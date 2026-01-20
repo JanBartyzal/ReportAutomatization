@@ -1,0 +1,156 @@
+version: '3.8'
+
+services:
+  # 1. FRONTEND (Veřejný)
+  frontend:
+    image: node:20-alpine
+    container_name: frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173" # Přístupné pro uživatele
+    command: sh -c "npm install && npm run dev -- --host"
+    environment:
+      - VITE_API_URL=${API_URL}
+      # Konfigurace pro MSAL (React Auth)
+      - VITE_AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - VITE_AZURE_TENANT_ID=${AZURE_TENANT_ID}
+    depends_on:
+      - api
+    networks:
+      - report-net
+
+  # 2. BACKEND API (Veřejný - Gateway)
+  api:
+    build: ./backend
+    container_name: api
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000" # Přístupné, ale chráněné tokenem
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
+      - OPENAI_API_BASE=${AI_API_BASE}
+      - OPENAI_API_KEY=${AI_API_KEY}
+      - MODEL_NAME=${CHOSEN_MODEL}
+      # Konfigurace pro validaci tokenů
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+      - API_ENV=production # nebo 'development' pro bypass auth na lokále
+    depends_on:
+      postgres:
+        condition: service_healthy
+      litellm:
+        condition: service_started
+    networks:
+      - report-net
+
+  # --- PRIVATE ZONE (Bez veřejných portů) ---
+
+  redis:
+    image: redis:alpine
+    container_name: pptx_redis
+    # ports: - ODSTRANĚNO (dostupné jen uvnitř sítě)
+    command: redis-server --save 60 1 --loglevel warning --requirepass "${REDIS_PASSWORD}"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - report-net
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm
+    # ports: - ODSTRANĚNO
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml
+    command: [ "--config", "/app/config.yaml", "--detailed_debug" ]
+    networks:
+      - report-net
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - STORE_MODEL_IN_DB=True
+    depends_on:
+      - redis
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    # ports: - ODSTRANĚNO
+    volumes:
+      - ollama_storage:/root/.ollama
+    restart: unless-stopped
+    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 10 && ollama pull llava && tail -f /dev/null" ]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    networks:
+      - report-net
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n
+    # ports: - ODSTRANĚNO (N8N je jen backendový proces)
+    environment:
+      - N8N_HOST=n8n
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://n8n:5678/
+      - DB_POSTGRESDB_HOST=postgres
+      # ... zbytek proměnných ...
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - litellm
+      - postgres
+    networks:
+      - report-net
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    ports:
+      - "127.0.0.1:5432:5432" # Bind pouze na localhost pro debugging
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+    networks:
+      - report-net
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "127.0.0.1:5050:80" # Bind pouze na localhost
+    depends_on:
+      - postgres
+    networks:
+      - report-net
+
+volumes:
+  ollama_storage:
+  n8n_data:
+  postgres_data:
+  redis_data:
+
+networks:
+  report-net:
