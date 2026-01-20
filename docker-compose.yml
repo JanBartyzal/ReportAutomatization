@@ -22,6 +22,7 @@ services:
     container_name: api
     volumes:
       - ./backend:/app
+      - ./local_data:/app/local_data
     ports:
       - "8000:8000"
     environment:

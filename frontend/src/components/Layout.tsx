@@ -93,7 +93,7 @@ export const Layout: React.FC = () => {
                 {/* Logo / Název */}
                 <div className={styles.logoArea}>
                     <Cube24Regular primaryFill={tokens.colorBrandForeground1} />
-                    <Text weight="bold" size={500}>CloudInfraMap</Text>
+                    <Text weight="bold" size={500}>Report Automatization</Text>
                 </div>
 
                 {/* Navigace */}
@@ -110,19 +110,8 @@ export const Layout: React.FC = () => {
                         IMPORT
                     </div>
 
-                    <Tab value="/import/source" icon={<Code24Regular />}>
-                        Ze zdrojových kódů
-                    </Tab>
-                    <Tab value="/import/json" icon={<ArrowUpload24Regular />}>
-                        Z Terraform Plánu
-                    </Tab>
-
-                    <div style={{ padding: '10px 10px 5px 10px', fontSize: '12px', color: '#666', fontWeight: 600 }}>
-                        ANALÝZA
-                    </div>
-
-                    <Tab value="/compare" icon={<ArrowSwap24Regular />}>
-                        Porovnání cen
+                    <Tab value="/import/opex" icon={<Code24Regular />}>
+                        OPEX pptx
                     </Tab>
                 </TabList>
 

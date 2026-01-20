@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 # Načtení URL z proměnné prostředí (nastaveno v Docker Compose) 
 DATABASE_URL = os.getenv(
-    "DB_URI", 
+    "DATABASE_URL", 
     "postgresql://user:password@db:5432/schema"
 )
 

@@ -71,8 +71,8 @@ interface FileUploaderProps {
 export const FileUploader: React.FC<FileUploaderProps> = ({
     onUpload,
     isLoading = false,
-    accept = ".tf,.bicep,.json,.zip",
-    multiple = true
+    accept = ".pptx",
+    multiple = false
 }) => {
     const styles = useStyles();
     const inputRef = useRef<HTMLInputElement>(null);
@@ -154,9 +154,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
                     <Text weight="semibold" size={400}>
                         Klikněte pro výběr nebo přetáhněte soubory sem
                     </Text>
-                    <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
-                        Podporované formáty: Terraform (.tf), Bicep (.bicep), JSON plány
-                    </Text>
+
                 </div>
 
                 <Button

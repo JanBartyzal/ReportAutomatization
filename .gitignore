@@ -125,10 +125,12 @@ shared_data/
 ollama_storage/
 n8n_data/
 frontend/node_modules/
+local_data/
 
 postgres_data/*
 redis_data/*
 shared_data/*
 ollama_storage/*
 n8n_data/*
+local_data/*
 frontend/node_modules/*

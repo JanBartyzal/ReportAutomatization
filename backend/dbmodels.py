@@ -3,32 +3,48 @@ from sqlalchemy.ext.declarative import declarative_base
 import datetime
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
+from pgvector.sqlalchemy import Vector
 
 Base = declarative_base()
 
 class Regions(Base):
     __tablename__ = "regions"
-    oid = Column(String, primary_key=True)
+    region_id = Column(Integer, primary_key=True)
+    oid = Column(String)  
     region = Column(String)
    
 
 class UploadFile(Base):
     __tablename__ = "upload_files"
-    oid = Column(String, primary_key=True)
+    file_id = Column(Integer, primary_key=True)
+    oid = Column(String)  
     filename = Column(String)
     md5hash = Column(String)
+    reports = relationship("Report", back_populates="upload_file")
 
 class Report(Base):
     __tablename__ = "reports"
-    oid = Column(String, primary_key=True)
+    report_id = Column(Integer, primary_key=True)
+    oid = Column(String)  
     region = Column(String)
-    upload_file_oid = Column(String)
-
+    upload_file_id = Column(Integer, ForeignKey("upload_files.file_id"))
+    upload_file = relationship("UploadFile", back_populates="reports")
+    slide_data = relationship("SlideData", back_populates="report")
+    
 class SlideData(Base):
     __tablename__ = "slide_data"
-    oid = Column(String, primary_key=True)
-    report_oid = Column(String)
+    slide_id = Column(Integer, primary_key=True)
+    report_id = Column(Integer, ForeignKey("reports.report_id"))
+    report = relationship("Report", back_populates="slide_data")
     slide_index = Column(Integer)
     title = Column(String)
     table_data = Column(JSONB)
     image_data = Column(JSONB)
+
+
+class Document_chunks(Base):
+    __tablename__ = "document_chunks"
+    id = Column(Integer, primary_key=True)
+    content = Column(String)
+    mdata = Column(JSONB)
+    embedding = Column(Vector(768))
