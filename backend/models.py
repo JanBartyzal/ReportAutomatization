@@ -24,8 +24,9 @@ class Report(BaseModel):
     region: str
 
 class SlideData(BaseModel):
-    report_oid: str
+    report_oid: Optional[str] = None
     slide_index: int
     title: str
     table_data: List[Dict[str, Any]]
     image_data: List[Dict[str, Any]]
+    text_content: List[str] = []

@@ -15,6 +15,7 @@ from dbmodels import UploadFile as DBUploadFile,Report as DBReport,SlideData as 
 from litellm import embedding, completion
 from pgvector.sqlalchemy import Vector
 from rag import get_embedding, json_to_markdown
+from opex import OpexManager
 
 
 # Inicializace DB (v produkci řešeno přes migrace/Alembic)
@@ -43,3 +44,30 @@ async def opex_data(
     #            {"uid": user.oid, "data": file_data})
     
     return {"message": "Processing started", "user": user.oid}
+
+@router.get("/run_opex_secure")
+async def run_opex_secure(
+    file_id: str, 
+    user: User = Depends(get_current_user) # <--- TADY JE ZABEZPEČENÍ
+):
+    opex_manager = OpexManager()
+    opex_manager.process_opex(file_id)
+    return {"message": "Processing started", "user": user.oid}
+
+@router.get("/run_opex")
+async def run_opex(file_id: str):
+    opex_manager = OpexManager()
+    opex_manager.process_opex(file_id)
+    return {"message": "Processing started"}
+
+@router.get("/get_file_header")
+async def get_file_header(file_id: str):
+    opex_manager = OpexManager()
+    result = opex_manager.get_presetation_header(file_id)
+    return result
+
+@router.get("/get_slide_data")
+async def get_slide_data(file_id: str, slide_id: int):
+    opex_manager = OpexManager()
+    result = opex_manager.get_slide_data(file_id, slide_id)
+    return result

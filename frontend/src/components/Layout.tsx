@@ -106,6 +106,11 @@ export const Layout: React.FC = () => {
                         Přehled
                     </Tab>
 
+                    <Tab value="/opex/dashboard" icon={<Code24Regular />}>
+                        OPEX Dashboard
+                    </Tab>
+
+
                     <div style={{ padding: '10px 10px 5px 10px', fontSize: '12px', color: '#666', fontWeight: 600 }}>
                         IMPORT
                     </div>
@@ -113,6 +118,13 @@ export const Layout: React.FC = () => {
                     <Tab value="/import/opex" icon={<Code24Regular />}>
                         OPEX pptx
                     </Tab>
+
+                    <Tab value="/opex/viewer" icon={<Code24Regular />}>
+                        Prohlížeč
+                    </Tab>
+
+
+
                 </TabList>
 
                 {/* Spodní část sidebaru (Logout) */}

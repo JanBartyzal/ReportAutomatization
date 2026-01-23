@@ -41,6 +41,18 @@ export const api = {
         getOpexData: async (opexId: string) => {
             const response = await apiClient.get<OpexData>(`/api/opex/data/${opexId}`);
             return response.data;
+        },
+        listUploadedFiles: async () => {
+            const response = await apiClient.get<any[]>('/api/import/get-list-uploaded-files');
+            return response.data;
+        },
+        getFileHeader: async (fileId: string) => {
+            const response = await apiClient.get<any[]>(`/api/opex/get_file_header?file_id=${fileId}`);
+            return response.data;
+        },
+        getSlideData: async (fileId: string, slideId: number) => {
+            const response = await apiClient.get<any[]>(`/api/opex/get_slide_data?file_id=${fileId}&slide_id=${slideId}`);
+            return response.data;
         }
     }
 

@@ -9,37 +9,43 @@ Base = declarative_base()
 
 class Regions(Base):
     __tablename__ = "regions"
-    region_id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
     oid = Column(String)  
     region = Column(String)
+    upload_files = relationship("UploadFile", back_populates="region")
    
 
 class UploadFile(Base):
     __tablename__ = "upload_files"
-    file_id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
     oid = Column(String)  
     filename = Column(String)
     md5hash = Column(String)
+    region_id = Column(Integer, ForeignKey("regions.id"))
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    region = relationship("Regions", back_populates="upload_files")    
     reports = relationship("Report", back_populates="upload_file")
 
 class Report(Base):
     __tablename__ = "reports"
-    report_id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
     oid = Column(String)  
     region = Column(String)
-    upload_file_id = Column(Integer, ForeignKey("upload_files.file_id"))
+    upload_file_id = Column(Integer, ForeignKey("upload_files.id"))
     upload_file = relationship("UploadFile", back_populates="reports")
     slide_data = relationship("SlideData", back_populates="report")
     
 class SlideData(Base):
     __tablename__ = "slide_data"
-    slide_id = Column(Integer, primary_key=True)
-    report_id = Column(Integer, ForeignKey("reports.report_id"))
+    id = Column(Integer, primary_key=True)
+    report_id = Column(Integer, ForeignKey("reports.id"))
     report = relationship("Report", back_populates="slide_data")
     slide_index = Column(Integer)
     title = Column(String)
     table_data = Column(JSONB)
     image_data = Column(JSONB)
+    text_content = Column(JSONB)
 
 
 class Document_chunks(Base):

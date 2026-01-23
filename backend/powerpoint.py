@@ -7,12 +7,13 @@ import base64
 import pandas as pd
 from typing import List, Dict, Any
 from table_data import TableDataProcessor
-
+from images_tesseract import TableImageData
 
 
 class PowerpointManager:
     def __init__(self):
         self.template_path = "template.pptx"
+        self.image_processor = TableImageData()
 
     def create_powerpoint(self, slide_data: List[SlideData]):
         prs = Presentation(self.template_path)
@@ -111,6 +112,17 @@ class PowerpointManager:
             return None
         return None
 
+    def extract_text_from_slide(self, slide):
+        """
+        Extracts text content from all shapes in the slide that have a text frame.
+        """
+        text_content = []
+        for shape in slide.shapes:
+            if hasattr(shape, "has_text_frame") and shape.has_text_frame:
+                if shape.text and shape.text.strip():
+                    text_content.append(shape.text.strip())
+        return text_content
+
     def extract_slides(self, prs: Presentation):
         slides = []
         
@@ -121,6 +133,9 @@ class PowerpointManager:
             title = "Untitled"
             if slide.shapes.title and slide.shapes.title.text:
                 title = slide.shapes.title.text
+            
+            # Extract text content
+            text_content = self.extract_text_from_slide(slide)
 
             for shape in slide.shapes:
                 # 1. Native Table
@@ -140,9 +155,15 @@ class PowerpointManager:
                 # 3. Image (Fallthrough)
                 if hasattr(shape, "image"):
                     image_blob = shape.image.blob
-                    # Convert to base64 for JSON transport
-                    b64_img = base64.b64encode(image_blob).decode('utf-8')
-                    extracted_images.append({
+                    local_table_data = self.image_processor.smart_extract(image_blob)
+                    print(local_table_data)
+                    if local_table_data["data"]:
+                        print(f"Extracted table data from image: {local_table_data}")
+                        slide_tables_data.extend(local_table_data["data"])
+                    else:
+                        # Convert to base64 for JSON transport
+                        b64_img = base64.b64encode(image_blob).decode('utf-8')
+                        extracted_images.append({
                         "slide_index": i + 1,
                         "image_base64": b64_img
                     })
@@ -151,7 +172,8 @@ class PowerpointManager:
                 slide_index=i + 1,
                 title=title,
                 table_data=slide_tables_data,
-                image_data=extracted_images
+                image_data=extracted_images,
+                text_content=text_content
             )
             slides.append(slide_data)
         return slides

@@ -41,3 +41,33 @@ class TableDataProcessor:
         cache.set(cache_key, json.dumps(result), ex=self.CACHE_TTL)
     
         return result
+
+    def normalize_text(self, text_content: list) -> str:
+        """
+        Takes a list of strings (text lines) and returns a single string with sequential line numbering.
+        """
+        combined_text_lines = []
+        line_counter = 1
+        
+        if isinstance(text_content, list):
+            for line in text_content:
+                if line and str(line).strip():
+                    combined_text_lines.append(f"{line_counter}. {str(line).strip()}")
+                    line_counter += 1
+        elif isinstance(text_content, str) and text_content.strip():
+             combined_text_lines.append(f"1. {text_content.strip()}")
+             
+        return "\n".join(combined_text_lines)
+
+    def normalize_table(self, table_data: list) -> pd.DataFrame:
+        """
+        Takes a list of dictionaries (rows) and converts it to a pandas DataFrame.
+        """
+        if table_data and isinstance(table_data, list):
+             try:
+                 df = pd.DataFrame(table_data)
+                 if not df.empty:
+                     return df
+             except Exception as e:
+                 print(f"Error converting table data to DataFrame: {e}")
+        return pd.DataFrame()

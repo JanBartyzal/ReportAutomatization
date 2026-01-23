@@ -87,7 +87,7 @@ class TableImageData:
                 # 3. Logika rozhodování (Semafory)
                 # Pokud je confidence vysoká A tabulka má rozumný tvar (ne 1 sloupec, ne 0 řádků)
                 if confidence > 85 and df.shape[1] > 1 and df.shape[0] > 1:
-                    print(" -> Kvalita skvělá, používám lokální OCR data.")
+                    print(" -> používám lokální OCR data.")
                     result["method"] = "LOCAL_OCR"
                     result["data"] = df.to_dict(orient='records')
                 else:

@@ -114,16 +114,20 @@ async def upload_opex_file(
 
 
 @router.get("/get-list-uploaded-files")
-async def get_list_uploaded_files(user: User = Depends(get_current_user)):
-    region = user.region
-    if Depends(verify_admin):
-        region = "all"
+async def get_list_uploaded_files():
+    
 
-    if region is None or region == "" or region == "all":
-        query = "SELECT * FROM upload_files"
-        results = db.fetch_all(query)
-    else:
-        query = "SELECT * FROM upload_files WHERE region = :region"
-        results = db.fetch_all(query, {"region": region})
+    db_files = db.query(DBUploadFile).all()
+    
+    results = []
+    for file in db_files:
+        results.append({
+            "id": file.id,
+            "filename": file.filename,
+            "md5hash": file.md5hash,
+            "region": "",
+            "created_at": file.created_at
+        })
+
     
     return results
