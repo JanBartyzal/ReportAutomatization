@@ -1,51 +1,63 @@
+"""
+Main FastAPI application entry point.
+
+This module initializes the FastAPI application with the new layered architecture,
+configures CORS middleware, and includes all API routers.
+"""
+
 import logging
 from fastapi import FastAPI
-import models
-import dbmodels
-from database import engine
-
-# Import routers
-import main_admin
-import main_import
-import main_opex
-import main_report
-import main_vector
 from fastapi.middleware.cors import CORSMiddleware
 
-# Init logger
+from app.core.config import settings
+from app.db.models import Base
+from app.db.session import engine
+from app.routers import admin, imports, opex, reports, vector, analytics
+
+# Initialize logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ReportAutomation")
 
-# Create tables
-dbmodels.Base.metadata.create_all(bind=engine)
+# Create database tables (TODO: Replace with Alembic migrations in production)
+Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Report Automation API")
+# Initialize FastAPI application
+app = FastAPI(
+    title="Report Automation API",
+    description="AI-powered PPTX table extraction and analysis with RAG",
+    version="2.0.0"
+)
 
-# Definujte povolené zdroje
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
-
+# Configure CORS middleware using centralized settings
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],  # Povolí GET, POST, atd.
-    allow_headers=["*"],  # Povolí všechny hlavičky včetně Authorization
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
 @app.get("/api/health")
-def health_check():
-    return {"status": "ok", "service": "report-automation"}
+def health_check() -> dict:
+    """
+    Health check endpoint.
+    
+    Returns:
+        Status dictionary confirming service is running
+    """
+    return {"status": "ok", "service": "report-automation", "version": "2.0.0"}
 
-# --- Include Routers ---
-app.include_router(main_admin.router, prefix="/api/admin", tags=["admin"])
-app.include_router(main_import.router, prefix="/api/import", tags=["import"])
-app.include_router(main_opex.router, prefix="/api/opex", tags=["opex"])
-app.include_router(main_report.router, prefix="/api/report", tags=["report"])
-app.include_router(main_vector.router, prefix="/api/vector", tags=["vector"])
+
+# Include API routers with prefixes and tags
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
+app.include_router(imports.router, prefix="/api/import", tags=["import"])
+app.include_router(opex.router, prefix="/api/opex", tags=["opex"])
+app.include_router(reports.router, prefix="/api/report", tags=["report"])
+app.include_router(vector.router, prefix="/api/vector", tags=["vector"])
+app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 
 
-logger.info("Report Automation started with modular structure.")
+logger.info("✅ Report Automation API started with layered architecture")
+logger.info(f"   Environment: {settings.api_env}")
+logger.info(f"   CORS Origins: {settings.cors_origins}")

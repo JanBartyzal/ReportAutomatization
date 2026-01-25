@@ -11,6 +11,7 @@ python-multipart
 redis
 prometheus-client
 pydantic
+pydantic-settings
 httpx
 mcp
 pytesseract
@@ -26,8 +27,14 @@ xlrd
 python-pptx
 pgvector
 litellm
+thefuzz[speedup]
 
-
+# Testing and Code Quality Tools
+pytest
+pytest-cov
+mypy
+ruff
+black
 
 
 

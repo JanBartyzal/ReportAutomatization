@@ -1,40 +1,40 @@
-// frontend/src/App.tsx
+
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Layout } from './components/Layout';
-import { Dashboard } from './pages/Dashboard';
-import { ImportOpex } from './pages/import/upload_opex';
-import { ViewerPPTX } from './pages/opex/viewerpptx';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthenticatedTemplate, UnauthenticatedTemplate } from "@azure/msal-react";
+import { MainLayout } from './components/Layout/MainLayout';
+import { Login } from './pages/Login';
 import { OpexDashboard } from './pages/opex/OpexDashboard';
+import { ImportOpex } from './pages/import/upload_opex';
 
-
-
-
-const queryClient = new QueryClient();
+// Placeholder Pages
+const Dashboard = () => <h1 className="text-2xl font-bold">Dashboard</h1>;
+const Analytics = () => <h1 className="text-2xl font-bold">Analytics</h1>;
+const Admin = () => <h1 className="text-2xl font-bold">Admin</h1>;
 
 const App: React.FC = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+    <BrowserRouter>
+      {/* If authenticated, show layout */}
+      <AuthenticatedTemplate>
         <Routes>
-          <Route path="/" element={<Layout />}>
-            {/* 1. Informativní Dashboard */}
+          <Route path="/" element={<MainLayout />}>
             <Route index element={<Dashboard />} />
-
-            {/* 2. Importní cesty */}
-            <Route path="import/opex" element={<ImportOpex />} />
-
-            {/* 3. Viewer */}
-            <Route path="opex/viewer" element={<ViewerPPTX />} />
-
-            {/* 4. Opex Dashboard */}
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="admin" element={<Admin />} />
             <Route path="opex/dashboard" element={<OpexDashboard />} />
-
+            <Route path="import/opex" element={<ImportOpex />} />
           </Route>
         </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
+      </AuthenticatedTemplate>
+
+      {/* If NOT authenticated, show login */}
+      <UnauthenticatedTemplate>
+        <Routes>
+          <Route path="*" element={<Login />} />
+        </Routes>
+      </UnauthenticatedTemplate>
+    </BrowserRouter>
   );
 };
 

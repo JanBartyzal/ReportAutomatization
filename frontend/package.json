@@ -1,5 +1,5 @@
 {
-    "name": "cloudinframap-frontend",
+    "name": "frontend",
     "private": true,
     "version": "0.0.0",
     "type": "module",
@@ -10,26 +10,36 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@emotion/react": "^11.14.0",
-        "@emotion/styled": "^11.14.1",
-        "@fluentui/react-components": "^9.72.9",
-        "@fluentui/react-icons": "^2.0.316",
-        "@mui/material": "^6.5.0",
-        "@mui/x-data-grid": "^8.25.0",
-        "@tanstack/react-query": "^5.90.16",
-        "@vitejs/plugin-react": "^5.1.2",
-        "axios": "^1.13.2",
-        "mermaid": "^10.6.0",
-        "react": "^18.3.1",
-        "react-dom": "^18.3.1",
-        "react-router-dom": "^6.30.3",
-        "recharts": "^2.10.0"
+        "@azure/msal-browser": "latest",
+        "@azure/msal-react": "latest",
+        "@emotion/react": "latest",
+        "@emotion/styled": "latest",
+        "@fluentui/react-components": "latest",
+        "@fluentui/react-icons": "latest",
+        "@mui/material": "latest",
+        "@mui/x-data-grid": "latest",
+        "@tanstack/react-query": "latest",
+        "@vitejs/plugin-react": "latest",
+        "axios": "latest",
+        "clsx": "latest",
+        "date-fns": "latest",
+        "lucide-react": "latest",
+        "mermaid": "latest",
+        "react": "latest",
+        "react-dom": "latest",
+        "react-dropzone": "latest",
+        "react-router-dom": "latest",
+        "recharts": "latest",
+        "tailwind-merge": "latest"
     },
     "devDependencies": {
-        "@types/node": "^25.0.5",
-        "@types/react": "^19.2.8",
-        "@types/react-dom": "^19.2.3",
-        "typescript": "^5.9.3",
-        "vite": "^7.3.1"
+        "@types/node": "latest",
+        "@types/react": "latest",
+        "@types/react-dom": "latest",
+        "autoprefixer": "^10.4.17",
+        "postcss": "^8.4.35",
+        "tailwindcss": "^3.4.17",
+        "typescript": "latest",
+        "vite": "latest"
     }
 }

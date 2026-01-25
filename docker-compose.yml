@@ -10,7 +10,10 @@ services:
       - "5173:5173"
     command: sh -c "npm install && npm run dev -- --host"
     environment:
-      - VITE_API_URL={API_URL}
+      - VITE_API_URL=${API_URL}
+      - VITE_AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - VITE_AZURE_TENANT_ID=${AZURE_TENANT_ID}
+      - VITE_AZURE_REDIRECT_URI=${AZURE_REDIRECT_URI}
     depends_on:
       - api
     networks:
@@ -20,21 +23,16 @@ services:
   api:
     build: ./backend
     container_name: api
+    env_file:
+      - .env
     volumes:
       - ./backend:/app
       - ./local_data:/app/local_data
     ports:
       - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}/${POSTGRES_DB}
-      - OPENAI_API_BASE={AI_API_BASE}
-      - OPENAI_API_KEY=${AI_API_KEY}
-      - MODEL_NAME=${CHOSEN_MODEL}
     depends_on:
       postgres:
         condition: service_healthy
-      litellm:
-        condition: service_started
     networks:
       - report-net
 
@@ -51,43 +49,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-    networks:
-      - report-net
-  # 3. AI GATEWAY (LiteLLM)
-  litellm:
-    image: ghcr.io/berriai/litellm:main-latest
-    container_name: litellm
-    ports:
-      - "4000:4000"
-    volumes:
-      - ./litellm_config.yaml:/app/config.yaml
-    command: [ "--config", "/app/config.yaml", "--detailed_debug" ]
-    networks:
-      - report-net
-    environment:
-      - REDIS_HOST={REDIS_HOST}
-      - REDIS_PORT={REDIS_POR }
-      - REDIS_PASSWORD={REDIS_PASSWORD}
-      - STORE_MODEL_IN_DB=True # Ukládá i metadata o modelech
-    depends_on:
-      - redis
-
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ./ollama_storage:/root/.ollama
-    restart: unless-stopped
-    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 10 && ollama pull llava && ollama pull nomic-embed-text && tail -f /dev/null" ]
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [ gpu ]
     networks:
       - report-net
 
@@ -114,7 +75,6 @@ services:
     volumes:
       - ./n8n_data:/home/node/.n8n
     depends_on:
-      - litellm
       - postgres
     networks:
       - report-net
