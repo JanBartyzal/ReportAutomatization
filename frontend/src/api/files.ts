@@ -38,7 +38,11 @@ const uploadFile = async (file: File, isOpex: boolean = false, onProgress?: (pro
 };
 
 const getUploadedFiles = async () => {
-    const response = await api.get<UploadedFile[]>('/import/get-list-uploaded-files');
+    console.log("Fetching uploaded files...");
+    console.log(api.defaults.baseURL);
+    console.log(api.defaults.headers);
+    const response = await api.get<UploadedFile[]>('/api/import/get-list-uploaded-files');
+    console.log(response.data);
     return response.data;
 };
 

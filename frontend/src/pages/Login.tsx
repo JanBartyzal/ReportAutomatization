@@ -1,16 +1,42 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useMsal } from "@azure/msal-react";
 import { loginRequest } from "../authConfig";
+import { InteractionStatus } from "@azure/msal-browser";
 import { Shield } from 'lucide-react';
 
 export const Login: React.FC = () => {
-    const { instance } = useMsal();
+    const { instance, inProgress } = useMsal();
 
-    const handleLogin = () => {
-        instance.loginRedirect(loginRequest).catch(e => {
-            console.error(e);
-        });
+    // Pokud chceš auto-redirect, musíš kontrolovat status:
+    useEffect(() => {
+        // TOTO JE TA OPRAVA:
+        // Nepouštěj login, pokud už se něco děje (Startup, HandleRedirect, atd.)
+        if (inProgress === InteractionStatus.None) {
+            // Volitelné: Odkomentuj, pokud chceš automatický redirect
+            // instance.loginRedirect(loginRequest);
+        }
+    }, [inProgress, instance]);
+
+
+    const handleLogin = async () => {
+        // Explicitní kontrola
+        if (inProgress !== InteractionStatus.None) {
+            console.warn("Login blokován, status:", inProgress);
+            return;
+        }
+
+        try {
+            await instance.loginRedirect(loginRequest);
+        } catch (e: any) {
+            console.error("Login failed", e);
+            // Pokud je to ta konkrétní chyba, zkusíme vyčistit cache (pro uživatele)
+            if (e.errorCode === "interaction_in_progress") {
+                alert("Došlo k chybě sezení. Stránka se obnoví.");
+                sessionStorage.clear();
+                window.location.reload();
+            }
+        }
     };
 
     return (
@@ -30,19 +56,23 @@ export const Login: React.FC = () => {
                         <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
                         <p className="text-slate-400">Sign in to access the Report Automation Platform</p>
                     </div>
+                    {inProgress !== InteractionStatus.None ? (
+                        <p>Načítám ověření...</p>
+                    ) : (
+                        <button
+                            onClick={handleLogin}
+                            className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-all duration-200 shadow-lg shadow-blue-900/20 flex items-center justify-center space-x-2 group"
+                        >
+                            <svg className="w-5 h-5" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11.5 0L0 0L0 11.5L11.5 11.5L11.5 0Z" fill="#F25022" />
+                                <path d="M23 0L11.5 0L11.5 11.5L23 11.5L23 0Z" fill="#7FBA00" />
+                                <path d="M11.5 11.5L0 11.5L0 23L11.5 23L11.5 11.5Z" fill="#00A4EF" />
+                                <path d="M23 11.5L11.5 11.5L11.5 23L23 23L23 11.5Z" fill="#FFB900" />
+                            </svg>
 
-                    <button
-                        onClick={handleLogin}
-                        className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-all duration-200 shadow-lg shadow-blue-900/20 flex items-center justify-center space-x-2 group"
-                    >
-                        <svg className="w-5 h-5" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M11.5 0L0 0L0 11.5L11.5 11.5L11.5 0Z" fill="#F25022" />
-                            <path d="M23 0L11.5 0L11.5 11.5L23 11.5L23 0Z" fill="#7FBA00" />
-                            <path d="M11.5 11.5L0 11.5L0 23L11.5 23L11.5 11.5Z" fill="#00A4EF" />
-                            <path d="M23 11.5L11.5 11.5L11.5 23L23 23L23 11.5Z" fill="#FFB900" />
-                        </svg>
-                        <span>Sign in with Microsoft Entra ID</span>
-                    </button>
+                            <span>Sign in with Microsoft Entra ID</span>
+                        </button>
+                    )}
 
                     <div className="mt-8 pt-6 border-t border-white/10 text-center">
                         <p className="text-xs text-slate-500">

@@ -15,7 +15,8 @@ export const msalConfig: Configuration = {
         postLogoutRedirectUri: "/"
     },
     cache: {
-        cacheLocation: "sessionStorage",
+        cacheLocation: "localStorage", // Ukládá tokeny, aby přežily refresh
+
     },
     system: {
         loggerOptions: {
@@ -43,10 +44,15 @@ export const msalConfig: Configuration = {
     }
 };
 
+/*
 export const loginRequest: PopupRequest = {
     scopes: ["User.Read"]
 };
+*/
 
+export const loginRequest = {
+    scopes: [`${import.meta.env.VITE_AZURE_CLIENT_ID}/user_impersonation`]
+};
 export const tokenRequest = {
     scopes: [`api://${clientId}/user_impersonation`]
 };

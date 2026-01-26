@@ -1,26 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
     Title2, Card, CardHeader, Text,
-    LargeTitle, Body1, Button, Spinner,
-    Select
+    LargeTitle, Body1,
 } from '@fluentui/react-components';
-import { ArrowLeft24Regular, ArrowRight24Regular } from '@fluentui/react-icons';
-import { api } from '../../api/endpoints';
+import { useFiles } from '../../api/files';
 
 export const OpexDashboard: React.FC = () => {
-    const [files, setFiles] = useState<any[]>([]);
-    useEffect(() => {
-        loadFiles();
-    }, []);
+    const { data: files, isLoading, isError } = useFiles();
 
-    const loadFiles = async () => {
-        try {
-            const data = await api.opex.listUploadedFiles();
-            setFiles(data);
-        } catch (e) {
-            console.error(e);
-        }
-    };
+
+    if (isLoading) {
+        return <div className="p-4">Načítám data...</div>;
+    }
+
+    if (isError) {
+        return <div className="p-4">Něco se pokazilo...</div>;
+    }
 
     return (
         <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -30,11 +25,21 @@ export const OpexDashboard: React.FC = () => {
 
             {/* Statistics */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-                <Card>
-                    <CardHeader header={<Text weight="semibold">Zpracované soubory</Text>} />
-                    <LargeTitle>{files.length}</LargeTitle>
-                    <Body1>Celkem nahraných souborů</Body1>
-                </Card>
+
+                {files?.length > 0 ? (
+
+                    <Card>
+                        <CardHeader header={<Text weight="semibold">Zpracované soubory</Text>} />
+                        <LargeTitle>{files?.length || 0}</LargeTitle>
+                        <Body1>Celkem nahraných souborů</Body1>
+                    </Card>
+                ) : (
+                    <Card>
+                        <CardHeader header={<Text weight="semibold">Zpracované soubory</Text>} />
+                        <LargeTitle>0</LargeTitle>
+                        <Body1>Celkem nahraných souborů</Body1>
+                    </Card>
+                )}
             </div>
         </div>
     );

@@ -1,49 +1,59 @@
-
 import axios, { InternalAxiosRequestConfig } from 'axios';
-import { PublicClientApplication, AccountInfo } from '@azure/msal-browser';
-import { msalConfig, tokenRequest } from '../authConfig';
+import { msalInstance } from '../msalInstance'; // Importujeme naši instanci
+import { loginRequest } from '../authConfig';   // Importujeme scope
 
+// Vytvoření instance Axiosu
 const api = axios.create({
-    baseURL: '/api', // Proxy in vite config handles path
+    baseURL: import.meta.env.VITE_API_URL,
     headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
     },
 });
 
-// Create a separate MSAL instance for token acquisition outside of React context
-const msalInstance = new PublicClientApplication(msalConfig);
-let msalInitialized = false;
-
-async function getAccessToken(): Promise<string | null> {
-    if (!msalInitialized) {
-        await msalInstance.initialize();
-        msalInitialized = true;
-    }
-
-    const accounts = msalInstance.getAllAccounts();
-    if (accounts.length > 0) {
-        const request = {
-            ...tokenRequest,
-            account: accounts[0],
-        };
-        try {
-            const response = await msalInstance.acquireTokenSilent(request);
-            return response.accessToken;
-        } catch (error) {
-            console.error("Silent token acquisition failed", error);
-            // Fallback to interaction if needed, or return null to trigger login
-            return null;
-        }
-    }
-    return null;
-}
-
+// REQUEST INTERCEPTOR
 api.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
-        const token = await getAccessToken();
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+        // DEBUG LOG: Vidíme, že interceptor běží
+        console.log(`🔌 Axios Interceptor: Zpracovávám ${config.url}`);
+
+        // 1. Zkusíme získat aktivní účet
+        let account = msalInstance.getActiveAccount();
+
+        // FALLBACK: Pokud ActiveAccount je null (stává se po refresh),
+        // zkusíme ho vytáhnout ze seznamu všech účtů.
+        if (!account) {
+            const allAccounts = msalInstance.getAllAccounts();
+            if (allAccounts.length > 0) {
+                console.log("⚠️ ActiveAccount byl null, beru první ze seznamu.");
+                account = allAccounts[0];
+                // Pro jistotu ho nastavíme jako aktivní pro příště
+                msalInstance.setActiveAccount(account);
+            }
         }
+
+        if (account) {
+            try {
+                // 2. Získání tokenu (Silent = na pozadí)
+                // Používáme 'loginRequest', protože tam máš definované scopes pro API
+                const response = await msalInstance.acquireTokenSilent({
+                    ...loginRequest,
+                    account: account
+                });
+
+                // 3. Přidáme token do hlavičky
+                config.headers.Authorization = `Bearer ${response.accessToken}`;
+                console.log("🔑 Token úspěšně přidán do hlavičky.");
+
+            } catch (error) {
+                console.error("❌ Chyba při získávání tokenu (Silent fail):", error);
+                // Poznámka: Pokud selže silent token (např. vypršela session),
+                // request odejde bez tokenu a skončí 401. To je správně.
+                // Frontend by pak měl uživatele přesměrovat na login.
+            }
+        } else {
+            console.warn("⚠️ Interceptor: Žádný uživatel není přihlášen! Posílám request bez tokenu.");
+        }
+
         return config;
     },
     (error) => {
