@@ -134,3 +134,10 @@ ollama_storage/*
 n8n_data/*
 local_data/*
 frontend/node_modules/*
+
+.ruff_cache
+.ruff_cache/*
+
+.venv
+
+litellm_config.yaml

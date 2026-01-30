@@ -37,6 +37,33 @@ const uploadFile = async (file: File, isOpex: boolean = false, onProgress?: (pro
     return response.data;
 };
 
+export interface Report {
+    id: number;
+    title?: string;
+    owner?: string;
+    region?: string;
+    appendix?: any;
+}
+
+export const getMyReports = async () => {
+    const response = await api.get<Report[]>('/api/reports/my-reports');
+    return response.data;
+};
+
+export const uploadExcelAppendix = async (reportId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('report_id', reportId.toString());
+    formData.append('file', file);
+
+    const response = await api.post('/api/import/upload/opex/excel', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
+
 const getUploadedFiles = async () => {
     console.log("Fetching uploaded files...");
     console.log(api.defaults.baseURL);
@@ -69,3 +96,23 @@ export const useFiles = () => {
         staleTime: 1000 * 60,
     });
 };
+
+export const useMyReports = () => {
+    return useQuery({
+        queryKey: ['reports', 'my'] as const,
+        queryFn: getMyReports,
+        staleTime: 1000 * 60 * 5,
+    });
+};
+
+export const useUploadAppendix = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ reportId, file }: { reportId: number; file: File }) =>
+            uploadExcelAppendix(reportId, file),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
+        },
+    });
+};
+

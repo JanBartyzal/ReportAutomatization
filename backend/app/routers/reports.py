@@ -7,7 +7,7 @@ user-specific report data with row-level security.
 
 import logging
 from sqlalchemy.orm import Session
-from app.db.session import get_db
+from app.core.database import get_db
 from typing import List, Dict, Any
 from fastapi import Depends
 from fastapi.routing import APIRouter

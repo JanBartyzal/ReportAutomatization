@@ -4,9 +4,13 @@ import { useMsal } from "@azure/msal-react";
 import { loginRequest } from "../authConfig";
 import { InteractionStatus } from "@azure/msal-browser";
 import { Shield } from 'lucide-react';
+import { Button } from '@fluentui/react-components';
+import { useAuth } from '../components/auth/authContext';
 
 export const Login: React.FC = () => {
     const { instance, inProgress } = useMsal();
+    const { loginDev } = useAuth();
+
 
     // Pokud chceš auto-redirect, musíš kontrolovat status:
     useEffect(() => {
@@ -72,6 +76,12 @@ export const Login: React.FC = () => {
 
                             <span>Sign in with Microsoft Entra ID</span>
                         </button>
+
+                    )}
+                    {import.meta.env.DEV && (
+                        <Button appearance="secondary" size="medium" onClick={() => loginDev()} style={{ width: '100%' }}>
+                            Skip SSO (Dev Mode)
+                        </Button>
                     )}
 
                     <div className="mt-8 pt-6 border-t border-white/10 text-center">

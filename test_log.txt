@@ -1,0 +1,20 @@
+Testing perfect grid...
+DEBUG: Detected 3 rows
+DEBUG: Detected 2 columns
+DEBUG: median_len=2, consistent_rows=3/3
+DEBUG: total_shapes=6, expected_cells=6, density=1.0
+Results: [{'type': 'pseudo_table', 'confidence_score': 1.0, 'bbox': [100.0, 100.0, 210.0, 180.0], 'data': [['R1C1', 'R1C2'], ['R2C1', 'R2C2'], ['R3C1', 'R3C2']]}]
+Perfect grid PASSED
+Testing jitter...
+DEBUG: Detected 3 rows
+DEBUG: Detected 2 columns
+DEBUG: median_len=2, consistent_rows=3/3
+DEBUG: total_shapes=6, expected_cells=6, density=1.0
+Jitter PASSED
+Testing missing cells...
+DEBUG: Insufficient shapes: 5
+Missing cells FAILED: 
+Testing noise rejection...
+DEBUG: Insufficient shapes: 4
+Noise rejection PASSED
+Done.

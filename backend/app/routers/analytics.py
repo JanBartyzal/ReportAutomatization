@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException
 from fastapi.routing import APIRouter
 
-from app.db.session import get_db
+from app.core.database import get_db
 from app.schemas.user import User
 from app.core.security import get_current_user
 from app.services.aggregation_service import AggregationService

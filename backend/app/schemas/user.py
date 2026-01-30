@@ -7,25 +7,6 @@ This module defines data models for user authentication and region assignments.
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
-
-class User(BaseModel):
-    """
-    User information from Azure AD JWT token.
-    
-    Attributes:
-        oid: Object ID in Azure AD (unique user identifier)
-        name: User's display name
-        email: User's email address (from preferred_username claim)
-        roles: List of assigned roles (e.g., ["AppAdmin"])
-        region: User's assigned region (optional)
-    """
-    oid: str = Field(..., description="Object ID in Azure AD (unique user identifier)")
-    name: Optional[str] = None
-    email: Optional[str] = Field(None, alias="preferred_username")
-    roles: List[str] = []
-    region: Optional[str] = None
-
-
 class Regions(BaseModel):
     """
     User region assignment.
@@ -36,3 +17,26 @@ class Regions(BaseModel):
     """
     oid: str
     region: str
+
+
+class User(BaseModel):
+    id: str
+    email: Optional[str] = None
+    name: Optional[str] = None
+    tenant_id: Optional[str] = None # Entra ID Directory ID
+    roles: List[str] = []
+    region: Optional[str] = None
+    
+    # Custom claim for app-specific tenant (Free/Premium DB)
+    app_tenant_id: Optional[str] = None
+
+class UserPermissions(BaseModel):
+    can_sync_prices: bool
+    can_edit_plans: bool
+    can_view_reports: bool
+
+class UserMeResponse(BaseModel):
+    id: str
+    email: Optional[str] = None
+    roles: List[str]
+    permissions: UserPermissions

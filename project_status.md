@@ -111,12 +111,14 @@ PPTX-AI-Analyzer is a **secure, production-ready** AI-powered microservices plat
 - [x] Schema validation for consistency
 - [x] Source tracking (filename + slide number)
 
-### 5. **AI/RAG Foundation**
-- [x] PostgreSQL with `pgvector` extension
-- [x] LiteLLM Proxy routing (Azure OpenAI for prod, Ollama for dev)
-- [x] Vector embedding pipeline ready
+### 6. **Batch Processing System** ✅ NEW
+- [x] Wave-based data grouping (e.g., "Review 1", "Q1 Audit")
+- [x] Batch management (create, list, close, and recursive delete)
+- [x] Upload validation (enforcing active/open batches)
+- [x] RAG filtering by Batch ID for scoped AI chat
+- [x] Backward compatibility via "Legacy Batch" for existing data
 
-### 6. **Analytics Integration**
+### 7. **Analytics Integration**
 - [x] JSON output compatible with PowerBI ingestion
 - [x] Relational database structure for SQL queries
 
@@ -328,40 +330,11 @@ PPTX-AI-Analyzer is a **secure, production-ready** AI-powered microservices plat
 
 ---
 
-### **Sprint 3: Batch Processing System** 🔴 To Do
-**Problem:** Same table structure appears across multiple PPTX files (e.g., "Monthly Report - Germany", "Monthly Report - France") but needs to be aggregated into a master dataset.
-
-**Solution:**
-- Implement table schema fingerprinting (column names, data types, order)
-- Develop similarity matching algorithm (fuzzy matching for minor variations)
-- Aggregate rows from identical schemas into master tables
-- Handle missing columns gracefully (fill with NULL/default values)
-
-**Acceptance Criteria:**
-- Successfully identify identical schemas with 95%+ accuracy
-- Merge data from ≥10 source files into a single master table
-- Preserve source metadata (original filename, slide number, date)
-- Handle column name variations (e.g., "Revenue" vs "Total Revenue")
-
-**Estimated Effort:** 4 weeks
-
----
-
-### **Sprint 3: Batch Processing System** 🔴 To Do
-**Problem:** Data arrives in distinct waves ("Review 1", "Review 2", "Review 3") and must be tracked separately for audit and versioning.
-
-**Solution:**
-- Add `review_batch_id` field to database schema
-- Implement batch management API (create, list, activate)
-- Tag all extracted data with current active batch
-- Support batch-level queries and filtering
-
-**Acceptance Criteria:**
-- All data must be associated with a batch ID
-- Support concurrent batches without data leakage
-- Enable batch comparison reports (e.g., "Show changes between Review 1 and Review 2")
-
-**Estimated Effort:** 2 weeks
+### **Sprint 3: Batch Processing System** ✅ Complete (2026-01-30)
+- ✅ **Wave-based Tracking**: All data tagged with `batch_id`
+- ✅ **Audit Scoping**: Users can chat exclusively with specific batch data
+- ✅ **Batch Lifecycle**: Implemented Create -> Upload -> Close -> Delete
+- ✅ **Recursion**: Deleting a batch clears all associated items/chunks
 
 ---
 

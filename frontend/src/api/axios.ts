@@ -1,6 +1,6 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 import { msalInstance } from '../msalInstance'; // Importujeme naši instanci
-import { loginRequest } from '../authConfig';   // Importujeme scope
+import { tokenRequest } from '../authConfig';   // Importujeme scope
 
 // Vytvoření instance Axiosu
 const api = axios.create({
@@ -34,9 +34,10 @@ api.interceptors.request.use(
         if (account) {
             try {
                 // 2. Získání tokenu (Silent = na pozadí)
-                // Používáme 'loginRequest', protože tam máš definované scopes pro API
+                // Používáme 'tokenRequest', protože potřebujeme access token pro API (api://...)
+                // loginRequest dává obvykle jen ID Token nebo User.Read pro Graph.
                 const response = await msalInstance.acquireTokenSilent({
-                    ...loginRequest,
+                    ...tokenRequest,
                     account: account
                 });
 

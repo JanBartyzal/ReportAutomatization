@@ -9,15 +9,16 @@ import json
 import logging
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
-from app.db.session import get_db
+from app.core.database import get_db
 from fastapi import Depends, HTTPException
 from fastapi.routing import APIRouter
 from app.schemas.user import User
 from app.core.security import get_current_user
-from app.db.models import Document_chunks as DBDocument_chunks
+from app.core.models import Document_chunks as DBDocument_chunks
 from litellm import completion
 from app.services.rag_service import get_embedding, json_to_markdown
 from app.core.config import settings
+from uuid import UUID
 
 
 router = APIRouter()
@@ -29,6 +30,7 @@ async def process_slide(
     json_data: dict,
     report_id: int,
     slide_index: int,
+    batch_id: UUID,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> Dict[str, str]:
@@ -58,7 +60,8 @@ async def process_slide(
     # Store chunk with metadata
     chunk = DBDocument_chunks(
         content=md_text,
-        mdata=json.dumps({"report_id": report_id, "slide_index": slide_index}),
+        mdata=json.dumps({"report_id": report_id, "slide_index": slide_index, "batch_id": str(batch_id)}),
+        batch_id=batch_id,
         embedding=str(vector)
     )
 
@@ -72,6 +75,7 @@ async def process_slide(
 @router.post("/chat-with-data")
 async def chat_rag(
     query: str,
+    batch_id: Optional[UUID] = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
@@ -101,15 +105,24 @@ async def chat_rag(
     # Step B: Semantic search in PostgreSQL
     # Operator <=> means "cosine distance"
     # Note: This uses raw SQL for pgvector operators
-    search_sql = """
+    
+    params = {"q_vec": str(query_vec)}
+    where_clause = ""
+    
+    if batch_id:
+        where_clause = "WHERE batch_id = :batch_id"
+        params["batch_id"] = batch_id
+    
+    search_sql = f"""
     SELECT content, mdata 
     FROM document_chunks 
+    {where_clause}
     ORDER BY embedding <=> :q_vec 
     LIMIT 5
     """
     
     # Execute semantic search
-    results = db.execute(search_sql, {"q_vec": str(query_vec)}).fetchall()
+    results = db.execute(search_sql, params).fetchall()
     
     # Step C: Build context for LLM
     context_str = "\n\n".join([

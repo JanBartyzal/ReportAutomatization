@@ -1,8 +1,15 @@
 
 import { Configuration, PopupRequest } from "@azure/msal-browser";
 
-const clientId = import.meta.env.VITE_AZURE_CLIENT_ID || "YOUR_CLIENT_ID";
-const tenantId = import.meta.env.VITE_AZURE_TENANT_ID || "common";
+const clientId = import.meta.env.VITE_AZURE_CLIENT_ID;
+if (!clientId) {
+    throw new Error("Missing VITE_AZURE_CLIENT_ID in environment variables! Application cannot start.");
+}
+
+const tenantId = import.meta.env.VITE_AZURE_TENANT_ID;
+if (!tenantId) {
+    throw new Error("Missing VITE_AZURE_TENANT_ID in environment variables! Application cannot start.");
+}
 const redirectUri = import.meta.env.VITE_AZURE_REDIRECT_URI || window.location.origin + "/";
 
 console.log("MSAL Config:", { clientId, tenantId, redirectUri });
@@ -44,15 +51,10 @@ export const msalConfig: Configuration = {
     }
 };
 
-/*
-export const loginRequest: PopupRequest = {
-    scopes: ["User.Read"]
-};
-*/
-
 export const loginRequest = {
-    scopes: [`${import.meta.env.VITE_AZURE_CLIENT_ID}/user_impersonation`]
+    scopes: [`api://${clientId}/user_impersonation`]
 };
+
 export const tokenRequest = {
     scopes: [`api://${clientId}/user_impersonation`]
 };

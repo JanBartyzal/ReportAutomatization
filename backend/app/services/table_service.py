@@ -11,7 +11,7 @@ import json
 import logging
 from typing import List, Dict, Any, Optional
 import pandas as pd
-from app.db.cache import cache
+from app.core.cache import cache
 from app.services.ocr_service import TableImageData
 from app.core.config import settings
 

@@ -24,5 +24,6 @@ class SlideData(BaseModel):
     slide_index: int
     title: str
     table_data: List[Dict[str, Any]]
+    pseudo_tables: List[Dict[str, Any]] = []
     image_data: List[Dict[str, Any]]
     text_content: List[str] = []

@@ -10,7 +10,7 @@ import logging
 from typing import List, Dict, Any
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from app.db.models import UploadFile as DBUploadFile
+from app.core.models import UploadFile as DBUploadFile
 from app.services.pptx_service import PowerpointManager
 from app.schemas.slide import SlideData
 from pptx import Presentation

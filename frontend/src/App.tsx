@@ -9,11 +9,13 @@ import { MainLayout } from './components/Layout/MainLayout';
 import { Login } from './pages/Login';
 import { OpexDashboard } from './pages/opex/OpexDashboard';
 import { ImportOpex } from './pages/import/upload_opex';
+import { AggregationDashboard } from './pages/AggregationDashboard';
+import { ExcelImport } from './pages/import/ExcelImport';
 
-// Placeholder Pages
-const Dashboard = () => <h1 className="text-2xl font-bold">Dashboard</h1>;
-const Analytics = () => <h1 className="text-2xl font-bold">Analytics</h1>;
-const Admin = () => <h1 className="text-2xl font-bold">Admin</h1>;
+// Real Page Imports
+import { Dashboard } from './pages/dashboard/Dashboard';
+import { Analytics } from './pages/analytics/Analytics';
+import { Admin } from './pages/admin/Admin';
 
 type AppProps = {
   msalInstance: PublicClientApplication;
@@ -33,6 +35,8 @@ const App: React.FC<AppProps> = ({ msalInstance }) => {
               <Route path="admin" element={<Admin />} />
               <Route path="opex/dashboard" element={<OpexDashboard />} />
               <Route path="import/opex" element={<ImportOpex />} />
+              <Route path="import/upload/opex/excel" element={<ExcelImport />} />
+              <Route path="aggregation" element={<AggregationDashboard />} />
             </Route>
             <Route path="/login" element={<Navigate to="/" replace />} />
           </Routes>

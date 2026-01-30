@@ -1,0 +1,21 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.2, pytest-9.0.2, pluggy-1.6.0 -- C:\Python314\python.exe
+cachedir: .pytest_cache
+rootdir: I:\Codes\GCP\ReportAutomatization
+plugins: anyio-4.12.1, cov-7.0.0
+collecting ... collected 6 items
+
+tests/backend/test_aggregation.py::test_normalize_column_name PASSED     [ 16%]
+tests/backend/test_aggregation.py::test_infer_column_types PASSED        [ 33%]
+tests/backend/test_aggregation.py::test_generate_schema_fingerprint PASSED [ 50%]
+tests/backend/test_aggregation.py::test_fuzzy_match_columns PASSED       [ 66%]
+tests/backend/test_aggregation.py::test_extract_schema_from_table_data PASSED [ 83%]
+tests/backend/test_aggregation.py::test_aggregate_by_fingerprint_logic PASSED [100%]
+
+============================== warnings summary ===============================
+backend\app\core\models.py:15
+  I:\Codes\GCP\ReportAutomatization\backend\app\core\models.py:15: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 6 passed, 1 warning in 0.29s =========================

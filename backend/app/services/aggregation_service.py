@@ -15,7 +15,7 @@ import re
 from typing import List, Dict, Any, Optional, Set, Tuple
 from sqlalchemy.orm import Session
 from thefuzz import fuzz
-from app.db.models import SlideData, UploadFile, Report
+from app.core.models import SlideData, UploadFile, Report
 
 
 logger = logging.getLogger(__name__)
@@ -83,22 +83,23 @@ class AggregationService:
             # Sample first 10 rows or all rows if fewer
             sample_size = min(10, len(table_data))
             numeric_count = 0
-            
+            # Skip iteration if no non-empty values
+            valid_samples = 0
             for i in range(sample_size):
                 value = table_data[i].get(col)
-                
-                if value is None or value == "":
-                    continue
-                
-                # Try to convert to float
-                try:
-                    float(str(value).replace(',', '').replace('%', ''))
-                    numeric_count += 1
-                except (ValueError, AttributeError):
-                    pass
+                if value is not None and str(value).strip() != "" and str(value).strip().lower() not in ["n/a", "none", "null"]:
+                    valid_samples += 1
+                    # Try to convert to float
+                    try:
+                        # Clean common currency/unit chars
+                        clean_val = str(value).replace(',', '').replace('%', '').replace('$', '').replace('€', '').strip()
+                        float(clean_val)
+                        numeric_count += 1
+                    except (ValueError, AttributeError):
+                        pass
             
-            # If >70% of values are numeric, consider it numeric
-            if numeric_count / sample_size > 0.7:
+            # If >70% of non-empty values are numeric, consider it numeric
+            if valid_samples > 0 and numeric_count / valid_samples > 0.7:
                 type_map[col] = 'numeric'
             else:
                 type_map[col] = 'string'
@@ -167,8 +168,9 @@ class AggregationService:
         norm_col1 = self.normalize_column_name(col1)
         norm_col2 = self.normalize_column_name(col2)
         
-        # Calculate similarity ratio (0-100)
-        similarity = fuzz.ratio(norm_col1, norm_col2)
+        # Calculate similarity score (0-100)
+        # token_sort_ratio is better for matching headers with different word orders
+        similarity = fuzz.token_sort_ratio(norm_col1, norm_col2)
         
         return similarity >= threshold
     

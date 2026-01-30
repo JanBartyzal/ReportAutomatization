@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, Settings, Database, Server } from 'lucide-react';
+import { LayoutDashboard, FileText, Settings, Database, Server, Table } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
+    { icon: Table, label: 'Aggregation', to: '/aggregation' },
     { icon: LayoutDashboard, label: 'Opex', to: '/opex/dashboard' },
     { icon: Database, label: 'Import Opex', to: '/import/opex' },
     { icon: Server, label: 'Admin', to: '/admin', adminOnly: true },

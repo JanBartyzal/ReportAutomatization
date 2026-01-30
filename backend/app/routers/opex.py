@@ -8,7 +8,7 @@ import os
 import logging
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
-from app.db.session import get_db
+from app.core.database import get_db
 from fastapi import Depends, HTTPException
 from fastapi.routing import APIRouter
 from app.schemas.user import User

@@ -19,6 +19,7 @@ from pptx.shapes.base import BaseShape
 from app.schemas.slide import SlideData
 from app.services.table_service import TableDataProcessor
 from app.services.ocr_service import TableImageData
+from app.services.parsers.ppt_shapes import PseudoTableParser
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ class PowerpointManager:
         """Initialize PowerPoint manager with default template and processors."""
         self.template_path = "template.pptx"
         self.image_processor = TableImageData()
+        self.pseudo_table_parser = PseudoTableParser()
 
     def create_powerpoint(self, slide_data: List[SlideData]) -> Presentation:
         """
@@ -226,6 +228,9 @@ class PowerpointManager:
             
             # Extract text content
             text_content = self.extract_text_from_slide(slide)
+            
+            # Collect shapes for pseudo-table detection
+            all_shapes_metadata = []
 
             for shape in slide.shapes:
                 # 1. Native Table
@@ -257,11 +262,26 @@ class PowerpointManager:
                         "slide_index": i + 1,
                         "image_base64": b64_img
                     })
+                
+                # Collect all text-containing shapes for pseudo-table candidate detection
+                if hasattr(shape, "has_text_frame") and shape.has_text_frame:
+                    if shape.text and shape.text.strip():
+                        all_shapes_metadata.append({
+                            "text": shape.text,
+                            "top": shape.top,
+                            "left": shape.left,
+                            "width": shape.width,
+                            "height": shape.height
+                        })
+            
+            # Identify pseudo-tables from collected shapes
+            pseudo_tables = self.pseudo_table_parser.parse(all_shapes_metadata)
                     
             slide_data = SlideData(
                 slide_index=i + 1,
                 title=title,
                 table_data=slide_tables_data,
+                pseudo_tables=pseudo_tables,
                 image_data=extracted_images,
                 text_content=text_content
             )
