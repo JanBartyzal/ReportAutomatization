@@ -62,7 +62,7 @@ const useStyles = makeStyles({
 
 // --- PROPS ---
 interface FileUploaderProps {
-    onUpload: (files: FileList) => void;
+    onUpload: (files: FileList) => vid;
     isLoading?: boolean;
     accept?: string; // např. ".tf,.json,.bicep"
     multiple?: boolean;

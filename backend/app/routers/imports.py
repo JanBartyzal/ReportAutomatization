@@ -21,7 +21,7 @@ import datetime
 from app.services.rag_service import get_embedding, json_to_markdown
 from app.core.config import settings
 from app.services.parsers.excel import ExcelProcessor
-from app.core.security import get_current_user
+from app.identity.auth import get_current_user
 
 
 router = APIRouter()
@@ -53,10 +53,10 @@ async def upload_file(
     Raises:
         HTTPException: If upload fails
     """
-    logger.info(f"File uploaded by user: {user.email} (ID: {user.oid}) to batch: {batch_id}")
+    logger.info(f"File uploaded by user: {user.email} (ID: {user.id}) to batch: {batch_id}")
     
     # Validate batch
-    batch = db.query(Batch).filter(Batch.id == batch_id, Batch.oid == user.oid).first()
+    batch = db.query(Batch).filter(Batch.id == batch_id, Batch.id == user.id).first()
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
     if batch.status != BatchStatus.OPEN:
@@ -89,9 +89,9 @@ async def upload_file(
     with open(file_path, "wb") as f:
         f.write(file_data)
 
-    # Save metadata to database with RLS (user OID)
+    # Save metadata to database with RLS (user id)
     upload_file = DBUploadFile(
-        oid=user.oid,
+        id=user.id,
         filename=filename,
         md5hash=md5hash,
         batch_id=batch_id
@@ -104,7 +104,7 @@ async def upload_file(
     if extension_filename in ["xlsx", "xls"]:
         background_tasks.add_task(process_excel_background, file_path, batch_id, upload_file.id, db)
     
-    return {"message": "File uploaded successfully", "user": user.oid}
+    return {"message": "File uploaded successfully", "user": user.id}
 
 
 async def process_excel_background(
@@ -168,10 +168,10 @@ async def upload_opex_file(
     Raises:
         HTTPException: If upload fails
     """
-    logger.info(f"OPEX file uploaded by user: {user.email} (ID: {user.oid}) to batch: {batch_id}")
+    logger.info(f"OPEX file uploaded by user: {user.email} (ID: {user.id}) to batch: {batch_id}")
     
     # Validate batch
-    batch = db.query(Batch).filter(Batch.id == batch_id, Batch.oid == user.oid).first()
+    batch = db.query(Batch).filter(Batch.id == batch_id, Batch.id == user.id).first()
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
     if batch.status != BatchStatus.OPEN:
@@ -204,9 +204,9 @@ async def upload_opex_file(
     with open(file_path, "wb") as f:
         f.write(file_data)
 
-    # Save metadata to database with RLS (user OID)
+    # Save metadata to database with RLS (user id)
     upload_file = DBUploadFile(
-        oid=user.oid,
+        id=user.id,
         filename=filename,
         md5hash=md5hash,
         batch_id=batch_id
@@ -244,7 +244,7 @@ async def upload_opex_excel(
     logger.info(f"Excel appendix upload for Report {report_id} by user {user.email}")
     
     # 1. Validate Report exists and belongs to user
-    report = db.query(Report).filter(Report.id == report_id, Report.oid == user.oid).first()
+    report = db.query(Report).filter(Report.id == report_id, Report.id == user.id).first()
     if not report:
         raise HTTPException(status_code=404, detail="Report not found or access denied")
         
@@ -316,8 +316,8 @@ async def get_list_uploaded_files(
     Returns:
         List of file metadata dictionaries
     """
-    # ROW LEVEL SECURITY: Filter by user OID
-    db_files = db.query(DBUploadFile).filter(DBUploadFile.oid == user.oid).all()
+    # ROW LEVEL SECURITY: Filter by user id
+    db_files = db.query(DBUploadFile).filter(DBUploadFile.id == user.id).all()
     
     results = []
     for file in db_files:

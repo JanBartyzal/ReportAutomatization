@@ -16,7 +16,8 @@ from typing import Dict, Any
 from fastapi import Depends
 from fastapi.routing import APIRouter
 from app.schemas.user import User
-from app.core.security import get_current_user, verify_admin
+from app.identity.auth import get_current_user
+from app.identity.rbac import verify_admin
 
 
 router = APIRouter()
@@ -43,10 +44,10 @@ async def admin_stats(
     stats = {}
     
     try:
-        # 1. Total Users (Count distinct OIDs from uploads as proxy)
+        # 1. Total Users (Count distinct ids from uploads as proxy)
         # Note: In a real Entra ID scenario, we might want to query Graph API,
         # but for now we track active users who have uploaded files.
-        total_users = db.query(UploadFile.oid).distinct().count()
+        total_users = db.query(UploadFile.id).distinct().count()
         stats["total_users"] = total_users
     except Exception as e:
         logger.error(f"Error calculating total_users: {e}")

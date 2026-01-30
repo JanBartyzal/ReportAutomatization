@@ -15,6 +15,11 @@ from pgvector.sqlalchemy import Vector
 
 Base = declarative_base()
 
+class SubscriptionTier(str, enum.Enum):
+    FREE = "FREE"
+    PRO = "PRO"
+    ENTERPRISE = "ENTERPRISE"
+    
 
 class SystemConfig(Base):
     """
@@ -23,6 +28,86 @@ class SystemConfig(Base):
     __tablename__ = "system_config"
     key = Column(String, primary_key=True)
     value = Column(String)
+
+class Users(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, index=True)
+    password = Column(String)
+    user_sid = Column(String)
+    
+    # Renamed from tenant_id
+    organization_id = Column(Integer, ForeignKey("organizations.id"))
+    organization = relationship("Organization", back_populates="users")
+    
+    # RBAC: Role for access control (admin, editor, viewer)
+    role = Column(String, default="viewer", index=True)
+    
+    projects = relationship("Projects", back_populates="users")
+
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class Projects(Base):
+    __tablename__ = "projects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"))
+    organization = relationship("Organization", back_populates="projects")
+    
+    # Missing explicit user link if Users.projects has back_populates="projects"
+    # But Users defines `projects = relationship("Projects", back_populates="users")`
+    # So Projects needs `users`. 
+    # NOTE: If Projects are 1:N with Users, it needs user_id. 
+    user_id = Column(Integer, ForeignKey("users.id"))
+    users = relationship("Users", back_populates="projects")
+
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+
+
+class Organization(Base):
+    """
+    SaaS Tenant / Organization Entity.
+    Renamed from Tenants to avid confusion with Azure Tenants.
+    """
+    __tablename__ = "organizations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    
+    # Optional Azure connection details (can be moved to separate table if 1:N needed)
+    azure_tenant_id = Column(String, unique=True, index=True, nullable=True)
+    subscription_id = Column(String, unique=True, index=True, nullable=True)
+    subscription_name = Column(String, unique=True, index=True, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    
+    # SaaS Subscription
+    subscription_tier = Column(SQLEnum(SubscriptionTier), default=SubscriptionTier.FREE)
+    max_projects = Column(Integer, default=1)
+    max_scans_per_month = Column(Integer, default=10)
+
+    users = relationship("Users", back_populates="organization")
+    projects = relationship("Projects", back_populates="organization")
+    usage = relationship("OrganizationUsage", back_populates="organization", uselist=False)
+
+
+
+class OrganizationUsage(Base):
+    __tablename__ = "organization_usage"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), unique=True)
+    organization = relationship("Organization", back_populates="usage")
+    
+    scans_this_month = Column(Integer, default=0)
+    last_reset_date = Column(DateTime, default=datetime.datetime.utcnow)
 
 
 class Regions(Base):
@@ -34,7 +119,7 @@ class Regions(Base):
     """
     __tablename__ = "regions"
     id = Column(Integer, primary_key=True)
-    oid = Column(String)  # Azure AD Object ID
+    id = Column(String)  # Azure AD Object ID
     region = Column(String)
     upload_files = relationship("UploadFile", back_populates="region")
 
@@ -58,7 +143,7 @@ class Batch(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)
     status = Column(SQLEnum(BatchStatus), default=BatchStatus.OPEN, nullable=False)
-    oid = Column(String, index=True)  # Owner's Azure AD Object ID (RLS)
+    id = Column(String, index=True)  # Owner's Azure AD Object ID (RLS)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     upload_files = relationship("UploadFile", back_populates="batch")
@@ -69,7 +154,7 @@ class UploadFile(Base):
     """
     Metadata for uploaded PPTX and Excel files.
     
-    Implements MD5-based deduplication and row-level security (oid filtering).
+    Implements MD5-based deduplication and row-level security (id filtering).
     
     Relationships:
         - region: Many-to-one with Regions
@@ -77,7 +162,7 @@ class UploadFile(Base):
     """
     __tablename__ = "upload_files"
     id = Column(Integer, primary_key=True)
-    oid = Column(String)  # Owner's Azure AD Object ID (RLS)
+    id = Column(String)  # Owner's Azure AD Object ID (RLS)
     filename = Column(String)  # Sanitized filename with MD5 suffix
     md5hash = Column(String)  # For deduplication checks
     region_id = Column(Integer, ForeignKey("regions.id"))
@@ -99,7 +184,7 @@ class Report(Base):
     """
     __tablename__ = "reports"
     id = Column(Integer, primary_key=True)
-    oid = Column(String)  # Owner's Azure AD Object ID (RLS)
+    id = Column(String)  # Owner's Azure AD Object ID (RLS)
     region = Column(String)
     upload_file_id = Column(Integer, ForeignKey("upload_files.id"))
     upload_file = relationship("UploadFile", back_populates="reports")

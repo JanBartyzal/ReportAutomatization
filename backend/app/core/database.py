@@ -1,8 +1,8 @@
 from sqlalchemy.orm import sessionmaker, Session, Query
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import event, MetaData
-from core.context import organization_context
-from core.config import Get_Key
+from app.core.context import organization_context
+import os
 import logging
 
 
@@ -10,14 +10,32 @@ import logging
 Base = declarative_base()
 
 # Load URL from env
-DATABASE_URL = Get_Key(
-    "DB_URI", 
-    "postgresql://user:password@db:5432/demo"
-)
+DATABASE_URL = os.getenv("DB_URI", "postgresql://user:password@db:5432/demo")
 
 # Engine creation
 from sqlalchemy import create_engine
 engine = create_engine(DATABASE_URL)
+
+
+# Session factory
+SessionLocal = sessionmaker(
+    autocommit=False, 
+    autoflush=False, 
+    bind=engine
+)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def init_db():
+    Base.metadata.create_all(bind=engine)
+
+
+
 
 # Custom Query class to auto-filter by organization_id
 class OrganizationAwareQuery(Query):
@@ -47,22 +65,4 @@ class OrganizationAwareQuery(Query):
                 return self.filter(mzero.class_.organization_id == org_id)
         return self
 
-# Session factory
-SessionLocal = sessionmaker(
-    autocommit=False, 
-    autoflush=False, 
-    bind=engine,
-    query_cls=OrganizationAwareQuery
-)
 
-def get_db():
-    db = SessionLocal()
-    try:
-        # Debug logging to verify context
-        # logger.debug(f"DB Session created. Context Org ID: {organization_context.get()}")
-        yield db
-    finally:
-        db.close()
-
-def init_db():
-    Base.metadata.create_all(bind=engine)

@@ -20,7 +20,7 @@ export const fileKeys = {
     lists: () => [...fileKeys.all, 'list'] as const,
 };
 
-const uploadFile = async (file: File, isOpex: boolean = false, onProgress?: (progress: number) => void) => {
+const uploadFile = async (file: File, isOpex: boolean = false, onProgress?: (progress: number) => vid) => {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -79,7 +79,7 @@ export const useUploadFile = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ file, isOpex, onProgress }: { file: File; isOpex?: boolean; onProgress?: (progress: number) => void }) =>
+        mutationFn: ({ file, isOpex, onProgress }: { file: File; isOpex?: boolean; onProgress?: (progress: number) => vid }) =>
             uploadFile(file, isOpex, onProgress),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: fileKeys.lists() });

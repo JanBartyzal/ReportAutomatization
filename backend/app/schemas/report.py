@@ -13,10 +13,10 @@ class Report(BaseModel):
     Report metadata.
     
     Attributes:
-        oid: Owner's Azure AD object ID
+        id: Owner's Azure AD object ID
         region: Report region
     """
-    oid: str
+    id: str
     region: str
 
 

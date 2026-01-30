@@ -8,9 +8,9 @@ Supports: Admin, Editor, Viewer roles with organization-aware validation.
 from functools import wraps
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from core.database import get_db
-from core.identity.auth import get_current_user
-from core.models import Users
+from app.core.database import get_db
+from app.identity.auth import get_current_user
+from app.core.models import Users
 from typing import List
 import logging
 

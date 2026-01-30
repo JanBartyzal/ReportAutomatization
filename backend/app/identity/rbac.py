@@ -2,8 +2,8 @@
 from typing import List, Optional
 from enum import Enum
 from fastapi import Depends, HTTPException, status
-from core.schemas import User
-from core.identity.auth import get_current_user
+from app.schemas.user import User
+from app.identity.auth import get_current_user
 import logging
 
 # Logger for Audit
@@ -46,3 +46,7 @@ class RoleChecker:
         # We assume success if no exception raised.
         # audit_logger.info(f"AUDIT [SUCCESS]: User {user.id} accessed resource.")
         return user
+
+# Convenience dependency for Admin-only routes
+verify_admin = RoleChecker([UserRole.ADMIN])
+

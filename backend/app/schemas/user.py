@@ -12,10 +12,10 @@ class Regions(BaseModel):
     User region assignment.
     
     Attributes:
-        oid: User's Azure AD object ID
+        id: User's Azure AD object ID
         region: Assigned region name
     """
-    oid: str
+    id: str
     region: str
 
 

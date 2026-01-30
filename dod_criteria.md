@@ -282,7 +282,7 @@ Based on comprehensive code review and refactoring, the following additional cri
 
 | Criterion | Requirement | Validation Method |
 |-----------|-------------|-------------------|
-| **User OID Filtering** | All database queries MUST filter by `user.oid` (e.g., `WHERE oid = :user_oid`) | SQL audit + manual code review |
+| **User id Filtering** | All database queries MUST filter by `user.id` (e.g., `WHERE id = :user_id`) | SQL audit + manual code review |
 | **Test RLS Isolation** | Integration tests verify users cannot access other users' data | Automated test suite |
 | **Admin Override Documented** | If admins can see all data, this must be explicitly documented and tested | Code review + documentation |
 
@@ -306,7 +306,7 @@ Based on comprehensive code review and refactoring, the following additional cri
 
 ---
 
-## 🚫 Anti-Patterns to Avoid
+## 🚫 Anti-Patterns to Avid
 
 The following patterns were found during code review and are now **explicitly prohibited**:
 

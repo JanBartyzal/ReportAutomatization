@@ -32,7 +32,7 @@ async def get_azure_user(token: dict = Security(azure_scheme)) -> User:
         token: Validated JWT token claims from Azure AD
         
     Returns:
-        User: User object with OID, name, email, and roles
+        User: User object with id, name, email, and roles
     """
     return User(**token)
 
@@ -62,15 +62,22 @@ async def get_current_user(
         async def protected_route(user: User = Depends(get_current_user)):
             return {"message": f"Hello {user.name}"}
     """
+
+    #print("settings.is_production", settings.is_production)
+
+
+    
     # Development mode: return mock user for testing
     if not settings.is_production:
         return User(
-            oid="local-dev-user",
+            id="local-dev-user",
             name="Developer",
             email="dev@local",
             roles=["AppAdmin"]
         )
-    
+
+    print("azure_user") 
+
     # Production mode: return validated Azure user
     if azure_user is None:
         raise HTTPException(

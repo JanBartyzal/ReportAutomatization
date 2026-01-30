@@ -1,18 +1,13 @@
 
 import React from 'react';
-import { useMsal } from "@azure/msal-react";
+import { useAuth } from '../auth/AuthProvider';
 import { LogOut, User as UserIcon, Bell } from 'lucide-react';
-import { loginRequest } from '../../authConfig';
 
 export const Header: React.FC = () => {
-    const { instance, accounts } = useMsal();
-    const activeAccount = accounts[0];
+    const { user, logout } = useAuth();
 
     const handleLogout = () => {
-        instance.logoutPopup({
-            postLogoutRedirectUri: "/",
-            mainWindowRedirectUri: "/"
-        });
+        logout();
     };
 
     return (
@@ -33,10 +28,10 @@ export const Header: React.FC = () => {
                 <div className="flex items-center space-x-3">
                     <div className="text-right hidden md:block">
                         <div className="text-sm font-semibold text-slate-900">
-                            {activeAccount?.name || 'Guest User'}
+                            {user?.email || 'Guest User'}
                         </div>
                         <div className="text-xs text-slate-500">
-                            {activeAccount?.username || 'Please login'}
+                            {user?.roles?.join(', ') || 'Please login'}
                         </div>
                     </div>
 

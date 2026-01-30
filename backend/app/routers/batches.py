@@ -4,7 +4,7 @@ from typing import List
 from uuid import UUID
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.identity.auth import get_current_user
 from app.core.models import Batch as DBBatch, BatchStatus, UploadFile, Document_chunks
 from app.schemas.user import User
 from app.schemas.batch import BatchCreate, BatchOut, BatchUpdate
@@ -21,7 +21,7 @@ async def create_batch(
     """Create a new batch for the authenticated user."""
     db_batch = DBBatch(
         name=batch_in.name,
-        oid=user.oid,
+        id=user.id,
         status=BatchStatus.OPEN
     )
     db.add(db_batch)
@@ -36,7 +36,7 @@ async def list_batches(
     db: Session = Depends(get_db)
 ):
     """List all batches owned by the authenticated user."""
-    return db.query(DBBatch).filter(DBBatch.oid == user.oid).all()
+    return db.query(DBBatch).filter(DBBatch.id == user.id).all()
 
 
 @router.get("/{batch_id}", response_model=BatchOut)
@@ -46,7 +46,7 @@ async def get_batch(
     db: Session = Depends(get_db)
 ):
     """Get details of a specific batch."""
-    batch = db.query(DBBatch).filter(DBBatch.id == batch_id, DBBatch.oid == user.oid).first()
+    batch = db.query(DBBatch).filter(DBBatch.id == batch_id, DBBatch.id == user.id).first()
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
     return batch
@@ -59,7 +59,7 @@ async def close_batch(
     db: Session = Depends(get_db)
 ):
     """Close an open batch."""
-    batch = db.query(DBBatch).filter(DBBatch.id == batch_id, DBBatch.oid == user.oid).first()
+    batch = db.query(DBBatch).filter(DBBatch.id == batch_id, DBBatch.id == user.id).first()
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
     
@@ -79,7 +79,7 @@ async def delete_batch(
     db: Session = Depends(get_db)
 ):
     """Delete a batch and all its associated data (cascading)."""
-    batch = db.query(DBBatch).filter(DBBatch.id == batch_id, DBBatch.oid == user.oid).first()
+    batch = db.query(DBBatch).filter(DBBatch.id == batch_id, DBBatch.id == user.id).first()
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
     

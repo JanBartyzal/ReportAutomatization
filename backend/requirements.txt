@@ -28,13 +28,23 @@ python-pptx
 pgvector
 litellm
 thefuzz[speedup]
-
-# Testing and Code Quality Tools
 pytest
 pytest-cov
 mypy
 ruff
 black
+prometheus-fastapi-instrumentator
+openai
+azure-identity
+azure-mgmt-resource
+azure-mgmt-compute
+azure-storage-blob
+azure-keyvault-secrets
+azure-keyvault-keys
+azure-keyvault-certificates
+python-jose[cryptography] 
+passlib[bcrypt] 
+
 
 
 

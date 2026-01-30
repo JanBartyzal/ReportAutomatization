@@ -1,5 +1,5 @@
 """
-SSO Routes for Azure Entra ID OAuth2/OIDC Authentication
+SSO Routes for Azure Entra ID OAuth2/idC Authentication
 
 Provides endpoints for:
 - Initiating SSO login flow
@@ -12,20 +12,24 @@ import secrets
 from fastapi import APIRouter, HTTPException, Request, Response, Depends
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
-from core.database import get_db
-from core.models import Users, Organization
-from core.identity.oidc import (
+from app.core.database import get_db
+from app.core.models import Users, Organization
+from app.identity.idc import (
     get_authorization_url,
     exchange_code_for_token,
     validate_id_token,
     refresh_access_token,
     get_user_info_from_token,
     extract_organization_from_token,
-    OIDCError,
-    OIDCTokenValidationError
+    generate_pkce_verifier,
+    generate_pkce_challenge,
+    idCError,
+    idCTokenValidationError
 )
 from pydantic import BaseModel
 import logging
+from app.core.configmanager import Get_Key
+
 
 logger = logging.getLogger(__name__)
 
@@ -64,16 +68,21 @@ async def sso_login(request: Request):
     state = secrets.token_urlsafe(32)
     nonce = secrets.token_urlsafe(32)
     
+    # Generate PKCE verifier and challenge
+    pkce_verifier = generate_pkce_verifier()
+    pkce_challenge = generate_pkce_challenge(pkce_verifier)
+    
     # Store state and optional redirect URL
     redirect_after = request.query_params.get("redirect_after_login", "/")
     _state_storage[state] = {
         "nonce": nonce,
         "redirect_after": redirect_after,
+        "pkce_verifier": pkce_verifier, # Store verifier for callback
         "created_at": os.times().elapsed  # Simple timestamp
     }
     
-    # Generate authorization URL
-    auth_url = get_authorization_url(state, nonce)
+    # Generate authorization URL with PKCE challenge
+    auth_url = get_authorization_url(state, nonce, pkce_challenge)
     
     logger.info(f"Initiating SSO login, redirecting to Azure Entra ID with state={state}")
     return RedirectResponse(url=auth_url)
@@ -124,10 +133,11 @@ async def sso_callback(
     
     nonce = stored_state["nonce"]
     redirect_after = stored_state.get("redirect_after", "/")
+    pkce_verifier = stored_state.get("pkce_verifier") # Retrieve verifier
     
     try:
-        # Exchange code for tokens
-        tokens = exchange_code_for_token(code)
+        # Exchange code for tokens (with verifier)
+        tokens = exchange_code_for_token(code, pkce_verifier)
         id_token = tokens["id_token"]
         access_token = tokens["access_token"]
         refresh_token = tokens.get("refresh_token")
@@ -144,7 +154,7 @@ async def sso_callback(
         user_info = get_user_info_from_token(claims)
         email = user_info["email"]
         name = user_info["name"]
-        azure_oid = user_info["oid"]  # Azure Object ID
+        azure_id = user_info["id"]  # Azure Object ID
         
         # Extract organization
         organization_id = extract_organization_from_token(claims)
@@ -160,15 +170,20 @@ async def sso_callback(
                 # Option 1: Create a default organization for new SSO users
                 # Option 2: Require organization_id in token
                 # For now, we'll require it
-                raise HTTPException(
-                    status_code=400,
-                    detail="Cannot determine organization from token. Contact administrator."
-                )
+                # Pokud chceš povolit automatický vznik organizace:
+                org_id = claims.get("tid")
+                if not org_id:
+                    org_id=Get_Key("AZURE_TENANT_ID","Default")
+                org = Organization(azure_tenant_id=org_id, name="Auto-Created Org")
+                db.add(org)
+                db.commit()
+                db.refresh(org)
+                organization_id = org.id
             
             user = Users(
                 email=email,
                 username=email.split("@")[0],  # Use email prefix as username
-                user_sid=azure_oid,
+                user_sid=azure_id,
                 organization_id=organization_id,
                 role="viewer",  # Default role for new SSO users
             )
@@ -177,41 +192,66 @@ async def sso_callback(
             db.refresh(user)
             logger.info(f"Created new user: {user.id} ({email})")
         else:
-            # Update user's Azure OID if not set
+            # Update user's Azure id if not set
             if not user.user_sid:
-                user.user_sid = azure_oid
+                user.user_sid = azure_id
                 db.commit()
             logger.info(f"Existing user logged in via SSO: {user.id} ({email})")
         
         # Generate application session token
         # (You would use your existing JWT generation logic here)
-        from core.identity.auth import create_access_token
+        from app.identity.auth import create_access_token
         app_token = create_access_token({"sub": user.email, "user_id": user.id})
         
-        # Set session cookie
-        response = RedirectResponse(url=redirect_after)
+        # Prepare redirect URL with token
+        from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+        
+        # If redirect_after is absolute, use it. If relative, assume frontend at localhost:5173 for dev fallback
+        # Ideally, redirect_after should always be provided correctly by the frontend.
+        target_url = redirect_after
+        if target_url == "/":
+             # Fallback default to standard frontend port if no specific redirect was given
+             target_url = "http://localhost:5173/"
+             
+        parsed_url = urlparse(target_url)
+        query_params = parse_qs(parsed_url.query)
+        query_params["access_token"] = [app_token] # Add token to query params
+        
+        new_query = urlencode(query_params, doseq=True)
+        final_redirect_url = urlunparse((
+            parsed_url.scheme,
+            parsed_url.netloc,
+            parsed_url.path,
+            parsed_url.params,
+            new_query,
+            parsed_url.fragment
+        ))
+        
+        # Set session cookie AND redirect with token
+        from app.core.config import settings
+        
+        response = RedirectResponse(url=final_redirect_url)
         response.set_cookie(
             key="access_token",
             value=app_token,
             httponly=True,
-            secure=True,  # Only over HTTPS in production
+            secure=settings.is_production,  # Only over HTTPS in production
             samesite="lax",
             max_age=3600  # 1 hour
         )
         
         # Optionally store refresh token securely (e.g., in database)
-        # For now, we'll just log it
         if refresh_token:
             logger.info(f"Refresh token available for user {user.id}")
         
-        logger.info(f"SSO login successful for user {user.id}, redirecting to {redirect_after}")
+        logger.info(f"SSO login successful for user {user.id}, redirecting to {final_redirect_url}")
         return response
         
-    except OIDCTokenValidationError as e:
+    except idCTokenValidationError as e:
         logger.error(f"Token validation failed: {e}")
         raise HTTPException(status_code=401, detail=f"Token validation failed: {e}")
-    except OIDCError as e:
-        logger.error(f"OIDC error: {e}")
+    except idCError as e:
+        logger.error(f"idC error: {e}")
         raise HTTPException(status_code=500, detail=f"Authentication error: {e}")
     except Exception as e:
         logger.error(f"Unexpected error in SSO callback: {e}", exc_info=True)
@@ -238,7 +278,7 @@ async def refresh_token_endpoint(request: TokenRefreshRequest) -> TokenResponse:
             expires_in=tokens.get("expires_in", 3600),
             refresh_token=tokens.get("refresh_token")
         )
-    except OIDCError as e:
+    except idCError as e:
         logger.error(f"Token refresh failed: {e}")
         raise HTTPException(status_code=401, detail="Token refresh failed")
 

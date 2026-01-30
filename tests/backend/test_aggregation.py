@@ -92,7 +92,7 @@ def test_aggregate_by_fingerprint_logic(aggregation_service):
         (mock_slide2, "file2.pptx", "APAC")
     ]
     
-    result = aggregation_service.aggregate_by_fingerprint(fingerprint, "user_oid", db)
+    result = aggregation_service.aggregate_by_fingerprint(fingerprint, "user_id", db)
     
     assert result["row_count"] == 2
     assert len(result["data"]) == 2

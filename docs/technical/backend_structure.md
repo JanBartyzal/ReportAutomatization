@@ -119,11 +119,11 @@ graph TD
 
 ### Row Level Security (RLS) Implementation
 
-All database queries must filter by `user.oid`:
+All database queries must filter by `user.id`:
 
 ```python
 # CORRECT: RLS enforced
-db_files = db.query(DBUploadFile).filter(DBUploadFile.oid == user.oid).all()
+db_files = db.query(DBUploadFile).filter(DBUploadFile.id == user.id).all()
 
 # INCORRECT: No RLS (security violation)
 db_files = db.query(DBUploadFile).all()  # ❌ Exposes all users' data
@@ -189,7 +189,7 @@ UPLOAD_DIR=local_data/uploads
 # Dependency injection pattern
 @router.get("/items")
 async def get_items(db: Session = Depends(get_db)):
-    return db.query(Item).filter(Item.oid ==user.oid).all()
+    return db.query(Item).filter(Item.id ==user.id).all()
 ```
 
 **Benefits:**
@@ -249,16 +249,16 @@ async def upload_file(
     with open(file_path, "wb") as f:
         f.write(file_data)
     
-    # Save metadata with RLS (user OID)
+    # Save metadata with RLS (user id)
     upload_file = DBUploadFile(
-        oid=user.oid,  # RLS: Associate with authenticated user
+        id=user.id,  # RLS: Associate with authenticated user
         filename=filename,
         md5hash=md5hash
     )
     db.add(upload_file)
     db.commit()
     
-    return {"message": "File uploaded successfully", "user": user.oid}
+    return {"message": "File uploaded successfully", "user": user.id}
 ```
 
 ---
@@ -311,7 +311,7 @@ async def extract_data(self, image_bytes: bytes) -> Dict[str, Any]:
 ```
 
 **Benefits:**
-- Avoid re-processing identical images
+- Avid re-processing identical images
 - Configurable TTL (default: 7 days)
 - Async client for FastAPI compatibility
 
@@ -367,7 +367,7 @@ logger.error(f"Failed to process file: {e}", exc_info=True)
 | Component | Optimization |
 |-----------|--------------|
 | **Redis Cache** | SHA-256 hash deduplication (68% hit rate) |
-| **Database** | Indexed queries on `oid`, `md5hash` |
+| **Database** | Indexed queries on `id`, `md5hash` |
 | **File Upload** | MD5 hash prevents duplicate storage |
 | **Async Endpoints** | Non-blocking I/O for Redis, HTTP calls |
 | **Connection Pooling** | SQLAlchemy pool for DB connections |

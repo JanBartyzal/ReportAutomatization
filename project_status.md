@@ -87,7 +87,7 @@ PPTX-AI-Analyzer is a **secure, production-ready** AI-powered microservices plat
   - ✅ Zero hardcoded credentials
   - ✅ Type-safe configuration access
 - [x] **Row Level Security (RLS) enforced - IMPROVED**
-  - ✅ All queries filter by `user.oid`
+  - ✅ All queries filter by `user.id`
   - ✅ File list endpoint now user-scoped
   - ✅ Proper SQL injection prevention
 
@@ -101,7 +101,7 @@ PPTX-AI-Analyzer is a **secure, production-ready** AI-powered microservices plat
 - [x] **Embedded Excel Objects:** OLE object extraction and conversion
 - [x] **Image-Based Tables:** Multi-tier extraction strategy:
   - SHA-256 hash calculation for deduplication
-  - Redis caching to avoid re-processing
+  - Redis caching to avid re-processing
   - Tesseract OCR for basic tables
   - AI Vision (LLaVA/GPT-4o) for complex tables
   - Confidence score calculation (>85% threshold)
@@ -149,7 +149,7 @@ PPTX-AI-Analyzer is a **secure, production-ready** AI-powered microservices plat
 
 ### **Phase 3: Frontend Revitalization** (2026-01-25)
 - ✅ **Initialized Modern Stack**: React 18, Vite, TypeScript, TailwindCSS
-- ✅ **Implemented Authentication**: Azure MSAL integration (SAML/OIDC)
+- ✅ **Implemented Authentication**: Azure MSAL integration (SAML/idC)
 - ✅ **Created Core UI Components**:
   - `Sidebar`, `Header`, `MainLayout` (Responsive)
   - `FileUploader` with Drag & Drop

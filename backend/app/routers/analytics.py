@@ -13,7 +13,7 @@ from fastapi.routing import APIRouter
 
 from app.core.database import get_db
 from app.schemas.user import User
-from app.core.security import get_current_user
+from app.identity.auth import get_current_user
 from app.services.aggregation_service import AggregationService
 from app.schemas.aggregation import (
     AggregationPreviewRequest,
@@ -69,14 +69,14 @@ async def preview_aggregation(
     # Detect common schemas
     result = aggregation_service.detect_common_schemas(
         file_ids=request.file_ids,
-        user_oid=user.oid,
+        user_id=user.id,
         db=db
     )
     
     if not result["schemas"]:
         logger.warning(
             f"No common schemas found for files: {request.file_ids}, "
-            f"user: {user.oid}"
+            f"user: {user.id}"
         )
         # Return empty list instead of 404 to match specification
         return {"schemas": []}
@@ -133,7 +133,7 @@ async def get_aggregated_data(
     # Aggregate data
     result = aggregation_service.aggregate_by_fingerprint(
         schema_fingerprint=schema_fingerprint,
-        user_oid=user.oid,
+        user_id=user.id,
         db=db
     )
     

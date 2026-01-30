@@ -12,7 +12,7 @@ Implement the logic for `GET /api/admin/all-stats` to return real system statist
 
 ## Requirements
 Modify `admin_stats` function in `admin.py` to calculate and return:
-1.  **total_users**: Count of users in DB (or Mock if using Entra ID without local user table duplication, might need to query Graph API or just count unique OIDs in `UploadFile` table). -> *Decision: Count unique `ids` from `User` table if it exists, otherwise `UploadFile.oid` distinct count.*
+1.  **total_users**: Count of users in DB (or Mock if using Entra ID without local user table duplication, might need to query Graph API or just count unique ids in `UploadFile` table). -> *Decision: Count unique `ids` from `User` table if it exists, otherwise `UploadFile.id` distinct count.*
 2.  **total_files**: Count of rows in `UploadFile`.
 3.  **total_storage**: Sum of file sizes (requires storing file size in DB, or traversing `upload_dir`. *Easier: traverse `settings.upload_dir` and sum bytes*).
 4.  **system_health**: Simple check (DB is connected = "Healthy").

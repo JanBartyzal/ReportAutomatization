@@ -12,7 +12,7 @@ from app.core.database import get_db
 from fastapi import Depends, HTTPException
 from fastapi.routing import APIRouter
 from app.schemas.user import User
-from app.core.security import get_current_user
+from app.identity.auth import get_current_user
 from app.services.opex_service import OpexManager
 
 
@@ -37,8 +37,8 @@ async def opex_data(
     Returns:
         Processing status message
     """
-    logger.info(f"OPEX data requested by user: {user.email} (ID: {user.oid})")
-    return {"message": "Processing started", "user": user.oid}
+    logger.info(f"OPEX data requested by user: {user.email} (ID: {user.id})")
+    return {"message": "Processing started", "user": user.id}
 
 
 @router.get("/run_opex")
@@ -62,7 +62,7 @@ async def run_opex(
     """
     opex_manager = OpexManager()
     opex_manager.process_opex(file_id, db)
-    return {"message": "Processing started", "user": user.oid}
+    return {"message": "Processing started", "user": user.id}
 
 
 @router.get("/get_file_header")

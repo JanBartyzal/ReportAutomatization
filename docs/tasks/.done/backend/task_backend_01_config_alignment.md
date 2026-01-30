@@ -4,7 +4,7 @@
 **Estimated Effort:** Fast (< 30 mins)
 
 ## Context
-The `backend/app/core/config.py` file defines default CORS origins as `http://localhost:5173` (Vite Default). However, `docs/project_defaults.md` (and potential older assumptions) might mention port `3000` (React Default). While the code is actually correct for Vite, we should ensure the documentation and code alignment is explicit to avoid confusion for future agents or developers.
+The `backend/app/core/config.py` file defines default CORS origins as `http://localhost:5173` (Vite Default). However, `docs/project_defaults.md` (and potential older assumptions) might mention port `3000` (React Default). While the code is actually correct for Vite, we should ensure the documentation and code alignment is explicit to avid confusion for future agents or developers.
 
 ## Objectives
 1.  **Verify & Update Config Defaults:** Ensure `config.py` explicitly supports both common ports if intended, or just the correct one.

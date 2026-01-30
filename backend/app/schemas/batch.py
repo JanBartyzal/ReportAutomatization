@@ -32,7 +32,7 @@ class BatchOut(BatchBase):
     """Schema for batch output/response."""
     id: UUID
     status: BatchStatus
-    oid: str
+    id: str
     created_at: datetime
 
     class Config:

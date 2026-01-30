@@ -1,7 +1,7 @@
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, generate_blob_sas, BlobSasPermissions
 from datetime import datetime, timedelta
 from typing import Optional
-from core.config import Get_Key
+from app.core.configmanager import Get_Key
 import logging
 
 logger = logging.getLogger(__name__)

@@ -204,7 +204,7 @@ class AggregationService:
     def detect_common_schemas(
         self, 
         file_ids: List[int], 
-        user_oid: str,
+        user_id: str,
         db: Session
     ) -> Dict[str, Any]:
         """
@@ -212,7 +212,7 @@ class AggregationService:
         
         Args:
             file_ids: List of file IDs to analyze
-            user_oid: User's Azure AD Object ID (for RLS)
+            user_id: User's Azure AD Object ID (for RLS)
             db: Database session
             
         Returns:
@@ -225,12 +225,12 @@ class AggregationService:
             .join(Report, SlideData.report_id == Report.id)
             .join(UploadFile, Report.upload_file_id == UploadFile.id)
             .filter(UploadFile.id.in_(file_ids))
-            .filter(UploadFile.oid == user_oid)  # RLS enforcement
+            .filter(UploadFile.id == user_id)  # RLS enforcement
             .all()
         )
         
         if not slide_data_records:
-            logger.warning(f"No slide data found for file_ids={file_ids}, user_oid={user_oid}")
+            logger.warning(f"No slide data found for file_ids={file_ids}, user_id={user_id}")
             return {"schemas": []}
         
         # Group by schema fingerprint
@@ -286,7 +286,7 @@ class AggregationService:
     def aggregate_by_fingerprint(
         self, 
         schema_fingerprint: str, 
-        user_oid: str,
+        user_id: str,
         db: Session
     ) -> Dict[str, Any]:
         """
@@ -296,7 +296,7 @@ class AggregationService:
         
         Args:
             schema_fingerprint: SHA-256 fingerprint of schema
-            user_oid: User's Azure AD Object ID (for RLS)
+            user_id: User's Azure AD Object ID (for RLS)
             db: Database session
             
         Returns:
@@ -307,7 +307,7 @@ class AggregationService:
             db.query(SlideData, UploadFile.filename, Report.region)
             .join(Report, SlideData.report_id == Report.id)
             .join(UploadFile, Report.upload_file_id == UploadFile.id)
-            .filter(UploadFile.oid == user_oid)  # RLS enforcement
+            .filter(UploadFile.id == user_id)  # RLS enforcement
             .all()
         )
         

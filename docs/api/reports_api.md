@@ -15,7 +15,7 @@ Trigger creation of a final report from processed data.
 - **200 OK**: Status message and user ID.
 
 ### Authentication
-Required. Data is associated with the user via OID for RLS.
+Required. Data is associated with the user via id for RLS.
 
 ---
 

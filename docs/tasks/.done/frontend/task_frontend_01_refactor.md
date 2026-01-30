@@ -18,7 +18,7 @@ Clean up `authConfig.ts` to prevent potential Auth failures and standardize the 
 
 2.  **Dashboard Stats Implementation**
     -   Remove hardcoded placeholders or wire them up to valid API endpoints if they exist.
-    -   If endpoints don't exist, wrap them in a conditional check `if (featureEnabled)` or remove/hide them to avoid confusing users.
+    -   If endpoints don't exist, wrap them in a conditional check `if (featureEnabled)` or remove/hide them to avid confusing users.
 
 3.  **Folder Structure Standardization (Refactoring)**
     -   Move root pages (`Dashboard.tsx`, `Analytics.tsx`, `Admin.tsx`) into dedicated folders:

@@ -3,7 +3,7 @@ import React from 'react';
 import api from '../../api/axios';
 import { useQuery } from '@tanstack/react-query';
 import { Users, FileText, Server, AlertTriangle, Activity } from 'lucide-react';
-import { useMsal } from '@azure/msal-react';
+import { useAuth } from '../../components/auth/AuthProvider';
 
 interface SystemStats {
     total_users: number;
@@ -27,8 +27,9 @@ const getAdminStats = async () => {
 };
 
 export const Admin: React.FC = () => {
-    const { accounts } = useMsal();
-    const isAdmin = accounts[0]?.idTokenClaims?.roles?.includes('AppAdmin');
+    const { user } = useAuth();
+    // Case insensitive check for ADMIN role
+    const isAdmin = user?.roles?.some(r => r.toUpperCase() === 'ADMIN' || r === 'AppAdmin');
 
     const { data: stats, isLoading, isError } = useQuery({
         queryKey: ['admin', 'stats'],

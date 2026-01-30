@@ -11,11 +11,11 @@ All API endpoints are prefixed with:
 
 ## Authentication
 
-Most endpoints require authentication. The system uses a User object (usually containing `oid` and `email`) provided via dependency injection.
+Most endpoints require authentication. The system uses a User object (usually containing `id` and `email`) provided via dependency injection.
 
 - **Secured Endpoints**: Require a valid session or token.
 - **Admin Endpoints**: Require admin privileges.
-- **Row Level Security (RLS)**: Data is strictly filtered by the user's `oid`. Users can only access and manipulate their own data.
+- **Row Level Security (RLS)**: Data is strictly filtered by the user's `id`. Users can only access and manipulate their own data.
 
 ## API Modules
 

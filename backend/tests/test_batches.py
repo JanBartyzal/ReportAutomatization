@@ -23,7 +23,7 @@ def override_get_db():
 
 def override_get_current_user():
     return User(
-        oid="test-user-oid",
+        id="test-user-id",
         name="Test User",
         email="test@example.com",
         roles=["User"]

@@ -12,10 +12,10 @@ class UploadFile(BaseModel):
     Uploaded file metadata.
     
     Attributes:
-        oid: Owner's Azure AD object ID
+        id: Owner's Azure AD object ID
         filename: Sanitized filename with MD5 suffix
         md5hash: MD5 hash of file content for deduplication
     """
-    oid: str
+    id: str
     filename: str
     md5hash: str

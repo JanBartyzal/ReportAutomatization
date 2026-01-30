@@ -25,7 +25,7 @@ class TestAnalyticsAPI:
     def mock_user(self):
         """Create mock authenticated user."""
         user = User(
-            oid="test-user-123",
+            id="test-user-123",
             email="test@example.com",
             name="Test User"
         )

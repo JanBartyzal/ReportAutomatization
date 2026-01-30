@@ -13,7 +13,7 @@ from app.core.database import get_db
 from fastapi import Depends, HTTPException
 from fastapi.routing import APIRouter
 from app.schemas.user import User
-from app.core.security import get_current_user
+from app.identity.auth import get_current_user
 from app.core.models import Document_chunks as DBDocument_chunks
 from litellm import completion
 from app.services.rag_service import get_embedding, json_to_markdown

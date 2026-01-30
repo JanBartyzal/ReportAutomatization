@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
-from core.schemas import UserMeResponse, UserPermissions, User
-from core.identity.auth import get_current_user
-from core.identity.rbac import UserRole, has_role
+from app.schemas.user import UserMeResponse, UserPermissions, User
+from app.identity.auth import get_current_user
+from app.identity.rbac import UserRole, has_role
 
 router = APIRouter()
 

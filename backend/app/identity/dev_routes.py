@@ -2,10 +2,10 @@
 import secrets
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from core.database import get_db
-from core.models import Users, Organization, SubscriptionTier
-from core.identity.auth import create_access_token
-from core.config import Get_Key
+from app.core.database import get_db
+from app.core.models import Users, Organization, SubscriptionTier
+from app.identity.auth import create_access_token
+from app.core.configmanager import Get_Key
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ async def dev_login(db: Session = Depends(get_db)):
         raise HTTPException(status_code=403, detail="Development login is disabled in this environment.")
 
     email = "dev@example.com"
-    mock_oid = "mock-user-oid-123"
+    mock_id = "mock-user-id-123"
     
     # 1. Create/Get Organization
     org = db.query(Organization).filter(Organization.name == "Dev Organization").first()
@@ -51,7 +51,7 @@ async def dev_login(db: Session = Depends(get_db)):
         user = Users(
             email=email,
             username="dev_admin",
-            user_sid=mock_oid,
+            user_sid=mock_id,
             organization_id=org.id,
             role="admin"
         )
@@ -59,9 +59,9 @@ async def dev_login(db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
     else:
-        # Ensure user has correct OID for mock token matching
-        if user.user_sid != mock_oid:
-            user.user_sid = mock_oid
+        # Ensure user has correct id for mock token matching
+        if user.user_sid != mock_id:
+            user.user_sid = mock_id
             db.commit()
 
     # 3. Generate Token

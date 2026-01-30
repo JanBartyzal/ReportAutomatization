@@ -1,8 +1,8 @@
 """
-Azure Entra ID (formerly Azure AD) OIDC Integration
+Azure Entra ID (formerly Azure AD) idC Integration
 
 Provides OpenID Connect authentication flow for Azure Entra ID:
-- Discovery of OIDC configuration from well-known endpoint
+- Discovery of idC configuration from well-known endpoint
 - JWT token validation (iss, aud, exp claims)
 - Token refresh logic
 - Organization mapping from Azure AD groups or claims
@@ -13,7 +13,7 @@ import requests
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 from functools import lru_cache
-from core.config import Get_Key
+from app.core.configmanager import Get_Key
 import logging
 
 logger = logging.getLogger(__name__)
@@ -22,51 +22,52 @@ logger = logging.getLogger(__name__)
 AZURE_TENANT_ID = Get_Key("AZURE_TENANT_ID")
 AZURE_CLIENT_ID = Get_Key("AZURE_CLIENT_ID")
 AZURE_CLIENT_SECRET = Get_Key("AZURE_CLIENT_SECRET")
-REDIRECT_URI = Get_Key("REDIRECT_URI", "http://localhost/api/auth/sso/callback")
+# Update default to match port 8000 and router prefix /api/auth/sso/azure
+REDIRECT_URI = Get_Key("REDIRECT_URI", "http://localhost:8000/api/auth/sso/azure/callback")
 
-# OIDC endpoints
+# idC endpoints
 AUTHORITY = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}"
-OIDC_DISCOVERY_URL = f"{AUTHORITY}/v2.0/.well-known/openid-configuration"
+idC_DISCOVERY_URL = f"{AUTHORITY}/v2.0/.well-known/openid-configuration"
 
 
-class OIDCError(Exception):
-    """Base exception for OIDC-related errors"""
+class idCError(Exception):
+    """Base exception for idC-related errors"""
     pass
 
 
-class OIDCConfigurationError(OIDCError):
-    """Raised when OIDC configuration cannot be retrieved"""
+class idCConfigurationError(idCError):
+    """Raised when idC configuration cannot be retrieved"""
     pass
 
 
-class OIDCTokenValidationError(OIDCError):
+class idCTokenValidationError(idCError):
     """Raised when token validation fails"""
     pass
 
 
 @lru_cache(maxsize=1)
-def get_oidc_configuration() -> Dict[str, Any]:
+def get_idc_configuration() -> Dict[str, Any]:
     """
-    Fetch OIDC configuration from Azure Entra ID well-known endpoint.
+    Fetch idC configuration from Azure Entra ID well-known endpoint.
     
-    Cached to avoid repeated network calls.
+    Cached to avid repeated network calls.
     
     Returns:
-        Dictionary containing OIDC configuration (issuer, jwks_uri, etc.)
+        Dictionary containing idC configuration (issuer, jwks_uri, etc.)
     
     Raises:
-        OIDCConfigurationError: If configuration cannot be retrieved
+        idCConfigurationError: If configuration cannot be retrieved
     """
     try:
-        logger.info(f"Fetching OIDC configuration from {OIDC_DISCOVERY_URL}")
-        response = requests.get(OIDC_DISCOVERY_URL, timeout=10)
+        logger.info(f"Fetching idC configuration from {idC_DISCOVERY_URL}")
+        response = requests.get(idC_DISCOVERY_URL, timeout=10)
         response.raise_for_status()
         config = response.json()
-        logger.info("OIDC configuration retrieved successfully")
+        logger.info("idC configuration retrieved successfully")
         return config
     except requests.RequestException as e:
-        logger.error(f"Failed to fetch OIDC configuration: {e}")
-        raise OIDCConfigurationError(f"Cannot retrieve OIDC configuration: {e}")
+        logger.error(f"Failed to fetch idC configuration: {e}")
+        raise idCConfigurationError(f"Cannot retrieve idC configuration: {e}")
 
 
 @lru_cache(maxsize=1)
@@ -75,16 +76,16 @@ def get_jwks() -> Dict[str, Any]:
     Fetch JSON Web Key Set (JWKS) from Azure Entra ID.
     
     JWKS contains public keys used to verify JWT signatures.
-    Cached to avoid repeated network calls.
+    Cached to avid repeated network calls.
     
     Returns:
         Dictionary containing JWKS
     
     Raises:
-        OIDCConfigurationError: If JWKS cannot be retrieved
+        idCConfigurationError: If JWKS cannot be retrieved
     """
     try:
-        config = get_oidc_configuration()
+        config = get_idc_configuration()
         jwks_uri = config["jwks_uri"]
         
         logger.info(f"Fetching JWKS from {jwks_uri}")
@@ -95,21 +96,27 @@ def get_jwks() -> Dict[str, Any]:
         return jwks
     except (requests.RequestException, KeyError) as e:
         logger.error(f"Failed to fetch JWKS: {e}")
-        raise OIDCConfigurationError(f"Cannot retrieve JWKS: {e}")
+        raise idCConfigurationError(f"Cannot retrieve JWKS: {e}")
 
 
-def get_authorization_url(state: str, nonce: str) -> str:
+import base64
+import hashlib
+import secrets
+
+def generate_pkce_verifier() -> str:
+    """Generate PKCE code verifier (random string)."""
+    return secrets.token_urlsafe(32)
+
+def generate_pkce_challenge(verifier: str) -> str:
+    """Generate PKCE code challenge from verifier (S256)."""
+    digest = hashlib.sha256(verifier.encode("utf-8")).digest()
+    return base64.urlsafe_b64encode(digest).decode("utf-8").rstrip("=")
+
+def get_authorization_url(state: str, nonce: str, code_challenge: Optional[str] = None) -> str:
     """
-    Generate Azure Entra ID authorization URL for OAuth2/OIDC flow.
-    
-    Args:
-        state: Random state value for CSRF protection
-        nonce: Random nonce value for replay attack protection
-    
-    Returns:
-        Authorization URL to redirect user to
+    Generate Azure Entra ID authorization URL for OAuth2/idC flow.
     """
-    config = get_oidc_configuration()
+    config = get_idc_configuration()
     auth_endpoint = config["authorization_endpoint"]
     
     params = {
@@ -122,26 +129,21 @@ def get_authorization_url(state: str, nonce: str) -> str:
         "nonce": nonce,
     }
     
+    if code_challenge:
+        params["code_challenge"] = code_challenge
+        params["code_challenge_method"] = "S256"
+    
     query_string = "&".join([f"{k}={v}" for k, v in params.items()])
     url = f"{auth_endpoint}?{query_string}"
     logger.info(f"Generated authorization URL with state={state}")
     return url
 
 
-def exchange_code_for_token(code: str) -> Dict[str, Any]:
+def exchange_code_for_token(code: str, code_verifier: Optional[str] = None) -> Dict[str, Any]:
     """
     Exchange authorization code for access token and ID token.
-    
-    Args:
-        code: Authorization code from OAuth2 callback
-    
-    Returns:
-        Dictionary containing access_token, id_token, refresh_token, etc.
-    
-    Raises:
-        OIDCError: If token exchange fails
     """
-    config = get_oidc_configuration()
+    config = get_idc_configuration()
     token_endpoint = config["token_endpoint"]
     
     data = {
@@ -152,16 +154,36 @@ def exchange_code_for_token(code: str) -> Dict[str, Any]:
         "grant_type": "authorization_code",
     }
     
+    if code_verifier:
+        data["code_verifier"] = code_verifier
+    
     try:
         logger.info("Exchanging authorization code for tokens")
         response = requests.post(token_endpoint, data=data, timeout=10)
+        
+        # Check for Public Client error (AADSTS700025) and retry without secret if needed
+        if response.status_code in [400, 401]:
+            try:
+                error_body = response.json()
+                if "700025" in str(error_body.get("error_description", "")):
+                    logger.warning("Detected Public Client (AADSTS700025), retrying token exchange without client_secret")
+                    if "client_secret" in data:
+                        del data["client_secret"]
+                        response = requests.post(token_endpoint, data=data, timeout=10)
+            except Exception:
+                # If json parse fails or other error, ignore and let raise_for_status handle it
+                pass
+
+        # Detailed error logging for debugging
+        if not response.ok:
+             logger.error(f"Token exchange failed. Status: {response.status_code}, Body: {response.text}")
         response.raise_for_status()
         tokens = response.json()
         logger.info("Token exchange successful")
         return tokens
     except requests.RequestException as e:
         logger.error(f"Token exchange failed: {e}")
-        raise OIDCError(f"Token exchange failed: {e}")
+        raise idCError(f"Token exchange failed: {e}")
 
 
 def validate_id_token(id_token: str) -> Dict[str, Any]:
@@ -182,11 +204,11 @@ def validate_id_token(id_token: str) -> Dict[str, Any]:
         Decoded token claims
     
     Raises:
-        OIDCTokenValidationError: If token validation fails
+        idCTokenValidationError: If token validation fails
     """
     try:
-        # Get expected issuer from OIDC config
-        config = get_oidc_configuration()
+        # Get expected issuer from idC config
+        config = get_idc_configuration()
         expected_issuer = config["issuer"]
         
         # Get JWKS for signature verification
@@ -205,7 +227,7 @@ def validate_id_token(id_token: str) -> Dict[str, Any]:
                 break
         
         if not signing_key:
-            raise OIDCTokenValidationError(f"No matching key found for kid: {kid}")
+            raise idCTokenValidationError(f"No matching key found for kid: {kid}")
         
         # Validate and decode token
         decoded = jwt.decode(
@@ -229,19 +251,19 @@ def validate_id_token(id_token: str) -> Dict[str, Any]:
         
     except jwt.ExpiredSignatureError:
         logger.warning("Token validation failed: Token expired")
-        raise OIDCTokenValidationError("Token expired")
+        raise idCTokenValidationError("Token expired")
     except jwt.InvalidAudienceError:
         logger.warning("Token validation failed: Invalid audience")
-        raise OIDCTokenValidationError("Invalid audience")
+        raise idCTokenValidationError("Invalid audience")
     except jwt.InvalidIssuerError:
         logger.warning("Token validation failed: Invalid issuer")
-        raise OIDCTokenValidationError("Invalid issuer")
+        raise idCTokenValidationError("Invalid issuer")
     except jwt.PyJWTError as e:
         logger.error(f"Token validation failed: {e}")
-        raise OIDCTokenValidationError(f"Token validation failed: {e}")
+        raise idCTokenValidationError(f"Token validation failed: {e}")
     except Exception as e:
         logger.error(f"Unexpected error during token validation: {e}")
-        raise OIDCTokenValidationError(f"Token validation error: {e}")
+        raise idCTokenValidationError(f"Token validation error: {e}")
 
 
 def refresh_access_token(refresh_token: str) -> Dict[str, Any]:
@@ -255,9 +277,9 @@ def refresh_access_token(refresh_token: str) -> Dict[str, Any]:
         Dictionary containing new access_token, id_token, etc.
     
     Raises:
-        OIDCError: If token refresh fails
+        idCError: If token refresh fails
     """
-    config = get_oidc_configuration()
+    config = get_idc_configuration()
     token_endpoint = config["token_endpoint"]
     
     data = {
@@ -276,7 +298,7 @@ def refresh_access_token(refresh_token: str) -> Dict[str, Any]:
         return tokens
     except requests.RequestException as e:
         logger.error(f"Token refresh failed: {e}")
-        raise OIDCError(f"Token refresh failed: {e}")
+        raise idCError(f"Token refresh failed: {e}")
 
 
 def extract_organization_from_token(claims: Dict[str, Any]) -> Optional[int]:
@@ -332,7 +354,7 @@ def get_user_info_from_token(claims: Dict[str, Any]) -> Dict[str, Any]:
         "name": claims.get("name"),
         "given_name": claims.get("given_name"),
         "family_name": claims.get("family_name"),
-        "oid": claims.get("oid"),  # Object ID (unique user identifier)
+        "id": claims.get("id"),  # Object ID (unique user identifier)
         "tid": claims.get("tid"),  # Tenant ID
         "sub": claims.get("sub"),  # Subject (unique identifier)
     }

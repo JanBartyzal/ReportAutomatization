@@ -13,10 +13,10 @@ interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    login: () => void;
-    loginDev: () => Promise<void>;
-    logout: () => void;
-    handleCallback: (code: string) => Promise<void>;
+    login: () => vid;
+    loginDev: () => Promise<vid>;
+    logout: () => vid;
+    handleCallback: (code: string) => Promise<vid>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
