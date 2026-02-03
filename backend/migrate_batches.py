@@ -31,7 +31,7 @@ def migrate():
                 id UUID PRIMARY KEY,
                 name VARCHAR NOT NULL,
                 status VARCHAR NOT NULL,
-                id VARCHAR,
+                owner_id VARCHAR,
                 created_at TIMESTAMP WITHOUT TIME ZONE
             )
         """))
@@ -63,13 +63,13 @@ def migrate():
         if existing_files or existing_chunks:
             print("Found existing legacy data. Creating 'Legacy Batch'...")
             session.execute(text("""
-                INSERT INTO batches (id, name, status, id, created_at)
-                VALUES (:id, :name, :status, :id, :created_at)
+                INSERT INTO batches (id, name, status, owner_id, created_at)
+                VALUES (:id, :name, :status, :owner_id, :created_at)
             """), {
                 "id": legacy_batch_id,
                 "name": "Legacy Batch",
                 "status": "CLOSED",
-                "id": "system",
+                "owner_id": "system",
                 "created_at": now
             })
 

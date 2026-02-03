@@ -40,14 +40,14 @@ export const analyticsKeys = {
 };
 
 const previewAggregation = async (fileIds: number[]) => {
-    const response = await api.post<AggregationPreviewResponse>('/analytics/aggregate/preview', {
+    const response = await api.post<AggregationPreviewResponse>('/api/analytics/aggregate/preview', {
         file_ids: fileIds
     });
     return response.data;
 };
 
 const getAggregatedData = async (fingerprint: string) => {
-    const response = await api.get<AggregatedDataResponse>(`/analytics/aggregate/${fingerprint}`);
+    const response = await api.get<AggregatedDataResponse>(`/api/analytics/aggregate/${fingerprint}`);
     return response.data;
 };
 

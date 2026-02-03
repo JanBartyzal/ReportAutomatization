@@ -28,7 +28,7 @@ const useStyles = makeStyles({
     }
 });
 
-export const ImportOpex: React.FC = () => {
+export const OpexPptxImport: React.FC = () => {
     const styles = useStyles();
     const navigate = useNavigate();
     const [uploading, setUploading] = useState(false);
@@ -39,7 +39,7 @@ export const ImportOpex: React.FC = () => {
         setUploading(true);
         try {
             // Voláme endpoint pro upload (v endpointu /api/parser/upload)
-            const plan = await api.import.uploadOpex(files);
+            const plan = await api.import.uploadOpexPptx(files);
             setActivePlanId(plan.id);
         } catch (err) {
             alert("Chyba při nahrávání souboru. Zkontrolujte, zda jde o validní JSON.");

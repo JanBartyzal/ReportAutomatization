@@ -119,7 +119,7 @@ class Regions(Base):
     """
     __tablename__ = "regions"
     id = Column(Integer, primary_key=True)
-    id = Column(String)  # Azure AD Object ID
+    aad_object_id = Column(String)  # Azure AD Object ID
     region = Column(String)
     upload_files = relationship("UploadFile", back_populates="region")
 
@@ -143,7 +143,7 @@ class Batch(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)
     status = Column(SQLEnum(BatchStatus), default=BatchStatus.OPEN, nullable=False)
-    id = Column(String, index=True)  # Owner's Azure AD Object ID (RLS)
+    owner_id = Column(String, index=True)  # Owner's Azure AD Object ID (RLS)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     upload_files = relationship("UploadFile", back_populates="batch")
@@ -162,7 +162,7 @@ class UploadFile(Base):
     """
     __tablename__ = "upload_files"
     id = Column(Integer, primary_key=True)
-    id = Column(String)  # Owner's Azure AD Object ID (RLS)
+    owner_id = Column(String)  # Owner's Azure AD Object ID (RLS)
     filename = Column(String)  # Sanitized filename with MD5 suffix
     md5hash = Column(String)  # For deduplication checks
     region_id = Column(Integer, ForeignKey("regions.id"))
@@ -184,7 +184,7 @@ class Report(Base):
     """
     __tablename__ = "reports"
     id = Column(Integer, primary_key=True)
-    id = Column(String)  # Owner's Azure AD Object ID (RLS)
+    owner_id = Column(String)  # Owner's Azure AD Object ID (RLS)
     region = Column(String)
     upload_file_id = Column(Integer, ForeignKey("upload_files.id"))
     upload_file = relationship("UploadFile", back_populates="reports")

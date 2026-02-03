@@ -14,7 +14,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.models import Users, Organization
-from app.identity.idc import (
+from app.identity.oidc import (
     get_authorization_url,
     exchange_code_for_token,
     validate_id_token,

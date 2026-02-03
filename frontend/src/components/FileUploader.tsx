@@ -62,7 +62,7 @@ const useStyles = makeStyles({
 
 // --- PROPS ---
 interface FileUploaderProps {
-    onUpload: (files: FileList) => vid;
+    onUpload: (files: FileList) => void;
     isLoading?: boolean;
     accept?: string; // např. ".tf,.json,.bicep"
     multiple?: boolean;
@@ -171,7 +171,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
                 <div>
                     <ProgressBar thickness="large" />
                     <Text align="center" style={{ display: 'block', marginTop: '0.5rem' }}>
-                        Nahrávám a analyzuji infrastrukturu...
+                        Nahrávám a analyzuji ...
                     </Text>
                 </div>
             )}

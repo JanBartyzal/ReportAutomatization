@@ -7,9 +7,9 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { MainLayout } from './components/Layout/MainLayout';
 import { Login } from './pages/Login';
 import { OpexDashboard } from './pages/opex/OpexDashboard';
-import { ImportOpex } from './pages/import/upload_opex';
+import { OpexPptxImport } from './pages/import/OpexPptxImport';
 import { AggregationDashboard } from './pages/AggregationDashboard';
-import { ExcelImport } from './pages/import/ExcelImport';
+import { OpexExcelImport } from './pages/import/OpexExcelImport';
 
 // Real Page Imports
 import { Dashboard } from './pages/dashboard/Dashboard';
@@ -31,8 +31,8 @@ const App: React.FC = () => {
               <Route path="analytics" element={<Analytics />} />
               <Route path="admin" element={<Admin />} />
               <Route path="opex/dashboard" element={<OpexDashboard />} />
-              <Route path="import/opex" element={<ImportOpex />} />
-              <Route path="import/upload/opex/excel" element={<ExcelImport />} />
+              <Route path="import/opex/pptx" element={<OpexPptxImport />} />
+              <Route path="import/opex/excel" element={<OpexExcelImport />} />
               <Route path="aggregation" element={<AggregationDashboard />} />
             </Route>
           </Route>

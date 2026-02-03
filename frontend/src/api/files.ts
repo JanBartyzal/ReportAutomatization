@@ -20,13 +20,21 @@ export const fileKeys = {
     lists: () => [...fileKeys.all, 'list'] as const,
 };
 
-const uploadFile = async (file: File, isOpex: boolean = false, onProgress?: (progress: number) => vid) => {
+const uploadFile = async (file: File, isOpex: boolean = false, batchId?: string, onProgress?: (progress: number) => void) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const endpoint = isOpex ? '/import/uploadopex' : '/import/upload';
+    // PPTX goes to /upload, Excel goes to /upload/batch (or vice versa depending on intended use)
+    // Based on backend imports.py:
+    // /upload handles both but is generally for PPTX
+    // /upload/batch also handles both but is tagged as OPEX
+    const endpoint = isOpex ? '/api/import/upload/batch' : '/api/import/upload';
 
-    const response = await api.post<UploadResponse>(endpoint, formData, {
+    // We need a batch_id. If not provided, we might need to fetch one, 
+    // but for now let's assume it's passed or we append a placeholder if backend allows (it doesn't yet)
+    const url = batchId ? `${endpoint}?batch_id=${batchId}` : endpoint;
+
+    const response = await api.post<UploadResponse>(url, formData, {
         onUploadProgress: (progressEvent) => {
             if (progressEvent.total && onProgress) {
                 const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -55,10 +63,8 @@ export const uploadExcelAppendix = async (reportId: number, file: File) => {
     formData.append('report_id', reportId.toString());
     formData.append('file', file);
 
-    const response = await api.post('/api/import/upload/opex/excel', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
+    const response = await api.post('/api/import/upload/appendix', formData, {
+        headers: {},
     });
     return response.data;
 };
@@ -79,8 +85,8 @@ export const useUploadFile = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ file, isOpex, onProgress }: { file: File; isOpex?: boolean; onProgress?: (progress: number) => vid }) =>
-            uploadFile(file, isOpex, onProgress),
+        mutationFn: ({ file, isOpex, batchId, onProgress }: { file: File; isOpex?: boolean; batchId?: string; onProgress?: (progress: number) => void }) =>
+            uploadFile(file, isOpex, batchId, onProgress),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: fileKeys.lists() });
         },

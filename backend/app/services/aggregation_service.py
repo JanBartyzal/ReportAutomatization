@@ -225,7 +225,7 @@ class AggregationService:
             .join(Report, SlideData.report_id == Report.id)
             .join(UploadFile, Report.upload_file_id == UploadFile.id)
             .filter(UploadFile.id.in_(file_ids))
-            .filter(UploadFile.id == user_id)  # RLS enforcement
+            .filter(UploadFile.owner_id == user_id)  # RLS enforcement
             .all()
         )
         
@@ -307,7 +307,7 @@ class AggregationService:
             db.query(SlideData, UploadFile.filename, Report.region)
             .join(Report, SlideData.report_id == Report.id)
             .join(UploadFile, Report.upload_file_id == UploadFile.id)
-            .filter(UploadFile.id == user_id)  # RLS enforcement
+            .filter(UploadFile.owner_id == user_id)  # RLS enforcement
             .all()
         )
         

@@ -18,10 +18,20 @@ const apiClient = axios.create({
 
 export const api = {
     import: {
-        uploadOpex: async (files: FileList) => {
+        uploadOpexPptx: async (files: FileList) => {
             const formData = new FormData();
             Array.from(files).forEach((file) => formData.append('file', file));
-            const response = await apiClient.post<OpexFile>('/api/import/uploadopex', formData, {
+            const response = await apiClient.post<OpexFile>('/upload/opex/pptx', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            console.log(response.data);
+            return response.data;
+        },
+        uploadOpexExcel: async (files: FileList) => {
+            const formData = new FormData();
+            Array.from(files).forEach((file) => formData.append('file', file));
+            const response = await apiClient.post<OpexFile>('/upload/opex/excel', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 

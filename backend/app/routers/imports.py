@@ -8,10 +8,10 @@ and user authentication.
 import os
 import logging
 import hashlib
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from fastapi import UploadFile, File, Depends, HTTPException, BackgroundTasks, Form
+from fastapi import UploadFile, File, Depends, HTTPException, BackgroundTasks, Form, Query
 from fastapi.routing import APIRouter
 from app.schemas.user import User
 from app.core.models import UploadFile as DBUploadFile, Batch, BatchStatus, Document_chunks as DBDocument_chunks, Report
@@ -30,9 +30,9 @@ logger = logging.getLogger("uvicorn")
 
 @router.post("/upload")
 async def upload_file(
-    batch_id: UUID,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
+    batch_id: Optional[UUID] = Query(None),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> Dict[str, str]:
@@ -43,6 +43,7 @@ async def upload_file(
     Files are stored with MD5 hash suffix to prevent duplicates.
     
     Args:
+        batch_id: Optional Batch ID. If missing, a default batch will be created/used.
         file: Uploaded file
         user: Authenticated user
         db: Database session
@@ -53,14 +54,27 @@ async def upload_file(
     Raises:
         HTTPException: If upload fails
     """
+    print("Batch ID: ", batch_id)
+    # 0. Handle Batch
+    if not batch_id:
+        # Finding or creating a default batch for the user
+        batch = db.query(Batch).filter(Batch.owner_id == user.id, Batch.name == "Default Batch", Batch.status == BatchStatus.OPEN).first()
+        if not batch:
+            batch = Batch(name="Default Batch", owner_id=user.id, status=BatchStatus.OPEN)
+            db.add(batch)
+            db.commit()
+            db.refresh(batch)
+        batch_id = batch.id
+    else:
+        # Validate batch
+        batch = db.query(Batch).filter(Batch.id == batch_id, Batch.owner_id == user.id).first()
+        if not batch:
+            raise HTTPException(status_code=404, detail="Batch not found")
+        if batch.status != BatchStatus.OPEN:
+            raise HTTPException(status_code=400, detail=f"Batch is {batch.status}. Upload allowed only for OPEN batches.")
+
     logger.info(f"File uploaded by user: {user.email} (ID: {user.id}) to batch: {batch_id}")
-    
-    # Validate batch
-    batch = db.query(Batch).filter(Batch.id == batch_id, Batch.id == user.id).first()
-    if not batch:
-        raise HTTPException(status_code=404, detail="Batch not found")
-    if batch.status != BatchStatus.OPEN:
-        raise HTTPException(status_code=400, detail=f"Batch is {batch.status}. Upload allowed only for OPEN batches.")
+    print(f"File uploaded by user: {user.email} (ID: {user.id}) to batch: {batch_id}")
 
     # Read file data
     file_data = await file.read()
@@ -91,7 +105,7 @@ async def upload_file(
 
     # Save metadata to database with RLS (user id)
     upload_file = DBUploadFile(
-        id=user.id,
+        owner_id=user.id,
         filename=filename,
         md5hash=md5hash,
         batch_id=batch_id
@@ -143,13 +157,13 @@ async def process_excel_background(
         logger.error(f"Error in background processing for {file_path}: {e}")
 
 
-@router.post("/uploadopex")
+@router.post("/upload/batch")
 async def upload_opex_file(
-    batch_id: UUID,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    batch_id: Optional[UUID] = Query(None)
 ) -> Dict[str, Any]:
     """
     Upload OPEX file with MD5 deduplication.
@@ -161,6 +175,7 @@ async def upload_opex_file(
         file: Uploaded file
         user: Authenticated user
         db: Database session
+        batch_id: Optional Batch ID
         
     Returns:
         Success message with user info
@@ -168,14 +183,24 @@ async def upload_opex_file(
     Raises:
         HTTPException: If upload fails
     """
+    # 0. Handle Batch
+    if not batch_id:
+        batch = db.query(Batch).filter(Batch.owner_id == user.id, Batch.name == "Default Batch", Batch.status == BatchStatus.OPEN).first()
+        if not batch:
+            batch = Batch(name="Default Batch", owner_id=user.id, status=BatchStatus.OPEN)
+            db.add(batch)
+            db.commit()
+            db.refresh(batch)
+        batch_id = batch.id
+    else:
+        # Validate batch
+        batch = db.query(Batch).filter(Batch.id == batch_id, Batch.owner_id == user.id).first()
+        if not batch:
+            raise HTTPException(status_code=404, detail="Batch not found")
+        if batch.status != BatchStatus.OPEN:
+            raise HTTPException(status_code=400, detail=f"Batch is {batch.status}. Upload allowed only for OPEN batches.")
+
     logger.info(f"OPEX file uploaded by user: {user.email} (ID: {user.id}) to batch: {batch_id}")
-    
-    # Validate batch
-    batch = db.query(Batch).filter(Batch.id == batch_id, Batch.id == user.id).first()
-    if not batch:
-        raise HTTPException(status_code=404, detail="Batch not found")
-    if batch.status != BatchStatus.OPEN:
-        raise HTTPException(status_code=400, detail=f"Batch is {batch.status}. Upload allowed only for OPEN batches.")
 
     # Read file data
     file_data = await file.read()
@@ -206,7 +231,7 @@ async def upload_opex_file(
 
     # Save metadata to database with RLS (user id)
     upload_file = DBUploadFile(
-        id=user.id,
+        owner_id=user.id,
         filename=filename,
         md5hash=md5hash,
         batch_id=batch_id
@@ -222,7 +247,7 @@ async def upload_opex_file(
     return {"message": "File uploaded successfully", "user": user.email}
 
 
-@router.post("/upload/opex/excel")
+@router.post("/upload/appendix")
 async def upload_opex_excel(
     report_id: int = Form(...),
     file: UploadFile = File(...),
@@ -244,7 +269,7 @@ async def upload_opex_excel(
     logger.info(f"Excel appendix upload for Report {report_id} by user {user.email}")
     
     # 1. Validate Report exists and belongs to user
-    report = db.query(Report).filter(Report.id == report_id, Report.id == user.id).first()
+    report = db.query(Report).filter(Report.id == report_id, Report.owner_id == user.id).first()
     if not report:
         raise HTTPException(status_code=404, detail="Report not found or access denied")
         
@@ -317,7 +342,7 @@ async def get_list_uploaded_files(
         List of file metadata dictionaries
     """
     # ROW LEVEL SECURITY: Filter by user id
-    db_files = db.query(DBUploadFile).filter(DBUploadFile.id == user.id).all()
+    db_files = db.query(DBUploadFile).filter(DBUploadFile.owner_id == user.id).all()
     
     results = []
     for file in db_files:

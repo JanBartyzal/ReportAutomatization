@@ -38,7 +38,7 @@ const useStyles = makeStyles({
     },
 });
 
-export const ExcelImport: React.FC = () => {
+export const OpexExcelImport: React.FC = () => {
     const styles = useStyles();
     const { dispatchToast } = useToastController('toaster');
 
