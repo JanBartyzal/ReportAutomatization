@@ -88,6 +88,26 @@ class Settings(BaseSettings):
         validation_alias="OCR_CONFIDENCE_THRESHOLD"
     )
     
+    # Ollama Configuration
+    ollama_base_url: str = Field(
+        default="http://ollama:11434",
+        description="Ollama service base URL",
+        validation_alias="OLLAMA_BASE_URL"
+    )
+    
+    ollama_ocr_model: str = Field(
+        default="deepseek-ocr:latest",
+        description="Ollama model for OCR and table extraction",
+        validation_alias="OLLAMA_OCR_MODEL"
+    )
+    
+    ollama_timeout: int = Field(
+        default=120,
+        ge=10,
+        description="Ollama API timeout in seconds",
+        validation_alias="OLLAMA_TIMEOUT"
+    )
+    
     # Cache Configuration
     cache_ttl_days: int = Field(
         default=7,

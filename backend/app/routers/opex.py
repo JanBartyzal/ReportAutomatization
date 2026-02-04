@@ -60,6 +60,7 @@ async def run_opex(
     Returns:
         Processing status message
     """
+    print(f"OPEX processing requested by user: {user.email} (ID: {user.id})")
     opex_manager = OpexManager()
     opex_manager.process_opex(file_id, db)
     return {"message": "Processing started", "user": user.id}

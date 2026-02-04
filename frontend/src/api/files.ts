@@ -24,15 +24,24 @@ const uploadFile = async (file: File, isOpex: boolean = false, batchId?: string,
     const formData = new FormData();
     formData.append('file', file);
 
-    // PPTX goes to /upload, Excel goes to /upload/batch (or vice versa depending on intended use)
-    // Based on backend imports.py:
-    // /upload handles both but is generally for PPTX
-    // /upload/batch also handles both but is tagged as OPEX
+    // PPTX goes to /upload, Excel goes to /upload/batch (or vice versa depending on intended use - checking backend)
+    // Backend imports.py:
+    // /upload -> upload_file (general)
+    // /upload/batch -> upload_opex_file (specific for Opex/Batch context)
+
+    // For this refactor, if we are in "UploadOpex" context, we likely want to use the batch endpoint if it does specific things,
+    // OR just pass the batch_id to the standard endpoint if they are unified.
+    // Looking at backend: Both accept batch_id. 
+    // /upload/batch is strictly "upload_opex_file" which might tag it differently? 
+    // "Similar to regular upload but tagged as OPEX file."
+
+    // So if isOpex is true, we use /api/import/upload/batch.
     const endpoint = isOpex ? '/api/import/upload/batch' : '/api/import/upload';
 
-    // We need a batch_id. If not provided, we might need to fetch one, 
-    // but for now let's assume it's passed or we append a placeholder if backend allows (it doesn't yet)
-    const url = batchId ? `${endpoint}?batch_id=${batchId}` : endpoint;
+    let url = endpoint;
+    if (batchId) {
+        url += `?batch_id=${batchId}`;
+    }
 
     const response = await api.post<UploadResponse>(url, formData, {
         onUploadProgress: (progressEvent) => {

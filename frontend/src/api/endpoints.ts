@@ -1,37 +1,16 @@
-import axios from 'axios';
+import apiClient from './axios';
 import {
     OpexFile,
     OpexData
 
 } from '../../';
 
-// Načtení URL z .env (nebo fallback pro dev)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-const apiClient = axios.create({
-    baseURL: API_URL,
-    headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-    },
-});
-
 export const api = {
     import: {
-        uploadOpexPptx: async (files: FileList) => {
+        uploadOpex: async (files: FileList) => {
             const formData = new FormData();
             Array.from(files).forEach((file) => formData.append('file', file));
-            const response = await apiClient.post<OpexFile>('/upload/opex/pptx', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
-            console.log(response.data);
-            return response.data;
-        },
-        uploadOpexExcel: async (files: FileList) => {
-            const formData = new FormData();
-            Array.from(files).forEach((file) => formData.append('file', file));
-            const response = await apiClient.post<OpexFile>('/upload/opex/excel', formData, {
+            const response = await apiClient.post<OpexFile>('/upload/import', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
@@ -63,7 +42,10 @@ export const api = {
         getSlideData: async (fileId: string, slideId: number) => {
             const response = await apiClient.get<any[]>(`/api/opex/get_slide_data?file_id=${fileId}&slide_id=${slideId}`);
             return response.data;
+        },
+        runProceedOpex: async (fileId: string) => {
+            const response = await apiClient.get<any[]>(`/api/opex/run_opex?file_id=${fileId}`);
+            return response.data;
         }
     }
-
 };

@@ -7,14 +7,17 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { MainLayout } from './components/Layout/MainLayout';
 import { Login } from './pages/Login';
 import { OpexDashboard } from './pages/opex/OpexDashboard';
-import { OpexPptxImport } from './pages/import/OpexPptxImport';
 import { AggregationDashboard } from './pages/AggregationDashboard';
-import { OpexExcelImport } from './pages/import/OpexExcelImport';
+import { OpexOverview } from './pages/opex/OpexOverview';
 
 // Real Page Imports
 import { Dashboard } from './pages/dashboard/Dashboard';
 import { Analytics } from './pages/analytics/Analytics';
 import { Admin } from './pages/admin/Admin';
+
+import { BatchCreate } from './pages/opex/BatchCreate';
+import { UploadOpex } from './pages/import/UploadOpex';
+import { ViewerPPTX } from './pages/opex/viewerpptx';
 
 const App: React.FC = () => {
   return (
@@ -31,9 +34,11 @@ const App: React.FC = () => {
               <Route path="analytics" element={<Analytics />} />
               <Route path="admin" element={<Admin />} />
               <Route path="opex/dashboard" element={<OpexDashboard />} />
-              <Route path="import/opex/pptx" element={<OpexPptxImport />} />
-              <Route path="import/opex/excel" element={<OpexExcelImport />} />
               <Route path="aggregation" element={<AggregationDashboard />} />
+              <Route path="opex" element={<OpexOverview />} />
+              <Route path="opex/new-batch" element={<BatchCreate />} />
+              <Route path="opex/view/:fileId" element={<ViewerPPTX />} />
+              <Route path="import/upload" element={<UploadOpex />} />
             </Route>
           </Route>
 

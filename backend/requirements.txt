@@ -25,6 +25,7 @@ pyyaml
 pillow
 xlrd
 python-pptx
+comtypes  # For PowerPoint COM automation on Windows (slide export)
 pgvector
 litellm
 thefuzz[speedup]

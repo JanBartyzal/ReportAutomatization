@@ -2,7 +2,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { useFiles } from '../../api/files';
-import { FileUploader } from '../../components/Upload/FileUploader';
+// import { FileUploader } from '../../components/Upload/FileUploader';
 import { FileText, Clock, Hash, MapPin, Loader2 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
@@ -51,13 +51,8 @@ export const Dashboard: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Information / Upload Column */}
+                {/* Information Column (Reduced) */}
                 <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                        <h2 className="text-lg font-semibold text-slate-900 mb-4">Upload New File</h2>
-                        <FileUploader />
-                    </div>
-
                     <div className="bg-blue-50 border border-blue-100 rounded-xl p-6">
                         <h3 className="text-sm font-semibold text-blue-900 mb-2">Processing Info</h3>
                         <p className="text-sm text-blue-700 leading-relaxed">

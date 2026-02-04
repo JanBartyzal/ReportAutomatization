@@ -1,5 +1,4 @@
-
-export * from './Analytics';
-export * from './Dashboard';
+export * from './analytics/Analytics';
+export * from './dashboard/Dashboard';
 export * from './Login';
-export * from './Admin';
+export * from './admin/Admin';

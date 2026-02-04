@@ -1,0 +1,316 @@
+Total slides: 1
+
+================================================================================
+SLIDE 1
+================================================================================
+Title: Cost optimization
+
+Total shapes: 71
+
+Shape 0: Type=EMBEDDED_OLE_OBJECT (7), Table=False, TextFrame=False
+
+Shape 1: Type=PLACEHOLDER (14), Table=False, TextFrame=True
+  Text: Cost optimization
+  Position: top=283998, left=771789, width=6673623, height=777668
+
+Shape 2: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Sum of
+  Position: top=965326, left=9243360, width=861233, height=184666
+
+Shape 3: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: 1
+  Position: top=840453, left=9827176, width=306910, height=306910
+
+Shape 4: Type=LINE (9), Table=False, TextFrame=False
+
+Shape 5: Type=LINE (9), Table=False, TextFrame=False
+
+Shape 6: Type=LINE (9), Table=False, TextFrame=False
+
+Shape 7: Type=LINE (9), Table=False, TextFrame=False
+
+Shape 8: Type=LINE (9), Table=False, TextFrame=False
+
+Shape 9: Type=LINE (9), Table=False, TextFrame=False
+
+Shape 10: Type=LINE (9), Table=False, TextFrame=False
+
+Shape 11: Type=FREEFORM (5), Table=False, TextFrame=True
+
+Shape 12: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Text Category
+  Position: top=1503083, left=771788, width=1978987, height=485193
+
+Shape 13: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Text Category
+  Position: top=2049052, left=771788, width=1978987, height=485193
+
+Shape 14: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Text Category
+  Position: top=2595021, left=771788, width=1978987, height=485193
+
+Shape 15: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Text Category
+  Position: top=3140990, left=771788, width=1978987, height=485193
+
+Shape 16: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Text Category
+  Position: top=3686959, left=771788, width=1978987, height=485193
+
+Shape 17: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Text Category
+  Position: top=4232928, left=771788, width=1978987, height=485193
+
+Shape 18: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Text Category
+  Position: top=4778897, left=771788, width=1978987, height=485193
+
+Shape 19: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Text Category
+  Position: top=5324865, left=771788, width=1978987, height=577926
+
+Shape 20: Type=FREEFORM (5), Table=False, TextFrame=True
+
+Shape 21: Type=FREEFORM (5), Table=False, TextFrame=True
+
+Shape 22: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Cost Category
+  Position: top=1108515, left=798971, width=1978434, height=336322
+
+Shape 23: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Main saving initiatives description (focus on non-comp)
+  Position: top=1108515, left=3026139, width=4380974, height=336322
+
+Shape 24: Type=FREEFORM (5), Table=False, TextFrame=True
+
+Shape 25: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Sum of
+  Position: top=965326, left=10702050, width=861233, height=184666
+
+Shape 26: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: 2
+  Position: top=840453, left=11285866, width=306910, height=306910
+
+Shape 27: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Net saving 2024 (M€) 
+  Position: top=1182081, left=8920753, width=1485146, height=153888
+
+Shape 28: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Additional net saving 2024 (M€)
+  Position: top=1133765, left=10431796, width=1279177, height=307777
+
+Shape 29: Type=FREEFORM (5), Table=False, TextFrame=True
+
+Shape 30: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: -2
+  Position: top=1492964, left=10502720, width=1314626, height=485193
+
+Shape 31: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: .
+  Position: top=2038933, left=10502720, width=1314626, height=485193
+
+Shape 32: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: .
+  Position: top=2584902, left=10502720, width=1314626, height=485193
+
+Shape 33: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: .
+  Position: top=3130871, left=10502720, width=1314626, height=485193
+
+Shape 34: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: .
+  Position: top=3676840, left=10502720, width=1314626, height=485193
+
+Shape 35: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: .
+  Position: top=4222809, left=10502720, width=1314626, height=485193
+
+Shape 36: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text:  .
+  Position: top=4768778, left=10502720, width=1314626, height=485193
+
+Shape 37: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: .
+  Position: top=5314747, left=10502720, width=1314626, height=577926
+
+Shape 38: Type=FREEFORM (5), Table=False, TextFrame=True
+
+Shape 39: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text:   Savings identified
+  Position: top=5968420, left=6665210, width=2181137, height=246888
+
+Shape 40: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: -100M€
+  Position: top=5972266, left=9013974, width=1329465, height=246888
+
+Shape 41: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: -2.0M€
+  Position: top=5968420, left=10487879, width=1329465, height=246888
+
+Shape 42: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text:   Savings to be identified
+  Position: top=6257813, left=6665210, width=2181137, height=246888
+
+Shape 43: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text:  -2,3M€
+  Position: top=6261659, left=9013974, width=1329465, height=246888
+
+Shape 44: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: 0,0M€
+  Position: top=6257813, left=10487879, width=1329465, height=246888
+
+Shape 45: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text:   TOTAL
+  Position: top=6558067, left=6665210, width=2181137, height=246888
+
+Shape 46: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: -8,6M€
+  Position: top=6561913, left=9013974, width=1329465, height=246888
+
+Shape 47: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: 0,0M€
+  Position: top=6558067, left=10487879, width=1329465, height=246888
+
+Shape 48: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Global initiatives  please report in red any impact expected from Global initiatives, including the
+  Position: top=6207003, left=1062829, width=3612868, height=276999
+
+Shape 49: Type=PICTURE (13), Table=False, TextFrame=False
+
+Shape 50: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: Updated Saving initiatives post
+  Position: top=1045859, left=3428296, width=4897336, height=169277
+
+Shape 51: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+
+Shape 52: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: Text row Text row Text row
+  Position: top=4741502, left=2961031, width=5043527, height=583939
+
+Shape 53: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: Text row Text row
+  Position: top=3690329, left=2961031, width=5043527, height=513990
+
+Shape 54: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: Text row Text row
+  Position: top=3154735, left=2961031, width=5043527, height=466408
+
+Shape 55: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: Text row
+  Position: top=4216056, left=2961031, width=5043527, height=527366
+
+Shape 56: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: Text row
+  Position: top=5330632, left=2961031, width=5043527, height=583939
+
+Shape 57: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: -0.01
+  Position: top=5363491, left=9104524, width=1330392, height=441594
+
+Shape 58: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: Text row Text row Text row
+  Position: top=2572390, left=2961031, width=5279146, height=555742
+
+Shape 59: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: Text row
+  Position: top=2018039, left=2961031, width=5043527, height=555742
+
+Shape 60: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: Text row Text row
+  Position: top=1455675, left=2954784, width=5043527, height=555742
+
+Shape 61: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: -1.15 -0.42
+  Position: top=3115986, left=9092030, width=1241809, height=471938
+
+Shape 62: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: -5.11
+  Position: top=3654684, left=9092030, width=1241809, height=555742
+
+Shape 63: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: -12.6
+  Position: top=4205586, left=9092030, width=1241809, height=555742
+
+Shape 64: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: -1.22 -0.06 WIP
+  Position: top=4749886, left=9092030, width=1318215, height=555742
+
+Shape 65: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: -3.2 -5.53 -0.3
+  Position: top=2552495, left=9072741, width=1241809, height=555742
+
+Shape 66: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: -1.9
+  Position: top=2046734, left=9072740, width=1241809, height=555742
+
+Shape 67: Type=AUTO_SHAPE (1), Table=False, TextFrame=True
+  Text: -21.4 +2.2
+  Position: top=1455237, left=9079535, width=1241809, height=555742
+
+Shape 68: Type=TEXT_BOX (17), Table=False, TextFrame=True
+  Text: P&L view,
+  Position: top=1, left=4317093, width=3607753, height=232152
+
+Shape 69: Type=PICTURE (13), Table=False, TextFrame=False
+
+Shape 70: Type=PICTURE (13), Table=False, TextFrame=False
+
+
+Text shapes sorted by position (top, left):
+================================================================================
+Idx 68 | Top:        1 | Left:  4317093 | Text: P&L view,
+Idx  1 | Top:   283998 | Left:   771789 | Text: Cost optimization
+Idx  3 | Top:   840453 | Left:  9827176 | Text: 1
+Idx 26 | Top:   840453 | Left: 11285866 | Text: 2
+Idx  2 | Top:   965326 | Left:  9243360 | Text: Sum of
+Idx 25 | Top:   965326 | Left: 10702050 | Text: Sum of
+Idx 50 | Top:  1045859 | Left:  3428296 | Text: Updated Saving initiatives post
+Idx 22 | Top:  1108515 | Left:   798971 | Text: Cost Category
+Idx 23 | Top:  1108515 | Left:  3026139 | Text: Main saving initiatives description (focus on non-comp)
+Idx 28 | Top:  1133765 | Left: 10431796 | Text: Additional net saving 2024 (M€)
+Idx 27 | Top:  1182081 | Left:  8920753 | Text: Net saving 2024 (M€) 
+Idx 67 | Top:  1455237 | Left:  9079535 | Text: -21.4 | +2.2
+Idx 60 | Top:  1455675 | Left:  2954784 | Text: Text row | Text row
+Idx 30 | Top:  1492964 | Left: 10502720 | Text: -2
+Idx 12 | Top:  1503083 | Left:   771788 | Text: Text Category
+Idx 59 | Top:  2018039 | Left:  2961031 | Text: Text row
+Idx 31 | Top:  2038933 | Left: 10502720 | Text: .
+Idx 66 | Top:  2046734 | Left:  9072740 | Text: -1.9
+Idx 13 | Top:  2049052 | Left:   771788 | Text: Text Category
+Idx 65 | Top:  2552495 | Left:  9072741 | Text: -3.2 | -5.53 | -0.3
+Idx 58 | Top:  2572390 | Left:  2961031 | Text: Text row | Text row | Text row
+Idx 32 | Top:  2584902 | Left: 10502720 | Text: .
+Idx 14 | Top:  2595021 | Left:   771788 | Text: Text Category
+Idx 61 | Top:  3115986 | Left:  9092030 | Text: -1.15 | -0.42
+Idx 33 | Top:  3130871 | Left: 10502720 | Text: .
+Idx 15 | Top:  3140990 | Left:   771788 | Text: Text Category
+Idx 54 | Top:  3154735 | Left:  2961031 | Text: Text row | Text row
+Idx 62 | Top:  3654684 | Left:  9092030 | Text: -5.11
+Idx 34 | Top:  3676840 | Left: 10502720 | Text: .
+Idx 16 | Top:  3686959 | Left:   771788 | Text: Text Category
+Idx 53 | Top:  3690329 | Left:  2961031 | Text: Text row | Text row
+Idx 63 | Top:  4205586 | Left:  9092030 | Text: -12.6
+Idx 55 | Top:  4216056 | Left:  2961031 | Text: Text row
+Idx 35 | Top:  4222809 | Left: 10502720 | Text: .
+Idx 17 | Top:  4232928 | Left:   771788 | Text: Text Category
+Idx 52 | Top:  4741502 | Left:  2961031 | Text: Text row | Text row | Text row
+Idx 64 | Top:  4749886 | Left:  9092030 | Text: -1.22 | -0.06 | WIP
+Idx 36 | Top:  4768778 | Left: 10502720 | Text:  | .
+Idx 18 | Top:  4778897 | Left:   771788 | Text: Text Category
+Idx 37 | Top:  5314747 | Left: 10502720 | Text: .
+Idx 19 | Top:  5324865 | Left:   771788 | Text: Text Category
+Idx 56 | Top:  5330632 | Left:  2961031 | Text: Text row
+Idx 57 | Top:  5363491 | Left:  9104524 | Text: -0.01
+Idx 39 | Top:  5968420 | Left:  6665210 | Text:   Savings identified
+Idx 41 | Top:  5968420 | Left: 10487879 | Text: -2.0M€
+Idx 40 | Top:  5972266 | Left:  9013974 | Text: -100M€
+Idx 48 | Top:  6207003 | Left:  1062829 | Text: Global initiatives  please report in red any impact expected from Global initia
+Idx 42 | Top:  6257813 | Left:  6665210 | Text:   Savings to be identified
+Idx 44 | Top:  6257813 | Left: 10487879 | Text: 0,0M€
+Idx 43 | Top:  6261659 | Left:  9013974 | Text:  -2,3M€
+Idx 45 | Top:  6558067 | Left:  6665210 | Text:   TOTAL
+Idx 47 | Top:  6558067 | Left: 10487879 | Text: 0,0M€
+Idx 46 | Top:  6561913 | Left:  9013974 | Text: -8,6M€
+
+
+Analysis complete!

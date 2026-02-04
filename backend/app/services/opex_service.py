@@ -130,28 +130,36 @@ class OpexManager:
             raise HTTPException(status_code=404, detail="File not found on disk")
         
         presentation = self.powerpoint_manager.load_powerpoint(file_path)
-        slides = self.powerpoint_manager.extract_slides(presentation)
+        
+        # Validate slide_id (1-based index)
+        if slide_id < 1 or slide_id > len(presentation.slides):
+            logger.warning(f"Requested slide {slide_id} out of range (Total: {len(presentation.slides)})")
+            return []
+
+        # Extract specific slide (0-based index for access)
+        target_slide = presentation.slides[slide_id - 1]
+        slide = self.powerpoint_manager.extract_slide(target_slide, slide_id)
+        
         headdata = []
+        
+        textslide = self.table_data_processor.normalize_text(slide.text_content)
+        tableslide = self.table_data_processor.normalize_table(slide.table_data)
+        
+        tables_list = []
+        # normalize_table returns a DataFrame. Validate it's not empty before converting.
+        if tableslide is not None and not tableslide.empty:
+                tables_list.append(tableslide.to_dict(orient='records'))
 
-        for slide in slides:
-            if slide.slide_index == slide_id:
-                textslide = self.table_data_processor.normalize_text(slide.text_content)
-                tableslide = self.table_data_processor.normalize_table(slide.table_data)
-                
-                tables_list = []
-                # normalize_table returns a DataFrame. Validate it's not empty before converting.
-                if tableslide is not None and not tableslide.empty:
-                     tables_list.append(tableslide.to_dict(orient='records'))
-
-                info = {
-                    "slide_id": slide.slide_index,
-                    "slide_title": slide.title,
-                    "text_content": textslide,
-                    "table_data": tables_list,
-                    "image_data_count": len(slide.image_data),
-                    "text_content_count": len(slide.text_content)
-                }
-                headdata.append(info)
+        info = {
+            "slide_id": slide.slide_index,
+            "slide_title": slide.title,
+            "text_content": textslide,
+            "table_data": tables_list,
+            # Count images for this slide (extracted_images contains objects with 'image_base64')
+            "image_data_count": len(slide.image_data),
+            "text_content_count": len(slide.text_content)
+        }
+        headdata.append(info)
 
         return headdata
 

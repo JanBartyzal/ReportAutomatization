@@ -2,17 +2,19 @@
 PowerPoint file processing and table extraction.
 
 This module handles reading PPTX files, extracting tables from various sources
-(native tables, Excel OLE objects, images), and creating PowerPoint presentations
-from structured data.
+(native tables, Excel OLE objects, images, Ollama OCR), and creating PowerPoint 
+presentations from structured data.
 """
 
 import logging
 import io
 import base64
+import asyncio
 from typing import List, Dict, Any, Optional
 import pandas as pd
+from PIL import Image
 from pptx import Presentation
-from pptx.util import Inches
+from pptx.util import Inches, Pt
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.slide import Slide
 from pptx.shapes.base import BaseShape
@@ -20,6 +22,7 @@ from app.schemas.slide import SlideData
 from app.services.table_service import TableDataProcessor
 from app.services.ocr_service import TableImageData
 from app.services.parsers.ppt_shapes import PseudoTableParser
+from app.services.ollama_ocr_service import OllamaOCRService
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +40,7 @@ class PowerpointManager:
         self.template_path = "template.pptx"
         self.image_processor = TableImageData()
         self.pseudo_table_parser = PseudoTableParser()
+        self.ollama_ocr = OllamaOCRService()
 
     def create_powerpoint(self, slide_data: List[SlideData]) -> Presentation:
         """
@@ -201,6 +205,111 @@ class PowerpointManager:
                     text_content.append(shape.text.strip())
         return text_content
 
+    def extract_slide(self, slide: Slide, slide_index: int) -> SlideData:
+        """
+        Extract content from a single slide.
+        
+        Args:
+            slide: PowerPoint slide object
+            slide_index: Index of the slide (1-based)
+            
+        Returns:
+            SlideData object with extracted content
+        """
+        extracted_images = []
+        slide_tables_data = []  # Store all extracted data (native, excel)
+
+        title = "Untitled"
+        if slide.shapes.title and slide.shapes.title.text:
+            title = slide.shapes.title.text
+        
+        # Extract text content
+        text_content = self.extract_text_from_slide(slide)
+        
+        # Collect shapes for pseudo-table detection
+        all_shapes_metadata = []
+
+        for shape in slide.shapes:
+            # 1. Native Table
+            if shape.has_table:
+                data = self.extract_native_table(shape)
+                if data:
+                    slide_tables_data.extend(data)
+                    continue  # Processed as table
+            
+            # 2. Excel OLE Object
+            if shape.shape_type == MSO_SHAPE_TYPE.EMBEDDED_OLE_OBJECT:
+                data = self.extract_excel_object(shape)
+                if data:
+                    slide_tables_data.extend(data)
+                    continue  # Processed as Excel
+
+            # 3. Image (Fallthrough)
+            if hasattr(shape, "image"):
+                image_blob = shape.image.blob
+                local_table_data = self.image_processor.smart_extract(image_blob)
+                logger.debug(f"Image extraction result: {local_table_data}")
+                if local_table_data["data"]:
+                    logger.info(f"Extracted table data from image: {local_table_data}")
+                    slide_tables_data.extend(local_table_data["data"])
+                else:
+                    # Convert to base64 for JSON transport
+                    b64_img = base64.b64encode(image_blob).decode('utf-8')
+                    extracted_images.append({
+                    "slide_index": slide_index,
+                    "image_base64": b64_img
+                })
+            
+            # Collect all text-containing shapes for pseudo-table candidate detection
+            if hasattr(shape, "has_text_frame") and shape.has_text_frame:
+                if shape.text and shape.text.strip():
+                    all_shapes_metadata.append({
+                        "text": shape.text,
+                        "top": shape.top,
+                        "left": shape.left,
+                        "width": shape.width,
+                        "height": shape.height
+                    })
+        
+        # Identify pseudo-tables from collected shapes
+        pseudo_tables = self.pseudo_table_parser.parse(all_shapes_metadata)
+        
+        # Try Ollama OCR for table extraction if no tables found yet
+        if not slide_tables_data and not pseudo_tables:
+            try:
+                logger.info(f"Attempting Ollama OCR extraction for slide {slide_index}")
+                slide_image = self._slide_to_image(slide)
+                
+                # Run async OCR extraction
+                ocr_result = asyncio.run(
+                    self.ollama_ocr.extract_table_from_slide(
+                        text="\n".join(text_content),
+                        image_bytes=slide_image
+                    )
+                )
+                
+                if ocr_result.get("has_table"):
+                    logger.info(f"Ollama OCR found {len(ocr_result.get('tables', []))} table(s)")
+                    for table in ocr_result.get("tables", []):
+                        # Convert OCR table format to dict list
+                        table_dicts = self.ollama_ocr.convert_ocr_table_to_dict_list(table)
+                        slide_tables_data.extend(table_dicts)
+                else:
+                    logger.debug("Ollama OCR found no tables")
+                    
+            except Exception as e:
+                logger.warning(f"Ollama OCR extraction failed: {e}", exc_info=True)
+                # Continue with existing data (fallback to pseudo-tables or empty)
+                
+        return SlideData(
+            slide_index=slide_index,
+            title=title,
+            table_data=slide_tables_data,
+            pseudo_tables=pseudo_tables,
+            image_data=extracted_images,
+            text_content=text_content
+        )
+
     def extract_slides(self, prs: Presentation) -> List[SlideData]:
         """
         Extract all slides with tables, images, and text from presentation.
@@ -217,77 +326,11 @@ class PowerpointManager:
             List of SlideData objects with extracted content
         """
         slides = []
-        
         for i, slide in enumerate(prs.slides):
-            extracted_images = []
-            slide_tables_data = []  # Store all extracted data (native, excel)
-
-            title = "Untitled"
-            if slide.shapes.title and slide.shapes.title.text:
-                title = slide.shapes.title.text
-            
-            # Extract text content
-            text_content = self.extract_text_from_slide(slide)
-            
-            # Collect shapes for pseudo-table detection
-            all_shapes_metadata = []
-
-            for shape in slide.shapes:
-                # 1. Native Table
-                if shape.has_table:
-                    data = self.extract_native_table(shape)
-                    if data:
-                        slide_tables_data.extend(data)
-                        continue  # Processed as table
-                
-                # 2. Excel OLE Object
-                if shape.shape_type == MSO_SHAPE_TYPE.EMBEDDED_OLE_OBJECT:
-                    data = self.extract_excel_object(shape)
-                    if data:
-                        slide_tables_data.extend(data)
-                        continue  # Processed as Excel
-
-                # 3. Image (Fallthrough)
-                if hasattr(shape, "image"):
-                    image_blob = shape.image.blob
-                    local_table_data = self.image_processor.smart_extract(image_blob)
-                    logger.debug(f"Image extraction result: {local_table_data}")
-                    if local_table_data["data"]:
-                        logger.info(f"Extracted table data from image: {local_table_data}")
-                        slide_tables_data.extend(local_table_data["data"])
-                    else:
-                        # Convert to base64 for JSON transport
-                        b64_img = base64.b64encode(image_blob).decode('utf-8')
-                        extracted_images.append({
-                        "slide_index": i + 1,
-                        "image_base64": b64_img
-                    })
-                
-                # Collect all text-containing shapes for pseudo-table candidate detection
-                if hasattr(shape, "has_text_frame") and shape.has_text_frame:
-                    if shape.text and shape.text.strip():
-                        all_shapes_metadata.append({
-                            "text": shape.text,
-                            "top": shape.top,
-                            "left": shape.left,
-                            "width": shape.width,
-                            "height": shape.height
-                        })
-            
-            # Identify pseudo-tables from collected shapes
-            pseudo_tables = self.pseudo_table_parser.parse(all_shapes_metadata)
-                    
-            slide_data = SlideData(
-                slide_index=i + 1,
-                title=title,
-                table_data=slide_tables_data,
-                pseudo_tables=pseudo_tables,
-                image_data=extracted_images,
-                text_content=text_content
-            )
-            slides.append(slide_data)
+            slides.append(self.extract_slide(slide, i + 1))
         return slides
     
+
     def get_image_from_slide(self, slide_data: SlideData, image_index: int) -> Optional[bytes]:
         """
         Get image bytes from slide data by index.
@@ -302,6 +345,108 @@ class PowerpointManager:
         if image_index < len(slide_data.image_data):
             return base64.b64decode(slide_data.image_data[image_index]['image_base64'])
         return None
+    
+    def _slide_to_image(self, slide: Slide) -> bytes:
+        """
+        Convert a PowerPoint slide to PNG image bytes.
+        
+        Uses COM automation to export slide as image (Windows only).
+        Falls back to creating a white placeholder if COM is unavailable.
+        
+        Args:
+            slide: PowerPoint slide object
+            
+        Returns:
+            PNG image as bytes
+        """
+        try:
+            import tempfile
+            import os
+            from pathlib import Path
+            
+            # Try to use PowerPoint COM to export slide
+            # This requires PowerPoint to be installed on Windows
+            try:
+                import comtypes.client
+                
+                # Create temp file for slide export
+                with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+                    tmp_path = tmp.name
+                
+                # Get parent presentation path
+                # Note: slide object doesn't directly give us the presentation file
+                # We'll need to re-save the presentation temporarily
+                temp_pptx = tempfile.NamedTemporaryFile(suffix='.pptx', delete=False)
+                temp_pptx_path = temp_pptx.name
+                temp_pptx.close()
+                
+                # Save current presentation state
+                slide.part.package.save(temp_pptx_path)
+                
+                # Open with PowerPoint COM
+                powerpoint = comtypes.client.CreateObject("Powerpoint.Application")
+                powerpoint.Visible = 1
+                
+                presentation = powerpoint.Presentations.Open(temp_pptx_path)
+                
+                # Export slide (slide numbers are 1-indexed in COM)
+                # slide.slide_id gives us the ID, but we need the index
+                slide_num = slide.slide_id  # This might not be the right index
+                
+                # Find slide index by iterating
+                for idx, s in enumerate(presentation.Slides, 1):
+                    if s.SlideID == slide.slide_id:
+                        slide_num = idx
+                        break
+                
+                presentation.Slides(slide_num).Export(tmp_path, "PNG")
+                
+                # Close presentation
+                presentation.Close()
+                powerpoint.Quit()
+                
+                # Read the exported image
+                with open(tmp_path, 'rb') as f:
+                    image_bytes = f.read()
+                
+                # Cleanup
+                os.unlink(tmp_path)
+                os.unlink(temp_pptx_path)
+                
+                logger.debug(f"Exported slide via PowerPoint COM: {len(image_bytes)} bytes")
+                return image_bytes
+                
+            except (ImportError, Exception) as com_error:
+                logger.debug(f"COM export failed: {com_error}. Using fallback.")
+                # Fall through to fallback method
+            
+            # Fallback: Create a simple placeholder image
+            # In production, you might want to use LibreOffice headless converter
+            slide_width = slide.slide_width
+            slide_height = slide.slide_height
+            
+            # Convert EMU to pixels (914400 EMU = 1 inch, assume 96 DPI)
+            width_px = max(800, int(slide_width * 96 / 914400))
+            height_px = max(600, int(slide_height * 96 / 914400))
+            
+            img = Image.new('RGB', (width_px, height_px), 'white')
+            
+            # Save to bytes
+            img_bytes = io.BytesIO()
+            img.save(img_bytes, format='PNG')
+            img_bytes.seek(0)
+            
+            logger.debug(f"Created placeholder slide image: {width_px}x{height_px}")
+            return img_bytes.getvalue()
+            
+        except Exception as e:
+            logger.error(f"Failed to convert slide to image: {e}")
+            # Return a minimal placeholder image
+            img = Image.new('RGB', (800, 600), 'white')
+            img_bytes = io.BytesIO()
+            img.save(img_bytes, format='PNG')
+            img_bytes.seek(0)
+            return img_bytes.getvalue()
     
     def extract_data(self, slide_data: SlideData) -> List[Dict[str, Any]]:
         """

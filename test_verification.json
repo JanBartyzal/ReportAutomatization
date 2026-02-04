@@ -1,0 +1,8 @@
+{
+  "test_name": "Column-Based Table Detection with Real Demo Coordinates",
+  "input_shapes_count": 16,
+  "expected_structure": "4 columns x 4 rows (header + 3 data)",
+  "detected_tables": 0,
+  "success": false,
+  "results": []
+}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     Title2, Card, CardHeader, Text,
     LargeTitle, Body1, Button, Spinner,
@@ -8,8 +9,10 @@ import { ArrowLeft24Regular, ArrowRight24Regular } from '@fluentui/react-icons';
 import { api } from '../../api/endpoints';
 
 export const ViewerPPTX: React.FC = () => {
+    const { fileId } = useParams<{ fileId: string }>();
+    const navigate = useNavigate();
     const [files, setFiles] = useState<any[]>([]);
-    const [selectedFileId, setSelectedFileId] = useState<string>("");
+    const [selectedFileId, setSelectedFileId] = useState<string>(fileId || "");
 
     // Slide Data
     const [slidesHeader, setSlidesHeader] = useState<any[]>([]);
@@ -21,6 +24,13 @@ export const ViewerPPTX: React.FC = () => {
         loadFiles();
     }, []);
 
+    useEffect(() => {
+        if (fileId) {
+            setSelectedFileId(fileId);
+            handleFileSelectLogic(fileId);
+        }
+    }, [fileId]);
+
     const loadFiles = async () => {
         try {
             const data = await api.opex.listUploadedFiles();
@@ -31,20 +41,26 @@ export const ViewerPPTX: React.FC = () => {
     };
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const fileId = e.target.value;
-        setSelectedFileId(fileId);
+        const newFileId = e.target.value;
+        // Update URL to reflect selection
+        navigate(`/opex/view/${newFileId}`);
+        // Logic handled by useEffect on fileId param change, but strictly speaking we might want to just set it here if no param based routing was used
+        // But since we want permalinks, navigating is better.
+    };
+
+    const handleFileSelectLogic = async (id: string) => {
         setSlidesHeader([]);
         setSlideData(null);
         setCurrentSlideIndex(0);
 
-        if (fileId) {
+        if (id) {
             setLoadingData(true);
             try {
-                const headers = await api.opex.getFileHeader(fileId);
+                const headers = await api.opex.getFileHeader(id);
                 setSlidesHeader(headers);
                 // Automatically fetch first slide if available
                 if (headers && headers.length > 0) {
-                    await loadSlide(fileId, headers[0].slide_id);
+                    await loadSlide(id, headers[0].slide_id);
                 }
             } catch (error) {
                 console.error("Error loading headers", error);

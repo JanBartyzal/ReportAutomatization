@@ -1,0 +1,57 @@
+{
+  "success": true,
+  "table": {
+    "type": "pseudo_table",
+    "confidence_score": 0.85,
+    "bbox": [
+      771788.0,
+      1108515.0,
+      11817346.0,
+      4743422.0
+    ],
+    "data": [
+      [
+        "Cost Category",
+        "Main saving initiatives description (focus on non-comp)",
+        "Net saving 2024 (M€)",
+        "Additional net saving 2024 (M€)"
+      ],
+      [
+        "Text Category",
+        "Text row\nText row",
+        "-21.4\n+2.2",
+        "-2"
+      ],
+      [
+        "Text Category",
+        "Text row",
+        "-1.9",
+        "."
+      ],
+      [
+        "Text Category",
+        "Text row\nText row\nText row",
+        "-3.2\n-5.53\n-0.3",
+        "."
+      ],
+      [
+        "Text Category",
+        null,
+        "-1.15\n-0.42",
+        "."
+      ],
+      [
+        "Text Category",
+        "Text row\nText row",
+        "-5.11",
+        "."
+      ],
+      [
+        null,
+        "Text row",
+        null,
+        null
+      ]
+    ]
+  }
+}

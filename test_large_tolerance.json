@@ -1,0 +1,41 @@
+{
+  "tables_detected": 1,
+  "results": [
+    {
+      "type": "pseudo_table",
+      "confidence_score": 0.93,
+      "bbox": [
+        771788.0,
+        1108515.0,
+        11817346.0,
+        3128132.0
+      ],
+      "data": [
+        [
+          "Cost Category",
+          "Main desc",
+          "Net saving",
+          "Additional saving"
+        ],
+        [
+          "Text Category",
+          "Text row Text row",
+          "-21.4",
+          "-2"
+        ],
+        [
+          "Text Category",
+          "Text row",
+          "-1.9",
+          "."
+        ],
+        [
+          "Text Category",
+          "Text row Text row Text row",
+          "-3.2",
+          "."
+        ]
+      ]
+    }
+  ]
+}

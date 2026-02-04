@@ -350,6 +350,7 @@ async def get_list_uploaded_files(
             "id": file.id,
             "filename": file.filename,
             "md5hash": file.md5hash,
+            "batch_id": str(file.batch_id) if file.batch_id else None,
             "region": file.region.region if file.region else "",
             "created_at": file.created_at.isoformat() if file.created_at else None
         })

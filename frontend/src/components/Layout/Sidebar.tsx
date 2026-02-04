@@ -8,9 +8,8 @@ const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
     { icon: Table, label: 'Aggregation', to: '/aggregation' },
     { icon: LayoutDashboard, label: 'Opex', to: '/opex/dashboard' },
-    { icon: Database, label: 'Import Pptx Opex', to: '/import/upload/opex/pptx' },
-    { icon: Database, label: 'Import Excel Opex', to: '/import/upload/opex/excel' },
-
+    { icon: Database, label: 'Import Opex', to: '/import/upload' },
+    { icon: Database, label: 'Opex Overview', to: '/opex' },
     { icon: Server, label: 'Admin', to: '/admin', adminOnly: true },
 ];
 
