@@ -27,3 +27,5 @@ class SlideData(BaseModel):
     pseudo_tables: List[Dict[str, Any]] = []
     image_data: List[Dict[str, Any]]
     text_content: List[str] = []
+    ollama_slide_image: Optional[str] = None # Base64
+    ollama_prompt: Optional[str] = None

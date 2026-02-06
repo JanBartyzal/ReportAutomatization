@@ -65,7 +65,7 @@ PPTX-AI-Analyzer is a **secure, production-ready** AI-powered microservices plat
 | **Backend API** | Python FastAPI | Business logic, authentication, data routing |
 | **Orchestration** | N8N | ETL workflows, async processing pipelines |
 | **AI/LLM** | LiteLLM Proxy | Unified interface for Azure OpenAI / Ollama |
-| **Vision AI** | DeepSeek-OCR | Table extraction from images |
+| **Vision AI** | LLava or DeepSeek-OCR | Table extraction from images |
 | **OCR** | Tesseract | Fallback text recognition |
 | **Database** | PostgreSQL + pgvector | Structured data + vector embeddings for RAG |
 | **Cache** | Redis | Image hash-based deduplication |

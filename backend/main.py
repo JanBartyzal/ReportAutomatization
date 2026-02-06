@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.models import Base
 from app.core.database import engine
-from app.routers import admin, imports, opex, reports, vector, analytics, batches
+from app.routers import admin, imports, opex, reports, vector, analytics, batches, ollama
 from app.core.cache import cache
 from app.identity import main as identity_main,dev_routes,sso_routes
 from app.core.configmanager import Get_Key
@@ -67,6 +67,7 @@ app.include_router(opex.router, prefix="/api/opex", tags=["opex"])
 app.include_router(reports.router, prefix="/api/report", tags=["report"])
 app.include_router(vector.router, prefix="/api/vector", tags=["vector"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
+app.include_router(ollama.router, prefix="/api", tags=["ollama"])
 
 
 env = Get_Key("ENVIRONMENT")

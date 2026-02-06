@@ -62,7 +62,7 @@ async def run_opex(
     """
     print(f"OPEX processing requested by user: {user.email} (ID: {user.id})")
     opex_manager = OpexManager()
-    opex_manager.process_opex(file_id, db)
+    await opex_manager.process_opex(file_id, db)
     return {"message": "Processing started", "user": user.id}
 
 
@@ -86,7 +86,7 @@ async def get_file_header(
         List of slide summaries
     """
     opex_manager = OpexManager()
-    result = opex_manager.get_presetation_header(file_id, db)
+    result = await opex_manager.get_presetation_header(file_id, db)
     return result
 
 
@@ -112,5 +112,5 @@ async def get_slide_data(
         List containing slide data
     """
     opex_manager = OpexManager()
-    result = opex_manager.get_slide_data(file_id, slide_id, db)
+    result = await opex_manager.get_slide_data(file_id, slide_id, db)
     return result

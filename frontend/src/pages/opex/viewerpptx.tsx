@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     Title2, Card, CardHeader, Text,
     LargeTitle, Body1, Button, Spinner,
-    Select
+    Select, Accordion, AccordionHeader, AccordionItem, AccordionPanel,
+    Image, Divider
 } from '@fluentui/react-components';
 import { ArrowLeft24Regular, ArrowRight24Regular } from '@fluentui/react-icons';
 import { api } from '../../api/endpoints';
@@ -176,6 +177,78 @@ export const ViewerPPTX: React.FC = () => {
                                     <Text style={{ display: 'block', marginTop: '0.5rem', fontStyle: 'italic', color: '#888' }}>Žádné tabulky</Text>
                                 )}
                             </div>
+
+                            <Divider />
+
+                            {/* Debug Information */}
+                            <Accordion collapsible>
+                                <AccordionItem value="debug">
+                                    <AccordionHeader>Debug Information (Extraction Details)</AccordionHeader>
+                                    <AccordionPanel>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', padding: '1rem' }}>
+
+                                            {/* Extracted Images */}
+                                            <div>
+                                                <Text weight="semibold" size={400}>Extrahované obrázky ({slideData.image_data?.length || 0}):</Text>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '1rem' }}>
+                                                    {slideData.image_data?.map((img: any, idx: number) => (
+                                                        <div key={idx} style={{ border: '1px solid #ddd', padding: '5px', borderRadius: '4px' }}>
+                                                            <img
+                                                                src={`data:image/png;base64,${img.image_base64}`}
+                                                                alt={`Extracted ${idx}`}
+                                                                style={{ maxWidth: '200px', maxHeight: '200px', display: 'block' }}
+                                                            />
+                                                            <Text size={100} style={{ display: 'block', textAlign: 'center', marginTop: '4px' }}>Image {idx + 1}</Text>
+                                                        </div>
+                                                    ))}
+                                                    {(!slideData.image_data || slideData.image_data.length === 0) && (
+                                                        <Text size={200} italic>Žádné přímo extrahované obrázky</Text>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Ollama Processing Image */}
+                                            {slideData.ollama_slide_image && (
+                                                <div>
+                                                    <Text weight="semibold" size={400}>Stránka jako PNG (pro Ollama OCR validaci):</Text>
+                                                    <div style={{ marginTop: '1rem', border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden', maxWidth: '800px' }}>
+                                                        <img
+                                                            src={`data:image/png;base64,${slideData.ollama_slide_image}`}
+                                                            alt="Ollama Slide"
+                                                            style={{ width: '100%', height: 'auto', display: 'block' }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Ollama Prompt */}
+                                            {slideData.ollama_prompt && (
+                                                <div>
+                                                    <Text weight="semibold" size={400}>Ollama OCR Prompt:</Text>
+                                                    <div style={{
+                                                        marginTop: '0.5rem',
+                                                        whiteSpace: 'pre-wrap',
+                                                        background: '#1e1e1e',
+                                                        color: '#d4d4d4',
+                                                        padding: '1rem',
+                                                        borderRadius: '4px',
+                                                        fontFamily: 'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
+                                                        fontSize: '0.85rem',
+                                                        maxHeight: '400px',
+                                                        overflowY: 'auto'
+                                                    }}>
+                                                        {slideData.ollama_prompt}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {!slideData.ollama_slide_image && !slideData.ollama_prompt && (
+                                                <Text size={200} italic>Žádné Ollama OCR debug informace (pravděpodobně použita nativní extrakce)</Text>
+                                            )}
+                                        </div>
+                                    </AccordionPanel>
+                                </AccordionItem>
+                            </Accordion>
                         </div>
                     )}
                 </div>

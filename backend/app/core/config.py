@@ -96,7 +96,7 @@ class Settings(BaseSettings):
     )
     
     ollama_ocr_model: str = Field(
-        default="deepseek-ocr:latest",
+        default="llava",
         description="Ollama model for OCR and table extraction",
         validation_alias="OLLAMA_OCR_MODEL"
     )

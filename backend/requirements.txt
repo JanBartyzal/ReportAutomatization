@@ -45,6 +45,8 @@ azure-keyvault-keys
 azure-keyvault-certificates
 python-jose[cryptography] 
 passlib[bcrypt] 
+spire-presentation
+pythonnet
 
 
 

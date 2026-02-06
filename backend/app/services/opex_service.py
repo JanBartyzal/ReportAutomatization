@@ -32,7 +32,7 @@ class OpexManager:
         self.powerpoint_manager = PowerpointManager()
         self.table_data_processor = TableDataProcessor()
 
-    def process_opex(self, file_id: str, db: Session) -> None:
+    async def process_opex(self, file_id: str, db: Session) -> None:
         """
         Process OPEX file and extract all slides.
         
@@ -52,12 +52,12 @@ class OpexManager:
             raise HTTPException(status_code=404, detail="File not found on disk")
         
         presentation = self.powerpoint_manager.load_powerpoint(file_path)
-        slides = self.powerpoint_manager.extract_slides(presentation)
+        slides = await self.powerpoint_manager.extract_slides(presentation)
 
         for slide in slides:
             logger.info(f"Processed slide {slide.slide_index}: {slide.title}")
 
-    def get_presetation_header(self, file_id: str, db: Session) -> List[Dict[str, Any]]:
+    async def get_presetation_header(self, file_id: str, db: Session) -> List[Dict[str, Any]]:
         """
         Get presentation header information (slide summary).
         
@@ -85,7 +85,8 @@ class OpexManager:
             raise HTTPException(status_code=404, detail="File not found on disk")
         
         presentation = self.powerpoint_manager.load_powerpoint(file_path)
-        slides = self.powerpoint_manager.extract_slides(presentation)
+        slides = await self.powerpoint_manager.extract_slides(presentation)
+
         headdata = []
 
         for slide in slides:
@@ -100,7 +101,7 @@ class OpexManager:
 
         return headdata
 
-    def get_slide_data(self, file_id: str, slide_id: int, db: Session) -> List[Dict[str, Any]]:
+    async def get_slide_data(self, file_id: str, slide_id: int, db: Session) -> List[Dict[str, Any]]:
         """
         Get detailed data for a specific slide.
         
@@ -138,7 +139,7 @@ class OpexManager:
 
         # Extract specific slide (0-based index for access)
         target_slide = presentation.slides[slide_id - 1]
-        slide = self.powerpoint_manager.extract_slide(target_slide, slide_id)
+        slide = await self.powerpoint_manager.extract_slide(target_slide, slide_id)
         
         headdata = []
         
@@ -157,7 +158,10 @@ class OpexManager:
             "table_data": tables_list,
             # Count images for this slide (extracted_images contains objects with 'image_base64')
             "image_data_count": len(slide.image_data),
-            "text_content_count": len(slide.text_content)
+            "text_content_count": len(slide.text_content),
+            "image_data": slide.image_data,
+            "ollama_slide_image": slide.ollama_slide_image,
+            "ollama_prompt": slide.ollama_prompt
         }
         headdata.append(info)
 

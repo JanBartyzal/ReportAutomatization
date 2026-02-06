@@ -141,3 +141,6 @@ frontend/node_modules/*
 .venv
 
 litellm_config.yaml
+
+owebui-data/
+owebui-data/*
