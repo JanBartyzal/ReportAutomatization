@@ -5,7 +5,8 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
     plugins: [react()],
     server: {
-        host: true, // Povolí přístup zvenčí kontejneru
+        //host: true, // Povolí přístup zvenčí kontejneru
+        host: '0.0.0.0',
         port: 5173,
         proxy: {
             '/api': {
@@ -14,6 +15,7 @@ export default defineConfig({
                 secure: false,
             },
         },
+        allowedHosts: ['bartwin10'], // Povolit přístup z konkrétního hosta
         strictPort: true,
         watch: {
             usePolling: true // Nutné pro Docker na Windows/Mac
