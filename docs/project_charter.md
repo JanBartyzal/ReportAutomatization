@@ -1,108 +1,149 @@
 # Project Charter: PPTX Analyzer & Automation Platform
-Popis projektu: Webová aplikace pro bezpečný upload, analýzu a vizualizaci dat z PPTX prezentací (se zaměřením na OPEX a finanční reporty), postavená na Reactu a Pythonu, zabezpečená přes Azure Entra ID.
+Version: 2.0 (Microservices + N8N Orchestration)
+Status: DRAFT / INITIATION
+Architecture Pattern: Event-Driven Microservices with Low-Code Orchestration
+Docs Reference: docs/project_standards.md, docs/dod_criteria.md
 
-**1. Technická Architektura**
-Frontend (Client)
-Framework: React 18+ (Vite)
-Jazyk: TypeScript
-State Management: TanStack Query (React Query) – pro server state.
-Styling: Tailwind CSS + Fluent UI (Microsoft Design Language).
-Routing: React Router DOM.
-HTTP Client: Axios (s interceptory).
-Backend (Server)
-Framework: Python FastAPI.
-Auth Library: fastapi-azure-auth.
-API Standard: REST.
+# Executive Summary
+Cílem projektu je vybudovat robustní, škálovatelnou platformu pro bezpečný příjem, analýzu a vizualizaci dat z nestrukturovaných souborů (PPTX, Excel, PDF). Systém se zaměřuje na automatizaci extrakce finančních dat (OPEX reporty) a jejich převod do strukturované podoby pro BI a analytiku.
 
-Infrastruktura
-Kontejnerizace: Docker & Docker Compose.
-Identita: Azure Entra ID (bývalé Azure AD).
+Architektura je postavena jako sada mikroslužeb (Polyglot: Java/Python), kde business logiku a tok dat řídí N8N orchestrátor. Frontend je oddělená React aplikace zabezpečená přes Azure Entra ID.
 
-**2. Implementační Checklist (Scope)**
+# High-Level Architecture
+Systém se skládá ze čtyř vrstev:
 
-**A. Autentizace a Bezpečnost (Azure Entra ID)**
-Toto byla nejkritičtější část. Je nutné zajistit:
-[ ] Registrace Aplikace v Azure:
-[ ] Nastaveno Redirect URI: http://localhost:5173 (Dev) a produkční URL.
-[ ] Manifest: Nastaveno "accessTokenAcceptedVersion": 2 (pro kompatibilitu s Python backendem).
-[ ] Expose an API: Vytvořen scope (např. user_impersonation nebo access_as_user).
-[ ] API Permissions: Aplikace má přidělená oprávnění sama k sobě (Delegated) a udělený Admin Consent.
-[ ] Frontend Auth (MSAL v3):
-[ ] main.tsx: Inicializace PublicClientApplication a handling handleRedirectPromise (automaticky přes Provider).
-[ ] App.tsx: Obalení routování pomocí <MsalProvider>.
-[ ] Použití <AuthenticatedTemplate> pro chráněné routy.
-[ ] Použití <UnauthenticatedTemplate> pro redirect na Login.
-[ ] Login Flow:
-[ ] Ošetření "Race Condition" (interaction_in_progress) v komponentě Login.tsx.
-[ ] Tlačítko pro Login (Popup nebo Redirect flow).
-[ ] Tlačítko pro Logout.
+Presentation Layer: React Frontend (SPA).
+Ingestion Layer: API Gateway + Ingestor Service (dumb & fast).
+Processing Layer: N8N Orchestrator řídící bezstavové "Atomizers" (Python/Java Workers).
+Persistence Layer: "Sinks" (Storage APIs) a databáze (Postgres, Mongo, Vector DB, Blob).
 
-**B. Komunikace s API (Axios & Tokeny)**
-Zajištění, že každý request má platný Bearer token.
-[ ] Axios Instance (src/axios.ts):
-[ ] Vytvoření centralizované instance Axiosu.
-[ ] Interceptor: Automatické vložení Authorization: Bearer <token> do hlavičky každého requestu.
-[ ] Logika Interceptoru:
-[ ] Získání ActiveAccount z MSAL.
-[ ] Fallback: Pokud není aktivní účet, vzít první ze seznamu getAllAccounts().
-[ ] Volání acquireTokenSilent se správným Scope (shodným s Azure).
-[ ] API Endpoints:
-[ ] Handling HTTP 401 (Unauthorized) – frontend by měl poznat vypršení session.
+# Technical Standards & Constraints
+Dle docs/STANDARDS.md a docs/dod_criteria.md.
+Backend Core: Java 21 + Spring Boot 3 + GraalVM Native Image.
+Backend AI/Data: Python + FastAPI + Pydantic.
+Frontend: React 18 + Vite + TypeScript + Tailwind CSS.
+Communication: Dapr Sidecars (gRPC internal, REST external).
+Auth: Azure Entra ID, Token v2, Scope api://<client_id>/access_as_user.
+Documentation: Každý modul má README.md s Mermaid diagramem a test-result.md.
+Testing: Unit testy pro logiku, Mocking externích služeb.
 
-**C. Hlavní Funkce Aplikace (Features)**
-**1. Dashboard & Navigace**
-[ ] Layout: Hlavní šablona s horní lištou (UserInfo, Logout) a bočním menu.
-[ ] Routing:
-[ ] / -> Dashboard (přehled).
-[ ] /analytics -> Analytika.
+## Technology Stack Versions
+| Komponenta | Technologie | Verze (Min) |
+| --- | --- | --- |
+| **Runtime** | Python | 3.11+ |
+| **Runtime** | Node.js | 20 (LTS) |
+| **Runtime** | Java (JDK) | 21 (LTS) |
+| **Container** | Docker | Latest |
+| **Orchestrator** | n8n | Latest Stable |
+| **DB** | PostgreSQL | 16 |
+| **Vector DB** | Qdrant | Latest |
 
-[ ] /admin -> Admin sekce.
-[ ] /opex/dashboard -> Specializovaný OPEX dashboard.
-[ ] /import/opex/pptx -> Upload pro OPEX Powerpoint.
-[ ] /import/opex/excel -> Upload pro OPEX Excel.
 
-**2. Práce se soubory (Upload & List)**
-[ ] Seznam souborů:
-[ ] Fetch dat z API (/api/import/get-list-uploaded-files).
-[ ] Zobrazení stavu načítání (isLoading) a chyb (isError, Error Boundary).
-[ ] Upload souborů:
-[ ] Drag & Drop zóna nebo tlačítko pro výběr.
-[ ] Progress bar (využití onUploadProgress v Axiosu).
-[ ] Podpora .pptx formátu.
-[ ] Podpora .xlsx formátu.
-[ ] Odeslání na endpointy /api/import/upload nebo /api/import/uploadopex.
-[ ] Invalidace React Query cache po úspěšném uploadu (auto-refresh seznamu).
+## Ports Allocation
+| Služba | Port Host | Port Container | Debug Port |
+| --- | --- | --- | --- |
+| **Frontend (Vite)** | `3000` | `3000` | - |
+| **API Gateway (Traefik)** | `8080` | `80` | - |
+| **Auth Service** | `8081` | `8000` | `5005` |
+| **File Ingestor** | `8082` | `8000` | `5006` |
+| **PPTX Atomizer** | `8090` | `8000` | `5678` |
+| **Excel Atomizer** | `8091` | `8000` | `5679` |
+| **Sink: Table API** | `8100` | `8080` | `5005` |
+| **n8n Webhook Listener** | `5678` | `5678` | - |
+| **PostgreSQL** | `5432` | `5432` | - |
+| **Redis** | `6379` | `6379` | - |
 
-**D. DevOps & Deployment**
-[ ] Docker Compose:
-[ ] Služba frontend: Mapování portů, volume pro hot-reload (pokud je v dev), předání ENV proměnných.
-[ ] Služba backend: Python container.
-[ ] Environment Variables (.env):
+## Libraries
 
-[ ] ENVIRONMENT
-[ ] API_URL
-[ ] AZURE_CLIENT_ID
-[ ] AZURE_TENANT
-[ ] AZURE_REDIRECT_URI
+### Frontend (React)
+- **Build Tool:** Vite
+- **State Management:** TanStack Query (Server State), Zustand (Client State).
+- **UI Framework:** Tailwind CSS + Radix UI / Shadcn.
+- **HTTP Client:** Axios (s nastavenými interceptory).
+
+### Backend - Python (FastAPI)
+- **Web Framework:** FastAPI + Uvicorn.
+- **Validace:** Pydantic v2.
+- **HTTP Client:** Httpx (Async).
+- **Testing:** Pytest.
+
+### Backend - Java (Spring Boot)
+- **Web Framework:** Spring Boot Web.
+- **DB Access:** Spring Data JPA / Hibernate.
+- **Testing:** JUnit 5 + Mockito.
 
 
 
-[ ] Soulad názvů proměnných v docker-compose.yml a v aplikaci.
+# Definition of Done (DoD) Checklist
+Před uzavřením jakékoliv Feature (FS) musí být splněno:
+- Code Quality: Linting (ESLint/Black/Checkstyle) bez chyb.
+- Tests: Unit testy pokrývají novou logiku, Happy path i Edge cases.
+- Security: Žádné hardcoded secrets, Auth tokeny validovány.
+- Docs: Aktualizované README a Mermaid diagramy.
+- Build: CI pipeline prošla (Build + Test).
 
-**3. Známá rizika a řešení (Lessons Learned)**
-Chyba 401 (Invalid Issuer):
-Řešení: Vždy zkontrolovat v Azure Manifestu accessTokenAcceptedVersion: 2.
+# Known Risks
+N8N Payload Size: Přenášení velkých JSONů (base64 obrázky) přes N8N může způsobit memory issues. Mitigace: Atomizers ukládají binárky do Blobu a vrací jen URL.
+Auth Complexity: Synchronizace tokenů mezi Frontend -> Gateway -> N8N -> Backend. Mitigace: Strict Token Propagation policies.
 
-Chyba 401 (Invalid Scope / 65005):
-Řešení: Scope v authConfig.ts (např. api://<id>/user_impersonation) musí přesně sedět s tím v Azure "Expose an API".
+# Scope & Feature Sets (FS)
 
-MSAL Interaction in Progress:
-Řešení: Nevolat loginRedirect okamžitě při renderu, pokud je status startup nebo handle_redirect. Vždy kontrolovat inProgress === InteractionStatus.None.
+## FS01: Infrastructure & Core
+Focus: Základní kameny aplikace.
+- API Gateway: (Traefik/APIM) Routing /api/auth, /api/upload, /api/query. SSL terminace, Rate limiting.
+- Service Discovery: Implementace Dapr sidecars pro vzájemnou komunikaci služeb (mSD).
+- Centralized Auth: Validace Azure Entra ID tokenů (v2.0) na úrovni Gateway/Middleware. RBAC role.
 
-Chybějící Token v Requestu:
-Řešení: Nepoužívat v komponentách import axios from 'axios', ale vždy import api from '../axios'.
+## FS02: The Ingestor (Input)
+Služba optimalizovaná na rychlý příjem dat.
+- Endpoint: POST /upload.
+- Stream Upload: Přímý stream do Blob Storage (S3/Azure Blob).
+- Validation: Kontrola MIME types a magic numbers.
+- Trigger: Po úspěšném uložení volá N8N Webhook s file_id.
+- Metadata: Zápis do Metadata DB (User, Timestamp, Size).
 
-**4. Další kroky (To-Do)**
-[ ] Implementovat Error Boundary komponentu pro hezčí zobrazení pádů (místo bílé obrazovky).
-[ ] Dokončit vizualizaci dat na Opex Dashboardu (grafy, tabulky).
-[ ] Přidat validaci souborů na straně klienta (velikost, typ) před odesláním.
+## FS03: The Atomizers (Stateless Extractors)
+Sada izolovaných Python kontejnerů pro extrakci dat. Volány výhradně přes N8N.
+
+- PPTX Structure Atomizer: POST /extract/pptx -> Vrací JSON strukturu prezentace (seznam SlideID, Headers).
+- PPTX Content Atomizer: POST /extract/pptx/slide -> Extrahuje texty a tabulky z konkrétního slidu.
+- PPTX Slide Atomizer: POST /extract/pptx/slide -> Vrací slide jako image (PNG) 800x600
+- Excel Atomizer: POST /extract/excel -> Vrací seznam listů.
+- Excel Table Atomizer: POST /extract/excel/sheet -> Konverze listu na JSON.
+- PDF/OCR Atomizer: Služba pro skenované dokumenty.
+- MetaTable Logic: Algoritmus pro rekonstrukci tabulek na základě vizuálních oddělovačů (tab/space) dle hlavičky.
+- AI Gateway: Integrace LiteLLM pro sémantickou analýzu textu.
+
+## FS04: The Orchestrator (N8N) (JSON workflow)
+Business logika a workflow management.
+- Pipeline Workflow: Webhook (New File) -> Get Metadata -> Router (Type) -> Call Atomizer.
+- Batch Processing: Iterace přes jednotlivé slidy/listy (Node: Split In Batches).
+- Filter Logic: Rozhodování, zda je element Tabulka (-> SQL Sink) nebo Text (-> Vector Sink).
+- Error Handling: Retry logika pro failed atomizers.
+
+## FS05: The Sinks (Storage APIs) & Persistence
+Služby pro trvalé uložení zpracovaných dat.
+- Table API (Java/Spring): Ukládání strukturovaných dat do PostgreSQL.
+- Document API (Python/FastAPI): Ukládání nestrukturovaného JSONu (PostgreSQL) a Vector Embeddings (pgVector).
+- Log API: Audit trail zpracování souboru.
+- Databases:
+    - PostgreSQL (Metadata & Relational Data).
+    - Redis (Cache & Session).
+Blob Storage (Physical Files).
+
+## FS06: Analytics & Query (Read Model)
+- CQRS Read API: Služba optimalizovaná pro rychlé čtení dat pro frontend.
+- Dashboard Aggregation: Endpointy pro grafy a souhrny.
+- Full-text Search: Integrace s ElasticSearch nebo PostgreSQL FTS.
+
+## FS07: Frontend (React)
+- Auth Integration: MSAL Provider, Login/Logout, Token Refresh (Axios Interceptor).
+- Upload Manager: Drag&Drop zóna, Progress bar, automatický refresh seznamu po uploadu (React Query).
+- Viewer Module: Read-only zobrazení parsovaných dat (slide by slide).
+- Dashboard: Vizualizace finančních dat (grafy, tabulky).
+
+## FS08: DevOps & Observability
+- CI/CD: Pipelines pro Linting, Testy, Build Docker Image.
+- Monitoring: OpenTelemetry tracing (Frontend -> Gateway -> N8N -> Atomizer).
+- Logs: Centralizované logování (ELK/Loki).
+- Metrics: Prometheus + Grafana (chybovost, délka fronty).

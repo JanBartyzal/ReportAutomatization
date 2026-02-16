@@ -14,8 +14,8 @@ class OllamaOCRService:
         """Initialize Ollama OCR service."""
         self.base_url = settings.ollama_base_url
         #self.model = settings.ollama_ocr_model
-        self.model = "llava"
-        #self.model = "glm-ocr:latest"
+        #self.model = "llava"
+        self.model = "glm-ocr:latest"
         self.timeout = settings.ollama_timeout
         
     async def extract_table_from_slide(

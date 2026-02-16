@@ -6,29 +6,22 @@
 **Instruction for AI:** Before responding that a task is finished, review your work against this checklist.
 
 
-## 1. Code Quality Check
-- [ ] **Linting:** Code passes all linter checks (ESLint, Pylint, Roslyn) without errors or warnings.
-- [ ] **Formatting:** Code is formatted according to the `project\_standards.md` (Prettier/Black/dotnet format).
-- [ ] **No Dead Code:** Unused imports, variables, and commented-out code blocks are removed.
-- [ ] **Type Safety:** No `any` types (TS) or missing type hints (Python) unless strictly justified.
+A. Code Quality & Integrity
+[ ] Linting & Formatting: Passes all checks (Checkstyle, Black, ESLint) per project_standards.md.
+[ ] No Dead Code: Unused imports and commented-out blocks are removed.
+[ ] Native Compatibility: (Java only) Code is verified to be "GraalVM Native-Image friendly".
+[ ] Security: No hardcoded secrets; input validation present; Entra ID scopes verified.
+[ ] Auth: Azure application manifest has token version set to v2.
+[ ] Tokens: Axios interceptor successfully renews tokens without user interaction (Silent Flow).
+[ ] UX: File upload triggers automatic refresh of file list (React Query invalidation).
 
-## 2. Functionality & Integrity
-- [ ] **Happy Path:** The code performs the requested function correctly.
-- [ ] **Edge Cases:** Basic edge cases (null inputs, empty lists, network failures) are handled gracefully.
-- [ ] **Security:** No secrets/API keys are hardcoded. Input validation is present.
+B. Documentation & Mermaid
+[ ] Module README: README.md updated with purpose and Dapr app-id.
+[ ] Mermaid Diagrams: README includes Sequence or Flowchart diagrams for the feature.
+[ ] Inline Docs: Complex logic explained (the why, not the what).
 
-## 3. Testing
-- [ ] **Unit Tests:** New logic is covered by unit tests.
-- [ ] **Pass Rate:** All specific tests related to the change pass successfully.
-- [ ] **Mocking:** External services are mocked in tests; no real API calls during testing.
-
-## 4. Documentation
-- [ ] **Inline Comments:** Complex logic is commented in English.
-- [ ] **Docstrings:** Classes and public functions have updated docstrings.
-- [ ] **Module README:** If a new file/module was created, `README.md` is created or updated.
-
-## 5. Project Specific Requirements
-- [ ] {{ INSERT: e.g., Migration file created }}
-- [ ] {{ INSERT: e.g., UI matches Figma design ID... }}
-- [ ] {{ INSERT: e.g., Swagger definition updated }}
+C. Testing & Results
+[ ] Unit Tests: New logic covered; external services (Dapr/LiteLLM) are mocked.
+[ ] test-result.md: This file is updated with the latest test execution summary and coverage %. Template file /docs/template-test-result.md
+[ ] Happy Path & Edges: Verified functionality including null inputs and network failures.
 
