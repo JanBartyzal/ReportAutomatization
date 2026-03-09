@@ -1,7 +1,7 @@
 # Microservices Decomposition – PPTX Analyzer & Automation Platform
-**Version:** 1.0  
-**Based on:** `docs/project_charter.md` v3.0  
-**Date:** 2026-02-18  
+**Version:** 2.0
+**Based on:** `docs/project_charter.md` v4.0
+**Date:** 2026-03-09
 
 ---
 
@@ -258,33 +258,38 @@ graph TB
 
 ## 5. Katalog Microservices (Units)
 
-| # | Unit ID | Název | Popis | FeatureSet | Tech Stack | Effort |
-|---|---------|-------|-------|------------|------------|--------|
-| 1 | **MS-FE** | Frontend SPA | React SPA – upload, viewer, dashboardy, notifikace (WebSocket/SSE), MSAL auth | FS09, FS11 | React 18 + Vite + TS + Tailwind | **XL** |
-| 2 | **MS-GW** | API Gateway | Traefik reverse proxy – routing, SSL terminace, rate limiting, ForwardAuth | FS01 | Traefik (config) | **S** |
-| 3 | **MS-AUTH** | Auth Service | Validace Azure Entra ID tokenů, RBAC engine, KeyVault integrace, API key validace | FS01, FS07 | Java 21 + Spring Boot | **L** |
-| 4 | **MS-ING** | File Ingestor | Streaming upload do Blob, MIME validace, metadata zápis, sanitizace, trigger N8N webhook | FS02 | Java 21 + Spring Boot | **L** |
-| 5 | **MS-SCAN** | Security Scanner | Antivirová kontrola přes ICAP/ClamAV sidecar | FS02 | ClamAV (sidecar/container) | **S** |
-| 6 | **MS-N8N** | N8N Orchestrator | Business workflow engine – routing, batch processing, retry, circuit breaker, DLQ | FS04 | N8N (JSON workflows) | **L** |
-| 7 | **MS-ATM-PPTX** | PPTX Atomizer | Extrakce struktury, textů, tabulek a slide images z PPTX souborů | FS03 | Python + FastAPI | **L** |
-| 8 | **MS-ATM-XLS** | Excel Atomizer | Parsování Excel souborů per-sheet do JSON, partial success handling | FS03, FS10 | Python + FastAPI | **M** |
-| 9 | **MS-ATM-PDF** | PDF/OCR Atomizer | OCR a extrakce textu ze skenovaných PDF dokumentů | FS03 | Python + FastAPI | **M** |
-| 10 | **MS-ATM-CSV** | CSV Atomizer | Konverze CSV souborů na strukturovaný JSON | FS03 | Python + FastAPI | **S** |
-| 11 | **MS-ATM-AI** | AI Gateway | LiteLLM integrace pro sémantickou analýzu, MetaTable logic, cost control (quotas) | FS03, FS12 | Python + FastAPI | **L** |
-| 12 | **MS-ATM-CLN** | Cleanup Worker | Cron/sidecar pro mazání dočasných souborů z Blob storage po expiraci | FS03 | Python (CronJob) | **S** |
-| 13 | **MS-SINK-TBL** | Table API (Sink) | Ukládání strukturovaných dat (tabulky, OPEX) do PostgreSQL | FS05 | Java 21 + Spring Boot | **M** |
-| 14 | **MS-SINK-DOC** | Document API (Sink) | Ukládání nestrukturovaného JSONu + vector embeddings (pgVector) | FS05 | Java 21 + Spring Boot | **M** |
-| 15 | **MS-SINK-LOG** | Log API (Sink) | Audit trail zpracování souborů – zápis processing logů | FS05 | Java 21 + Spring Boot | **S** |
-| 16 | **MS-QRY** | Query API (Read) | CQRS read model – optimalizované čtení pro frontend, caching (Redis) | FS06 | Java 21 + Spring Boot | **M** |
-| 17 | **MS-DASH** | Dashboard Aggregation | Endpointy pro grafy, souhrny, Group By / Sort, SQL nad JSON tabulkami | FS06, FS11 | Java 21 + Spring Boot | **L** |
-| 18 | **MS-SRCH** | Search Service | Full-text search přes ElasticSearch / PostgreSQL FTS + vector search | FS06 | Java 21 + Spring Boot | **M** |
-| 19 | **MS-ADMIN** | Admin Backend | Správa rolí (Admin/Editor/Viewer), holdingová hierarchie, secrets, API keys, Failed Jobs UI | FS07, FS08 | Java 21 + Spring Boot | **L** |
-| 20 | **MS-NOTIF** | Notification Center | In-app notifikace (WebSocket/SSE), e-mail alerty (SMTP/SendGrid), granulární nastavení | FS13 | Java 21 + Spring Boot | **M** |
-| 21 | **MS-TMPL** | Template & Schema Registry | UI pro mapování sloupců, learning z historie, voláno z N8N před uložením | FS15 | Java 21 + Spring Boot | **L** |
-| 22 | **MS-VER** | Versioning Service | Verzování dat (v1→v2), diff tool pro zobrazení změn mezi verzemi | FS14 | Java 21 + Spring Boot | **M** |
-| 23 | **MS-AUDIT** | Audit & Compliance | Immutable logy (kdo-kdy-co), read access log, AI audit (prompty/odpovědi), export | FS16 | Java 21 + Spring Boot | **M** |
-| 24 | **MS-MCP** | MCP Server (AI Agent) | Integrace AI agentů, On-Behalf-Of flow, token dědění, quotas | FS12 | Python + FastAPI | **L** |
-| 25 | **MS-BATCH** | Batch & Org Service | Seskupování souborů do batchů, holdingová metadata, RLS enforcement | FS08 | Java 21 + Spring Boot | **M** |
+| # | Unit ID | Function ID | Název | Popis | FeatureSet | Tech Stack | Effort |
+|---|---------|-------------|-------|-------|------------|------------|--------|
+| 1 | MS-FE | **MS-FE** | Frontend SPA | React SPA – upload, viewer, dashboardy, notifikace (WebSocket/SSE), MSAL auth | FS09, FS11 | React 18 + Vite + TS + Tailwind | **XL** |
+| 2 | MS-GW | **MS-GW** | API Gateway | Traefik reverse proxy – routing, SSL terminace, rate limiting, ForwardAuth | FS01 | Traefik (config) | **S** |
+| 3 | MS-CORE | **MS-AUTH** | Auth Service | Validace Azure Entra ID tokenů, RBAC engine, KeyVault integrace, API key validace | FS01, FS07 | Java 21 + Spring Boot | **L** |
+| 4 | MS-INGESTOR | **MS-ING** | File Ingestor | Streaming upload do Blob, MIME validace, metadata zápis, sanitizace, trigger N8N webhook | FS02 | Java 21 + Spring Boot | **L** |
+| 5 | MS-INGESTOR | **MS-SCAN** | Security Scanner | Antivirová kontrola přes ICAP/ClamAV sidecar | FS02 | ClamAV (sidecar/container) | **S** |
+| 6 | MS-N8N | **MS-N8N** | N8N Orchestrator | Business workflow engine – routing, batch processing, retry, circuit breaker, DLQ | FS04 | N8N (JSON workflows) | **L** |
+| 7 | MS-PROCESSOR | **MS-ATM-PPTX** | PPTX Atomizer | Extrakce struktury, textů, tabulek a slide images z PPTX souborů | FS03 | Python + FastAPI | **L** |
+| 8 | MS-PROCESSOR | **MS-ATM-XLS** | Excel Atomizer | Parsování Excel souborů per-sheet do JSON, partial success handling | FS03, FS10 | Python + FastAPI | **M** |
+| 9 | MS-PROCESSOR | **MS-ATM-PDF** | PDF/OCR Atomizer | OCR a extrakce textu ze skenovaných PDF dokumentů | FS03 | Python + FastAPI | **M** |
+| 10 | MS-PROCESSOR | **MS-ATM-CSV** | CSV Atomizer | Konverze CSV souborů na strukturovaný JSON | FS03 | Python + FastAPI | **S** |
+| 11 | MS-AI | **MS-ATM-AI** | AI Gateway | LiteLLM integrace pro sémantickou analýzu, MetaTable logic, cost control (quotas) | FS03, FS12 | Python + FastAPI | **L** |
+| 12 | MS-PROCESSOR | **MS-ATM-CLN** | Cleanup Worker | Cron/sidecar pro mazání dočasných souborů z Blob storage po expiraci | FS03 | Python (CronJob) | **S** |
+| 13 | MS-DATA | **MS-SINK-TBL** | Table API (Sink) | Ukládání strukturovaných dat (tabulky, OPEX) do PostgreSQL | FS05 | Java 21 + Spring Boot | **M** |
+| 14 | MS-DATA | **MS-SINK-DOC** | Document API (Sink) | Ukládání nestrukturovaného JSONu + vector embeddings (pgVector) | FS05 | Java 21 + Spring Boot | **M** |
+| 15 | MS-DATA | **MS-SINK-LOG** | Log API (Sink) | Audit trail zpracování souborů – zápis processing logů | FS05 | Java 21 + Spring Boot | **S** |
+| 16 | MS-DATA | **MS-QRY** | Query API (Read) | CQRS read model – optimalizované čtení pro frontend, caching (Redis) | FS06 | Java 21 + Spring Boot | **M** |
+| 17 | MS-DATA | **MS-DASH** | Dashboard Aggregation | Endpointy pro grafy, souhrny, Group By / Sort, SQL nad JSON tabulkami | FS06, FS11 | Java 21 + Spring Boot | **L** |
+| 18 | MS-DATA | **MS-SRCH** | Search Service | Full-text search přes ElasticSearch / PostgreSQL FTS + vector search | FS06 | Java 21 + Spring Boot | **M** |
+| 19 | MS-CORE | **MS-ADMIN** | Admin Backend | Správa rolí (Admin/Editor/Viewer), holdingová hierarchie, secrets, API keys, Failed Jobs UI | FS07, FS08 | Java 21 + Spring Boot | **L** |
+| 20 | MS-CORE | **MS-NOTIF** | Notification Center | In-app notifikace (WebSocket/SSE), e-mail alerty (SMTP/SendGrid), granulární nastavení | FS13 | Java 21 + Spring Boot | **M** |
+| 21 | MS-DATA | **MS-TMPL** | Template & Schema Registry | UI pro mapování sloupců, learning z historie, voláno z N8N před uložením | FS15 | Java 21 + Spring Boot | **L** |
+| 22 | MS-CORE | **MS-VER** | Versioning Service | Verzování dat (v1→v2), diff tool pro zobrazení změn mezi verzemi | FS14 | Java 21 + Spring Boot | **M** |
+| 23 | MS-CORE | **MS-AUDIT** | Audit & Compliance | Immutable logy (kdo-kdy-co), read access log, AI audit (prompty/odpovědi), export | FS16 | Java 21 + Spring Boot | **M** |
+| 24 | MS-AI | **MS-MCP** | MCP Server (AI Agent) | Integrace AI agentů, On-Behalf-Of flow, token dědění, quotas | FS12 | Python + FastAPI | **L** |
+| 25 | MS-CORE | **MS-BATCH** | Batch & Org Service | Seskupování souborů do batchů, holdingová metadata, RLS enforcement | FS08 | Java 21 + Spring Boot | **M** |
+| 26 | MS-REPORTING | **MS-LIFECYCLE** | Report Lifecycle Service | Správa stavového automatu reportů, submission checklist, rejection flow, hromadné akce | FS17 | Java 21 + Spring Boot | **L** |
+| 27 | MS-REPORTING | **MS-TMPL-PPTX** | PPTX Template Manager | Nahrávání, verzování a správa PPTX šablon; extrakce placeholderů; mapování na datové zdroje | FS18 | Java 21 + Spring Boot | **L** |
+| 28 | MS-AI | **MS-GEN-PPTX** | PPTX Generator | Renderování PPTX ze zdrojových dat + šablony; placeholder substituce; grafy; batch generování | FS18 | Python + FastAPI (python-pptx, matplotlib) | **L** |
+| 29 | MS-REPORTING | **MS-FORM** | Form Builder & Data Collection | Definice formulářů, správa verzí, sběr dat, validace, Excel import, napojení na MS-LIFECYCLE | FS19 | Java 21 + Spring Boot | **XL** |
+| 30 | MS-REPORTING | **MS-PERIOD** | Reporting Period Manager | Správa period a deadlinů, automatické uzavírání, completion tracking, eskalace, historické srovnání | FS20 | Java 21 + Spring Boot | **M** |
 
 ---
 
@@ -423,16 +428,31 @@ graph LR
 ## 10. Doporučený rollout (fáze)
 
 ### Phase 1 – MVP Core (FS01 + FS02 + FS03-PPTX + FS04 + FS05 + FS09-basic)
-> MS-GW, MS-AUTH, MS-ING, MS-SCAN, MS-N8N, MS-ATM-PPTX, MS-SINK-TBL, MS-SINK-LOG, MS-FE (upload + viewer)
+> MS-GW, MS-AUTH, MS-ING, MS-SCAN, MS-N8N, MS-ATM-PPTX, MS-SINK-TBL, MS-SINK-DOC, MS-SINK-LOG, MS-FE (upload + viewer)
 
 ### Phase 2 – Extended Parsing (FS03-rest + FS10 + FS06)
 > MS-ATM-XLS, MS-ATM-PDF, MS-ATM-CSV, MS-ATM-CLN, MS-QRY, MS-DASH
 
-### Phase 3 – Intelligence & Admin (FS07 + FS08 + FS12 + FS15)
+### Phase 3a – Intelligence & Admin (FS07 + FS08 + FS12 + FS15)
 > MS-ADMIN, MS-BATCH, MS-ATM-AI, MS-MCP, MS-TMPL
 
-### Phase 4 – Enterprise Features (FS11 + FS13 + FS14 + FS16)
+### Phase 3b – Reporting Lifecycle (FS17 + FS20)
+> MS-LIFECYCLE, MS-PERIOD, MS-N8N (rozšíření), MS-FE (rozšíření)
+
+### Phase 3c – Form Builder (FS19)
+> MS-FORM, MS-SINK-TBL (rozšíření), MS-FE (rozšíření)
+
+### Phase 4a – Enterprise Features (FS11 + FS13 + FS14 + FS16)
 > MS-NOTIF, MS-VER, MS-AUDIT, MS-SRCH, MS-DASH (extended)
+
+### Phase 4b – PPTX Report Generation (FS18)
+> MS-TMPL-PPTX, MS-GEN-PPTX, MS-N8N (rozšíření), MS-FE (rozšíření)
 
 ### Phase 5 – DevOps Maturity (FS99)
 > Observability stack (Prometheus, Grafana, Loki, OpenTelemetry), CI/CD pipelines, Tilt/Skaffold local dev
+
+### Phase 6 – Local Scope & Advanced Analytics (FS21)
+> MS-FORM (rozšíření), MS-TMPL-PPTX (rozšíření), MS-ADMIN (rozšíření), MS-FE (rozšíření)
+
+### Phase 7 – Advanced Period Comparison (FS22 – placeholder)
+> MS-DASH (rozšíření), MS-PERIOD (rozšíření)
