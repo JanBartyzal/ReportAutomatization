@@ -2,7 +2,7 @@
 
 **Verze:** 4.0 – Release Candidate (APPROVED)  
 **Datum:** Únor 2026  
-**Architektura:** Event-Driven Microservices + N8N Orchestration  
+**Architektura:** Event-Driven Microservices + Custom Orchestrator (MS-ORCH)
 **Microservices:** 25 service units (MS-FE … MS-BATCH)  
 **Feature Sets:** FS01–FS16 + FS99 (DevOps)  
 **Docs Reference:** `docs/project_standards.md`, `docs/dod_criteria.md`
@@ -38,19 +38,38 @@ Systém je rozdělen do šesti logických vrstev, přičemž každá vrstva má 
 | # | Vrstva | Odpovědnost | Klíčové služby |
 |---|---|---|---|
 | 1 | **Presentation Layer** | React SPA – upload souborů, viewer parsovaných dat, BI dashboardy, real-time notifikace přes WebSocket/SSE, MSAL autentizace. | MS-FE |
-| 2 | **Edge Layer** | API Gateway (Traefik) jako jediný vstupní bod. SSL terminace, rate limiting, ForwardAuth pro validaci Azure Entra ID tokenů. | MS-GW, MS-AUTH |
-| 3 | **Ingestion Layer** | Streaming příjem souborů, antivirová kontrola (ClamAV/ICAP), sanitizace (odstranění maker), uložení do Blob Storage, trigger N8N workflow. | MS-ING, MS-SCAN |
-| 4 | **Orchestration Layer** | N8N workflow engine řídí celý processing pipeline: routing dle typu souboru, batch zpracování, retry/circuit breaker, Dead Letter Queue. | MS-N8N, MS-DLQ |
-| 5 | **Processing Layer (Atomizers)** | Bezstavové kontejnery pro extrakci dat z konkrétního formátu. Volány výhradně z N8N. Výsledky ukládají jako URL reference na Blob, ne jako inline payload. | MS-ATM-PPTX, -XLS, -PDF, -CSV, -AI, -CLN |
-| 6 | **Persistence Layer (Sinks)** | Write-optimalizované API pro strukturovaná data (PostgreSQL), vector embeddings (pgVector), audit logy. CQRS: oddělený read model (MS-QRY, MS-DASH). | MS-SINK-TBL/DOC/LOG, MS-QRY, MS-DASH |
+| 2 | **Edge Layer** | API Gateway (Nginx) jako jediný vstupní bod. Azure Front Door (WAF + SSL terminace), Host-based routing, rate limiting (100 req/s API, 10 req/s Auth/Upload, burst 20), ForwardAuth pro validaci Azure Entra ID tokenů. CORS whitelist: `https://*.company.cz` + `localhost:3000` (dev). | MS-GW, MS-AUTH |
+| 3 | **Ingestion Layer** | Streaming příjem souborů, antivirová kontrola (ClamAV/ICAP), sanitizace (odstranění maker), uložení do Blob Storage, trigger orchestrátoru přes Dapr PubSub / gRPC. | MS-ING, MS-SCAN |
+| 4 | **Orchestration Layer** | Custom Orchestrator (Spring State Machine) řídí celý processing pipeline: routing dle typu souboru, Saga Pattern pro distribuované transakce, exponential backoff retry, Dead Letter Queue. gRPC pro interní volání Atomizerů a Sinků. | MS-ORCH |
+| 5 | **Processing Layer (Atomizers)** | Bezstavové kontejnery pro extrakci dat z konkrétního formátu. Volány výhradně přes MS-ORCH (Dapr gRPC). **Žádné REST endpointy** – pouze gRPC service definitions. Výsledky ukládají jako URL reference na Blob, ne jako inline payload. | MS-ATM-PPTX, -XLS, -PDF, -CSV, -AI, -CLN |
+| 6 | **Persistence Layer (Sinks)** | Write-optimalizované gRPC API pro strukturovaná data (PostgreSQL), vector embeddings (pgVector), audit logy. Voláno výhradně z MS-ORCH přes Dapr gRPC. **Žádné REST endpointy** – čtení přes CQRS read model (MS-QRY, MS-DASH – ty vystavují REST pro FE). | MS-SINK-TBL/DOC/LOG, MS-QRY, MS-DASH |
 
 ### 2.1 Komunikační pravidla
 
-- Veškerá inter-service komunikace probíhá přes Dapr sidecars (gRPC interně, REST externě).
+- **Interní komunikace (service-to-service):** Probíhá **výhradně** přes Dapr sidecars s gRPC protokolem. Žádná interní služba nevystavuje REST rozhraní pro interní volání.
+- **Externí komunikace (frontend-facing):** REST API dostupné **pouze** přes API Gateway (MS-GW). REST endpointy vystavují pouze edge služby: MS-AUTH (auth_request z Nginx), MS-ING (upload endpoint), MS-QRY (čtení pro FE), MS-DASH (agregace pro FE).
+- **Interní služby bez REST:** MS-ATM-* (Atomizery), MS-SINK-* (Sinky), MS-TMPL, MS-ORCH – tyto služby komunikují **výhradně** přes Dapr gRPC a nemají žádné REST endpointy.
 - Frontend komunikuje výhradně s API Gateway – nikdy přímo s backend službami.
-- Atomizery jsou volány **VÝHRADNĚ** přes N8N Orchestrátor – nikdy přímo z frontendové vrstvy.
+- Atomizery jsou volány **VÝHRADNĚ** přes MS-ORCH Orchestrátor (Dapr gRPC) – nikdy přímo z frontendové vrstvy.
+- Sinky jsou volány **VÝHRADNĚ** přes MS-ORCH Orchestrátor (Dapr gRPC) pro zápis. Čtení probíhá přes MS-QRY (CQRS read model, REST pro FE).
+- **Asynchronní eventy:** Dapr Pub/Sub pro události typu `file-uploaded`, `report.status_changed`, `notify`. Fire-and-forget s built-in retry.
 - Binary data (PNG slidy, CSV soubory) se **NIKDY** nepřenáší jako inline payload – vždy jako URL reference na Blob Storage.
 - Každý request musí nést validní Azure Entra ID JWT token v2 se scope `api://<client_id>/access_as_user`.
+
+**Přehled protokolů:**
+
+| Komunikační cesta | Protokol | Důvod |
+|---|---|---|
+| MS-FE → MS-GW | REST (HTTPS) | Kompatibilita s prohlížečem |
+| MS-GW → MS-AUTH | REST (auth_request) | Nginx nepodporuje gRPC auth_request |
+| MS-GW → MS-ING, MS-QRY, MS-DASH | REST | Frontend-facing edge služby |
+| MS-ING → MS-SCAN | Dapr gRPC | Interní služba |
+| MS-ING → MS-ORCH | Dapr Pub/Sub | Async event trigger |
+| MS-ORCH → MS-ATM-* | Dapr gRPC | Interní zpracování |
+| MS-ORCH → MS-SINK-* | Dapr gRPC | Interní persistence |
+| MS-ORCH → MS-TMPL | Dapr gRPC | Interní mapping |
+| MS-ORCH → MS-NOTIF | Dapr Pub/Sub | Async notifikace |
+| MS-NOTIF → MS-FE | WebSocket / SSE | Real-time push |
 
 ### 2.2 Technologický stack
 
@@ -59,18 +78,18 @@ Systém je rozdělen do šesti logických vrstev, přičemž každá vrstva má 
 | **Backend Core** | Java 21 + Spring Boot 3 | 21 LTS / 3.x | Dlouhodobá podpora, enterprise ecosystem, GraalVM pro scale-to-zero |
 | **Backend AI/Data** | Python + FastAPI + Pydantic v2 | 3.11+ / latest | Nativní AI knihovny (python-pptx, openpyxl, LiteLLM, Tesseract) |
 | **Frontend** | React 18 + Vite + TypeScript + Tailwind CSS | 18 / 5.x / 5.x | Moderní SPA s type safety, optimalizovaný build |
-| **Orchestrátor** | N8N (self-hosted) | latest stable | Low-code workflow editor, webhooks, JSON flow as code |
+| **Orchestrátor** | Custom Orchestrator (MS-ORCH) | — | Spring State Machine, Saga Pattern, gRPC, Type-Safe Contracts, JSON workflow definitions |
 | **Service Mesh** | Dapr Sidecars | 1.x | Abstrakce komunikace, PubSub, state management |
 | **Auth** | Azure Entra ID (AAD) | v2.0 endpoint | Enterprise SSO, MSAL, On-Behalf-Of flow pro AI |
 | **DB – Relační** | PostgreSQL 16 | 16 | JSONB, pgVector, Row-Level Security nativně |
 | **DB – Cache** | Redis | latest stable | Session, rate limit counters, query cache |
 | **DB – Vector** | pgVector extension | latest | Sémantické vyhledávání bez dalšího závislosti |
-| **Security Scan** | ClamAV / ICAP | latest | Open-source AV, ICAP protokol pro streamový scan |
+| **Security Scan** | ClamAV (clamd TCP socket) | latest | Open-source AV, clamd TCP socket (port 3310) pro scan |
 | **Observability** | OpenTelemetry + Prometheus + Grafana + Loki | latest | End-to-end tracing, metriky, centralizované logy |
 | **Local Dev** | Tilt / Skaffold | latest | Hot-reload pro K8s/Docker lokální topologii |
-| **E2E Testy** | Playwright | latest | React + API + N8N flow testování |
+| **E2E Testy** | Playwright | latest | React + API + Orchestrator flow testování |
 | **DB migrace** | Flyway / Liquibase | latest | Správa verzí DB schématu |
-| **Schema Registry** | Apicurio / JSON Schema Store | latest | Centralizace schémat pro N8N a služby |
+| **Schema Registry** | Apicurio / JSON Schema Store | latest | Centralizace schémat pro MS-ORCH a služby |
 
 > **NOTE:** Pokud není určeno jinak, primárním programovacím jazykem je **Java (Spring Boot)**. Python se používá výhradně pro Atomizery a AI komponenty.
 
@@ -89,7 +108,7 @@ Systém je rozdělen do šesti logických vrstev, přičemž každá vrstva má 
 |   |       ├── units   # services
 |   |       ├── docs
 |   |       └── logs
-|   └── orchestrator #n8n
+|   └── orchestrator #ms-orch
 |
 ├── data   #lokální data pro Docker
 |
@@ -112,7 +131,7 @@ Systém je rozdělen do šesti logických vrstev, přičemž každá vrstva má 
 |   .env
 |   Dockerfile
 |   ├── scripts
-|   ├── n8n
+|   ├── orchestrator
 |   └── terraform
 |
 ├── local_data
@@ -140,13 +159,13 @@ Systém je rozdělen do šesti logických vrstev, přičemž každá vrstva má 
 | Služba | Host Port | Container Port | Debug Port | Protokol |
 |---|---|---|---|---|
 | Frontend (Vite SPA) | `3000` | `3000` | — | HTTP |
-| API Gateway (Traefik) | `8080` | `80` | — | HTTP/HTTPS |
+| API Gateway (Nginx) | `8080` | `80` | — | HTTP/HTTPS |
 | Auth Service | `8081` | `8000` | `5005` | HTTP |
 | File Ingestor | `8082` | `8000` | `5006` | HTTP / multipart |
 | PPTX Atomizer | `8090` | `8000` | `5678` | HTTP |
 | Excel Atomizer | `8091` | `8000` | `5679` | HTTP |
 | Sink: Table API | `8100` | `8080` | `5005` | HTTP |
-| N8N Webhook Listener | `5678` | `5678` | — | HTTP/WS |
+| MS-ORCH Orchestrator | `8095` | `8080` | `5010` | gRPC / HTTP |
 | PostgreSQL | `5432` | `5432` | — | TCP |
 | Redis | `6379` | `6379` | — | TCP |
 
@@ -164,7 +183,7 @@ Systém je rozdělen do šesti logických vrstev, přičemž každá vrstva má 
 | Bezpečnost | Datová izolace | PostgreSQL RLS: cross-tenant data leak = 0 | MUST |
 | Bezpečnost | Antivirový scan | 100 % nahraných souborů skenováno před zpracováním | MUST |
 | Audit | Auditní trail | Každá akce uložena, neměnná, exportovatelná | MUST |
-| Observability | Distribuované trasování | OpenTelemetry trace přes celý pipeline (FE→GW→N8N→ATM→Sink) | SHOULD |
+| Observability | Distribuované trasování | OpenTelemetry trace přes celý pipeline (FE→GW→MS-ORCH→ATM→Sink) | SHOULD |
 | Kód | Linting / formátování | ESLint, Black, Checkstyle – CI blokující | MUST |
 | Kód | Unit test coverage | Nová logika: min. happy path + 2 edge cases | MUST |
 
@@ -197,11 +216,12 @@ Každá Feature (FS) je považována za dokončenou teprve tehdy, když jsou spl
 Business kontext: Základní infrastruktura, bez které žádná jiná FS nemůže fungovat. Zabezpečuje síťování, auth, secrets management a service discovery.
 
 **Požadavky:**
-- Kontejnerizovaná infrastruktura: N8N, Traefik, Redis, Grafana, Prometheus spustitelná přes Docker Compose i Kubernetes (Tilt/Skaffold pro lokální dev).
+- Kontejnerizovaná infrastruktura: MS-ORCH, Nginx, Redis, Grafana, Prometheus spustitelná přes Docker Compose i Kubernetes (Tilt/Skaffold pro lokální dev).
 - Minimální base image pro Java (JDK 21, bez zbytečných závislostí) a Python (3.11 slim) – základ všech Atomizerů.
-- **API Gateway (Traefik):** Routing `/api/auth` → MS-AUTH, `/api/upload` → MS-ING, `/api/query` → MS-QRY. SSL terminace, rate limiting (429 Too Many Requests), ForwardAuth middleware.
+- **API Gateway (Nginx):** Host-based routing `/api/auth` → MS-AUTH, `/api/upload` → MS-ING, `/api/query` → MS-QRY. SSL terminace přes Azure Front Door (WAF). Rate limiting: 100 req/s per IP (API), 10 req/s per IP (Auth/Upload), burst size 20, `429 Too Many Requests`. ForwardAuth middleware. CORS whitelist: `https://*.company.cz` + `localhost:3000` (dev).
 - **Service Discovery:** Dapr sidecar pattern pro vzájemnou inter-service komunikaci. Každá služba dostává Dapr sidecar s definovanými komponentami (state store, pub/sub).
-- **Centralized Auth:** Validace Azure Entra ID tokenů (v2.0 endpoint) na úrovni API Gateway / ForwardAuth. RBAC role: Admin, Editor, Viewer.
+- **Centralized Auth:** Validace Azure Entra ID tokenů (v2.0 endpoint) na úrovni API Gateway / ForwardAuth. RBAC role: Admin (vše v rámci Org), Editor (Upload/Edit), Viewer (Read-only), HoldingAdmin (Cross-org Read + approval).
+- **Organizační hierarchie:** Fixní 3 úrovně: Holding → Společnost → Divize/Nákladové středisko.
 - **Azure KeyVault:** Všechny secrets (DB connection strings, API keys, SMTP credentials) uloženy v KeyVault. Aplikace je čte při startu přes MSI (Managed Service Identity).
 - Přístup do aplikace podmíněn členstvím v konkrétní AAD Security Group (Conditional Access).
 
@@ -222,18 +242,19 @@ Business kontext: První kontaktní bod pro nahrávání souborů. Musí být ry
 
 **Požadavky:**
 - **Endpoint:** `POST /api/upload` s `multipart/form-data` nebo chunked streaming.Excel upload slouží jako datový vstup do formuláře (FS19), nejen jako soubor k parsování. Ingestor musí rozlišit `upload_purpose: PARSE` (původní flow) vs. `upload_purpose: FORM_IMPORT` (nový flow → MS-FORM).
-- **Stream Upload:** Soubor streamován přímo do Azure Blob Storage nebo S3 – nikdy celý v paměti serveru.
+- **Stream Upload:** Soubor streamován přímo do Azure Blob Storage (lokálně Azurite v Dockeru) – nikdy celý v paměti serveru. Max file size: 50 MB (PPTX/XLSX/CSV), 100 MB (PDF s OCR).
 - **Validace:** Kontrola MIME types (allowlist: `.pptx`, `.xlsx`, `.pdf`, `.csv`) a magic numbers (binární hlavička souboru).
-- **Security Scan:** Integrovaný ClamAV sidecar (ICAP protokol) – soubor skenován **PŘED** uložením do Blobu. Infikované soubory vrací `422` s reason kódem.
-- **Sanitizace:** Automatické odstranění VBA maker a externích odkazů z Office dokumentů (MS-SCAN) před předáním Atomizerům.
+- **Security Scan:** ClamAV přes clamd TCP socket (port 3310) – soubor skenován **PŘED** uložením do Blobu. Infikované soubory vrací `422` s reason kódem.
+- **Sanitizace:** Automatické odstranění VBA maker a externích odkazů z Office dokumentů (MS-SCAN) před předáním Atomizerům. Originální soubory (`_raw/`) uchovávat 90 dní (audit), poté smazat. Sanitizované verze trvale.
 - **Metadata:** Zápis záznamu do PostgreSQL (`UserId`, `OrgId`, `Filename`, `Size`, `MimeType`, `UploadTimestamp`, `BlobUrl`, `ScanStatus`).
-- **N8N Trigger:** Po úspěšném uložení fire-and-forget webhook na N8N: `{ file_id, type, org_id, blob_url }`.
+- **Blob naming:** `{org_id}/{yyyy}/{MM}/{file_id}/{original_filename}`
+- **Orchestrátor Trigger:** Po úspěšném uložení event přes Dapr PubSub (nebo gRPC) na MS-ORCH: `{ file_id, type, org_id, blob_url }`.
 
 **Acceptance kritéria:**
 - Upload 20 MB PPTX souboru dokončen za < 5 s na 100 Mbps připojení.
 - Soubor s EICAR test virem vrátí `422` s `{ error: "INFECTED", details: "..." }`.
 - Soubor s nepovolený MIME type (`.exe`) vrátí `415 Unsupported Media Type`.
-- N8N webhook doručen do 1 s od úspěšného uložení do Blobu.
+- Orchestrátor event doručen do 1 s od úspěšného uložení do Blobu.
 
 ---
 
@@ -242,27 +263,27 @@ Business kontext: První kontaktní bod pro nahrávání souborů. Musí být ry
 
 **Pokrývající microservices:** MS-ATM-PPTX, MS-ATM-XLS, MS-ATM-PDF, MS-ATM-CSV, MS-ATM-AI, MS-ATM-CLN
 
-Business kontext: Srdce platformy. Každý Atomizer je izolovaný, bezstavový kontejner specializovaný na jeden formát. Komunikují výhradně přes N8N a pracují asynchronně.
+Business kontext: Srdce platformy. Každý Atomizer je izolovaný, bezstavový kontejner specializovaný na jeden formát. Komunikují výhradně přes MS-ORCH (gRPC) a pracují asynchronně.
 
 #### PPTX Atomizer (MS-ATM-PPTX)
-- `POST /extract/pptx` – Vrací JSON strukturu: `{ slides: [{ slide_id, title, layout, has_tables, has_text }] }`
-- `POST /extract/pptx/slide` – Extrahuje texty, tabulky a metadata konkrétního slidu. Výstup: `{ texts, tables: [{ headers, rows }], notes }`.
-- `POST /extract/pptx/slide/image` – Renderuje slide jako PNG 800×600. PNG ukládá do Blob Storage, vrací `{ artifact_url }`.
-- **MetaTable Logic:** Algoritmus pro rekonstrukci tabulek z nestrukturovaného textu na základě vizuálních oddělovačů (tabulátor, mezery) a porovnání s hlavičkovým řádkem.
+- `gRPC ExtractStructure(ExtractRequest)` → `PptxStructureResponse { slides: [{ slide_id, title, layout, has_tables, has_text }] }` – Vrací strukturu PPTX souboru.
+- `gRPC ExtractSlideContent(SlideRequest)` → `SlideContentResponse { texts, tables: [{ headers, rows }], notes }` – Extrahuje texty, tabulky a metadata konkrétního slidu.
+- `gRPC RenderSlideImage(SlideRequest)` → `SlideImageResponse { artifact_url }` – Renderuje slide jako PNG 1280×720 (720p, ~200 KB per slide) přes **LibreOffice Headless** (`--convert-to png`). Python-pptx na rendering nestačí (SmartArty, grafy). PNG ukládá do Blob Storage.
+- **MetaTable Logic:** Algoritmus pro rekonstrukci tabulek z nestrukturovaného textu na základě vizuálních oddělovačů (tabulátor, mezery) a porovnání s hlavičkovým řádkem. Confidence threshold > 0.85 – pokud nižší, uložit jako plain text s příznakem `low_confidence`.
 
 #### Excel Atomizer (MS-ATM-XLS)
-- `POST /extract/excel` – Vrací seznam listů: `{ sheets: [{ sheet_id, name, row_count, col_count }] }`.
-- `POST /extract/excel/sheet` – Konverze listu na JSON. Výstup: `{ headers, rows: [{}], data_types }`.
+- `gRPC ExtractStructure(ExtractRequest)` → `ExcelStructureResponse { sheets: [{ sheet_id, name, row_count, col_count }] }` – Vrací seznam listů.
+- `gRPC ExtractSheetContent(SheetRequest)` → `SheetContentResponse { headers, rows: [{}], data_types }` – Konverze listu na JSON.
 - **Partial Success State:** Pokud 1 z 10 listů selže, vrátí `{ status: "PARTIAL", successful: [...], failed: [{ sheet_id, error }] }`.
 
 #### PDF / OCR Atomizer (MS-ATM-PDF)
-- `POST /extract/pdf` – Detekce, zda je PDF textové nebo skenované. Text extrahován přímo; skenované stránky přes Tesseract OCR.
+- `gRPC ExtractPdf(ExtractRequest)` → `PdfContentResponse` – Detekce, zda je PDF textové nebo skenované. Text extrahován přímo; skenované stránky přes Tesseract OCR.
 
 #### CSV Atomizer (MS-ATM-CSV)
-- `POST /extract/csv` – Automatická detekce oddělovače (`,;|\t`), kódování, hlavičkového řádku. Výstup: `{ headers, rows }`.
+- `gRPC ExtractCsv(ExtractRequest)` → `CsvContentResponse { headers, rows }` – Automatická detekce oddělovače (`,;|\t`), kódování, hlavičkového řádku.
 
 #### AI Gateway (MS-ATM-AI)
-- `POST /analyze/semantic` – LiteLLM integrace pro sémantickou analýzu textu (klasifikace, sumarizace, extrakce entit).
+- `gRPC AnalyzeSemantic(SemanticRequest)` → `SemanticResponse` – LiteLLM integrace pro sémantickou analýzu textu (klasifikace, sumarizace, extrakce entit).
 - **Cost Control:** Každý request loguje počet spotřebovaných tokenů. Překročení kvóty vrací `429` s `{ quota_remaining: 0 }`.
 
 #### Cleanup Worker (MS-ATM-CLN)
@@ -276,19 +297,24 @@ Business kontext: Srdce platformy. Každý Atomizer je izolovaný, bezstavový k
 
 ---
 
-### FS04 – Orchestrator – N8N JSON Workflows
+### FS04 – Custom Orchestrator (MS-ORCH)
 **Priorita: KRITICKÁ**
 
-**Pokrývající microservices:** MS-N8N
+**Pokrývající microservices:** MS-ORCH
 
-Business kontext: N8N je mozek celého systému. Řídí tok dat, rozhoduje o routování, spravuje chyby a garantuje idempotenci. Veškerá business logika je v N8N workflows (JSON), nikoli roztroušena po mikroslužbách.
+Business kontext: MS-ORCH je mozek celého systému. Řídí tok dat, rozhoduje o routování, spravuje chyby a garantuje idempotenci. Implementován jako custom Java služba (Spring State Machine) s Type-Safe Contracts, Saga Pattern pro distribuované transakce, gRPC pro interní volání Atomizerů a Sinků. Workflow definice jako JSON soubory verzované v Gitu. Stav běžících flows v Redis, stav paused/waiting flows v PostgreSQL.
 
 **Požadavky:**
-- **Pipeline Workflow:** `Webhook (new_file)` → `Get Metadata` → `Router dle file type` → `Call Atomizer` → `Apply Schema Mapping (MS-TMPL)` → `Store (MS-SINK-*)`
-- **Batch Processing:** `Split In Batches` node pro iteraci přes slidy (PPTX) nebo listy (Excel). Max. 5 paralelních volání Atomizeru.
+- **Workflow Engine:** Spring State Machine. Workflow definice jako JSON soubory verzované v Gitu (ne GUI editor).
+- **Type-Safe Contracts:** Java interfaces + DTOs pro veškerou komunikaci s Atomizery a Sinky. Žádné volné JSON objekty – každý krok má definovaný vstup a výstup.
+- **Pipeline Workflow:** `Event (new_file)` → `Get Metadata` → `Router dle file type` → `Call Atomizer (gRPC)` → `Apply Schema Mapping (MS-TMPL)` → `Store (MS-SINK-* via gRPC)`
+- **Saga Pattern:** Distribuované transakce s rollback capability. Každý krok definuje compensating action pro případ selhání.
+- **Async Worker Layer:** Dapr Pub/Sub (nebo RabbitMQ / Azure Service Bus) pro asynchronní zpracování. 20–50 paralelních slide extractions.
+- **gRPC Internal Communication:** Všechna interní volání Atomizerů a Sinků přes gRPC (ne REST webhooky).
 - **Filter Logic:** Po extrakci každého elementu: je-li tabulka → MS-SINK-TBL (PostgreSQL); je-li text → MS-SINK-DOC (pgVector).
-- **Error Handling:** Automatický retry (3×, exponential backoff). Circuit Breaker: po 5 selháních Atomizeru pozastaven workflow.
-- **Idempotence:** Každý workflow krok je idempotentní. Duplicate processing `file_id` je detekován a přeskočen.
+- **Error Handling:** Exponential backoff: 3 retry (1s, 5s, 30s), pak záznam do `failed_jobs`. Specifické exception types: `ParsingException`, `StorageException`, `VirusDetectedException`.
+- **Idempotence:** Redis-based: `file_id + step_hash` jako klíč. Duplicate processing detekován a přeskočen.
+- **State Management:** Redis pro stav běžících flows (nízká latence). PostgreSQL pro paused/waiting flows (persistence).
 - **Dead Letter Queue:** Fatálně selhaný workflow odešle `{ file_id, error_stacktrace, timestamp }` do tabulky `failed_jobs`. Admin UI zobrazuje tyto záznamy pro manuální reprocessing.
 
 **Acceptance kritéria:**
@@ -306,17 +332,21 @@ Business kontext: N8N je mozek celého systému. Řídí tok dat, rozhoduje o ro
 Business kontext: Write-optimalizovaná API vrstva nad databázemi. Garantuje schéma validaci před zápisem, verzování a RLS enforcement.
 
 **Table API – MS-SINK-TBL (Java/Spring):**
-- `POST /tables/{org_id}/{batch_id}` – Bulk insert strukturovaných dat (tabulky, OPEX data) do PostgreSQL (JSONB).
+- `gRPC BulkInsert(BulkInsertRequest)` → `BulkInsertResponse` – Bulk insert strukturovaných dat (tabulky, OPEX data) do PostgreSQL (JSONB). Voláno výhradně z MS-ORCH přes Dapr gRPC.
+- `gRPC DeleteByFileId(DeleteRequest)` → `DeleteResponse` – Compensating action pro Saga rollback.
 - Flyway migrace pro správu schématu. RLS policy: uživatel vidí pouze záznamy svého `org_id`.
-- ukldá data z formulářů (FS19). Schéma: `form_responses` tabulka s `(org_id, period_id, form_version_id, field_id, value, submitted_at)`.
+- Ukládá data z formulářů (FS19). Schéma: `form_responses` tabulka s `(org_id, period_id, form_version_id, field_id, value, submitted_at)`.
+- **Čtení:** Data přístupná přes MS-QRY (CQRS read model, REST pro frontend).
 
 **Document API – MS-SINK-DOC (Java/Spring):**
-- `POST /documents/{org_id}` – Ukládání nestrukturovaného JSONu do PostgreSQL + generování vector embeddings (pgVector).
-- Embeddings generovány asynchronně přes MS-ATM-AI po uložení dokumentu.
+- `gRPC StoreDocument(StoreDocumentRequest)` → `StoreDocumentResponse` – Ukládání nestrukturovaného JSONu do PostgreSQL + generování vector embeddings (pgVector). Voláno výhradně z MS-ORCH přes Dapr gRPC.
+- `gRPC DeleteByFileId(DeleteRequest)` → `DeleteResponse` – Compensating action pro Saga rollback.
+- Embeddings generovány asynchronně přes MS-ATM-AI po uložení dokumentu. Model: **OpenAI text-embedding-3-small** (1536 dimenzí) přes Azure Foundry AI Services.
+- **Čtení:** Data přístupná přes MS-QRY (CQRS read model, REST pro frontend).
 
 **Log API – MS-SINK-LOG (Java/Spring):**
-- `POST /logs/{file_id}` – Append-only zápis processing logů (`step_name`, `status`, `duration_ms`, `error_detail`).
-- Záznamy jsou read-only přístupné z MS-QRY a Admin UI.
+- `gRPC AppendLog(AppendLogRequest)` → `AppendLogResponse` – Append-only zápis processing logů (`step_name`, `status`, `duration_ms`, `error_detail`). Voláno výhradně z MS-ORCH přes Dapr gRPC.
+- **Čtení:** Záznamy přístupné z MS-QRY (REST pro frontend a Admin UI).
 
 **Databáze:**
 - **PostgreSQL 16:** Primární store. JSONB pro semi-strukturovaná data, RLS pro tenant isolation, pgVector extension.
@@ -332,9 +362,9 @@ Business kontext: Write-optimalizovaná API vrstva nad databázemi. Garantuje sc
 
 Business kontext: Oddělený read model optimalizovaný pro rychlé čtení. Frontend nikdy nečte přímo z write databáze.
 
-- **MS-QRY:** CQRS read API. Materialized views pro nejčastější dotazy. Redis caching s TTL.
-- **MS-DASH:** Agregační endpointy pro grafy a souhrny. SQL over JSONB tabulky s GROUP BY / ORDER BY z UI konfigurace.MS-DASH musí zobrazovat i data pocházející z formulářů, nejen z parsovaných souborů. Zdroj dat je transparentní (flag `source_type: FORM / FILE`)
-- **MS-SRCH:** Full-text search (PostgreSQL FTS nebo ElasticSearch). Vector search přes pgVector pro sémantické dotazy.
+- **MS-QRY:** CQRS read API – **REST endpointy pro frontend** (přes API Gateway). Materialized views pro nejčastější dotazy. Redis caching s TTL. Jediný způsob, jak frontend čte data uložená přes Sinky.
+- **MS-DASH:** Agregační REST endpointy pro grafy a souhrny – **přístupné přes API Gateway pro frontend**. SQL over JSONB tabulky s GROUP BY / ORDER BY z UI konfigurace. Chart library: **Recharts** (lehká, React-nativní) pro standardní grafy + **Nivo** pro komplexní vizualizace (heatmaps). MS-DASH musí zobrazovat i data pocházející z formulářů, nejen z parsovaných souborů. Zdroj dat je transparentní (flag `source_type: FORM / FILE`).
+- **MS-SRCH:** Full-text search (PostgreSQL FTS nebo ElasticSearch). Vector search přes pgVector pro sémantické dotazy. REST endpoint pro frontend přes API Gateway.
 
 ---
 
@@ -371,8 +401,8 @@ Business kontext: Oddělený read model optimalizovaný pro rychlé čtení. Fro
 - **Auth:** MSAL Provider, login/logout flow, automatický token refresh (Axios interceptor s retry).
 - **Upload Manager:** Drag & Drop zóna (react-dropzone), progress bar přes XHR upload events, automatický refresh seznamu po uploadu (React Query invalidation).
 - **Viewer:** Read-only zobrazení parsovaných dat slide-by-slide s preview obrázků (PNG z Blob).
-- **Real-time feedback:** WebSocket nebo SSE připojení přes API Gateway/BFF pro zobrazení stavu zpracování v reálném čase (`Processing 50%...`).
-- **N8N trigger:** Spouštění N8N workflow z frontendových akcí. Uživatel nikdy nevidí N8N UI.
+- **Real-time feedback:** V P1 polling přes React Query (interval 3 s). SSE/WebSocket zavést v P2 (ušetří starosti s load-balancerem).
+- **Orchestrátor trigger:** Spouštění MS-ORCH workflow z frontendových akcí (přes API). Uživatel nemá přímý přístup k orchestrátoru.
 - **Form Builder UI**
 - **formulář pro vyplnění**
 - **submission workflow UI**
@@ -382,7 +412,7 @@ Business kontext: Oddělený read model optimalizovaný pro rychlé čtení. Fro
 
 **Knihovny:**
 - State Management: TanStack Query (server state), Zustand (client state)
-- UI Framework: Tailwind CSS + Radix UI / Shadcn
+- UI Framework: Tailwind CSS + FluentUI (Microsoft)
 - HTTP Client: Axios s nastavenými interceptory
 
 ---
@@ -427,7 +457,7 @@ Business kontext: Oddělený read model optimalizovaný pro rychlé čtení. Fro
 **Pokrývající microservices:** MS-NOTIF
 
 - **In-app notifikace:** Push přes WebSocket/SSE při dokončení/chybě zpracování.
-- **E-mail notifikace:** SendGrid/SMTP pro kritické chyby a dokončení batch jobů.
+- **E-mail notifikace:** SMTP server pro kritické chyby a dokončení batch jobů.
 - **Granulární nastavení:** Opt-in/Opt-out pro každý typ události (import, parsing fail, report ready) na úrovni uživatele i organizace.
 - **notifikační triggery:** z FS17 (stavové přechody) a FS20 (deadliny, eskalace). 
 - **Typy notifikací rozšířeny o:** `REPORT_SUBMITTED`, `REPORT_APPROVED`, `REPORT_REJECTED`, `DEADLINE_APPROACHING`, `DEADLINE_MISSED`.
@@ -455,8 +485,8 @@ Business kontext: Oddělený read model optimalizovaný pro rychlé čtení. Fro
 
 - **Editor UI:** Definice mapovacích šablon. *"Pokud sloupec obsahuje Cena / Cost / Náklady → namapuj jako `amount_czk`."*
 - **Learning:** Systém si pamatuje předchozí mapování a navrhuje je automaticky pro nové soubory.
-- **N8N integrace:** MS-TMPL je voláno z N8N workflow **PŘED** zápisem do DB.
-- **Excel import do formuláře** - nopé volání, už nejen z N8N pipeline. MS-TMPL dostane nový endpoint `POST /map/excel-to-form`.
+- **MS-ORCH integrace:** MS-TMPL je voláno z MS-ORCH workflow (gRPC) **PŘED** zápisem do DB.
+- **Excel import do formuláře** – nové volání, už nejen z orchestrátoru. MS-TMPL dostane nový endpoint `POST /map/excel-to-form`.
 
 ---
 
@@ -475,7 +505,7 @@ Business kontext: Oddělený read model optimalizovaný pro rychlé čtení. Fro
 ## FS17 – OPEX Report Lifecycle & Submission Workflow
 **Priorita: KRITICKÁ**  
 
-**Pokrývající microservices:** MS-LIFECYCLE, MS-N8N
+**Pokrývající microservices:** MS-LIFECYCLE, MS-ORCH
 
 **Tech Stack:** Java 21 + Spring Boot (MS-LIFECYCLE)
 
@@ -510,9 +540,9 @@ DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED
 - **Hromadné akce:** HoldingAdmin může schválit nebo zamítnout více reportů najednou.
 - **Uzamčení dat po schválení:** Po přechodu do `APPROVED` jsou zdrojová data read-only. Jakákoli změna vyžaduje nový přechod do `DRAFT` (vytvoří novou verzi – viz FS14).
 
-#### Architektura a Workflow customizace (N8N vs MS-LIFECYCLE)
+#### Architektura a Workflow customizace (MS-ORCH vs MS-LIFECYCLE)
 - **MS-LIFECYCLE:** Spravuje stavový automat entity `Report`, vystavuje endpointy pro přechody stavů, validuje oprávnění, loguje do MS-AUDIT a publikuje event `report.status_changed` do Dapr PubSub.
-- **N8N Orchestrátor:** Odebírá event `report.status_changed` a orchestruje následné kroky (např. notifikace, automatické kontroly dat, triggerování generování PPTX). Různé `report_type` mohou mít různý N8N workflow.
+- **MS-ORCH Orchestrátor:** Odebírá event `report.status_changed` a orchestruje následné kroky (např. notifikace, automatické kontroly dat, triggerování generování PPTX). Různé `report_type` mohou mít různý JSON workflow definition.
 
 ### Acceptance kritéria
 
@@ -766,9 +796,9 @@ Po nasazení centrálního reportingového cyklu vznikne přirozená poptávka z
 **Pokrývající microservices:** CI/CD, Observability stack
 
 - **CI/CD:** Pipeline pro Linting → Unit Testy → Integration Testy → Docker Build → Push to Registry. Oddělená pipeline pro GraalVM Native Image build (release).
-- **OpenTelemetry tracing:** E2E trace přes celý stack: Frontend → API Gateway → N8N → Atomizer → Sink. Jaeger/Tempo jako trace backend.
+- **OpenTelemetry tracing:** E2E trace přes celý stack: Frontend → API Gateway → MS-ORCH → Atomizer → Sink. Jaeger/Tempo jako trace backend.
 - **Centralizované logy:** Loki nebo ELK stack. Structured JSON logging ze všech služeb.
-- **Metriky:** Prometheus scrape z každé služby. Grafana dashboardy: chybovost, délka N8N fronty, Atomizer latence, DB connection pool.
+- **Metriky:** Prometheus scrape z každé služby. Grafana dashboardy: chybovost, MS-ORCH workflow queue, Atomizer latence, DB connection pool.
 - **Local Dev:** `tilt up` spustí kompletní topologii v lokálním K8s (Kind) nebo Docker Compose s hot-reloadem pro React a Python služby.
 
 ---
@@ -778,11 +808,11 @@ Po nasazení centrálního reportingového cyklu vznikne přirozená poptávka z
 | # | Unit ID | Function ID | Název | Popis / Odpovědnost | Feature Set | Tech Stack | Effort |
 |---|---|---|---|---|---|---|---|
 | 1 | MS-FE | **MS-FE** | Frontend SPA | React SPA – upload, viewer, dashboardy, notifikace (WebSocket/SSE), MSAL auth | FS09, FS11 | React 18 + Vite + TS + Tailwind | **XL** |
-| 2 | MS-GW | **MS-GW** | API Gateway | Traefik – routing, SSL, rate limiting, ForwardAuth | FS01 | Traefik (config) | **S** |
+| 2 | MS-GW | **MS-GW** | API Gateway | Nginx – Host-based routing, Azure Front Door (WAF + SSL), rate limiting (100/10 req/s, burst 20), ForwardAuth | FS01 | Nginx (config) | **S** |
 | 3 | MS-CORE | **MS-AUTH** | Auth Service | Validace Entra ID tokenů, RBAC engine, KeyVault integrace, API key validace | FS01, FS07 | Java 21 + Spring Boot | **L** |
-| 4 | MS-INGESTOR | **MS-ING** | File Ingestor | Streaming upload, MIME validace, metadata zápis, sanitizace, trigger N8N | FS02 | Java 21 + Spring Boot | **L** |
-| 5 | MS-INGESTOR | **MS-SCAN** | Security Scanner | Antivirová kontrola přes ICAP/ClamAV sidecar | FS02 | ClamAV (sidecar) | **S** |
-| 6 | MS-N8N | **MS-N8N** | N8N Orchestrator | Business workflow engine – routing, batch, retry, circuit breaker, DLQ | FS04 | N8N (JSON workflows) | **L** |
+| 4 | MS-INGESTOR | **MS-ING** | File Ingestor | Streaming upload, MIME validace, metadata zápis, sanitizace, trigger MS-ORCH (Dapr PubSub / gRPC) | FS02 | Java 21 + Spring Boot | **L** |
+| 5 | MS-INGESTOR | **MS-SCAN** | Security Scanner | Antivirová kontrola přes ClamAV clamd TCP socket | FS02 | ClamAV (sidecar) | **S** |
+| 6 | MS-ORCH | **MS-ORCH** | Custom Orchestrator | Workflow engine (Spring State Machine), Saga Pattern, Type-Safe Contracts, gRPC, Redis state, exponential backoff retry, DLQ | FS04 | Java 21 + Spring Boot | **XL** |
 | 7 | MS-PROCESSOR | **MS-ATM-PPTX** | PPTX Atomizer | Extrakce struktury, textů, tabulek a slide images z PPTX | FS03 | Python + FastAPI | **L** |
 | 8 | MS-PROCESSOR | **MS-ATM-XLS** | Excel Atomizer | Parsování Excel per-sheet do JSON, partial success handling | FS03, FS10 | Python + FastAPI | **M** |
 | 9 | MS-PROCESSOR | **MS-ATM-PDF** | PDF/OCR Atomizer | OCR a extrakce textu ze skenovaných PDF | FS03 | Python + FastAPI | **M** |
@@ -796,8 +826,8 @@ Po nasazení centrálního reportingového cyklu vznikne přirozená poptávka z
 | 17 | MS-DATA | **MS-DASH** | Dashboard Aggregation | Grafy, souhrny, GROUP BY/SORT, SQL nad JSON tabulkami | FS06, FS11 | Java 21 + Spring Boot | **L** |
 | 18 | MS-DATA | **MS-SRCH** | Search Service | Full-text search (PostgreSQL FTS / ES) + vector search | FS06 | Java 21 + Spring Boot | **M** |
 | 19 | MS-CORE | **MS-ADMIN** | Admin Backend | Správa rolí, holdingová hierarchie, secrets, API keys, Failed Jobs UI | FS07, FS08 | Java 21 + Spring Boot | **L** |
-| 20 | MS-CORE | **MS-NOTIF** | Notification Center | In-app (WS/SSE), e-mail (SMTP/SendGrid), granulární nastavení | FS13 | Java 21 + Spring Boot | **M** |
-| 21 | MS-DATA | **MS-TMPL** | Template Registry | UI pro mapování sloupců, learning z historie, voláno z N8N | FS15 | Java 21 + Spring Boot | **L** |
+| 20 | MS-CORE | **MS-NOTIF** | Notification Center | In-app (WS/SSE), e-mail (SMTP), granulární nastavení | FS13 | Java 21 + Spring Boot | **M** |
+| 21 | MS-DATA | **MS-TMPL** | Template Registry | UI pro mapování sloupců, learning z historie, voláno z MS-ORCH (gRPC) | FS15 | Java 21 + Spring Boot | **L** |
 | 22 | MS-CORE | **MS-VER** | Versioning Service | Verzování dat (v1→v2), diff tool pro zobrazení změn | FS14 | Java 21 + Spring Boot | **M** |
 | 23 | MS-CORE | **MS-AUDIT** | Audit & Compliance | Immutable logy, read access log, AI audit, export | FS16 | Java 21 + Spring Boot | **M** |
 | 24 | MS-AI | **MS-MCP** | MCP Server (AI Agent) | AI agenti, On-Behalf-Of flow, token dědění, quotas | FS12 | Python + FastAPI | **L** |
@@ -823,7 +853,7 @@ Po nasazení centrálního reportingového cyklu vznikne přirozená poptávka z
 
 | Fáze | Název | Microservices | Feature Sets | Výstup / Milestone |
 |---|---|---|---|---|
-| **P1** | MVP Core | MS-GW, MS-AUTH, MS-ING, MS-SCAN, MS-N8N, MS-ATM-PPTX, MS-SINK-TBL, MS-SINK-DOC, MS-SINK-LOG, MS-FE (základní) | FS01, FS02, FS03-PPTX, FS04, FS05, FS09-basic | Funkční upload + extrakce PPTX + základní viewer |
+| **P1** | MVP Core | MS-GW, MS-AUTH, MS-ING, MS-SCAN, MS-ORCH, MS-ATM-PPTX, MS-SINK-TBL, MS-SINK-DOC, MS-SINK-LOG, MS-FE (základní) | FS01, FS02, FS03-PPTX, FS04, FS05, FS09-basic | Funkční upload + extrakce PPTX + základní viewer |
 | **P2** | Extended Parsing | MS-ATM-XLS, MS-ATM-PDF, MS-ATM-CSV, MS-ATM-CLN, MS-QRY, MS-DASH | FS03-rest, FS10, FS06 | Plná podpora formátů + BI dashboardy |
 | **P3a** | Intelligence & Admin | MS-ADMIN, MS-BATCH, MS-ATM-AI, MS-MCP, MS-TMPL | FS07, FS08, FS12, FS15 | Holdingová hierarchie + AI integrace + schema mapping |
 | **P3b** | Lifecycle + Period Mgmt  |MS-LIFECYCLE, MS-PERIOD | | Řízení OPEX cyklu, deadliny, stavový automat |
@@ -844,10 +874,10 @@ Po nasazení centrálního reportingového cyklu vznikne přirozená poptávka z
 
 | # | Riziko | Pravd. | Dopad | Mitigace | Owner |
 |---|---|---|---|---|---|
-| R1 | N8N Payload Size: přenášení velkých JSONů (base64 obrázky) způsobí OOM crash | M | KRITICKÝ | Atomizery NIKDY neposílají binary inline. Vždy ukládají do Blob a vracejí URL. Max. payload limit: 5 MB na N8N webhook. | MS-ATM-*, MS-N8N |
-| R2 | Auth Token Propagation: desynchronizace tokenů mezi FE → GW → N8N → Backend | M | VYSOKÝ | Strict Token Propagation policy. Dapr middleware automaticky propaguje `Authorization` header. E2E testy pokrývají celý auth flow. | MS-GW, MS-AUTH |
+| R1 | Payload Size: přenášení velkých JSONů (base64 obrázky) způsobí OOM crash | M | KRITICKÝ | Atomizery NIKDY neposílají binary inline. Vždy ukládají do Blob a vracejí URL. gRPC streaming pro velké payloady. | MS-ATM-*, MS-ORCH |
+| R2 | Auth Token Propagation: desynchronizace tokenů mezi FE → GW → MS-ORCH → Backend | M | VYSOKÝ | Strict Token Propagation policy. Dapr middleware automaticky propaguje `Authorization` header. E2E testy pokrývají celý auth flow. | MS-GW, MS-AUTH |
 | R3 | Scope Creep: postupné přidávání features způsobí nerealistické termíny | H | STŘEDNÍ | Striktní fázový rollout (P1–P5). FS kategorizovány jako MUST/SHOULD/COULD. Scope freeze pro každou fázi. | PM / Architekt |
-| R4 | Komplexita N8N workflows: JSON workflow soubory se stanou neudržitelnými | M | STŘEDNÍ | Workflows verzovány v Gitu jako JSON. Code review povinný. Standardizované naming konvence pro všechny workflow uzly. | MS-N8N |
+| R4 | Komplexita orchestrátoru: JSON workflow definice a Saga patterns se stanou neudržitelnými | M | STŘEDNÍ | Workflow definitions verzovány v Gitu jako JSON. Code review povinný. Type-Safe Contracts garantují kompatibilitu. Unit testy pro každý workflow step. | MS-ORCH |
 | R5 | PostgreSQL RLS konfigurace: chybná policy způsobí cross-tenant data leak | L | KRITICKÝ | Automatické integráční testy ověřují RLS po každé DB migraci. Minimální oprávnění pro app user (no superuser). | MS-SINK-TBL |
 | R6 | Vendor Lock-in: Azure specifické závislosti (Blob, Entra ID, KeyVault) | M | STŘEDNÍ | Abstrakční vrstva pro storage (interface → Azure/S3). Auth abstrahován přes OIDC standard. KeyVault nahraditelný HashiCorp Vault. | Architekt |
 | R7 | Výkonnostní bottleneck: serializační overhead Dapr sidecar pro high-throughput Atomizery | L | STŘEDNÍ | Load testy v P1. Možnost přímé HTTP komunikace Atomizer↔Sink bez Dapr pro vysoce výkonné paths. | MS-ATM-* |
@@ -863,9 +893,9 @@ Po nasazení centrálního reportingového cyklu vznikne přirozená poptávka z
 | Závislá služba | Závisí na | Typ závislosti |
 |---|---|---|
 | MS-ING | MS-AUTH, MS-SCAN, Blob Storage | HARD – bez auth a skenu nelze přijmout soubor |
-| MS-N8N | MS-ING (webhook), MS-ATM-*, MS-SINK-* | HARD – orchestrátor bez zdrojů a sinks nefunguje |
+| MS-ORCH | MS-ING (event), MS-ATM-*, MS-SINK-*, Redis | HARD – orchestrátor bez zdrojů, sinks a state store nefunguje |
 | MS-SINK-TBL/DOC | PostgreSQL (RLS, Flyway migrace) | HARD – DB musí být migrována před nasazením |
-| MS-TMPL | MS-N8N (volání), PostgreSQL (mapování history) | SOFT – N8N může fungovat bez TMPL (bez normalizace) |
+| MS-TMPL | MS-ORCH (gRPC volání), PostgreSQL (mapování history) | SOFT – MS-ORCH může fungovat bez TMPL (bez normalizace) |
 | MS-MCP | MS-AUTH (OBO flow), MS-QRY | HARD – AI nesmí fungovat bez autorizace |
 
 ### 10.2 Externí závislosti
@@ -873,28 +903,36 @@ Po nasazení centrálního reportingového cyklu vznikne přirozená poptávka z
 - **Azure Entra ID tenant:** Nakonfigurovaná App Registration s RBAC skupinami.
 - **Azure KeyVault:** Provisionovaný vault s oprávněními pro MSI aplikace.
 - **Azure Blob Storage nebo S3:** Bucket/container s odpovídajícími CORS pravidly.
-- **SendGrid nebo SMTP server:** Pro e-mailové notifikace (FS13).
+- **SMTP server:** Pro e-mailové notifikace (FS13).
 - **LiteLLM / OpenAI API:** Pro AI Gateway (FS03, FS12). Potřeba API klíč a quota.
 
 ---
 
 ## 11. Kommunikační matice (Dapr)
 
-| Caller | Callee | Protokol | Typ |
-|---|---|---|---|
-| MS-GW | MS-AUTH | REST (ForwardAuth) | Sync |
-| MS-GW | MS-ING | REST | Sync |
-| MS-GW | MS-QRY | REST | Sync |
-| MS-ING | MS-SCAN | ICAP / gRPC | Sync |
-| MS-ING | MS-N8N | REST (Webhook) | Async (fire & forget) |
-| MS-N8N | MS-ATM-* | REST | Sync (within workflow) |
-| MS-N8N | MS-SINK-* | REST | Sync |
-| MS-N8N | MS-TMPL | REST | Sync |
-| MS-N8N | MS-NOTIF | REST / Pub-Sub | Async |
-| MS-NOTIF | MS-FE | WebSocket / SSE | Push |
-| MS-QRY | Redis | TCP | Cache lookup |
-| MS-SINK-* | PostgreSQL | TCP | Write |
-| MS-AUDIT | PostgreSQL | TCP | Append-only write |
+> **Princip:** Interní služby komunikují **výhradně** přes Dapr gRPC. REST se používá **pouze** pro edge služby komunikující s frontendem přes API Gateway.
+
+| Caller | Callee | Protokol | Typ | Poznámka |
+|---|---|---|---|---|
+| MS-FE | MS-GW | REST (HTTPS) | Sync | Frontend → API Gateway (jediný vstupní bod) |
+| MS-GW | MS-AUTH | REST (auth_request) | Sync | Nginx auth_request – REST vyžadován Nginxem |
+| MS-GW | MS-ING | REST | Sync | Frontend-facing upload endpoint |
+| MS-GW | MS-QRY | REST | Sync | Frontend-facing read API |
+| MS-GW | MS-DASH | REST | Sync | Frontend-facing dashboard API |
+| MS-GW | MS-ADMIN | REST | Sync | Frontend-facing admin API |
+| MS-ING | MS-SCAN | Dapr gRPC | Sync | Interní: AV scan před uložením |
+| MS-ING | MS-ORCH | Dapr Pub/Sub | Async | Event `file-uploaded` → trigger workflow |
+| MS-ORCH | MS-ATM-* | Dapr gRPC | Sync | Interní: orchestrátor volá Atomizery |
+| MS-ORCH | MS-SINK-* | Dapr gRPC | Sync | Interní: orchestrátor volá Sinky |
+| MS-ORCH | MS-TMPL | Dapr gRPC | Sync | Interní: schema mapping před uložením |
+| MS-ORCH | MS-NOTIF | Dapr Pub/Sub | Async | Event-driven notifikace |
+| MS-ORCH | Redis | TCP | State mgmt | Running workflow state (nízká latence) |
+| MS-LIFECYCLE | MS-ORCH | Dapr Pub/Sub | Async | Event `report.status_changed` |
+| MS-NOTIF | MS-FE | WebSocket / SSE | Push | Real-time notifikace do prohlížeče |
+| MS-QRY | PostgreSQL | TCP | Read | CQRS read model |
+| MS-QRY | Redis | TCP | Cache | TTL 5 min |
+| MS-SINK-* | PostgreSQL | TCP | Write | Přímý DB přístup |
+| MS-AUDIT | PostgreSQL | TCP | Write | Append-only |
 
 ---
 
@@ -902,17 +940,17 @@ Po nasazení centrálního reportingového cyklu vznikne přirozená poptávka z
 
 | Termín | Definice |
 |---|---|
-| **Atomizer** | Bezstavový mikroservice specializovaný na extrakci dat z konkrétního formátu (PPTX, Excel, PDF, CSV). Vždy voláni přes N8N Orchestrátor. |
+| **Atomizer** | Bezstavový mikroservice specializovaný na extrakci dat z konkrétního formátu (PPTX, Excel, PDF, CSV). Vždy voláni přes MS-ORCH Orchestrátor (gRPC). |
 | **Sink** | Write-optimalizovaná API vrstva pro trvalé uložení zpracovaných dat do databáze. Implementuje CQRS write side. |
 | **Batch** | Sada souborů ze stejného reportovacího období (např. Q2/2025) seskupená pro hromadné zpracování a konsolidaci. |
 | **RLS** | Row-Level Security – PostgreSQL mechanismus zajišťující, že uživatel vidí pouze řádky patřící jeho organizaci, přímo na úrovni DB enginu. |
-| **DLQ** | Dead Letter Queue – tabulka `failed_jobs`, kam N8N ukládá informace o fatálně selhaných workflow pro manuální reprocessing. |
+| **DLQ** | Dead Letter Queue – tabulka `failed_jobs`, kam MS-ORCH ukládá informace o fatálně selhaných workflow pro manuální reprocessing. |
 | **CQRS** | Command Query Responsibility Segregation – oddělení write modelu (Sinks) od read modelu (MS-QRY, MS-DASH) pro optimalizaci výkonu. |
 | **Schema Mapping** | Konfigurovatelné pravidlo pro normalizaci názvů sloupců z různých zdrojových souborů do jednotného interního datového modelu. |
 | **Dapr Sidecar** | Kontejner běžící vedle každé mikroslužby, který abstrahuje inter-service komunikaci, state management a PubSub. |
 | **OBO flow** | On-Behalf-Of OAuth flow: AI agent (MS-MCP) používá token uživatele pro volání downstream API, nikoli vlastní servisní identitu. |
 | **GraalVM Native Image** | Kompilace Java aplikace do nativního binárního souboru se sub-sekundovým startem – vhodné pro scale-to-zero Atomizery. |
-| **ForwardAuth** | Traefik middleware přesměrovávající každý příchozí request na MS-AUTH pro validaci tokenu PŘED předáním backend službě. |
+| **ForwardAuth** | Nginx middleware (auth_request) přesměrovávající každý příchozí request na MS-AUTH pro validaci tokenu PŘED předáním backend službě. |
 | **OPEX report** | Operating Expenditure report – finanční výkaz provozních nákladů, primární datový typ zpracovávaný touto platformou. |
 
 ---

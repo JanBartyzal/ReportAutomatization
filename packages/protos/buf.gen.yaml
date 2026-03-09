@@ -1,0 +1,17 @@
+version: v2
+plugins:
+  # Java protobuf stubs
+  - remote: buf.build/protocolbuffers/java
+    out: gen/java
+
+  # Java gRPC stubs
+  - remote: buf.build/grpc/java
+    out: gen/java
+
+  # Python protobuf stubs
+  - remote: buf.build/protocolbuffers/python
+    out: gen/python
+
+  # Python gRPC stubs
+  - remote: buf.build/grpc/python
+    out: gen/python

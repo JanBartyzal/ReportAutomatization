@@ -1,0 +1,522 @@
+openapi: 3.0.3
+info:
+  title: Dashboard Service API (MS-DASH)
+  description: Dashboard configuration and data aggregation
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: Base API server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/dashboards:
+    get:
+      operationId: listDashboards
+      summary: List available dashboards
+      description: >
+        Returns all dashboards accessible to the current user, including
+        public dashboards and those owned by the user's organization.
+      tags:
+        - Dashboards
+      responses:
+        "200":
+          description: List of dashboards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DashboardSummary"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      operationId: createDashboard
+      summary: Create a new dashboard
+      description: >
+        Creates a new dashboard with the specified configuration and widget
+        layout.
+      tags:
+        - Dashboards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DashboardConfig"
+      responses:
+        "201":
+          description: Dashboard created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardConfig"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Invalid dashboard configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/dashboards/{dashboard_id}:
+    get:
+      operationId: getDashboard
+      summary: Get dashboard configuration
+      description: >
+        Returns the full configuration for a specific dashboard, including
+        all widget definitions.
+      tags:
+        - Dashboards
+      parameters:
+        - name: dashboard_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Dashboard unique identifier
+      responses:
+        "200":
+          description: Dashboard configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardConfig"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Dashboard not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      operationId: updateDashboard
+      summary: Update dashboard configuration
+      description: >
+        Replaces the full configuration for a specific dashboard.
+      tags:
+        - Dashboards
+      parameters:
+        - name: dashboard_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Dashboard unique identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DashboardConfig"
+      responses:
+        "200":
+          description: Dashboard updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardConfig"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Dashboard not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Invalid dashboard configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteDashboard
+      summary: Delete a dashboard
+      description: >
+        Permanently deletes a dashboard and all associated widget
+        configurations.
+      tags:
+        - Dashboards
+      parameters:
+        - name: dashboard_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Dashboard unique identifier
+      responses:
+        "204":
+          description: Dashboard deleted successfully
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Dashboard not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/dashboards/{dashboard_id}/data:
+    post:
+      operationId: executeDashboardQuery
+      summary: Execute dashboard data query
+      description: >
+        Executes an aggregation query against the dashboard's data sources.
+        Supports grouping, ordering, filtering, and date range constraints.
+      tags:
+        - Dashboard Data
+      parameters:
+        - name: dashboard_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Dashboard unique identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DashboardQueryRequest"
+      responses:
+        "200":
+          description: Aggregated query results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AggregatedData"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Dashboard not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/dashboards/period-comparison:
+    post:
+      operationId: comparePeriods
+      summary: Compare metrics across periods
+      description: >
+        Compares a specified metric across multiple reporting periods and
+        organizations, returning both absolute values and calculated deltas
+        between consecutive periods.
+      tags:
+        - Dashboard Data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PeriodComparisonRequest"
+      responses:
+        "200":
+          description: Period comparison results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComparisonData"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Invalid comparison parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Azure Entra ID v2.0 JWT token
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    DashboardSummary:
+      type: object
+      required:
+        - id
+        - name
+        - is_public
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Dashboard unique identifier
+        name:
+          type: string
+          description: Dashboard display name
+        is_public:
+          type: boolean
+          description: Whether the dashboard is visible to all organization members
+        created_at:
+          type: string
+          format: date-time
+          description: Dashboard creation timestamp
+
+    DashboardConfig:
+      type: object
+      required:
+        - name
+        - is_public
+        - widgets
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Dashboard unique identifier (read-only, set by server)
+          readOnly: true
+        name:
+          type: string
+          description: Dashboard display name
+        description:
+          type: string
+          description: Dashboard description
+        is_public:
+          type: boolean
+          description: Whether the dashboard is visible to all organization members
+        widgets:
+          type: array
+          description: Widget configurations that compose the dashboard
+          items:
+            $ref: "#/components/schemas/WidgetConfig"
+        created_at:
+          type: string
+          format: date-time
+          description: Dashboard creation timestamp (read-only)
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          description: Dashboard last update timestamp (read-only)
+          readOnly: true
+
+    WidgetConfig:
+      type: object
+      required:
+        - type
+        - title
+        - data_source
+      properties:
+        type:
+          type: string
+          enum:
+            - TABLE
+            - BAR_CHART
+            - LINE_CHART
+            - PIE_CHART
+            - HEATMAP
+          description: Widget visualization type
+        title:
+          type: string
+          description: Widget display title
+        data_source:
+          type: string
+          description: Reference to the data source (table ID, query name, etc.)
+        config:
+          type: object
+          additionalProperties: true
+          description: >
+            Widget-specific configuration (axis mappings, color schemes,
+            thresholds, etc.)
+
+    DashboardQueryRequest:
+      type: object
+      properties:
+        group_by:
+          type: array
+          description: Fields to group results by
+          items:
+            type: string
+        order_by:
+          type: string
+          description: Field to order results by (prefix with - for descending)
+        filters:
+          type: object
+          additionalProperties: true
+          description: Key-value filter criteria
+        date_range:
+          $ref: "#/components/schemas/DateRange"
+
+    DateRange:
+      type: object
+      required:
+        - from
+        - to
+      properties:
+        from:
+          type: string
+          format: date
+          description: Start date (inclusive)
+        to:
+          type: string
+          format: date
+          description: End date (inclusive)
+
+    AggregatedData:
+      type: object
+      required:
+        - columns
+        - rows
+        - total_rows
+      properties:
+        columns:
+          type: array
+          description: Column names in the result set
+          items:
+            type: string
+        rows:
+          type: array
+          description: Result rows as arrays of values
+          items:
+            type: array
+            items:
+              oneOf:
+                - type: string
+                - type: number
+                - type: boolean
+                - type: "null"
+        total_rows:
+          type: integer
+          description: Total number of rows in the full result set
+
+    PeriodComparisonRequest:
+      type: object
+      required:
+        - metric
+        - period_ids
+      properties:
+        metric:
+          type: string
+          description: Metric identifier to compare
+        period_ids:
+          type: array
+          description: List of period identifiers to compare
+          items:
+            type: string
+        org_ids:
+          type: array
+          description: Organization IDs to include in comparison
+          items:
+            type: string
+            format: uuid
+
+    ComparisonData:
+      type: object
+      required:
+        - periods
+        - deltas
+      properties:
+        periods:
+          type: array
+          description: Metric values for each period
+          items:
+            $ref: "#/components/schemas/PeriodValue"
+        deltas:
+          type: array
+          description: Calculated changes between consecutive periods
+          items:
+            $ref: "#/components/schemas/PeriodDelta"
+
+    PeriodValue:
+      type: object
+      required:
+        - period_id
+        - period_name
+        - value
+      properties:
+        period_id:
+          type: string
+          description: Period identifier
+        period_name:
+          type: string
+          description: Human-readable period name
+        value:
+          type: number
+          description: Metric value for this period
+
+    PeriodDelta:
+      type: object
+      required:
+        - from_period
+        - to_period
+        - absolute_change
+        - percentage_change
+      properties:
+        from_period:
+          type: string
+          description: Starting period identifier
+        to_period:
+          type: string
+          description: Ending period identifier
+        absolute_change:
+          type: number
+          description: Absolute difference (to_value - from_value)
+        percentage_change:
+          type: number
+          format: double
+          description: Percentage change ((to - from) / from * 100)

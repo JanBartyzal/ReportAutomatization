@@ -1,0 +1,19 @@
+syntax = "proto3";
+package sink.v1;
+
+import "common/v1/common.proto";
+
+option java_package = "com.reportplatform.proto.sink.v1";
+option java_multiple_files = true;
+
+// Shared messages used by multiple sink services (Table, Document)
+// Extracted to avoid duplicate definitions within the same package.
+
+message DeleteByFileIdRequest {
+  common.v1.RequestContext context = 1;
+  string file_id = 2;
+}
+
+message DeleteResponse {
+  int32 records_deleted = 1;
+}

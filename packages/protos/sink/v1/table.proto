@@ -1,0 +1,63 @@
+syntax = "proto3";
+package sink.v1;
+
+import "common/v1/common.proto";
+import "sink/v1/shared.proto";
+
+option java_package = "com.reportplatform.proto.sink.v1";
+option java_multiple_files = true;
+
+service TableSinkService {
+  // Bulk insert structured data (tables, OPEX)
+  rpc BulkInsert(BulkInsertRequest) returns (BulkInsertResponse);
+
+  // Delete by file_id (Saga compensating action)
+  rpc DeleteByFileId(DeleteByFileIdRequest) returns (DeleteResponse);
+
+  // Store form response data
+  rpc StoreFormResponse(StoreFormResponseRequest) returns (StoreFormResponseResponse);
+}
+
+message BulkInsertRequest {
+  common.v1.RequestContext context = 1;
+  string file_id = 2;
+  string org_id = 3;
+  string source_type = 4;  // "FILE" or "FORM"
+  repeated TableRecord records = 5;
+}
+
+message TableRecord {
+  string record_id = 1;
+  string source_sheet = 2;   // sheet name or slide index
+  repeated string headers = 3;
+  repeated TableRecordRow rows = 4;
+  map<string, string> metadata = 5;
+}
+
+message TableRecordRow {
+  repeated string cells = 1;
+}
+
+message BulkInsertResponse {
+  int32 records_inserted = 1;
+  common.v1.ProcessingStatus status = 2;
+}
+
+message StoreFormResponseRequest {
+  common.v1.RequestContext context = 1;
+  string org_id = 2;
+  string period_id = 3;
+  string form_version_id = 4;
+  repeated FormFieldValue fields = 5;
+}
+
+message FormFieldValue {
+  string field_id = 1;
+  string value = 2;
+  string data_type = 3;
+}
+
+message StoreFormResponseResponse {
+  string response_id = 1;
+  string submitted_at = 2;
+}

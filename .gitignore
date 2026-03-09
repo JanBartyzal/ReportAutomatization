@@ -144,3 +144,13 @@ litellm_config.yaml
 
 owebui-data/
 owebui-data/*
+
+# Proto generated code
+packages/protos/gen/
+
+# Node packages
+packages/types/node_modules/
+packages/types/dist/
+apps/frontend/node_modules/
+apps/frontend/dist/
+node_modules/

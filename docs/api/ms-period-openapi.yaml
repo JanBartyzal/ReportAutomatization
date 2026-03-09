@@ -1,0 +1,449 @@
+openapi: 3.0.3
+info:
+  title: Period Service API (MS-PERIOD)
+  description: |
+    Manages reporting periods (monthly, quarterly, annual), their deadlines,
+    completion tracking, and status export.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Periods
+    description: Period CRUD, cloning, status tracking, and export
+
+paths:
+  # ── Periods CRUD ──────────────────────────────────────────────────────
+  /api/periods:
+    get:
+      tags: [Periods]
+      summary: List periods
+      operationId: listPeriods
+      parameters:
+        - name: type
+          in: query
+          description: Filter by period type
+          schema:
+            $ref: "#/components/schemas/PeriodType"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Paginated list of periods
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginationResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Period"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Periods]
+      summary: Create period
+      operationId: createPeriod
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePeriodRequest"
+      responses:
+        "201":
+          description: Period created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Period"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/periods/{period_id}:
+    parameters:
+      - $ref: "#/components/parameters/PeriodIdPath"
+    get:
+      tags: [Periods]
+      summary: Get period
+      operationId: getPeriod
+      responses:
+        "200":
+          description: Period details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Period"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    put:
+      tags: [Periods]
+      summary: Update period
+      operationId: updatePeriod
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePeriodRequest"
+      responses:
+        "200":
+          description: Period updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Period"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ── Clone ─────────────────────────────────────────────────────────────
+  /api/periods/{period_id}/clone:
+    parameters:
+      - $ref: "#/components/parameters/PeriodIdPath"
+    post:
+      tags: [Periods]
+      summary: Clone from previous period
+      description: |
+        Creates a new period by cloning settings (deadlines, assignments)
+        from the specified period.
+      operationId: clonePeriod
+      responses:
+        "201":
+          description: Cloned period created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Period"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ── Status Tracking ──────────────────────────────────────────────────
+  /api/periods/{period_id}/status:
+    parameters:
+      - $ref: "#/components/parameters/PeriodIdPath"
+    get:
+      tags: [Periods]
+      summary: Completion tracking matrix
+      description: |
+        Returns aggregate completion statistics and per-organization
+        submission status for the given period.
+      operationId: getPeriodStatus
+      responses:
+        "200":
+          description: Period completion matrix
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeriodStatusMatrix"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ── Export ────────────────────────────────────────────────────────────
+  /api/periods/{period_id}/export:
+    parameters:
+      - $ref: "#/components/parameters/PeriodIdPath"
+    get:
+      tags: [Periods]
+      summary: Export period status
+      description: Downloads the period status report as PDF or Excel.
+      operationId: exportPeriodStatus
+      parameters:
+        - name: format
+          in: query
+          required: true
+          description: Export file format
+          schema:
+            type: string
+            enum: [PDF, EXCEL]
+      responses:
+        "200":
+          description: Binary file download
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+# ═════════════════════════════════════════════════════════════════════════
+# Components
+# ═════════════════════════════════════════════════════════════════════════
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PeriodIdPath:
+      name: period_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Page:
+      name: page
+      in: query
+      description: Page number (1-based)
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: page_size
+      in: query
+      description: Items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  schemas:
+    # ── Common ────────────────────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    PaginationResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_items:
+          type: integer
+        total_pages:
+          type: integer
+
+    # ── Period ────────────────────────────────────────────────────────
+    PeriodType:
+      type: string
+      enum: [MONTHLY, QUARTERLY, ANNUAL]
+
+    PeriodStatus:
+      type: string
+      enum: [OPEN, COLLECTING, REVIEWING, CLOSED]
+
+    Period:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/PeriodType"
+        start_date:
+          type: string
+          format: date
+        submission_deadline:
+          type: string
+          format: date-time
+        review_deadline:
+          type: string
+          format: date-time
+        period_code:
+          type: string
+          description: "Human-readable code (e.g. 2026-Q1, 2026-03)"
+        status:
+          $ref: "#/components/schemas/PeriodStatus"
+        created_at:
+          type: string
+          format: date-time
+
+    CreatePeriodRequest:
+      type: object
+      required: [name, type, start_date, submission_deadline, review_deadline, period_code]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        type:
+          $ref: "#/components/schemas/PeriodType"
+        start_date:
+          type: string
+          format: date
+        submission_deadline:
+          type: string
+          format: date-time
+        review_deadline:
+          type: string
+          format: date-time
+        period_code:
+          type: string
+          minLength: 1
+          maxLength: 32
+
+    UpdatePeriodRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        type:
+          $ref: "#/components/schemas/PeriodType"
+        start_date:
+          type: string
+          format: date
+        submission_deadline:
+          type: string
+          format: date-time
+        review_deadline:
+          type: string
+          format: date-time
+        period_code:
+          type: string
+          minLength: 1
+          maxLength: 32
+
+    # ── Status Matrix ─────────────────────────────────────────────────
+    OrgPeriodStatus:
+      type: object
+      properties:
+        org_id:
+          type: string
+          format: uuid
+        org_name:
+          type: string
+        status:
+          type: string
+          description: Current report status for this org in the period
+        submitted_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    PeriodStatusMatrix:
+      type: object
+      properties:
+        period_id:
+          type: string
+          format: uuid
+        total_orgs:
+          type: integer
+        submitted:
+          type: integer
+        approved:
+          type: integer
+        rejected:
+          type: integer
+        draft:
+          type: integer
+        completion_percentage:
+          type: number
+          format: double
+        orgs:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrgPeriodStatus"
+
+  responses:
+    BadRequest:
+      description: Invalid request body or parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Resource conflict (e.g. duplicate period_code)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

@@ -1,0 +1,65 @@
+syntax = "proto3";
+package generator.v1;
+
+import "common/v1/common.proto";
+
+option java_package = "com.reportplatform.proto.generator.v1";
+option java_multiple_files = true;
+
+service PptxGeneratorService {
+  // Generate PPTX report from template + data
+  rpc GenerateReport(GenerateReportRequest) returns (GenerateReportResponse);
+
+  // Batch generate for multiple reports
+  rpc BatchGenerate(BatchGenerateRequest) returns (BatchGenerateResponse);
+}
+
+message GenerateReportRequest {
+  common.v1.RequestContext context = 1;
+  string template_id = 2;
+  string report_id = 3;
+  map<string, string> text_placeholders = 4;
+  repeated GeneratorTableData tables = 5;
+  repeated GeneratorChartData charts = 6;
+}
+
+message GeneratorTableData {
+  string placeholder_key = 1;  // "TABLE:table_name"
+  repeated string headers = 2;
+  repeated GeneratorTableRow rows = 3;
+}
+
+message GeneratorTableRow {
+  repeated string cells = 1;
+}
+
+message GeneratorChartData {
+  string placeholder_key = 1;  // "CHART:metric_name"
+  string chart_type = 2;       // "BAR", "LINE", "PIE"
+  repeated string labels = 3;
+  repeated ChartSeries series = 4;
+}
+
+message ChartSeries {
+  string name = 1;
+  repeated double values = 2;
+}
+
+message GenerateReportResponse {
+  string report_id = 1;
+  common.v1.BlobReference generated_file = 2;
+  repeated string missing_placeholders = 3;  // placeholders without data
+  string generated_at = 4;
+}
+
+message BatchGenerateRequest {
+  common.v1.RequestContext context = 1;
+  string template_id = 2;
+  repeated string report_ids = 3;
+}
+
+message BatchGenerateResponse {
+  repeated GenerateReportResponse results = 1;
+  int32 successful = 2;
+  int32 failed = 3;
+}

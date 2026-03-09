@@ -1,0 +1,67 @@
+syntax = "proto3";
+package atomizer.v1;
+
+import "common/v1/common.proto";
+
+option java_package = "com.reportplatform.proto.atomizer.v1";
+option java_multiple_files = true;
+
+service ExcelAtomizerService {
+  rpc ExtractStructure(ExtractRequest) returns (ExcelStructureResponse);
+  rpc ExtractSheetContent(SheetRequest) returns (SheetContentResponse);
+  rpc ExtractAll(ExtractRequest) returns (ExcelFullExtractionResponse);
+}
+
+message SheetRequest {
+  common.v1.RequestContext context = 1;
+  string file_id = 2;
+  string blob_url = 3;
+  int32 sheet_index = 4;
+}
+
+message ExcelStructureResponse {
+  string file_id = 1;
+  repeated SheetMetadata sheets = 2;
+}
+
+message SheetMetadata {
+  int32 sheet_index = 1;
+  string name = 2;
+  int32 row_count = 3;
+  int32 col_count = 4;
+  bool has_merged_cells = 5;
+}
+
+message SheetContentResponse {
+  int32 sheet_index = 1;
+  string sheet_name = 2;
+  repeated string headers = 3;
+  repeated SheetRow rows = 4;
+  repeated ColumnDataType data_types = 5;
+}
+
+// Reused by csv.proto, ai.proto, and template.proto
+message SheetRow {
+  int32 row_index = 1;
+  repeated string cells = 2;
+}
+
+message ColumnDataType {
+  int32 col_index = 1;
+  string column_name = 2;
+  string detected_type = 3;  // STRING, NUMBER, DATE, CURRENCY, PERCENTAGE
+}
+
+message ExcelFullExtractionResponse {
+  string file_id = 1;
+  common.v1.ProcessingStatus status = 2;  // COMPLETED or PARTIAL
+  repeated SheetContentResponse successful_sheets = 3;
+  repeated SheetExtractionError failed_sheets = 4;
+}
+
+message SheetExtractionError {
+  int32 sheet_index = 1;
+  string sheet_name = 2;
+  string error_code = 3;
+  string error_message = 4;
+}

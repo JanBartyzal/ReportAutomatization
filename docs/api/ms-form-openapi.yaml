@@ -1,0 +1,885 @@
+openapi: 3.0.3
+info:
+  title: Form Service API (MS-FORM)
+  description: |
+    Form builder for admins, form response handling for editors,
+    Excel template export/import, and form-to-organization assignments.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Form Builder
+    description: Form definition CRUD, publishing, versioning, and preview (Admin)
+  - name: Responses
+    description: Form response submission and auto-save (Editor)
+  - name: Assignments
+    description: Assign forms to organizations
+  - name: Excel
+    description: Excel template export and import
+
+paths:
+  # ── Form Builder (Admin) ──────────────────────────────────────────────
+  /api/forms:
+    get:
+      tags: [Form Builder]
+      summary: List forms
+      operationId: listForms
+      parameters:
+        - name: status
+          in: query
+          description: Filter by form status
+          schema:
+            $ref: "#/components/schemas/FormStatus"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Paginated list of forms
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginationResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/FormDefinition"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Form Builder]
+      summary: Create form
+      operationId: createForm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFormRequest"
+      responses:
+        "201":
+          description: Form created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/forms/{form_id}:
+    parameters:
+      - $ref: "#/components/parameters/FormIdPath"
+    get:
+      tags: [Form Builder]
+      summary: Get form
+      operationId: getForm
+      responses:
+        "200":
+          description: Form definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormDefinition"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    put:
+      tags: [Form Builder]
+      summary: Update form
+      operationId: updateForm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFormRequest"
+      responses:
+        "200":
+          description: Form updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags: [Form Builder]
+      summary: Delete form (only DRAFT)
+      description: Deletes a form. Only forms in DRAFT status can be deleted.
+      operationId: deleteForm
+      responses:
+        "204":
+          description: Form deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Form is not in DRAFT status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/forms/{form_id}/publish:
+    parameters:
+      - $ref: "#/components/parameters/FormIdPath"
+    post:
+      tags: [Form Builder]
+      summary: Publish form (DRAFT -> PUBLISHED)
+      operationId: publishForm
+      responses:
+        "200":
+          description: Form published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormDefinition"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Invalid state transition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/forms/{form_id}/close:
+    parameters:
+      - $ref: "#/components/parameters/FormIdPath"
+    post:
+      tags: [Form Builder]
+      summary: Close form (-> CLOSED)
+      operationId: closeForm
+      responses:
+        "200":
+          description: Form closed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormDefinition"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Invalid state transition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/forms/{form_id}/versions:
+    parameters:
+      - $ref: "#/components/parameters/FormIdPath"
+    get:
+      tags: [Form Builder]
+      summary: List form versions
+      operationId: listFormVersions
+      responses:
+        "200":
+          description: List of form versions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FormVersion"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/forms/{form_id}/preview:
+    parameters:
+      - $ref: "#/components/parameters/FormIdPath"
+    get:
+      tags: [Form Builder]
+      summary: Render form preview
+      operationId: previewForm
+      responses:
+        "200":
+          description: Rendered form preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormPreview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/forms/{form_id}/export/excel-template:
+    parameters:
+      - $ref: "#/components/parameters/FormIdPath"
+    get:
+      tags: [Excel]
+      summary: Download Excel template
+      description: Downloads an Excel template generated from the form definition.
+      operationId: exportExcelTemplate
+      responses:
+        "200":
+          description: Excel template file
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ── Responses (Editor) ────────────────────────────────────────────────
+  /api/forms/{form_id}/responses:
+    parameters:
+      - $ref: "#/components/parameters/FormIdPath"
+    get:
+      tags: [Responses]
+      summary: List responses
+      operationId: listResponses
+      responses:
+        "200":
+          description: List of form responses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FormResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Responses]
+      summary: Create response
+      operationId: createResponse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFormResponseRequest"
+      responses:
+        "201":
+          description: Response created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/forms/{form_id}/responses/{response_id}:
+    parameters:
+      - $ref: "#/components/parameters/FormIdPath"
+      - $ref: "#/components/parameters/ResponseIdPath"
+    get:
+      tags: [Responses]
+      summary: Get response
+      operationId: getResponse
+      responses:
+        "200":
+          description: Form response detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    put:
+      tags: [Responses]
+      summary: Update response
+      operationId: updateResponse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFormResponseRequest"
+      responses:
+        "200":
+          description: Response updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/forms/{form_id}/responses/{response_id}/auto-save:
+    parameters:
+      - $ref: "#/components/parameters/FormIdPath"
+      - $ref: "#/components/parameters/ResponseIdPath"
+    put:
+      tags: [Responses]
+      summary: Auto-save partial response
+      description: Saves partial form data without validation.
+      operationId: autoSaveResponse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFormResponseRequest"
+      responses:
+        "200":
+          description: Response auto-saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ── Excel Import ──────────────────────────────────────────────────────
+  /api/forms/{form_id}/import/excel:
+    parameters:
+      - $ref: "#/components/parameters/FormIdPath"
+    post:
+      tags: [Excel]
+      summary: Import Excel file
+      description: Imports form response data from an uploaded Excel file.
+      operationId: importExcel
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Excel file (.xlsx)
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExcelImportResult"
+        "400":
+          description: Invalid file or parsing errors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ── Assignments ───────────────────────────────────────────────────────
+  /api/forms/{form_id}/assignments:
+    parameters:
+      - $ref: "#/components/parameters/FormIdPath"
+    get:
+      tags: [Assignments]
+      summary: List assignments
+      operationId: listAssignments
+      responses:
+        "200":
+          description: List of assigned organizations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FormAssignment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    post:
+      tags: [Assignments]
+      summary: Assign organizations to form
+      operationId: assignOrganizations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [org_ids]
+              properties:
+                org_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+      responses:
+        "200":
+          description: Organizations assigned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FormAssignment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+# ═════════════════════════════════════════════════════════════════════════
+# Components
+# ═════════════════════════════════════════════════════════════════════════
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    FormIdPath:
+      name: form_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ResponseIdPath:
+      name: response_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Page:
+      name: page
+      in: query
+      description: Page number (1-based)
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: page_size
+      in: query
+      description: Items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  schemas:
+    # ── Common ────────────────────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    PaginationResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_items:
+          type: integer
+        total_pages:
+          type: integer
+
+    # ── Form Definition ───────────────────────────────────────────────
+    FormStatus:
+      type: string
+      enum: [DRAFT, PUBLISHED, CLOSED]
+
+    FormFieldType:
+      type: string
+      enum: [TEXT, NUMBER, PERCENTAGE, DATE, DROPDOWN, TABLE, FILE_ATTACHMENT]
+
+    FormField:
+      type: object
+      required: [field_id, name, type, order]
+      properties:
+        field_id:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/FormFieldType"
+        required:
+          type: boolean
+          default: false
+        validation_rules:
+          type: object
+          additionalProperties: true
+          description: Field-specific validation (e.g. min, max, pattern)
+        section:
+          type: string
+          description: Logical section grouping
+        order:
+          type: integer
+          description: Display order within the section
+        options:
+          type: array
+          items:
+            type: string
+          description: Available choices (for DROPDOWN type)
+
+    FormDefinition:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        report_type:
+          type: string
+        status:
+          $ref: "#/components/schemas/FormStatus"
+        version:
+          type: integer
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/FormField"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateFormRequest:
+      type: object
+      required: [name, report_type, fields]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        report_type:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/FormField"
+          minItems: 1
+
+    UpdateFormRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        report_type:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/FormField"
+
+    FormVersion:
+      type: object
+      properties:
+        version:
+          type: integer
+        form_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/FormStatus"
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/FormField"
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+          format: uuid
+
+    FormPreview:
+      type: object
+      properties:
+        form_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        sections:
+          type: array
+          items:
+            type: object
+            properties:
+              section:
+                type: string
+              fields:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FormField"
+
+    # ── Form Responses ────────────────────────────────────────────────
+    FormResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        form_id:
+          type: string
+          format: uuid
+        org_id:
+          type: string
+          format: uuid
+        data:
+          type: object
+          additionalProperties: true
+          description: "Map of field_id to value"
+        is_complete:
+          type: boolean
+        submitted_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateFormResponseRequest:
+      type: object
+      required: [org_id, data]
+      properties:
+        org_id:
+          type: string
+          format: uuid
+        data:
+          type: object
+          additionalProperties: true
+          description: "Map of field_id to value"
+
+    UpdateFormResponseRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: true
+          description: "Map of field_id to value"
+
+    # ── Excel Import ──────────────────────────────────────────────────
+    ExcelImportResult:
+      type: object
+      properties:
+        response_id:
+          type: string
+          format: uuid
+        rows_imported:
+          type: integer
+        warnings:
+          type: array
+          items:
+            type: object
+            properties:
+              row:
+                type: integer
+              field:
+                type: string
+              message:
+                type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              row:
+                type: integer
+              field:
+                type: string
+              message:
+                type: string
+
+    # ── Assignments ───────────────────────────────────────────────────
+    FormAssignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        form_id:
+          type: string
+          format: uuid
+        org_id:
+          type: string
+          format: uuid
+        assigned_at:
+          type: string
+          format: date-time
+        assigned_by:
+          type: string
+          format: uuid
+
+  responses:
+    BadRequest:
+      description: Invalid request body or parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

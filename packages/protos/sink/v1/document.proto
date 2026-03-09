@@ -1,0 +1,30 @@
+syntax = "proto3";
+package sink.v1;
+
+import "common/v1/common.proto";
+import "sink/v1/shared.proto";
+
+option java_package = "com.reportplatform.proto.sink.v1";
+option java_multiple_files = true;
+
+service DocumentSinkService {
+  // Store unstructured document (text, notes, etc.)
+  rpc StoreDocument(StoreDocumentRequest) returns (StoreDocumentResponse);
+
+  // Delete by file_id (Saga compensating action)
+  rpc DeleteByFileId(DeleteByFileIdRequest) returns (DeleteResponse);
+}
+
+message StoreDocumentRequest {
+  common.v1.RequestContext context = 1;
+  string file_id = 2;
+  string org_id = 3;
+  string document_type = 4;  // "SLIDE_TEXT", "PDF_PAGE", "NOTES"
+  string content = 5;         // JSON text content
+  map<string, string> metadata = 6;
+}
+
+message StoreDocumentResponse {
+  string document_id = 1;
+  bool embedding_queued = 2;  // true if sent to MS-ATM-AI for embedding
+}

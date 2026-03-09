@@ -1,0 +1,24 @@
+syntax = "proto3";
+package atomizer.v1;
+
+import "common/v1/common.proto";
+import "atomizer/v1/pptx.proto";
+import "atomizer/v1/excel.proto";
+
+option java_package = "com.reportplatform.proto.atomizer.v1";
+option java_multiple_files = true;
+
+service CsvAtomizerService {
+  rpc ExtractCsv(ExtractRequest) returns (CsvExtractionResponse);
+}
+
+message CsvExtractionResponse {
+  string file_id = 1;
+  common.v1.ProcessingStatus status = 2;
+  string detected_delimiter = 3;   // ",", ";", "|", "\t"
+  string detected_encoding = 4;     // "UTF-8", "Windows-1250", etc.
+  int32 total_rows = 5;
+  repeated string headers = 6;
+  repeated SheetRow rows = 7;       // reuse from excel.proto
+  repeated ColumnDataType data_types = 8;
+}

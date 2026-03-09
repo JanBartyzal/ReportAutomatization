@@ -1,0 +1,261 @@
+openapi: 3.0.3
+info:
+  title: Search Service API (MS-SRCH)
+  description: Full-text and semantic search across all platform content
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: Base API server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/search:
+    get:
+      operationId: search
+      summary: Full-text + semantic search
+      description: >
+        Performs full-text and semantic search across indexed platform content.
+        Results are ranked by relevance score and include highlighted snippets.
+      tags:
+        - Search
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query string
+          schema:
+            type: string
+            minLength: 1
+            example: "Q4 revenue report"
+        - name: type
+          in: query
+          required: false
+          description: Filter results by content type
+          schema:
+            type: string
+            enum:
+              - FILE
+              - DOCUMENT
+              - REPORT
+              - FORM
+        - name: page
+          in: query
+          required: false
+          description: Page number (1-based)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          required: false
+          description: Number of results per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Paginated search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResultPage"
+              example:
+                items:
+                  - id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                    type: REPORT
+                    title: "Q4 2025 Revenue Report"
+                    snippet: "Total revenue for Q4 reached $1.35M, a 12% increase..."
+                    score: 0.95
+                    highlight: "Total <em>revenue</em> for <em>Q4</em> reached $1.35M"
+                    metadata:
+                      org_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                      created_by: "analyst@example.com"
+                      created_at: "2026-01-15T10:30:00Z"
+                page: 1
+                page_size: 20
+                total_items: 1
+                total_pages: 1
+        "400":
+          description: Invalid search query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: BAD_REQUEST
+                message: "Query parameter 'q' is required"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/search/suggest:
+    get:
+      operationId: suggest
+      summary: Autocomplete suggestions
+      description: >
+        Returns autocomplete suggestions for the given query prefix. Used to
+        power type-ahead search in the frontend.
+      tags:
+        - Search
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Partial query string for autocomplete
+          schema:
+            type: string
+            minLength: 1
+            example: "Q4 rev"
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of suggestions to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 5
+      responses:
+        "200":
+          description: List of autocomplete suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Suggestion"
+              example:
+                - text: "Q4 Revenue Report"
+                  type: REPORT
+                  id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                - text: "Q4 Revenue Summary.xlsx"
+                  type: FILE
+                  id: "b5c6d7e8-f9a0-1234-bcde-f56789012345"
+        "400":
+          description: Invalid query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Azure Entra ID v2.0 JWT token
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    SearchResult:
+      type: object
+      required:
+        - id
+        - type
+        - title
+        - score
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the matched entity
+        type:
+          type: string
+          enum:
+            - FILE
+            - DOCUMENT
+            - REPORT
+            - FORM
+          description: Content type of the result
+        title:
+          type: string
+          description: Title or name of the matched entity
+        snippet:
+          type: string
+          description: Short excerpt of the matched content
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Relevance score (0.0 to 1.0)
+        highlight:
+          type: string
+          description: HTML-highlighted snippet with matching terms wrapped in <em> tags
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional metadata about the result (org_id, created_by, etc.)
+
+    SearchResultPage:
+      type: object
+      required:
+        - items
+        - page
+        - page_size
+        - total_items
+        - total_pages
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        page:
+          type: integer
+          description: Current page number
+        page_size:
+          type: integer
+          description: Number of items per page
+        total_items:
+          type: integer
+          description: Total number of matching results
+        total_pages:
+          type: integer
+          description: Total number of pages
+
+    Suggestion:
+      type: object
+      required:
+        - text
+        - type
+        - id
+      properties:
+        text:
+          type: string
+          description: Suggested completion text
+        type:
+          type: string
+          description: Content type of the suggested entity
+        id:
+          type: string
+          format: uuid
+          description: Identifier of the suggested entity

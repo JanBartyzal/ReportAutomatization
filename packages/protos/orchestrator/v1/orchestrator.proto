@@ -1,0 +1,134 @@
+syntax = "proto3";
+package orchestrator.v1;
+
+import "common/v1/common.proto";
+
+option java_package = "com.reportplatform.proto.orchestrator.v1";
+option java_multiple_files = true;
+
+// MS-ORCH: Workflow Engine
+// Called via Dapr Pub/Sub (file-uploaded event) and gRPC (manual trigger)
+
+service OrchestratorService {
+  // Trigger processing workflow for a file
+  rpc StartFileWorkflow(StartFileWorkflowRequest) returns (StartFileWorkflowResponse);
+
+  // Get workflow status
+  rpc GetWorkflowStatus(GetWorkflowStatusRequest) returns (WorkflowStatusResponse);
+
+  // Retry a failed workflow
+  rpc RetryWorkflow(RetryWorkflowRequest) returns (StartFileWorkflowResponse);
+
+  // Cancel a running workflow
+  rpc CancelWorkflow(CancelWorkflowRequest) returns (CancelWorkflowResponse);
+
+  // List failed jobs (DLQ)
+  rpc ListFailedJobs(ListFailedJobsRequest) returns (ListFailedJobsResponse);
+
+  // Reprocess a failed job
+  rpc ReprocessFailedJob(ReprocessFailedJobRequest) returns (StartFileWorkflowResponse);
+}
+
+// --- Requests ---
+
+message StartFileWorkflowRequest {
+  common.v1.RequestContext context = 1;
+  string file_id = 2;
+  string file_type = 3;      // "PPTX", "XLSX", "PDF", "CSV"
+  string org_id = 4;
+  string blob_url = 5;
+  string upload_purpose = 6;  // "PARSE" or "FORM_IMPORT"
+}
+
+message GetWorkflowStatusRequest {
+  common.v1.RequestContext context = 1;
+  string workflow_id = 2;
+}
+
+message RetryWorkflowRequest {
+  common.v1.RequestContext context = 1;
+  string workflow_id = 2;
+}
+
+message CancelWorkflowRequest {
+  common.v1.RequestContext context = 1;
+  string workflow_id = 2;
+}
+
+message ListFailedJobsRequest {
+  common.v1.RequestContext context = 1;
+  common.v1.PaginationRequest pagination = 2;
+  string org_id = 3;  // optional filter
+}
+
+message ReprocessFailedJobRequest {
+  common.v1.RequestContext context = 1;
+  string failed_job_id = 2;
+}
+
+// --- Responses ---
+
+message StartFileWorkflowResponse {
+  string workflow_id = 1;
+  string status = 2;  // "STARTED", "ALREADY_RUNNING", "QUEUED"
+}
+
+message WorkflowStatusResponse {
+  string workflow_id = 1;
+  string file_id = 2;
+  string status = 3;  // "RUNNING", "COMPLETED", "FAILED", "CANCELLED"
+  repeated WorkflowStep steps = 4;
+  string started_at = 5;
+  string completed_at = 6;
+  string error_detail = 7;
+}
+
+message WorkflowStep {
+  string step_name = 1;
+  string status = 2;
+  int64 duration_ms = 3;
+  string error_detail = 4;
+  string started_at = 5;
+  string completed_at = 6;
+}
+
+message CancelWorkflowResponse {
+  bool cancelled = 1;
+}
+
+message ListFailedJobsResponse {
+  repeated FailedJob jobs = 1;
+  common.v1.PaginationResponse pagination = 2;
+}
+
+message FailedJob {
+  string id = 1;
+  string file_id = 2;
+  string workflow_id = 3;
+  string error_type = 4;
+  string error_detail = 5;
+  string failed_at = 6;
+  int32 retry_count = 7;
+}
+
+// --- Dapr Pub/Sub Events ---
+
+// Published by MS-ING on topic "file-uploaded"
+message FileUploadedEvent {
+  string file_id = 1;
+  string file_type = 2;
+  string org_id = 3;
+  string user_id = 4;
+  string blob_url = 5;
+  string upload_purpose = 6;
+  string uploaded_at = 7;
+}
+
+// Published by MS-ORCH on topic "processing-completed"
+message ProcessingCompletedEvent {
+  string file_id = 1;
+  string workflow_id = 2;
+  string org_id = 3;
+  common.v1.ProcessingStatus status = 4;
+  string completed_at = 5;
+}

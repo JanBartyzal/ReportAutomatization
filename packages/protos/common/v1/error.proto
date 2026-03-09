@@ -1,0 +1,12 @@
+syntax = "proto3";
+package common.v1;
+
+option java_package = "com.reportplatform.proto.common.v1";
+option java_multiple_files = true;
+
+// Standard gRPC error detail
+message ErrorDetail {
+  string code = 1;          // e.g., "PARSING_FAILED", "INFECTED"
+  string message = 2;
+  map<string, string> metadata = 3;
+}

@@ -1,0 +1,48 @@
+syntax = "proto3";
+package scanner.v1;
+
+import "common/v1/common.proto";
+
+option java_package = "com.reportplatform.proto.scanner.v1";
+option java_multiple_files = true;
+
+service ScannerService {
+  // Scan file for viruses via ClamAV
+  rpc ScanFile(ScanFileRequest) returns (ScanFileResponse);
+
+  // Sanitize file (remove macros, external links)
+  rpc SanitizeFile(SanitizeFileRequest) returns (SanitizeFileResponse);
+}
+
+message ScanFileRequest {
+  common.v1.RequestContext context = 1;
+  string file_id = 2;
+  string blob_url = 3;
+}
+
+message ScanFileResponse {
+  string file_id = 1;
+  ScanResult result = 2;
+  string threat_name = 3;  // empty if clean
+  int64 scan_duration_ms = 4;
+}
+
+enum ScanResult {
+  SCAN_RESULT_UNSPECIFIED = 0;
+  SCAN_RESULT_CLEAN = 1;
+  SCAN_RESULT_INFECTED = 2;
+  SCAN_RESULT_ERROR = 3;
+}
+
+message SanitizeFileRequest {
+  common.v1.RequestContext context = 1;
+  string file_id = 2;
+  string blob_url = 3;
+  string mime_type = 4;
+}
+
+message SanitizeFileResponse {
+  string file_id = 1;
+  common.v1.BlobReference sanitized_file = 2;
+  repeated string removed_items = 3;  // ["VBA_MACROS", "EXTERNAL_LINKS"]
+}

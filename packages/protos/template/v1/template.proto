@@ -1,0 +1,70 @@
+syntax = "proto3";
+package template.v1;
+
+import "common/v1/common.proto";
+import "atomizer/v1/excel.proto";
+
+option java_package = "com.reportplatform.proto.template.v1";
+option java_multiple_files = true;
+
+service TemplateMappingService {
+  // Apply schema mapping to extracted data
+  rpc ApplyMapping(ApplyMappingRequest) returns (ApplyMappingResponse);
+
+  // Suggest mapping based on headers (AI-assisted learning)
+  rpc SuggestMapping(SuggestMappingRequest) returns (SuggestMappingResponse);
+
+  // Map Excel columns to form fields (FS19 import)
+  rpc MapExcelToForm(MapExcelToFormRequest) returns (MapExcelToFormResponse);
+}
+
+message ApplyMappingRequest {
+  common.v1.RequestContext context = 1;
+  string template_id = 2;
+  repeated string source_headers = 3;
+  repeated atomizer.v1.SheetRow rows = 4;
+}
+
+message ApplyMappingResponse {
+  repeated string mapped_headers = 1;
+  repeated atomizer.v1.SheetRow mapped_rows = 2;
+  repeated MappingAction applied_mappings = 3;
+}
+
+message MappingAction {
+  string source_column = 1;
+  string target_column = 2;
+  string rule = 3;  // "EXACT_MATCH", "SYNONYM", "AI_SUGGESTED"
+  double confidence = 4;
+}
+
+message SuggestMappingRequest {
+  common.v1.RequestContext context = 1;
+  string org_id = 2;
+  repeated string source_headers = 3;
+}
+
+message SuggestMappingResponse {
+  repeated MappingAction suggestions = 1;
+}
+
+message MapExcelToFormRequest {
+  common.v1.RequestContext context = 1;
+  string form_id = 2;
+  string form_version_id = 3;
+  repeated string excel_headers = 4;
+  repeated atomizer.v1.SheetRow sample_rows = 5;
+}
+
+message MapExcelToFormResponse {
+  repeated FormFieldMapping mappings = 1;
+  repeated string unmapped_excel_columns = 2;
+  repeated string unmapped_form_fields = 3;
+}
+
+message FormFieldMapping {
+  string excel_column = 1;
+  string form_field_id = 2;
+  string form_field_name = 3;
+  double confidence = 4;
+}

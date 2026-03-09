@@ -55,7 +55,7 @@ Story je done, pokud:
 
 **Scope:** FS01, FS02, FS03-PPTX, FS04, FS05, FS09-basic
 
-**Celkový effort:** ~193 MD (s AI asistencí ~80 MD)
+**Celkový effort:** ~213 MD (s AI asistencí ~88 MD)
 
 | Unit ID | Function ID | Effort (MD) | AI (MD) |
 |---|---|---|---|
@@ -67,7 +67,7 @@ Story je done, pokud:
 | MS-DATA | MS-SINK-TBL | 12 | 5 |
 | MS-DATA | MS-SINK-DOC | 10 | 5 |
 | MS-DATA | MS-SINK-LOG | 5 | 2 |
-| MS-N8N | MS-N8N | 25 | 10 |
+| MS-ORCH | MS-ORCH | 45 | 18 |
 | MS-FE | MS-FE | 45 | 20 |
 
 ---
@@ -82,35 +82,33 @@ Story je done, pokud:
 
 ---
 
-##### Story: Traefik Routing & ForwardAuth
+##### Story: Nginx Routing & auth_request
 
-**Jako** DevOps **chci** nakonfigurovat Traefik jako API Gateway **abych** zajistil centrální vstupní bod s autentizací pro všechny služby.
+**Jako** DevOps **chci** nakonfigurovat Nginx jako API Gateway **abych** zajistil centrální vstupní bod s autentizací pro všechny služby.
 
 **AC:**
 
-- [ ] Traefik routuje `/api/auth/*` → MS-AUTH (port 8081)
-- [ ] Traefik routuje `/api/upload/*` → MS-ING (port 8082)
-- [ ] Traefik routuje `/api/files/*` → MS-QRY (port 8100, prepared for P2)
-- [ ] ForwardAuth middleware volá MS-AUTH na každém requestu (kromě `/healthz`)
-- [ ] Rate limiting vrací `429` po překročení limitu
-- [ ] CORS headers pro frontend (localhost:3000 v dev, produkční URL v prod)
-- [ ] Health check endpoint `/healthz` vrací `200`
+- [ ] Nginx routuje `/api/auth/*` → MS-AUTH (port 8081)
+- [ ] Nginx routuje `/api/upload/*` → MS-ING (port 8082)
+- [ ] Nginx routuje `/api/files/*` → MS-QRY (port 8100, prepared for P2)
+- [ ] `auth_request` modul volá MS-AUTH na každém requestu (kromě `/health`)
+- [ ] Rate limiting (ngx_http_limit_req_module):
+  - API endpointy: 100 req/s per IP, burst 20
+  - Auth + Upload endpointy: 10 req/s per IP, burst 20
+  - Překročení → `429 Too Many Requests`
+- [ ] CORS headers: whitelist `https://*.company.cz` + `localhost:3000` (dev)
+- [ ] SSL: Azure Front Door terminuje SSL (WAF + SSL = holding standard), Nginx komunikuje přes HTTP v interní síti
+- [ ] Health check endpoint `/health` vrací `200`
 
 **Tasks:**
 
-- [ ] Vytvořit `traefik.yml` – entrypoints (HTTP :80, HTTPS :443), providers
-- [ ] Dynamic routing rules (Docker labels nebo file provider)
-- [ ] ForwardAuth middleware → `http://ms-auth:8000/api/auth/verify`
-- [ ] Rate limiting middleware
-- [ ] CORS middleware konfigurace
-- [ ] SSL – self-signed cert pro lokální dev (mkcert)
+- [ ] Vytvořit `nginx.conf` – upstream blocks, server blocks, Host-based routing
+- [ ] `auth_request` konfigurace → `http://ms-auth:8000/api/auth/verify`
+- [ ] `auth_request_set` pro propagaci headerů (`X-User-Id`, `X-Org-Id`, `X-Roles`)
+- [ ] Rate limiting: `limit_req_zone` pro API (100r/s) a Auth/Upload (10r/s) zóny
+- [ ] CORS: `add_header Access-Control-Allow-Origin` s whitelist logikou
 - [ ] Docker Compose service definice s health check
-
-**TODO:**
-
-- [ ] Rate limit hodnoty: req/s per IP, burst size?
-- [ ] Produkční SSL strategie: Azure Front Door, Let's Encrypt, nebo vlastní cert?
-- [ ] CORS: produkční frontend URL?
+- [ ] Azure Front Door konfigurace docs (WAF rules, SSL cert, origin group → Nginx)
 
 **Effort:** 1 MD
 
@@ -184,17 +182,14 @@ Headers:
 - [ ] Spring Security – OAuth2 Resource Server konfigurace
 - [ ] JWKS endpoint: `https://login.microsoftonline.com/{tenant}/discovery/v2.0/keys`
 - [ ] Custom `JwtAuthenticationConverter` – extrakce claims (`oid`, `tid`, `roles`, `groups`)
-- [ ] ForwardAuth controller – vrací headers s user context
+- [ ] auth_request controller – vrací headers s user context (Nginx `auth_request_set`)
 - [ ] JWKS cache s konfigurovaným TTL
 - [ ] Unit testy: platný token, expirovaný, špatný issuer, chybějící role
 - [ ] Integration test s mock JWKS endpoint (WireMock)
-
-**TODO:**
-
-- [ ] Azure Entra ID Tenant ID
-- [ ] App Registration Client ID a scope URI
-- [ ] Mapování Azure AD Security Groups → interní role (která skupina = Admin/Editor/Viewer/HoldingAdmin?)
-- [ ] Je vyžadováno členství v konkrétní AAD Security Group (Conditional Access)?
+- [ ] Azure Entra ID Tenant ID - součástí appconfig.json
+- [ ] App Registration Client ID a scope URI - v KeyVault pod Managed identity
+- [ ] Mapování Azure AD Security Groups → interní role - všechny role jsou namapované na AAD Security Groups (Admin, Viewer, Editor, HoldingAdmin)
+- [ ] Je vyžadováno členství v konkrétní AAD Security Group (Conditional Access)
 
 **Effort:** 5 MD | **Závislosti:** Base Setup
 
@@ -210,7 +205,7 @@ Headers:
 - [ ] Každé oprávnění je scoped na `org_id`
 - [ ] HoldingAdmin vidí data ze všech dceřiných organizací v holdingu
 - [ ] API endpoint `GET /api/auth/me` vrací aktuální user context (role, organizace)
-- [ ] Oprávnění vyhodnoceno při ForwardAuth i při přímém volání z jiných služeb
+- [ ] Oprávnění vyhodnoceno při auth_request (Nginx) i při přímém volání z jiných služeb
 
 **API:**
 
@@ -273,15 +268,22 @@ INSERT INTO roles (name, description) VALUES
 - [ ] `RbacService.getUserContext(userId)` → UserContext DTO
 - [ ] Hierarchická logika: HoldingAdmin → `parent_org_id IS NULL` vidí všechny child orgs
 - [ ] `/api/auth/me` endpoint
-- [ ] Seed data migrace: základní role + **TODO** testovací organizace
+- [ ] Seed data migrace: základní role + testovací organizace
 - [ ] Unit testy: oprávnění per role, hierarchie, cross-tenant denial
 
-**TODO:**
+**Permission matice (rozhodnuto):**
 
-- [ ] Kompletní permission matice: jaké akce per role? (upload, view, edit, delete, approve, ...)
-- [ ] Organizační hierarchie – kolik úrovní? (holding → dceřiná → divize?)
+| Role | Upload | Edit | View (own org) | View (cross-org) | Approve | Admin |
+|---|---|---|---|---|---|---|
+| **Admin** | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ (v rámci Org) |
+| **Editor** | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Viewer** | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| **HoldingAdmin** | ❌ | ❌ | ✅ | ✅ (Read-only) | ✅ | ✅ (cross-org) |
+
+**Organizační hierarchie (rozhodnuto):** Fixní 3 úrovně: **Holding → Společnost → Divize/Nákladové středisko**
+
 - [ ] Seed data pro dev: testovací organizace a uživatelé
-- [ ] Má Editor vidět data jiných Editorů ve stejné organizaci?
+- [ ] Editor vidí data jiných Editorů ve stejné organizaci a všechny data z nižších org. jednotek pod organizací
 
 **Effort:** 8 MD | **Závislosti:** Token Validation
 
@@ -305,11 +307,9 @@ INSERT INTO roles (name, description) VALUES
 - [ ] `application-local.yml` – env variable fallback
 - [ ] Dokumentace: seznam secrets, naming konvence v KeyVault
 
-**TODO:**
-
 - [ ] Azure KeyVault URL
 - [ ] Kompletní seznam secrets a jejich naming konvence v KeyVault
-- [ ] MSI setup – je provisioned? Jaká identita?
+- [ ] MSI setup – Managed Identity
 
 **Effort:** 2 MD
 
@@ -336,11 +336,9 @@ INSERT INTO roles (name, description) VALUES
 - [ ] Init script: vytvoření app user s omezenými právy (ne superuser)
 - [ ] Connection pool tuning (HikariCP – max pool size, idle timeout)
 
-**TODO:**
-
-- [ ] PostgreSQL credentials pro lokální dev
-- [ ] Prod: Azure Database for PostgreSQL Flexible Server, nebo self-hosted?
-- [ ] Max connection pool size per service?
+- [ ] PostgreSQL credentials pro lokální dev v appseting.json
+- [ ] Prod: Azure Database for PostgreSQL Flexible Server
+- [ ] Max connection pool size per service - bude cca 50 uživatelů.
 
 **Effort:** 3 MD
 
@@ -368,31 +366,35 @@ INSERT INTO roles (name, description) VALUES
 
 ---
 
-##### Story: Docker Compose Full Topology (P1)
+##### Story: Docker Compose Full Topology + Dapr Sidecars (P1)
 
 **Jako** vývojář **chci** spustit celou P1 topologii jedním příkazem **abych** mohl lokálně vyvíjet a testovat.
 
 **AC:**
 
-- [ ] `docker-compose up` spustí: Traefik, MS-AUTH, MS-ING, MS-SCAN, MS-N8N, MS-ATM-PPTX, MS-SINK-TBL, MS-SINK-DOC, MS-SINK-LOG, MS-FE, PostgreSQL, Redis
-- [ ] Všechny služby komunikují přes interní Docker network
+- [ ] `docker-compose up` spustí: Nginx, MS-AUTH, MS-ING, MS-SCAN, MS-ORCH, MS-ATM-PPTX, MS-SINK-TBL, MS-SINK-DOC, MS-SINK-LOG, MS-FE, PostgreSQL, Redis, Azurite
+- [ ] Každá interní služba má **Dapr sidecar** kontejner s konfigurovaným `app-id` a `app-protocol`
+- [ ] Interní služby (MS-ATM-*, MS-SINK-*, MS-ORCH, MS-TMPL) komunikují přes Dapr gRPC
+- [ ] Edge služby (MS-AUTH, MS-ING, MS-QRY) vystavují REST přes Docker network
 - [ ] `.env` soubor s konfiguratelnými porty a credentials
-- [ ] Hot-reload pro FE (Vite HMR), Java (Spring DevTools), Python (uvicorn --reload)
+- [ ] Hot-reload pro FE (Vite HMR), Java (Spring DevTools), Python (gRPC server reload)
 
 **Tasks:**
 
-- [ ] `docker-compose.yml` se všemi P1 službami
+- [ ] `docker-compose.yml` se všemi P1 službami + Dapr sidecars
+- [ ] Dapr component definitions: `components/pubsub.yaml` (Redis Streams), `components/statestore.yaml`
+- [ ] Dapr sidecar konfigurace per služba: `app-id`, `app-protocol: grpc/http`, `app-port`
 - [ ] `.env.example` s dokumentovanými proměnnými
 - [ ] Shared Docker network konfigurace
 - [ ] Volume mappings pro hot-reload (source code mounts)
-- [ ] Startup ordering (depends_on + healthcheck)
+- [ ] Startup ordering (depends_on + healthcheck) – Redis a PG musí být ready před Dapr sidecars
+- [ ] Dapr dashboard (localhost:8080/dapr) pro debugging service invocations
 
-**TODO:**
+- [ ] Pro lokální dev stačí Docker Compose
+- [ ] Služby sdílejí jednu PostgreSQL instanci (různá schémata)
+- [ ] Dapr placement service pro actor model (pokud bude potřeba v budoucnu)
 
-- [ ] Má se použít Tilt/Skaffold pro lokální dev, nebo stačí Docker Compose?
-- [ ] Mají služby sdílet jednu PostgreSQL instanci (různá schémata) nebo samostatné instance?
-
-**Effort:** 5 MD
+**Effort:** 6 MD
 
 ---
 
@@ -504,19 +506,20 @@ CREATE INDEX idx_files_processing_status ON files(processing_status);
 - [ ] Blob naming: `{org_id}/{yyyy}/{MM}/{file_id}/{original_filename}`
 - [ ] Flyway migrace V002 – files tabulka s RLS
 - [ ] `FileMetadataRepository` – zápis záznamu po uploadu
-- [ ] `org_id` a `user_id` extrakce z ForwardAuth headers (`X-Org-Id`, `X-User-Id`)
+- [ ] `org_id` a `user_id` extrakce z auth_request headers (`X-Org-Id`, `X-User-Id`)
 - [ ] File size limit konfigurace (`spring.servlet.multipart.max-file-size`)
 - [ ] Unit testy: MIME validace (povolený typ, zakázaný typ, spoofed extension)
 - [ ] Integration test: upload → Blob → DB záznam
 
-**TODO:**
+**Rozhodnutí (potvrzeno):**
 
-- [ ] Max file size: 20 MB? 50 MB? 100 MB?
-- [ ] Blob Storage: Azure Blob, S3, nebo MinIO pro lokální dev?
-- [ ] Blob naming konvence – je `{org_id}/{yyyy}/{MM}/{file_id}/` OK?
-- [ ] Mají se počítat storage quotas per organizace?
+- **Max file size:** 50 MB (PPTX), 100 MB (PDF s OCR)
+- **Blob Storage:** Azure Blob Storage (lokálně Azurite v Dockeru)
+- **Blob naming:** `{org_id}/{yyyy}/{MM}/{file_id}/{original_filename}` – potvrzeno
 
-**Effort:** 8 MD | **Závislosti:** MS-AUTH (ForwardAuth), PostgreSQL (migrace), Blob Storage
+- [ ] Storage quotas je jedna celková
+
+**Effort:** 8 MD | **Závislosti:** MS-AUTH (auth_request), PostgreSQL (migrace), Azure Blob Storage
 
 ---
 
@@ -544,10 +547,10 @@ CREATE INDEX idx_files_processing_status ON files(processing_status);
 - [ ] Update `scan_status` v files tabulce
 - [ ] Test: EICAR virus, clean file, ClamAV timeout, ClamAV unavailable
 
-**TODO:**
+**Rozhodnutí (potvrzeno):**
 
-- [ ] ICAP protokol nebo clamd socket? (ICAP pro enterprise, clamd jednodušší)
-- [ ] ClamAV virus DB update strategie: freshclam sidecar s cron?
+- **ClamAV protokol:** clamd TCP socket (port 3310) – jednodušší na scaling v Kubernetes/ACA
+- [ ] ClamAV virus DB update strategie freshclam sidecar s cron
 
 **Effort:** 5 MD | **Závislosti:** Upload Endpoint
 
@@ -574,33 +577,33 @@ CREATE INDEX idx_files_processing_status ON files(processing_status);
 - [ ] Unit test: soubor s makrem → makro odstraněno, obsah zachován
 - [ ] Unit test: soubor bez makra → beze změny
 
-**TODO:**
+**Rozhodnutí (potvrzeno):**
 
-- [ ] Má se originál uchovávat trvale nebo s expirací (např. 90 dní)?
-- [ ] Další typy k odstranění? ActiveX, embedded executables, external data connections?
+- **Retention policy:** Raw soubory (`_raw/`) uchovávat 90 dní (pro audit), pak smazat. Sanitizované trvale.
+- [ ] Další typy k odstranění - ActiveX, embedded executables, external data connections atd.
 
 **Effort:** 4 MD | **Závislosti:** Upload Endpoint
 
 ---
 
-##### Story: N8N Webhook Trigger
+##### Story: Orchestrator Event Trigger
 
-**Jako** Ingestor **chci** po úspěšném uploadu notifikovat N8N orchestrátor **abych** spustil processing pipeline.
+**Jako** Ingestor **chci** po úspěšném uploadu notifikovat MS-ORCH orchestrátor **abych** spustil processing pipeline.
 
 **AC:**
 
-- [ ] Po úspěšném uploadu + clean scan → webhook na N8N
-- [ ] Payload: `{ file_id, type, org_id, blob_url, user_id, filename }`
-- [ ] Fire-and-forget: Ingestor nečeká na odpověď N8N
-- [ ] Webhook doručen do 1 s od uložení
-- [ ] Selhání webhooku → log warning, soubor zůstane `UPLOADED` (N8N může pollovat)
+- [ ] Po úspěšném uploadu + clean scan → event přes Dapr PubSub na MS-ORCH
+- [ ] Payload (Type-Safe DTO): `FileUploadedEvent { file_id, type, org_id, blob_url, user_id, filename, size_bytes }`
+- [ ] Fire-and-forget: Ingestor nečeká na odpověď MS-ORCH
+- [ ] Event doručen do 1 s od uložení
+- [ ] Selhání publikace → log warning + retry (Dapr built-in retry)
 - [ ] `processing_status` aktualizován na `PROCESSING`
 
-**API (odchozí):**
+**API (odchozí – Dapr PubSub):**
 
 ```
-POST http://ms-n8n:5678/webhook/new-file
-Content-Type: application/json
+Topic: file-uploaded
+Payload (FileUploadedEvent):
 {
   "file_id": "uuid",
   "type": "pptx",
@@ -614,13 +617,13 @@ Content-Type: application/json
 
 **Tasks:**
 
-- [ ] N8N webhook URL – env variable `N8N_WEBHOOK_URL`
-- [ ] Async HTTP client (WebClient non-blocking) pro webhook call
-- [ ] Fire-and-forget: `.subscribe()` bez čekání na response
-- [ ] Error handling: log warning, neretryovat (N8N má vlastní retry)
+- [ ] Dapr PubSub component konfigurace (Redis Streams nebo RabbitMQ)
+- [ ] `FileUploadedEvent` DTO (Type-Safe Contract)
+- [ ] Dapr SDK – publish event na topic `file-uploaded`
+- [ ] Error handling: log warning, Dapr retry policy
 - [ ] Update `processing_status` → `PROCESSING` v DB
 
-**Effort:** 2 MD | **Závislosti:** Upload Endpoint, N8N Webhook Listener
+**Effort:** 2 MD | **Závislosti:** Upload Endpoint, MS-ORCH Event Subscriber
 
 ---
 
@@ -634,126 +637,137 @@ Content-Type: application/json
 
 ---
 
-##### Story: FastAPI Base Setup (MS-ATM-PPTX)
+##### Story: gRPC Server Base Setup (MS-ATM-PPTX)
 
 **Jako** vývojář **chci** připravit base projekt PPTX Atomizeru **abych** měl základ pro extraction službu.
 
 **AC:**
 
-- [ ] Python 3.11+, FastAPI, Pydantic v2, uvicorn
+- [ ] Python 3.11+, gRPC server (grpcio), Pydantic v2
 - [ ] Dockerfile s python:3.11-slim base image
-- [ ] Health check endpoint `/healthz`
+- [ ] Dapr sidecar konfigurace: `app-protocol: grpc`, `app-port: 50051`
+- [ ] Health check přes gRPC Health Check Protocol (`grpc.health.v1`)
 - [ ] Structured JSON logging
-- [ ] Docker Compose entry (port 8090:8000, debug 5678)
+- [ ] Docker Compose entry (gRPC port 50051, debug 5678)
+- [ ] **Žádné REST endpointy** – služba komunikuje výhradně přes Dapr gRPC
 
 **Tasks:**
 
-- [ ] Projekt scaffolding: `pyproject.toml` (poetry/pip), FastAPI app
+- [ ] Projekt scaffolding: `pyproject.toml` (poetry/pip), gRPC server
 - [ ] Dockerfile (multi-stage: dependencies → runtime)
-- [ ] Dependencies: `python-pptx`, `Pillow`, `httpx`, `pydantic`
+- [ ] Dependencies: `python-pptx`, `Pillow`, `httpx`, `pydantic`, `grpcio`, `grpcio-tools`, `grpcio-health-checking`
+- [ ] Protobuf kompilace: `protoc` → Python stubs z `packages/protos/atomizer_pptx.proto`
+- [ ] LibreOffice Headless v Dockerfile: `apt-get install libreoffice-impress`
+- [ ] Dapr component konfigurace (dapr.yaml): `app-id: ms-atm-pptx`, `app-protocol: grpc`
 - [ ] Config: environment variables (BLOB_STORAGE_URL, etc.)
-- [ ] Docker Compose entry
+- [ ] Docker Compose entry s Dapr sidecar
 
-**Effort:** 1 MD
+**Effort:** 2 MD
 
 ---
 
 ##### Story: PPTX Structure Extraction
 
-**Jako** N8N Orchestrátor **chci** získat strukturu PPTX souboru **abych** věděl, kolik slidů soubor obsahuje a jak je zpracovat.
+**Jako** MS-ORCH Orchestrátor **chci** získat strukturu PPTX souboru **abych** věděl, kolik slidů soubor obsahuje a jak je zpracovat.
 
 **AC:**
 
-- [ ] `POST /extract/pptx` přijímá `{ file_id, blob_url }`
+- [ ] `gRPC ExtractStructure(ExtractRequest)` přijímá `{ file_id, blob_url, org_id }`
 - [ ] Atomizer si stahuje soubor z Blob Storage sám (přes `blob_url`)
-- [ ] Vrací JSON seznam slidů s metadaty
-- [ ] Chybný soubor vrací `422` s detailem, nikdy `500`
+- [ ] Vrací `PptxStructureResponse` se seznamem slidů s metadaty
+- [ ] Chybný soubor vrací gRPC `INVALID_ARGUMENT` status s detailem, nikdy `INTERNAL`
+- [ ] Služba nemá žádné REST endpointy – pouze gRPC přes Dapr sidecar
 
-**API:**
+**gRPC API (definice v `packages/protos/atomizer_pptx.proto`):**
 
-```
-POST /extract/pptx
-{
-  "file_id": "uuid",
-  "blob_url": "https://storage.blob.core.windows.net/files/..."
+```protobuf
+service PptxAtomizerService {
+  rpc ExtractStructure (ExtractRequest) returns (PptxStructureResponse);
 }
 
-→ 200 OK
-{
-  "file_id": "uuid",
-  "slide_count": 15,
-  "slides": [
-    {
-      "slide_id": 1,
-      "title": "Q2 2025 OPEX Report",
-      "layout": "Title Slide",
-      "has_tables": false,
-      "has_text": true,
-      "has_images": true,
-      "has_notes": true
-    },
-    ...
-  ]
+message ExtractRequest {
+  string file_id = 1;
+  string blob_url = 2;
+  string org_id = 3;
 }
 
-→ 422 Unprocessable Entity
-{ "error": "INVALID_PPTX", "detail": "File is not a valid PPTX" }
+message PptxStructureResponse {
+  string file_id = 1;
+  int32 slide_count = 2;
+  repeated SlideMetadata slides = 3;
+}
+
+message SlideMetadata {
+  int32 slide_id = 1;
+  string title = 2;
+  string layout = 3;
+  bool has_tables = 4;
+  bool has_text = 5;
+  bool has_images = 6;
+  bool has_notes = 7;
+}
 ```
 
 **Tasks:**
 
+- [ ] gRPC server setup – `grpcio` + `grpcio-tools` v FastAPI aplikaci (nebo standalone gRPC server)
+- [ ] Dapr sidecar konfigurace – `app-protocol: grpc`, `app-port: 50051`
 - [ ] `BlobDownloader` – async stažení souboru z Blob URL (`httpx`)
 - [ ] `PptxParser.get_structure(file_path)` – python-pptx, iterace přes slidy
 - [ ] Extrakce metadat per slide: title (first text frame), layout name, detection tabulek/textu/obrázků
-- [ ] Pydantic response model
-- [ ] Error handling: `try/except` → `422` s popisem chyby
+- [ ] Protobuf response mapping
+- [ ] Error handling: `try/except` → gRPC `INVALID_ARGUMENT` s popisem chyby
 - [ ] Dočasný soubor – stáhnout do `/tmp`, po zpracování smazat
 - [ ] Unit testy: validní PPTX, prázdný PPTX, poškozený soubor
 
-**Effort:** 5 MD | **Závislosti:** Blob Storage
+**Effort:** 5 MD | **Závislosti:** Blob Storage, Proto definitions
 
 ---
 
 ##### Story: Slide Content Extraction (Text + Tables)
 
-**Jako** N8N Orchestrátor **chci** extrahovat texty a tabulky z konkrétního slidu **abych** je mohl uložit do DB.
+**Jako** MS-ORCH Orchestrátor **chci** extrahovat texty a tabulky z konkrétního slidu **abych** je mohl uložit do DB.
 
 **AC:**
 
-- [ ] `POST /extract/pptx/slide` přijímá `{ file_id, blob_url, slide_id }`
+- [ ] `gRPC ExtractSlideContent(SlideRequest)` přijímá `{ file_id, blob_url, slide_id }`
 - [ ] Extrahuje všechny textové rámce, tabulky a poznámky ze slidu
-- [ ] Tabulky strukturovány jako `{ headers: [...], rows: [[...], ...] }`
-- [ ] Nikdy nevrací inline binary data – pouze JSON
+- [ ] Tabulky strukturovány jako `TableData { headers, rows }`
+- [ ] Nikdy nevrací inline binary data – pouze strukturovaná gRPC response
 
-**API:**
+**gRPC API (definice v `packages/protos/atomizer_pptx.proto`):**
 
-```
-POST /extract/pptx/slide
-{
-  "file_id": "uuid",
-  "blob_url": "https://...",
-  "slide_id": 3
+```protobuf
+// Součást PptxAtomizerService
+rpc ExtractSlideContent (SlideRequest) returns (SlideContentResponse);
+
+message SlideRequest {
+  string file_id = 1;
+  string blob_url = 2;
+  int32 slide_id = 3;
 }
 
-→ 200 OK
-{
-  "file_id": "uuid",
-  "slide_id": 3,
-  "texts": [
-    { "shape_name": "Title 1", "content": "IT Costs Overview" },
-    { "shape_name": "Content Placeholder 2", "content": "Total OPEX: 1.2M CZK" }
-  ],
-  "tables": [
-    {
-      "table_id": 1,
-      "headers": ["Category", "Q1", "Q2", "Delta"],
-      "rows": [
-        ["Hardware", "450000", "520000", "+15.6%"],
-        ["Software", "320000", "310000", "-3.1%"]
-      ]
-    }
-  ],
-  "notes": "Speaker notes text here..."
+message SlideContentResponse {
+  string file_id = 1;
+  int32 slide_id = 2;
+  repeated TextShape texts = 3;
+  repeated TableData tables = 4;
+  string notes = 5;
+}
+
+message TextShape {
+  string shape_name = 1;
+  string content = 2;
+}
+
+message TableData {
+  int32 table_id = 1;
+  repeated string headers = 2;
+  repeated TableRow rows = 3;
+}
+
+message TableRow {
+  repeated string cells = 1;
 }
 ```
 
@@ -763,7 +777,7 @@ POST /extract/pptx/slide
 - [ ] Text extraction: `shape.text_frame.paragraphs` → concatenated text per shape
 - [ ] Table extraction: `shape.table` → headers (first row) + data rows
 - [ ] Notes extraction: `slide.notes_slide.notes_text_frame`
-- [ ] Handling: slide_id mimo rozsah → `422`
+- [ ] Handling: slide_id mimo rozsah → gRPC `INVALID_ARGUMENT`
 - [ ] Unit testy: slide s textem, slide s tabulkou, slide s notes, prázdný slide
 
 **Effort:** 6 MD | **Závislosti:** Structure Extraction
@@ -772,47 +786,44 @@ POST /extract/pptx/slide
 
 ##### Story: Slide Image Rendering
 
-**Jako** N8N Orchestrátor **chci** vyrenderovat slide jako PNG obrázek **abych** mohl zobrazit náhled ve frontend vieweru.
+**Jako** MS-ORCH Orchestrátor **chci** vyrenderovat slide jako PNG obrázek **abych** mohl zobrazit náhled ve frontend vieweru.
 
 **AC:**
 
-- [ ] `POST /extract/pptx/slide/image` renderuje slide jako PNG 800×600
-- [ ] PNG uložen do Blob Storage, vrací `{ artifact_url }`
-- [ ] Nikdy nevrací binary data inline v JSON response
+- [ ] `gRPC RenderSlideImage(SlideRequest)` renderuje slide jako PNG 1280×720 (720p)
+- [ ] PNG uložen do Blob Storage, vrací `SlideImageResponse { artifact_url }`
+- [ ] Nikdy nevrací binary data inline v gRPC response – pouze URL reference
 
-**API:**
+**gRPC API (definice v `packages/protos/atomizer_pptx.proto`):**
 
-```
-POST /extract/pptx/slide/image
-{
-  "file_id": "uuid",
-  "blob_url": "https://...",
-  "slide_id": 3
-}
+```protobuf
+// Součást PptxAtomizerService
+rpc RenderSlideImage (SlideRequest) returns (SlideImageResponse);
 
-→ 200 OK
-{
-  "file_id": "uuid",
-  "slide_id": 3,
-  "artifact_url": "https://storage.blob.core.windows.net/artifacts/uuid/slide_3.png",
-  "width": 800,
-  "height": 600
+message SlideImageResponse {
+  string file_id = 1;
+  int32 slide_id = 2;
+  string artifact_url = 3;
+  int32 width = 4;
+  int32 height = 5;
 }
 ```
 
 **Tasks:**
 
-- [ ] Slide → PNG rendering engine (LibreOffice headless nebo python-pptx + Pillow)
+- [ ] LibreOffice Headless rendering: `libreoffice --headless --convert-to png --outdir /tmp/{file_id}/ input.pptx`
+- [ ] Rozlišení: 1280×720 (720p, ~200KB per slide) – dobrý kompromis mezi čitelností a velikostí
+- [ ] LibreOffice jako sidecar container nebo součást MS-ATM-PPTX Docker image
 - [ ] Upload PNG do Blob Storage (`artifacts/{file_id}/slide_{n}.png`)
-- [ ] Vrácení `artifact_url` v response
+- [ ] Vrácení `artifact_url` v gRPC response
 - [ ] Cleanup: smazání lokálního PNG po uploadu
-- [ ] Unit test: renderování, ověření rozměrů PNG
+- [ ] Unit test: renderování, ověření rozměrů PNG (1280×720)
 
-**TODO:**
+**Rozhodnutí (potvrzeno):**
 
-- [ ] Rendering engine: LibreOffice headless (`libreoffice --convert-to png`) nebo čistý Python (omezenější kvalita)?
-- [ ] Rozlišení PNG: 800×600, nebo konfigurovatelné?
-- [ ] Artifact retention policy: kolik dní uchovávat PNG? (MS-ATM-CLN maže po 24h)
+- **Rendering engine:** LibreOffice Headless (`--convert-to png`) – python-pptx neumí věrně vykreslit SmartArty a grafy
+- **Rozlišení:** 1280×720 (720p), ~200KB per slide
+- **Artifact retention:** MS-ATM-CLN maže artefakty po 24h (konfigurovatelné)
 
 **Effort:** 6 MD | **Závislosti:** Structure Extraction, Blob Storage
 
@@ -834,13 +845,13 @@ POST /extract/pptx/slide/image
 - [ ] Heuristický parser: detekce oddělovačů (tab, multiple spaces, pipes)
 - [ ] Header detection: první řádek s konzistentními oddělovači
 - [ ] Row parsing: split na základě detekovaného vzoru
-- [ ] Confidence score: pokud < threshold → vrátit jako plain text
-- [ ] Unit testy: tab-separated text, space-aligned text, mixed content
+- [ ] Confidence score: pokud < 0.85 → vrátit jako plain text a označit příznakem `low_confidence`
+- [ ] Unit testy: tab-separated text, space-aligned text, mixed content, low confidence scenario
 
-**TODO:**
+**Rozhodnutí (potvrzeno):**
 
-- [ ] Confidence threshold pro MetaTable detection: jaká minimální jistota?
-- [ ] Má se MetaTable logic volat vždy, nebo jen na request? (flag `detect_meta_tables: true`)
+- **Confidence threshold:** > 0.85. Pokud nižší, uložit jako plain text s příznakem `low_confidence`
+- [ ] MetaTable logic se volá jen na request, bude osučástí flow (flag `detect_meta_tables: true`)
 
 **Effort:** 8 MD | **Závislosti:** Slide Content Extraction
 
@@ -848,130 +859,211 @@ POST /extract/pptx/slide/image
 
 ##### Story: Error Handling & Resilience
 
-**Jako** Atomizer **chci** robustně zpracovat chybné soubory **abych** nikdy nevrátil `500` a vždy dal smysluplnou chybovou hlášku.
+**Jako** Atomizer **chci** robustně zpracovat chybné soubory **abych** nikdy nevrátil gRPC `INTERNAL` a vždy dal smysluplnou chybovou hlášku.
 
 **AC:**
 
-- [ ] Chybný/poškozený PPTX → `422` s `{ error: "INVALID_PPTX", detail: "..." }`
-- [ ] Blob URL nedostupný → `422` s `{ error: "BLOB_UNAVAILABLE", detail: "..." }`
-- [ ] Timeout na stažení souboru → `422` s `{ error: "DOWNLOAD_TIMEOUT" }`
-- [ ] Memory limit: soubory > N MB odmítnuty
+- [ ] Chybný/poškozený PPTX → gRPC `INVALID_ARGUMENT` s detailem `"INVALID_PPTX: ..."`
+- [ ] Blob URL nedostupný → gRPC `UNAVAILABLE` s detailem `"BLOB_UNAVAILABLE: ..."`
+- [ ] Timeout na stažení souboru → gRPC `DEADLINE_EXCEEDED` s detailem `"DOWNLOAD_TIMEOUT"`
+- [ ] Memory limit: soubory > N MB odmítnuty → gRPC `RESOURCE_EXHAUSTED`
 - [ ] Cleanup: dočasné soubory v `/tmp` vždy smazány (i při chybě)
 
 **Tasks:**
 
-- [ ] Global exception handler (FastAPI `@app.exception_handler`)
-- [ ] Structured error response model (`ErrorResponse(error, detail, file_id)`)
+- [ ] gRPC interceptor pro globální exception handling
+- [ ] Mapování Python exceptions → gRPC status codes (`INVALID_ARGUMENT`, `UNAVAILABLE`, `DEADLINE_EXCEEDED`)
 - [ ] Download timeout konfigurace (env variable)
 - [ ] File size check před parsováním
 - [ ] `finally` blok pro cleanup dočasných souborů
 - [ ] Unit testy: každý error scenario
-
-**TODO:**
-
-- [ ] Max file size pro Atomizer (odlišný od upload limitu?)
-- [ ] Download timeout v sekundách?
+- [ ] Max file size pro Atomizer - stejny jako upload limit
+- [ ] Download timeout 30 sec.
 
 **Effort:** 3 MD
 
 ---
 
-### FS04 – N8N Orchestrator
+### FS04 – Custom Orchestrator (MS-ORCH)
 
 ---
 
-#### Epic: Processing Pipeline (MS-N8N)
+#### Epic: Workflow Engine & Processing Pipeline (MS-ORCH)
 
-**Unit ID:** MS-N8N | **Effort:** 25 MD
+**Unit ID:** MS-ORCH | **Effort:** 45 MD
 
 ---
 
-##### Story: N8N Instance Setup
+##### Story: Workflow Engine Setup
 
-**Jako** DevOps **chci** nakonfigurovat N8N instanci **abych** měl workflow engine pro orchestraci processing pipeline.
+**Jako** DevOps **chci** nasadit MS-ORCH jako custom orchestrátor **abych** měl workflow engine pro orchestraci processing pipeline.
 
 **AC:**
 
-- [ ] N8N běží v Docker kontejneru (port 5678)
-- [ ] Workflow data persistována v PostgreSQL (ne SQLite)
-- [ ] Webhook listener aktivní na `http://ms-n8n:5678/webhook/*`
-- [ ] N8N credentials uloženy bezpečně (encrypted v DB)
-- [ ] N8N UI přístupné pouze z interní sítě (ne přes API Gateway)
+- [ ] MS-ORCH běží v Docker kontejneru (port 8095:8080, debug 5010)
+- [ ] Workflow engine: Spring State Machine (finální rozhodnutí CTO)
+- [ ] Dapr PubSub subscriber na topic `file-uploaded`
+- [ ] gRPC server pro příjem příkazů, gRPC client pro volání Atomizerů a Sinků
+- [ ] Workflow definice jako JSON soubory v `/resources/workflows/` (verzované v Gitu)
+- [ ] Redis pro stav běžících flows (nízká latence)
+- [ ] PostgreSQL pro stav paused/waiting flows (persistence)
+- [ ] Actuator health endpoint, structured JSON logging, OTEL prepared
 
 **Tasks:**
 
-- [ ] Docker Compose: N8N container s PostgreSQL backend
-- [ ] Environment variables: `DB_TYPE=postgresdb`, `DB_POSTGRESDB_*`
-- [ ] Webhook listener konfigurace (`WEBHOOK_URL`)
-- [ ] N8N credentials pro HTTP nodes (Atomizer URLs, Sink URLs)
-- [ ] Disable public access k N8N UI (bind na internal network)
+- [ ] Spring Boot 3.x, Java 21, Gradle projekt scaffolding
+- [ ] Závislost: Spring State Machine
+- [ ] gRPC server konfigurace (port 9090) + Dapr sidecar: `app-protocol: grpc`, `app-id: ms-orch`
+- [ ] Dapr gRPC client pro volání služeb přes Dapr service invocation (`dapr-app-id` header):
+  - MS-ATM-PPTX (`ms-atm-pptx`), MS-SINK-TBL (`ms-sink-tbl`), MS-SINK-DOC (`ms-sink-doc`), MS-SINK-LOG (`ms-sink-log`)
+- [ ] Dapr PubSub subscriber na topic `file-uploaded`
+- [ ] Redis client (Lettuce) pro workflow state management
+- [ ] JSON workflow definition loader: `WorkflowDefinitionRegistry`
+- [ ] Dockerfile (multi-stage build), Docker Compose entry s Dapr sidecar
+- [ ] `application.yml` s profily (local, dev, prod)
 
-**TODO:**
+- [ ] Spring State Machine – finální rozhodnutí CTO
+- [ ] Redis: sdílená instance s MS-AUTH
+- [ ] Všechna interní volání přes Dapr gRPC service invocation (ne přímé gRPC) – zajišťuje service discovery, mTLS, observability
 
-- [ ] N8N authentication: basic auth nebo OAuth pro admin UI?
-- [ ] Workflow version control: export JSON do Git nebo N8N native?
-
-**Effort:** 3 MD
+**Effort:** 8 MD
 
 ---
 
-##### Story: PPTX Processing Workflow
+##### Story: Type-Safe Contracts (DTOs & Interfaces)
 
-**Jako** N8N **chci** zpracovat nově nahraný PPTX soubor end-to-end **abych** extrahoval data a uložil je do DB.
+**Jako** vývojář **chci** mít Type-Safe kontrakty pro veškerou komunikaci mezi MS-ORCH a Atomizery/Sinky **abych** měl compile-time garance a jasné API.
 
-**Workflow:**
+**AC:**
 
+- [ ] Java interfaces pro každý Atomizer a Sink (gRPC service definitions v `.proto` souborech)
+- [ ] DTOs pro vstupy a výstupy každého workflow stepu (Protobuf messages)
+- [ ] Žádné volné `Map<String, Object>` nebo raw JSON – vše typované
+- [ ] Sdílený modul `orchestrator-contracts` s `.proto` soubory
+- [ ] Automaticky generované Java třídy z `.proto` souborů (protoc plugin)
+
+**Proto definice (příklad):**
+
+```protobuf
+// atomizer_pptx.proto
+service PptxAtomizerService {
+  rpc ExtractStructure (ExtractRequest) returns (PptxStructureResponse);
+  rpc ExtractSlideContent (SlideRequest) returns (SlideContentResponse);
+  rpc RenderSlideImage (SlideRequest) returns (SlideImageResponse);
+}
+
+message ExtractRequest {
+  string file_id = 1;
+  string blob_url = 2;
+  string org_id = 3;
+}
+
+message PptxStructureResponse {
+  string file_id = 1;
+  int32 slide_count = 2;
+  repeated SlideMetadata slides = 3;
+}
+
+message SlideMetadata {
+  int32 slide_id = 1;
+  string title = 2;
+  string layout = 3;
+  bool has_tables = 4;
+  bool has_text = 5;
+  bool has_images = 6;
+}
+
+// sink_table.proto
+service TableSinkService {
+  rpc BulkInsert (BulkInsertRequest) returns (BulkInsertResponse);
+}
+
+// sink_document.proto
+service DocumentSinkService {
+  rpc StoreDocument (StoreDocumentRequest) returns (StoreDocumentResponse);
+}
 ```
-Webhook (new_file)
-  → Validate file_type == "pptx"
-  → HTTP: POST ms-atm-pptx/extract/pptx (get structure)
-  → Split In Batches: iterate over slides (max 5 parallel)
-    → HTTP: POST ms-atm-pptx/extract/pptx/slide (get content)
-    → HTTP: POST ms-atm-pptx/extract/pptx/slide/image (get PNG)
-    → IF has_tables:
-        → HTTP: POST ms-sink-tbl/tables/{org_id}/{batch_id} (store table data)
-    → IF has_text:
-        → HTTP: POST ms-sink-doc/documents/{org_id} (store text + embeddings)
-    → HTTP: POST ms-sink-log/logs/{file_id} (log step result)
-  → On Complete:
-    → Update file processing_status → DONE
-    → [Future: POST ms-notif → notify user]
+
+**Tasks:**
+
+- [ ] Vytvořit `orchestrator-contracts` modul (Gradle subproject)
+- [ ] `.proto` soubory pro: PptxAtomizerService, ExcelAtomizerService, PdfAtomizerService, CsvAtomizerService
+- [ ] `.proto` soubory pro: TableSinkService, DocumentSinkService, LogSinkService
+- [ ] `.proto` soubory pro: TemplateMappingService
+- [ ] Protoc Gradle plugin pro generování Java tříd
+- [ ] Sdílení contracts modulu jako závislost do MS-ATM-* a MS-SINK-*
+- [ ] Exception types v Protobuf: `ParsingException`, `StorageException`, `VirusDetectedException`
+
+**Effort:** 5 MD | **Závislosti:** Workflow Engine Setup
+
+---
+
+##### Story: PPTX Processing Workflow (Saga)
+
+**Jako** MS-ORCH **chci** zpracovat nově nahraný PPTX soubor end-to-end **abych** extrahoval data a uložil je do DB.
+
+**Workflow (JSON definition):**
+
+```json
+{
+  "name": "pptx-processing-pipeline",
+  "version": 1,
+  "trigger": { "type": "event", "topic": "file-uploaded", "filter": "type == 'pptx'" },
+  "steps": [
+    { "id": "extract-structure", "service": "PptxAtomizerService", "method": "ExtractStructure", "retry": { "maxAttempts": 3, "backoff": [1, 5, 30] } },
+    { "id": "process-slides", "type": "parallel-for-each", "source": "extract-structure.slides", "maxParallel": 50, "steps": [
+      { "id": "extract-content", "service": "PptxAtomizerService", "method": "ExtractSlideContent" },
+      { "id": "render-image", "service": "PptxAtomizerService", "method": "RenderSlideImage" },
+      { "id": "store-table", "condition": "extract-content.has_tables", "service": "TableSinkService", "method": "BulkInsert" },
+      { "id": "store-document", "condition": "extract-content.has_text", "service": "DocumentSinkService", "method": "StoreDocument" },
+      { "id": "log-step", "service": "LogSinkService", "method": "AppendLog" }
+    ]},
+    { "id": "update-status", "type": "internal", "action": "updateFileStatus", "status": "DONE" }
+  ],
+  "compensations": [
+    { "step": "store-table", "action": "TableSinkService.DeleteByFileId" },
+    { "step": "store-document", "action": "DocumentSinkService.DeleteByFileId" }
+  ]
+}
 ```
 
 **AC:**
 
-- [ ] Upload nového PPTX automaticky spustí workflow bez manuálního zásahu
-- [ ] Každý slide zpracován nezávisle (partial success)
-- [ ] Tabulky → MS-SINK-TBL, texty → MS-SINK-DOC, logy → MS-SINK-LOG
+- [ ] Upload nového PPTX automaticky spustí workflow bez manuálního zásahu (Dapr PubSub event)
+- [ ] Každý slide zpracován nezávisle (partial success) – 20-50 paralelních slide extractions
+- [ ] Tabulky → MS-SINK-TBL (gRPC), texty → MS-SINK-DOC (gRPC), logy → MS-SINK-LOG (gRPC)
 - [ ] Processing status aktualizován v DB: `PROCESSING` → `DONE` / `PARTIAL` / `FAILED`
-- [ ] Max 5 paralelních volání Atomizeru
+- [ ] Saga Pattern: při selhání se spouští compensating actions (rollback uložených dat)
+- [ ] Stav workflow v Redis (running), přesun do PostgreSQL při pause/wait
 
 **Tasks:**
 
-- [ ] Vytvořit N8N workflow JSON: `pptx-processing-pipeline.json`
-- [ ] Webhook trigger node: `POST /webhook/new-file`
-- [ ] File type router (Switch node): PPTX → this workflow, others → TBD
-- [ ] HTTP Request node: call MS-ATM-PPTX `/extract/pptx`
-- [ ] Split In Batches node: iterace přes `slides[]` (batch size: 5)
-- [ ] HTTP Request nodes: `/extract/pptx/slide`, `/extract/pptx/slide/image`
-- [ ] Condition nodes: `has_tables` → Sink TBL, `has_text` → Sink DOC
-- [ ] HTTP Request nodes: call MS-SINK-TBL, MS-SINK-DOC, MS-SINK-LOG
-- [ ] Status update node: HTTP PATCH na MS-ING nebo přímý DB update
-- [ ] Export workflow jako JSON do Git
+- [ ] JSON workflow definition: `pptx-processing-pipeline.json`
+- [ ] `WorkflowEngine.execute(workflowDefinition, context)` – hlavní orchestrační loop
+- [ ] `ParallelForEachStep` – paralelní zpracování slidů s konfigurovaným `maxParallel`
+- [ ] Dapr gRPC service invocation: MS-ATM-PPTX (`ms-atm-pptx`) → `ExtractStructure`, `ExtractSlideContent`, `RenderSlideImage`
+- [ ] Condition evaluator: `has_tables` → Sink TBL, `has_text` → Sink DOC
+- [ ] Dapr gRPC service invocation: MS-SINK-TBL (`ms-sink-tbl`) → `BulkInsert`, MS-SINK-DOC (`ms-sink-doc`) → `StoreDocument`, MS-SINK-LOG (`ms-sink-log`) → `AppendLog`
+- [ ] Status update: DB update `processing_status` → `DONE` / `PARTIAL` / `FAILED`
+- [ ] Saga compensations: Dapr gRPC → `DeleteByFileId` na Sinks při fatálním selhání
+- [ ] Redis state persistence: workflow context uložen po každém stepu
 
-**Effort:** 8 MD | **Závislosti:** MS-ATM-PPTX, MS-SINK-*, N8N Setup
+**Effort:** 12 MD | **Závislosti:** Type-Safe Contracts, MS-ATM-PPTX, MS-SINK-*
 
 ---
 
-##### Story: Error Handling, Retry & DLQ
+##### Story: Error Handling & Exponential Backoff
 
-**Jako** N8N **chci** správně zpracovat selhání Atomizerů **abych** neztratil data a umožnil manuální reprocessing.
+**Jako** MS-ORCH **chci** správně zpracovat selhání Atomizerů a Sinků **abych** neztratil data a umožnil manuální reprocessing.
 
 **AC:**
 
-- [ ] Automatický retry: 3× s exponential backoff (1s, 5s, 25s)
-- [ ] Circuit breaker: po 5 selháních Atomizeru pozastavit workflow
-- [ ] Fatální selhání → záznam v `failed_jobs` tabulce
+- [ ] Exponential backoff: 3 retry (1s, 5s, 30s), pak záznam do `failed_jobs`
+- [ ] Specifické exception types: `ParsingException`, `StorageException`, `VirusDetectedException`
+- [ ] `ParsingException` → retry (soubor mohl být dočasně nedostupný)
+- [ ] `StorageException` → retry (DB/Blob mohly být dočasně nedostupné)
+- [ ] `VirusDetectedException` → NO retry, okamžitý záznam do `failed_jobs`
+- [ ] Fatální selhání → Saga compensating actions + záznam v `failed_jobs` tabulce
 - [ ] Admin může zobrazit failed_jobs a spustit reprocessing
 
 **DB:**
@@ -983,9 +1075,12 @@ CREATE TABLE failed_jobs (
     file_id UUID NOT NULL REFERENCES files(id),
     workflow_name VARCHAR(255) NOT NULL,
     step_name VARCHAR(255) NOT NULL,
+    exception_type VARCHAR(100) NOT NULL,  -- ParsingException, StorageException, etc.
     error_message TEXT,
     error_stacktrace TEXT,
     retry_count INT DEFAULT 0,
+    max_retries INT DEFAULT 3,
+    last_retry_at TIMESTAMP,
     status VARCHAR(20) DEFAULT 'FAILED',  -- FAILED, REPROCESSING, RESOLVED
     created_at TIMESTAMP DEFAULT NOW(),
     resolved_at TIMESTAMP
@@ -994,53 +1089,123 @@ CREATE TABLE failed_jobs (
 
 **Tasks:**
 
-- [ ] N8N Error Trigger node → catch workflow errors
-- [ ] Retry konfigurace na HTTP Request nodes (3×, exponential backoff)
-- [ ] Error workflow: uložení chyby do `failed_jobs` přes MS-SINK-LOG
-- [ ] Circuit breaker logika: IF Node s počítadlem selhání
-- [ ] Flyway migrace V003 – failed_jobs tabulka
-- [ ] Endpoint pro reprocessing: re-trigger webhook s `file_id`
+- [ ] `RetryPolicy` třída: exponential backoff (1s, 5s, 30s) s konfigurací per exception type
+- [ ] Exception hierarchy: `OrchestratorException` → `ParsingException`, `StorageException`, `VirusDetectedException`
+- [ ] gRPC error mapping: gRPC status codes → interní exception types
+- [ ] `FailedJobService`: zápis do `failed_jobs` tabulky po vyčerpání retries
+- [ ] Flyway migrace V003 – failed_jobs tabulka (rozšířená o `exception_type`, `max_retries`, `last_retry_at`)
+- [ ] Reprocessing endpoint: `POST /api/orchestrator/reprocess/{file_id}` → re-trigger workflow
+- [ ] Saga compensation executor: volání compensating actions při fatálním selhání
 
-**Effort:** 5 MD | **Závislosti:** PPTX Processing Workflow
+**Effort:** 7 MD | **Závislosti:** PPTX Processing Workflow
 
 ---
 
-##### Story: Idempotence
+##### Story: Idempotence (Redis-based)
 
 **Jako** systém **chci** garantovat idempotenci zpracování **abych** neměl duplicitní záznamy v DB při opětovném spuštění workflow.
 
 **AC:**
 
 - [ ] Opětovné spuštění workflow pro stejné `file_id` nevytvoří duplicitní záznamy
-- [ ] Detekce: before insert → check `file_id` + `slide_id` existence
-- [ ] Existující záznamy přepsány (upsert), ne duplikovány
+- [ ] Idempotence klíč: `file_id + step_hash` uložen v Redis s TTL (24h)
+- [ ] Before each step: check Redis → pokud klíč existuje → skip
+- [ ] Upsert logika v Sinks: `ON CONFLICT DO UPDATE` jako fallback
 
 **Tasks:**
 
-- [ ] Upsert logika v MS-SINK-TBL a MS-SINK-DOC (ON CONFLICT DO UPDATE)
-- [ ] N8N workflow: check node – je file_id již zpracováno?
-- [ ] Processing status check: pokud `DONE` → skip (nebo force flag)
+- [ ] `IdempotenceService`: Redis-based check `SETNX file_id:step_hash` s TTL
+- [ ] `step_hash` = hash z `(workflow_name, step_id, file_id, slide_id)`
+- [ ] Integrace do `WorkflowEngine` – before/after each step hooks
+- [ ] Upsert logika v MS-SINK-TBL a MS-SINK-DOC (ON CONFLICT DO UPDATE) jako safety net
+- [ ] Processing status check: pokud `DONE` → skip (nebo `force` flag pro reprocessing)
 
-**Effort:** 3 MD | **Závislosti:** PPTX Processing Workflow
+**Effort:** 4 MD | **Závislosti:** PPTX Processing Workflow, Redis Setup
 
 ---
 
-##### Story: File Type Router (Prepared for P2)
+##### Story: Async Worker Layer
 
-**Jako** N8N **chci** routovat soubory dle typu na správný workflow **abych** v P2 mohl přidat Excel, PDF a CSV parsování.
+**Jako** MS-ORCH **chci** asynchronně distribuovat práci přes message queue **abych** mohl škálovat zpracování na 20-50 paralelních slide extractions.
 
 **AC:**
 
-- [ ] Router node: `type == "pptx"` → PPTX workflow
-- [ ] Ostatní typy: `type == "xlsx|pdf|csv"` → placeholder node s logem "Not implemented yet"
-- [ ] Neznámý typ → error + záznam do failed_jobs
+- [ ] Dapr Pub/Sub (nebo RabbitMQ / Azure Service Bus) pro distribuci work items
+- [ ] Worker pool: konfigurovatelný počet paralelních workerů (default: 20, max: 50)
+- [ ] Backpressure: pokud queue přeteče, nové soubory čekají (ne reject)
+- [ ] Monitoring: Prometheus metriky pro queue depth, processing time, error rate
 
 **Tasks:**
 
-- [ ] Switch node v N8N workflow
-- [ ] Placeholder workflows pro xlsx, pdf, csv (prázdné, jen log)
+- [ ] Dapr PubSub component konfigurace pro worker topics (`slide-extract`, `slide-store`)
+- [ ] `WorkerPool` třída: thread pool s konfigurovaným počtem workerů
+- [ ] `SlideExtractionWorker`: odebírá z `slide-extract` topic, volá Atomizer via gRPC
+- [ ] `SlideStorageWorker`: odebírá z `slide-store` topic, volá Sinks via gRPC
+- [ ] Backpressure: `maxConcurrency` na Dapr subscription
+- [ ] Prometheus metriky: `orch_queue_depth`, `orch_processing_duration_seconds`, `orch_error_total`
 
-**Effort:** 1 MD
+**Effort:** 5 MD | **Závislosti:** Workflow Engine Setup
+
+---
+
+##### Story: File Type Router
+
+**Jako** MS-ORCH **chci** routovat soubory dle typu na správný workflow definition **abych** v P2 mohl přidat Excel, PDF a CSV parsování.
+
+**AC:**
+
+- [ ] Router: `type == "pptx"` → `pptx-processing-pipeline.json`
+- [ ] Ostatní typy: `type == "xlsx|pdf|csv"` → log "Not implemented yet" + status `UNSUPPORTED`
+- [ ] Neznámý typ → error + záznam do failed_jobs
+- [ ] Router logika v `WorkflowDefinitionRegistry` – mapování file type → workflow JSON
+
+**Tasks:**
+
+- [ ] `WorkflowDefinitionRegistry.getWorkflow(fileType)` → WorkflowDefinition
+- [ ] Placeholder JSON definitions pro xlsx, pdf, csv (prázdné, jen log step)
+- [ ] Unknown type handling: `UnsupportedFileTypeException` → failed_jobs
+
+**Effort:** 2 MD | **Závislosti:** Workflow Engine Setup
+
+---
+
+##### Story: Workflow State Persistence
+
+**Jako** systém **chci** persistovat stav workflow **abych** mohl obnovit zpracování po restartu služby.
+
+**AC:**
+
+- [ ] Running workflows: stav uložen v Redis (po každém stepu)
+- [ ] Paused/waiting workflows: stav přesunut z Redis do PostgreSQL
+- [ ] Po restartu MS-ORCH: automatická obnova running workflows z Redis
+- [ ] PostgreSQL tabulka `workflow_state` pro long-running flows
+
+**DB:**
+
+```sql
+-- V003b__create_workflow_state.sql
+CREATE TABLE workflow_state (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    file_id UUID NOT NULL REFERENCES files(id),
+    workflow_name VARCHAR(255) NOT NULL,
+    current_step VARCHAR(255),
+    state_data JSONB NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PAUSED',  -- PAUSED, WAITING, COMPLETED
+    paused_at TIMESTAMP DEFAULT NOW(),
+    resumed_at TIMESTAMP,
+    UNIQUE(file_id, workflow_name)
+);
+```
+
+**Tasks:**
+
+- [ ] Redis state serializer: `WorkflowContext` → Redis hash
+- [ ] `WorkflowStateRepository` (Spring Data JPA) pro PostgreSQL persistence
+- [ ] State migration: Redis → PostgreSQL pro paused flows (po timeout)
+- [ ] Startup recovery: scan Redis pro incomplete workflows → resume
+- [ ] TTL na Redis state: 1h (pokud workflow nedoběhne, přesun do PG)
+
+**Effort:** 5 MD | **Závislosti:** Workflow Engine Setup, Redis Setup
 
 ---
 
@@ -1054,50 +1219,65 @@ CREATE TABLE failed_jobs (
 
 ---
 
-##### Story: Spring Boot Base Setup (MS-SINK-TBL)
-
-*Identická šablona jako MS-AUTH base setup. Port 8100:8080, debug 5005.*
-
-**Effort:** 1 MD
-
----
-
-##### Story: Bulk Insert Endpoint
-
-**Jako** N8N Orchestrátor **chci** uložit strukturovaná tabulková data do PostgreSQL **abych** je měl k dispozici pro dashboardy a query.
+##### Story: Spring Boot + gRPC Base Setup (MS-SINK-TBL)
 
 **AC:**
 
-- [ ] `POST /tables/{org_id}/{batch_id}` přijímá JSON tabulková data
+- [ ] Spring Boot 3.x, Java 21, gRPC server (grpc-spring-boot-starter)
+- [ ] Dockerfile, Docker Compose entry (gRPC port 9090, debug 5005)
+- [ ] Dapr sidecar konfigurace: `app-protocol: grpc`, `app-id: ms-sink-tbl`
+- [ ] Actuator health, structured logging, OTEL prepared
+- [ ] **Žádné REST endpointy** – služba komunikuje výhradně přes Dapr gRPC
+
+**Effort:** 2 MD
+
+---
+
+##### Story: gRPC Bulk Insert
+
+**Jako** MS-ORCH Orchestrátor **chci** uložit strukturovaná tabulková data do PostgreSQL **abych** je měl k dispozici pro dashboardy a query.
+
+**AC:**
+
+- [ ] `gRPC BulkInsert(BulkInsertRequest)` přijímá strukturovaná tabulková data přes Dapr gRPC
 - [ ] Data uložena jako JSONB v PostgreSQL
 - [ ] RLS policy: uživatel vidí pouze záznamy svého `org_id`
 - [ ] Upsert: duplicitní `file_id + slide_id + table_id` přepíše existující záznam
 - [ ] Bulk insert: až 100 řádků v jednom requestu
+- [ ] **Žádné REST endpointy** – služba komunikuje výhradně přes Dapr gRPC. Čtení dat přes MS-QRY (CQRS).
 
-**API:**
+**gRPC API (definice v `packages/protos/sink_table.proto`):**
 
-```
-POST /tables/{org_id}/{batch_id}
-{
-  "file_id": "uuid",
-  "slide_id": 3,
-  "table_id": 1,
-  "source_type": "FILE",
-  "headers": ["Category", "Q1", "Q2", "Delta"],
-  "rows": [
-    ["Hardware", "450000", "520000", "+15.6%"],
-    ["Software", "320000", "310000", "-3.1%"]
-  ],
-  "metadata": {
-    "filename": "report_q2.pptx",
-    "slide_title": "IT Costs Overview"
-  }
+```protobuf
+service TableSinkService {
+  rpc BulkInsert (BulkInsertRequest) returns (BulkInsertResponse);
+  rpc DeleteByFileId (DeleteByFileIdRequest) returns (DeleteResponse);
 }
 
-→ 201 Created
-{ "record_id": "uuid", "rows_inserted": 2 }
+message BulkInsertRequest {
+  string org_id = 1;
+  string batch_id = 2;
+  string file_id = 3;
+  int32 slide_id = 4;
+  int32 table_id = 5;
+  string source_type = 6;  // FILE | FORM
+  repeated string headers = 7;
+  repeated TableRow rows = 8;
+  map<string, string> metadata = 9;
+}
 
-→ 409 Conflict (if duplicate and no upsert flag)
+message BulkInsertResponse {
+  string record_id = 1;
+  int32 rows_inserted = 2;
+}
+
+message DeleteByFileIdRequest {
+  string file_id = 1;
+}
+
+message DeleteResponse {
+  int32 rows_deleted = 1;
+}
 ```
 
 **DB:**
@@ -1131,16 +1311,20 @@ CREATE INDEX idx_table_data_file ON table_data(file_id);
 
 **Tasks:**
 
+- [ ] gRPC server setup v Spring Boot (grpc-spring-boot-starter)
+- [ ] Dapr sidecar konfigurace: `app-protocol: grpc`, `app-port: 9090`
+- [ ] Protobuf kompilace: `protoc` → Java stubs z `packages/protos/sink_table.proto`
 - [ ] Flyway migrace V004 – table_data tabulka s RLS
-- [ ] REST controller `POST /tables/{org_id}/{batch_id}`
+- [ ] gRPC service implementace `TableSinkServiceImpl` (ne REST controller)
 - [ ] `TableDataRepository` (Spring Data JPA)
 - [ ] Upsert logika (ON CONFLICT DO UPDATE)
 - [ ] RLS enforcement: `SET app.current_org_id = ?` před každým dotazem
-- [ ] Request validation (Pydantic-style: headers a rows povinné)
+- [ ] `DeleteByFileId` gRPC method – compensating action pro Saga rollback
+- [ ] Request validation (Protobuf + custom validátor: headers a rows povinné)
 - [ ] Unit testy: insert, upsert, RLS isolation
 - [ ] Integration test: dva org_id nesmí vidět data druhého
 
-**Effort:** 7 MD | **Závislosti:** PostgreSQL, Flyway
+**Effort:** 8 MD | **Závislosti:** PostgreSQL, Flyway, Proto definitions
 
 ---
 
@@ -1174,34 +1358,38 @@ CREATE INDEX idx_table_data_file ON table_data(file_id);
 
 ---
 
-##### Story: Document Storage Endpoint
+##### Story: gRPC Document Storage
 
-**Jako** N8N Orchestrátor **chci** uložit nestrukturované texty z prezentací **abych** je měl k dispozici pro full-text a sémantické vyhledávání.
+**Jako** MS-ORCH Orchestrátor **chci** uložit nestrukturované texty z prezentací **abych** je měl k dispozici pro full-text a sémantické vyhledávání.
 
 **AC:**
 
-- [ ] `POST /documents/{org_id}` přijímá JSON s textem a metadaty
+- [ ] `gRPC StoreDocument(StoreDocumentRequest)` přijímá text s metadaty přes Dapr gRPC
 - [ ] Data uložena do PostgreSQL (JSONB + full-text index)
 - [ ] RLS policy per org_id
-- [ ] Response: `{ document_id }`
+- [ ] Response: `StoreDocumentResponse { document_id }`
+- [ ] **Žádné REST endpointy** – služba komunikuje výhradně přes Dapr gRPC. Čtení dat přes MS-QRY (CQRS).
 
-**API:**
+**gRPC API (definice v `packages/protos/sink_document.proto`):**
 
-```
-POST /documents/{org_id}
-{
-  "file_id": "uuid",
-  "slide_id": 3,
-  "content": "Total OPEX for Q2 2025 reached 1.2M CZK...",
-  "content_type": "slide_text",
-  "metadata": {
-    "filename": "report_q2.pptx",
-    "slide_title": "IT Costs Overview"
-  }
+```protobuf
+service DocumentSinkService {
+  rpc StoreDocument (StoreDocumentRequest) returns (StoreDocumentResponse);
+  rpc DeleteByFileId (DeleteByFileIdRequest) returns (DeleteResponse);
 }
 
-→ 201 Created
-{ "document_id": "uuid" }
+message StoreDocumentRequest {
+  string org_id = 1;
+  string file_id = 2;
+  int32 slide_id = 3;
+  string content = 4;
+  string content_type = 5;
+  map<string, string> metadata = 6;
+}
+
+message StoreDocumentResponse {
+  string document_id = 1;
+}
 ```
 
 **DB:**
@@ -1230,14 +1418,17 @@ CREATE INDEX idx_documents_content_fts ON documents USING gin(to_tsvector('simpl
 
 **Tasks:**
 
+- [ ] gRPC server setup (grpc-spring-boot-starter), Dapr sidecar: `app-protocol: grpc`, `app-id: ms-sink-doc`
+- [ ] Protobuf kompilace z `packages/protos/sink_document.proto`
 - [ ] Flyway migrace V005 – documents tabulka s RLS a FTS index
-- [ ] REST controller `POST /documents/{org_id}`
+- [ ] gRPC service implementace `DocumentSinkServiceImpl` (ne REST controller)
 - [ ] `DocumentRepository` (Spring Data JPA)
 - [ ] RLS enforcement
+- [ ] `DeleteByFileId` gRPC method – compensating action pro Saga rollback
 - [ ] `embedding` sloupec zatím NULL – bude plněn v P2 (MS-ATM-AI)
 - [ ] Unit testy
 
-**Effort:** 5 MD | **Závislosti:** PostgreSQL, Flyway
+**Effort:** 6 MD | **Závislosti:** PostgreSQL, Flyway, Proto definitions
 
 ---
 
@@ -1257,10 +1448,11 @@ CREATE INDEX idx_documents_content_fts ON documents USING gin(to_tsvector('simpl
 - [ ] `CREATE INDEX idx_documents_embedding ON documents USING hnsw (embedding vector_cosine_ops);`
 - [ ] Placeholder service: `EmbeddingService.generateEmbedding()` → throws "Not implemented in P1"
 
-**TODO:**
+**Rozhodnutí (potvrzeno):**
 
-- [ ] Embedding model: OpenAI `text-embedding-ada-002` (1536 dim) nebo jiný?
-- [ ] Embedding dimension: 1536 (OpenAI) nebo 768 (open-source)?
+- **Embedding model:** OpenAI `text-embedding-3-small` (1536 dimenzí) – levnější a výkonnější než v2
+- **Provider:** Azure Foundry AI Services (managed, multi-model)
+- **Embedding dimension:** 1536 (potvrzeno, odpovídá `vector(1536)` sloupci)
 
 **Effort:** 2 MD
 
@@ -1272,33 +1464,62 @@ CREATE INDEX idx_documents_content_fts ON documents USING gin(to_tsvector('simpl
 
 ---
 
-##### Story: Append-Only Processing Log
+##### Story: gRPC Append-Only Processing Log
 
-**Jako** N8N Orchestrátor **chci** logovat každý krok zpracování souboru **abych** měl audit trail pro debugging a monitoring.
+**Jako** MS-ORCH Orchestrátor **chci** logovat každý krok zpracování souboru **abych** měl audit trail pro debugging a monitoring.
 
 **AC:**
 
-- [ ] `POST /logs/{file_id}` přidává záznam do processing logu
+- [ ] `gRPC AppendLog(AppendLogRequest)` přidává záznam do processing logu přes Dapr gRPC
 - [ ] Append-only: žádné UPDATE ani DELETE
 - [ ] Záznamy: `step_name`, `status`, `duration_ms`, `error_detail`
-- [ ] `GET /logs/{file_id}` vrací chronologický seznam kroků
+- [ ] **Čtení logů:** Přes MS-QRY REST endpoint `GET /api/logs/{file_id}` (CQRS read side, přístupné z frontendu přes API Gateway)
+- [ ] **Žádné REST endpointy na MS-SINK-LOG** – zápis výhradně přes Dapr gRPC
 
-**API:**
+**gRPC API (definice v `packages/protos/sink_log.proto`):**
 
-```
-POST /logs/{file_id}
-{
-  "step_name": "extract_slide_3",
-  "status": "SUCCESS",
-  "duration_ms": 1250,
-  "error_detail": null,
-  "metadata": { "slide_id": 3, "tables_found": 2 }
+```protobuf
+service LogSinkService {
+  rpc AppendLog (AppendLogRequest) returns (AppendLogResponse);
+  rpc GetLogs (GetLogsRequest) returns (GetLogsResponse);  // Interní čtení pro MS-QRY
 }
 
-→ 201 Created
-{ "log_id": "uuid" }
+message AppendLogRequest {
+  string file_id = 1;
+  string step_name = 2;
+  string status = 3;  // SUCCESS, FAILED, SKIPPED
+  int32 duration_ms = 4;
+  string error_detail = 5;
+  map<string, string> metadata = 6;
+}
 
-GET /logs/{file_id}
+message AppendLogResponse {
+  string log_id = 1;
+}
+
+message GetLogsRequest {
+  string file_id = 1;
+}
+
+message GetLogsResponse {
+  string file_id = 1;
+  repeated LogEntry steps = 2;
+}
+
+message LogEntry {
+  string step_name = 1;
+  string status = 2;
+  int32 duration_ms = 3;
+  string error_detail = 4;
+  string timestamp = 5;
+  map<string, string> metadata = 6;
+}
+```
+
+**REST endpoint pro frontend (v rámci MS-QRY, ne MS-SINK-LOG):**
+
+```
+GET /api/logs/{file_id}  (přes API Gateway)
 
 → 200 OK
 {
@@ -1334,12 +1555,15 @@ CREATE INDEX idx_processing_logs_file ON processing_logs(file_id);
 
 **Tasks:**
 
+- [ ] gRPC server setup (grpc-spring-boot-starter), Dapr sidecar: `app-protocol: grpc`, `app-id: ms-sink-log`
+- [ ] Protobuf kompilace z `packages/protos/sink_log.proto`
 - [ ] Flyway migrace V006 – processing_logs tabulka
-- [ ] REST controller: POST (append), GET (read by file_id)
+- [ ] gRPC service implementace `LogSinkServiceImpl` (ne REST controller)
+- [ ] `GetLogs` gRPC method pro interní čtení z MS-QRY
 - [ ] App user permissions: INSERT + SELECT only
 - [ ] Unit testy
 
-**Effort:** 3 MD | **Závislosti:** PostgreSQL
+**Effort:** 4 MD | **Závislosti:** PostgreSQL, Proto definitions
 
 ---
 
@@ -1374,10 +1598,8 @@ CREATE INDEX idx_processing_logs_file ON processing_logs(file_id);
 - [ ] Dockerfile pro produkční build (nginx)
 - [ ] Docker Compose entry s volume mount pro HMR
 
-**TODO:**
-
-- [ ] UI component library: Shadcn/UI + Radix, nebo jiná?
-- [ ] Monorepo přístup (turborepo) nebo standalone?
+- [ ] UI component library: FluentUI (based on MS)
+- [ ] Monorepo přístup NX 
 
 **Effort:** 2 MD
 
@@ -1408,10 +1630,8 @@ CREATE INDEX idx_processing_logs_file ON processing_logs(file_id);
 - [ ] Protected route wrapper: `<AuthenticatedRoute>`
 - [ ] Unit testy: mock MSAL provider
 
-**TODO:**
-
-- [ ] Azure App Registration Client ID
-- [ ] Redirect URI pro lokální dev a produkci
+- [ ] Azure App Registration Client ID - KeyVault
+- [ ] Redirect URI pro lokální dev a produkci  - KeyVault
 - [ ] Scope: `api://<client_id>/access_as_user`
 
 **Effort:** 5 MD
@@ -1438,11 +1658,9 @@ CREATE INDEX idx_processing_logs_file ON processing_logs(file_id);
 - [ ] React Router setup: routes pro Upload, Files, Settings
 - [ ] 404 page
 
-**TODO:**
-
-- [ ] UI design / wireframe pro layout?
-- [ ] Barevné schéma a branding?
-- [ ] Dark mode v P1 nebo později?
+- [ ] UI design / wireframe pro layout ve Figma
+- [ ] Barevné schéma a branding bdue definován v configUI.json
+- [ ] Dark mode v P1
 
 **Effort:** 3 MD
 
@@ -1523,10 +1741,8 @@ GET /api/files?org_id={org_id}&page=1&size=20
 - [ ] React Query hook: `useFiles(orgId, page)`
 - [ ] Link na Viewer stránku
 
-**TODO:**
-
-- [ ] Má být file list endpoint v MS-ING nebo v MS-QRY (CQRS read side)?
-- [ ] Filtrování: dle typu souboru, dle data, dle statusu?
+- [ ] file list endpoint v MS-ING
+- [ ] Filtrování: dle typu souboru, dle data, dle statusu
 
 **Effort:** 4 MD | **Závislosti:** Upload, Backend endpoint
 
@@ -1561,11 +1777,9 @@ GET /api/files?org_id={org_id}&page=1&size=20
 - [ ] Processing log timeline (GET `/logs/{file_id}`)
 - [ ] React Query hooks: `useFileDetail(fileId)`, `useSlideData(fileId, slideId)`, `useProcessingLog(fileId)`
 
-**TODO:**
-
-- [ ] Wireframe / mockup pro Viewer layout?
-- [ ] Má viewer zobrazovat originální slide (PNG) a extrahovaná data vedle sebe, nebo pod sebou?
-- [ ] Má uživatel vidět notes (poznámky ke slidu)?
+- [ ] Wireframe / mockup pro Viewer layout - Koncepce: „The Three-Pane Layout“
+- [ ] viewer zobrazuje originální slide (PNG) a extrahovaná data vedle sebe
+- [ ] Má uživatel vidět notes (poznámky ke slidu) - Ne.
 
 **Effort:** 8 MD | **Závislosti:** MS-ATM-PPTX, MS-SINK-TBL, MS-SINK-LOG
 
@@ -1583,21 +1797,21 @@ GET /api/files?org_id={org_id}&page=1&size=20
 
 **AC:**
 
-- [ ] Po uploadu: status se aktualizuje automaticky (polling nebo WebSocket/SSE)
+- [ ] Po uploadu: status se aktualizuje automaticky (Polling v P1, SSE v P2)
 - [ ] Status přechody viditelné v UI bez refresh: `UPLOADED → PROCESSING → DONE/FAILED`
 - [ ] Notifikace (toast) při dokončení zpracování
 
 **Tasks:**
 
-- [ ] Varianta A (polling): React Query s `refetchInterval: 3000` pro aktivní soubory
-- [ ] Varianta B (SSE): EventSource endpoint v backendu + FE listener
+- [ ] React Query s `refetchInterval: 3000` pro aktivní soubory (P1 – polling)
 - [ ] Toast notifikace při přechodu do `DONE` nebo `FAILED`
 - [ ] Indikátor zpracování: `Processing slide 3/15...`
+- [ ] Prepared: abstrakce pro budoucí SSE (P2) – `useFileStatus(fileId)` hook
 
-**TODO:**
+**Rozhodnutí (potvrzeno):**
 
-- [ ] Polling nebo SSE/WebSocket v P1? (polling jednodušší, SSE lepší UX)
-- [ ] Pokud SSE: který backend service bude SSE endpoint hostovat?
+- **P1:** Polling (React Query, 3s interval) – jednodušší, bez starostí s load-balancerem
+- **P2:** SSE (Server-Sent Events) – lepší UX, zavedení v P2
 
 **Effort:** 5 MD | **Závislosti:** Upload, File List
 
@@ -1605,44 +1819,48 @@ GET /api/files?org_id={org_id}&page=1&size=20
 
 ### P1 – Souhrn Stories
 
-| # | Epic / Story | Function ID | Effort | Závislosti |
-|---|---|---|---|---|
-| 1 | Traefik Routing & ForwardAuth | MS-GW | 1 MD | — |
-| 2 | Spring Boot Base Setup (AUTH) | MS-AUTH | 2 MD | — |
-| 3 | Azure Entra ID Token Validation | MS-AUTH | 5 MD | #2 |
-| 4 | RBAC Engine | MS-AUTH | 8 MD | #3 |
-| 5 | KeyVault Integration | MS-AUTH | 2 MD | #2 |
-| 6 | PostgreSQL & Flyway Setup | MS-AUTH | 3 MD | — |
-| 7 | Redis Connection Setup | MS-AUTH | 2 MD | — |
-| 8 | Docker Compose Full Topology | infra | 5 MD | — |
-| 9 | Spring Boot Base Setup (ING) | MS-ING | 1 MD | — |
-| 10 | Streaming Upload Endpoint | MS-ING | 8 MD | #3, #6 |
-| 11 | ClamAV Security Scan | MS-SCAN | 5 MD | #10 |
-| 12 | File Sanitization | MS-ING | 4 MD | #10 |
-| 13 | N8N Webhook Trigger | MS-ING | 2 MD | #10, #17 |
-| 14 | FastAPI Base Setup (ATM-PPTX) | MS-ATM-PPTX | 1 MD | — |
-| 15 | PPTX Structure Extraction | MS-ATM-PPTX | 5 MD | #14 |
-| 16 | Slide Content Extraction | MS-ATM-PPTX | 6 MD | #15 |
-| 17 | Slide Image Rendering | MS-ATM-PPTX | 6 MD | #15 |
-| 18 | MetaTable Logic | MS-ATM-PPTX | 8 MD | #16 |
-| 19 | Error Handling & Resilience (ATM) | MS-ATM-PPTX | 3 MD | #15 |
-| 20 | N8N Instance Setup | MS-N8N | 3 MD | #6 |
-| 21 | PPTX Processing Workflow | MS-N8N | 8 MD | #15, #16, #17, #25, #26, #27 |
-| 22 | Error Handling, Retry & DLQ | MS-N8N | 5 MD | #21 |
-| 23 | Idempotence | MS-N8N | 3 MD | #21 |
-| 24 | File Type Router | MS-N8N | 1 MD | #20 |
-| 25 | Bulk Insert Endpoint (SINK-TBL) | MS-SINK-TBL | 7 MD | #6 |
-| 26 | RLS Integration Test | MS-SINK-TBL | 3 MD | #25 |
-| 27 | Document Storage Endpoint | MS-SINK-DOC | 5 MD | #6 |
-| 28 | Vector Embedding Pipeline (prepared) | MS-SINK-DOC | 2 MD | #27 |
-| 29 | Append-Only Processing Log | MS-SINK-LOG | 3 MD | #6 |
-| 30 | React Project Setup | MS-FE | 2 MD | — |
-| 31 | MSAL Authentication | MS-FE | 5 MD | #30 |
-| 32 | App Shell & Navigation | MS-FE | 3 MD | #31 |
-| 33 | Drag & Drop Upload Zone | MS-FE | 4 MD | #31, #10 |
-| 34 | File List View | MS-FE | 4 MD | #31 |
-| 35 | Slide-by-Slide Viewer | MS-FE | 8 MD | #34, #16, #17, #29 |
-| 36 | Processing Status Updates | MS-FE | 5 MD | #33, #34 |
+| # | Epic / Story | Function ID | Effort | Protokol | Závislosti |
+|---|---|---|---|---|---|
+| 1 | Nginx Routing & auth_request | MS-GW | 1 MD | REST (edge) | — |
+| 2 | Spring Boot Base Setup (AUTH) | MS-AUTH | 2 MD | REST (edge) | — |
+| 3 | Azure Entra ID Token Validation | MS-AUTH | 5 MD | REST (auth_request) | #2 |
+| 4 | RBAC Engine | MS-AUTH | 8 MD | REST (edge) | #3 |
+| 5 | KeyVault Integration | MS-AUTH | 2 MD | — | #2 |
+| 6 | PostgreSQL & Flyway Setup | MS-AUTH | 3 MD | TCP | — |
+| 7 | Redis Connection Setup | MS-AUTH | 2 MD | TCP | — |
+| 8 | Docker Compose Full Topology + Dapr | infra | 5 MD | — | — |
+| 9 | Spring Boot Base Setup (ING) | MS-ING | 1 MD | REST (edge) | — |
+| 10 | Streaming Upload Endpoint | MS-ING | 8 MD | REST (edge) | #3, #6 |
+| 11 | ClamAV Security Scan | MS-SCAN | 5 MD | Dapr gRPC | #10 |
+| 12 | File Sanitization | MS-ING | 4 MD | — | #10 |
+| 13 | Orchestrator Event Trigger | MS-ING | 2 MD | Dapr Pub/Sub | #10, #20 |
+| 14 | gRPC Server Base Setup (ATM-PPTX) | MS-ATM-PPTX | 2 MD | Dapr gRPC | Proto defs |
+| 15 | PPTX Structure Extraction | MS-ATM-PPTX | 5 MD | Dapr gRPC | #14 |
+| 16 | Slide Content Extraction | MS-ATM-PPTX | 6 MD | Dapr gRPC | #15 |
+| 17 | Slide Image Rendering | MS-ATM-PPTX | 6 MD | Dapr gRPC | #15 |
+| 18 | MetaTable Logic | MS-ATM-PPTX | 8 MD | Dapr gRPC | #16 |
+| 19 | Error Handling & Resilience (ATM) | MS-ATM-PPTX | 3 MD | gRPC status | #15 |
+| 20 | Workflow Engine Setup | MS-ORCH | 8 MD | Dapr gRPC + Pub/Sub | #6, #7 |
+| 21 | Type-Safe Contracts (Proto defs) | MS-ORCH | 5 MD | Protobuf | #20 |
+| 22 | PPTX Processing Workflow (Saga) | MS-ORCH | 12 MD | Dapr gRPC | #21, #15, #16, #17, #25, #26, #27 |
+| 23 | Error Handling & Exponential Backoff | MS-ORCH | 7 MD | Dapr gRPC | #22 |
+| 24 | Idempotence (Redis-based) | MS-ORCH | 4 MD | TCP (Redis) | #22, #7 |
+| 24b | Async Worker Layer | MS-ORCH | 5 MD | Dapr Pub/Sub | #20 |
+| 24c | File Type Router | MS-ORCH | 2 MD | — | #20 |
+| 24d | Workflow State Persistence | MS-ORCH | 5 MD | TCP (Redis/PG) | #20, #7 |
+| 25 | gRPC Bulk Insert (SINK-TBL) | MS-SINK-TBL | 8 MD | Dapr gRPC | #6, Proto defs |
+| 25b | Spring Boot + gRPC Base (SINK-TBL) | MS-SINK-TBL | 2 MD | Dapr gRPC | — |
+| 26 | RLS Integration Test | MS-SINK-TBL | 3 MD | — | #25 |
+| 27 | gRPC Document Storage (SINK-DOC) | MS-SINK-DOC | 6 MD | Dapr gRPC | #6, Proto defs |
+| 28 | Vector Embedding Pipeline (prepared) | MS-SINK-DOC | 2 MD | — | #27 |
+| 29 | gRPC Append-Only Processing Log | MS-SINK-LOG | 4 MD | Dapr gRPC | #6, Proto defs |
+| 30 | React Project Setup | MS-FE | 2 MD | — | — |
+| 31 | MSAL Authentication | MS-FE | 5 MD | REST (edge) | #30 |
+| 32 | App Shell & Navigation | MS-FE | 3 MD | REST (edge) | #31 |
+| 33 | Drag & Drop Upload Zone | MS-FE | 4 MD | REST (edge) | #31, #10 |
+| 34 | File List View | MS-FE | 4 MD | REST (edge) | #31 |
+| 35 | Slide-by-Slide Viewer | MS-FE | 8 MD | REST (edge) | #34, #16, #17, #29 |
+| 36 | Processing Status Updates | MS-FE | 5 MD | REST polling | #33, #34 |
 
 ---
 
@@ -1662,52 +1880,48 @@ GET /api/files?org_id={org_id}&page=1&size=20
 
 #### Epic: Excel Atomizer (MS-ATM-XLS)
 
-**Unit ID:** MS-PROCESSOR | **Effort:** 15 MD
+**Unit ID:** MS-PROCESSOR | **Effort:** 16 MD
 
 | # | Story | Effort | Popis |
 |---|---|---|---|
-| 1 | FastAPI Base Setup | 1 MD | Stejná šablona jako MS-ATM-PPTX |
-| 2 | Sheet Structure Extraction | 3 MD | `POST /extract/excel` → list listů s metadaty (row_count, col_count) |
-| 3 | Sheet Content Extraction | 5 MD | `POST /extract/excel/sheet` → headers + rows + data_types per sheet |
-| 4 | Partial Success Handling | 3 MD | 9/10 listů OK + 1 FAILED → `{ status: "PARTIAL", successful: [...], failed: [...] }` |
-| 5 | N8N Excel Workflow | 3 MD | Workflow pro batch iteraci přes listy, routing na SINK-TBL |
+| 1 | gRPC Server Base Setup | 2 MD | Stejná šablona jako MS-ATM-PPTX – gRPC server, Dapr sidecar (`app-id: ms-atm-xls`, `app-protocol: grpc`), žádné REST endpointy |
+| 2 | Sheet Structure Extraction | 3 MD | `gRPC ExtractStructure(ExtractRequest)` → `ExcelStructureResponse` s listem listů (row_count, col_count) |
+| 3 | Sheet Content Extraction | 5 MD | `gRPC ExtractSheetContent(SheetRequest)` → `SheetContentResponse` s headers + rows + data_types per sheet |
+| 4 | Partial Success Handling | 3 MD | 9/10 listů OK + 1 FAILED → `PartialResult { status: "PARTIAL", successful: [...], failed: [...] }` |
+| 5 | MS-ORCH Excel Workflow | 3 MD | JSON workflow definition pro batch iteraci přes listy, Dapr gRPC routing na SINK-TBL |
 
-**TODO:**
-
-- [ ] Má Excel Atomizer detekovat merged cells a jak je zpracovat?
-- [ ] Formátování čísel: zachovat formát z Excelu nebo normalizovat?
-- [ ] Prázdné řádky/sloupce: skipovat nebo zachovat?
+- [ ] Má Excel Atomizer detekovat merged cells a jak je zpracovat? Ano, rozdělit a zkopírovat do sloupců
+- [ ] Formátování čísel: zachovat formát z Excelu nebo normalizovat? Normalizovat
+- [ ] Prázdné řádky/sloupce: skipovat nebo zachovat? skipopvat
 
 ---
 
 #### Epic: PDF/OCR Atomizer (MS-ATM-PDF)
 
-**Unit ID:** MS-PROCESSOR | **Effort:** 15 MD
+**Unit ID:** MS-PROCESSOR | **Effort:** 16 MD
 
 | # | Story | Effort | Popis |
 |---|---|---|---|
-| 1 | FastAPI Base Setup | 1 MD | Base setup + Tesseract OCR v Dockerfile |
+| 1 | gRPC Server Base Setup | 2 MD | gRPC server + Tesseract OCR v Dockerfile, Dapr sidecar (`app-id: ms-atm-pdf`, `app-protocol: grpc`), žádné REST endpointy |
 | 2 | PDF Type Detection | 2 MD | Detekce: textový PDF vs. skenovaný (image-based) |
-| 3 | Text PDF Extraction | 4 MD | PyPDF2/pdfplumber: extrakce textu, tabulek, metadat |
+| 3 | Text PDF Extraction | 4 MD | `gRPC ExtractPdf(ExtractRequest)` → PyPDF2/pdfplumber: extrakce textu, tabulek, metadat |
 | 4 | OCR Pipeline | 5 MD | Tesseract OCR pro skenované stránky → text |
-| 5 | N8N PDF Workflow | 3 MD | Workflow: detect type → route → extract → store |
+| 5 | MS-ORCH PDF Workflow | 3 MD | JSON workflow definition: detect type → route → extract → store (Dapr gRPC) |
 
-**TODO:**
-
-- [ ] OCR jazyky: čeština + angličtina, nebo více?
-- [ ] Tesseract: přetrénovaný model pro finanční dokumenty?
-- [ ] PDF tabulky: Camelot/Tabula integrace?
+- [ ] OCR jazyky: angličtina
+- [ ] Tesseract: přetrénovaný model pro finanční dokumenty? Ne, stačí klasciké tabulky.
+- [ ] PDF tabulky: Camelot/Tabula integrace? Ano, zkusíme free
 
 ---
 
 #### Epic: CSV Atomizer (MS-ATM-CSV)
 
-**Unit ID:** MS-PROCESSOR | **Effort:** 4 MD
+**Unit ID:** MS-PROCESSOR | **Effort:** 5 MD
 
 | # | Story | Effort | Popis |
 |---|---|---|---|
-| 1 | CSV Parser | 2 MD | Auto-detection: oddělovač (`,;|\t`), kódování (UTF-8, CP1250), header detection |
-| 2 | N8N CSV Workflow | 2 MD | Workflow: parse → store |
+| 1 | gRPC Server + CSV Parser | 3 MD | gRPC server + auto-detection: oddělovač (`,;|\t`), kódování (UTF-8, CP1250), header detection. Dapr sidecar (`app-id: ms-atm-csv`, `app-protocol: grpc`), žádné REST endpointy |
+| 2 | MS-ORCH CSV Workflow | 2 MD | JSON workflow definition: parse → store (Dapr gRPC) |
 
 ---
 
@@ -1720,10 +1934,8 @@ GET /api/files?org_id={org_id}&page=1&size=20
 | 1 | Cleanup CronJob | 3 MD | Smazání dočasných artefaktů (PNG, CSV) z Blob starších než 24h |
 | 2 | Cleanup Konfigurace | 2 MD | Konfigurovatelná retention policy per artifact type |
 
-**TODO:**
-
-- [ ] Retention policy: 24h pro PNG slidy, jiná doba pro jiné typy?
-- [ ] Má CronJob logovat smazané soubory do MS-SINK-LOG?
+- [ ] Retention policy: 24h pro všechny temporary, pokud je proces za sebou sám nevyčistí
+- [ ] Má CronJob logovat smazané soubory do MS-SINK-LOG? Ne
 
 ---
 
@@ -1731,38 +1943,44 @@ GET /api/files?org_id={org_id}&page=1&size=20
 
 ---
 
-#### Epic: Query API (MS-QRY)
+#### Epic: Query API (MS-QRY) – CQRS Read Side
 
-**Unit ID:** MS-DATA | **Effort:** 12 MD
+**Unit ID:** MS-DATA | **Effort:** 14 MD
+
+> **MS-QRY je edge služba** – vystavuje REST endpointy pro frontend přes API Gateway. Čte data z PostgreSQL (zapsaná přes Sinky). Pro čtení logů volá MS-SINK-LOG přes Dapr gRPC.
 
 | # | Story | Effort | Popis |
 |---|---|---|---|
-| 1 | Spring Boot Base Setup | 1 MD | Base setup, Redis client |
-| 2 | File Detail Endpoint | 3 MD | `GET /api/files/{id}` – kompletní detail souboru s parsovanými daty |
-| 3 | Table Data Query | 4 MD | `GET /api/tables?org_id=&file_id=&slide_id=` – dotazy nad JSONB |
-| 4 | Redis Caching Layer | 2 MD | Cache s TTL (5 min) pro nejčastější dotazy |
-| 5 | Materialized Views | 2 MD | Flyway migrace: precomputed views pro dashboard aggregace |
+| 1 | Spring Boot Base Setup | 1 MD | Base setup, Redis client, Dapr sidecar (`app-protocol: http` – REST pro GW, gRPC client pro interní volání) |
+| 2 | File Detail Endpoint | 3 MD | REST `GET /api/files/{id}` – kompletní detail souboru s parsovanými daty (přes API Gateway) |
+| 3 | Table Data Query | 4 MD | REST `GET /api/tables?org_id=&file_id=&slide_id=` – dotazy nad JSONB (přes API Gateway) |
+| 4 | Processing Log Query | 2 MD | REST `GET /api/logs/{file_id}` – čtení processing logů (Dapr gRPC volání na MS-SINK-LOG `GetLogs`) |
+| 5 | Redis Caching Layer | 2 MD | Cache s TTL (5 min) pro nejčastější dotazy |
+| 6 | Materialized Views | 2 MD | Flyway migrace: precomputed views pro dashboard aggregace |
 
 ---
 
-#### Epic: Dashboard Aggregation (MS-DASH)
+#### Epic: Dashboard Aggregation (MS-DASH) – Edge Service
 
 **Unit ID:** MS-DATA | **Effort:** 35 MD
 
+> **MS-DASH je edge služba** – vystavuje REST endpointy pro frontend přes API Gateway.
+
 | # | Story | Effort | Popis |
 |---|---|---|---|
-| 1 | Spring Boot Base Setup | 1 MD | Base setup |
+| 1 | Spring Boot Base Setup | 1 MD | Base setup, Dapr sidecar (`app-protocol: http` – REST pro API Gateway) |
 | 2 | Aggregation Engine | 8 MD | SQL nad JSONB: GROUP BY, ORDER BY, filtr datum/org z UI parametrů |
-| 3 | Dashboard Configuration API | 5 MD | CRUD pro definice dashboardů (JSON config: zdroj dat, typ grafu, filtry) |
-| 4 | Chart Data Endpoints | 8 MD | Endpointy vracející data pro grafy: bar, line, pie, table |
+| 3 | Dashboard Configuration API | 5 MD | REST CRUD pro definice dashboardů (JSON config: zdroj dat, typ grafu, filtry) |
+| 4 | Chart Data Endpoints | 8 MD | REST endpointy vracející data pro grafy: bar, line, pie, table (přes API Gateway) |
 | 5 | FE: Dashboard Viewer | 8 MD | React komponenty: chart library integrace, interaktivní filtry, drill-down |
 | 6 | FE: Dashboard Builder (Admin) | 5 MD | Admin UI pro konfiguraci dashboardů |
 
-**TODO:**
+**Rozhodnutí (potvrzeno):**
 
-- [ ] Chart library: Recharts, Nivo, nebo ECharts?
-- [ ] SQL editor pro pokročilé uživatele – v P2 nebo později?
-- [ ] Jaké výchozí dashboardy vytvořit? (OPEX přehled per org, trend, srovnání)
+- **Chart library:** Recharts (lehká, React-nativní) pro standardní grafy + Nivo pro komplexnější vizualizace (heatmaps)
+
+- [ ] SQL editor pro pokročilé uživatele – v P2
+- [ ] Jaké výchozí dashboardy vytvořit? OPEX přehled per org, trend, srovnání
 
 ---
 
@@ -1796,11 +2014,9 @@ GET /api/files?org_id={org_id}&page=1&size=20
 | 4 | API Key Management | 4 MD | Generování, hashování (bcrypt), revokace service account klíčů |
 | 5 | FE: Admin Section | 4 MD | React stránky pro role, organizace, failed jobs, API keys |
 
-**TODO:**
-
-- [ ] Má Admin UI být součást hlavní SPA nebo separátní aplikace?
-- [ ] Invitation flow: jak se přidají noví uživatelé? (Azure AD sync nebo manuální pozvánka?)
-- [ ] API key rate limiting: per klíč nebo per organizace?
+- [ ] Má Admin UI být součást hlavní SPA nebo separátní aplikace? Separátní app
+- [ ] Invitation flow: jak se přidají noví uživatelé? (Azure AD sync nebo manuální pozvánka?) - skrze AD sync
+- [ ] API key rate limiting: per klíč nebo per organizace? per klíč
 
 ---
 
@@ -1817,10 +2033,9 @@ GET /api/files?org_id={org_id}&page=1&size=20
 | 3 | RLS Enforcement Layer | 3 MD | Sdílený middleware pro automatické nastavení `app.current_org_id` |
 | 4 | FE: Batch Dashboard | 3 MD | Přehled batchů, stav souborů v batchi |
 
-**TODO:**
 
-- [ ] Vztah Batch vs. Reporting Period (FS20): sloučení konceptů nebo dva různé objekty?
-- [ ] Granularita org metadata: stačí `org_id` nebo potřeba `division_id`, `cost_center_id`?
+- [ ] Vztah Batch vs. Reporting Period (FS20): sloučení konceptů nebo dva různé objekty? různé objekty. batch nemusí odpovídat Reporting
+- [ ] Granularita org metadata: stačí `org_id` nebo potřeba `division_id`, `cost_center_id`? granularita `org_id`, `division_id`, `cost_center_id`
 
 ---
 
@@ -1832,16 +2047,17 @@ GET /api/files?org_id={org_id}&page=1&size=20
 
 | # | Story | Effort | Popis |
 |---|---|---|---|
-| 1 | LiteLLM Integration | 4 MD | FastAPI endpoint `POST /analyze/semantic`, LiteLLM wrapper pro multi-model |
-| 2 | Token Quota & Cost Control | 3 MD | Tracking spotřeby tokenů per user/org, `429` při překročení kvóty |
-| 3 | Vector Embedding Generator | 3 MD | Async generování embeddings pro documents v MS-SINK-DOC |
+| 1 | LiteLLM Integration | 4 MD | gRPC `AnalyzeSemantic(SemanticRequest)` přes Dapr, LiteLLM wrapper pro multi-model. **Žádné REST endpointy** – voláno z MS-ORCH přes Dapr gRPC |
+| 2 | Token Quota & Cost Control | 3 MD | Tracking spotřeby tokenů per user/org, gRPC `RESOURCE_EXHAUSTED` při překročení kvóty |
+| 3 | Vector Embedding Generator | 3 MD | Async generování embeddings pro documents v MS-SINK-DOC (Dapr gRPC volání) |
 | 4 | Prompt Templates | 3 MD | Konfigurovatelné prompty pro klasifikaci, sumarizaci, extrakci entit |
 
-**TODO:**
+**Rozhodnutí (částečně potvrzeno):**
 
-- [ ] LLM provider: Azure OpenAI, OpenAI API, nebo open-source (Ollama)?
-- [ ] Model pro embeddings: `text-embedding-ada-002` nebo `text-embedding-3-small`?
-- [ ] Měsíční token quota per organizace: jaká výchozí hodnota?
+- **Embedding model:** OpenAI `text-embedding-3-small` (1536 dims) via Azure Foundry AI Services
+
+- [ ] LLM provider pro sémantickou analýzu: Azure OpenAI, OpenAI API, nebo open-source (Ollama)? všechny 3 dostupní, v config určíme
+- [ ] Měsíční token quota per organizace: jaká výchozí hodnota? 0. Bude nastavitelné v konfiguraci.
 
 #### Epic: MCP Server (MS-MCP)
 
@@ -1854,10 +2070,8 @@ GET /api/files?org_id={org_id}&page=1&size=20
 | 3 | RLS Enforcement in AI | 2 MD | Každý AI dotaz scoped na `org_id` uživatele |
 | 4 | AI Audit Logging | 2 MD | Logování každého promptu a odpovědi do MS-AUDIT |
 
-**TODO:**
-
-- [ ] MCP protocol verze a klientské SDK?
-- [ ] Jaké MCP tools definovat? (query_tables, search_documents, summarize_report, ...)
+- [ ] MCP protocol verze a klientské SDK? Microsft Azure MCP SDK
+- [ ] Jaké MCP tools definovat? query_tables, search_documents, summarize_report,import_report, proced_flow
 
 ---
 
@@ -1867,20 +2081,21 @@ GET /api/files?org_id={org_id}&page=1&size=20
 
 **Unit ID:** MS-DATA | **Effort:** 30 MD
 
+> **MS-TMPL je interní služba** – komunikuje výhradně přes Dapr gRPC (voláno z MS-ORCH). Mapping Editor UI přistupuje přes dedikované REST endpointy na MS-ADMIN (proxy), ne přímo na MS-TMPL.
+
 | # | Story | Effort | Popis |
 |---|---|---|---|
 | 1 | Mapping Rule Engine | 8 MD | Pravidla: `IF column contains "Cena/Cost/Náklady" → map to amount_czk` |
-| 2 | Mapping Template CRUD | 5 MD | API pro vytvoření, editaci, verzování mapovacích šablon |
+| 2 | Mapping Template CRUD | 5 MD | gRPC API pro vytvoření, editaci, verzování mapovacích šablon (voláno z MS-ADMIN) |
 | 3 | Auto-suggestion (Learning) | 7 MD | Systém navrhuje mapování na základě historie (fuzzy match na column names) |
-| 4 | N8N Integration Point | 3 MD | `POST /map/apply` voláno z N8N PŘED zápisem do Sink |
-| 5 | Excel-to-Form Mapping | 4 MD | `POST /map/excel-to-form` – mapování Excel sloupců na pole formuláře (FS19 prepared) |
-| 6 | FE: Mapping Editor | 3 MD | UI pro definici a testování mapovacích pravidel |
+| 4 | MS-ORCH Integration Point | 3 MD | Dapr gRPC `ApplyMapping()` voláno z MS-ORCH PŘED zápisem do Sink |
+| 5 | Excel-to-Form Mapping | 4 MD | gRPC `MapExcelToForm()` – mapování Excel sloupců na pole formuláře (FS19 prepared) |
+| 6 | FE: Mapping Editor | 3 MD | UI pro definici a testování mapovacích pravidel (přes MS-ADMIN REST proxy) |
 
-**TODO:**
 
-- [ ] Jaké normalizační pravidla jsou potřeba? (měna, jednotky, datumy, naming)
-- [ ] Learning: jaký algoritmus? (TF-IDF, embeddings similarity, rule-based?)
-- [ ] Priorita pravidel: explicit rule > learned suggestion > user confirmation?
+- [ ] Jaké normalizační pravidla jsou potřeba? měna, jednotky, datumy, naming
+- [ ] Learning: jaký algoritmus? TF-IDF, embeddings similarity, rule-based
+- [ ] Priorita pravidel: explicit rule > learned suggestion > user confirmation? Ano
 
 ---
 
@@ -1903,12 +2118,12 @@ GET /api/files?org_id={org_id}&page=1&size=20
 | # | Story | Effort | Popis |
 |---|---|---|---|
 | 1 | Report Entity & State Machine | 6 MD | `DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED / REJECTED → DRAFT` |
-| 2 | State Transition API | 4 MD | `POST /reports/{id}/submit`, `/approve`, `/reject` s validací oprávnění |
+| 2 | State Transition REST API | 4 MD | REST `POST /api/reports/{id}/submit`, `/approve`, `/reject` – **edge služba**, přístupné přes API Gateway pro frontend |
 | 3 | Rejection with Comment | 3 MD | Povinný komentář při zamítnutí, viditelný Editorovi |
 | 4 | Submission Checklist | 4 MD | Validace kompletnosti před odesláním (povinná pole, nahrané listy, validační pravidla) |
 | 5 | Bulk Actions | 3 MD | HoldingAdmin: schválení/zamítnutí více reportů najednou |
 | 6 | Data Lock after Approval | 3 MD | Schválená data read-only, úprava = nový DRAFT (nová verze, FS14) |
-| 7 | Dapr Event Publishing | 2 MD | Event `report.status_changed` → PubSub pro N8N a MS-NOTIF |
+| 7 | Dapr Event Publishing | 2 MD | Dapr Pub/Sub event `report.status_changed` → MS-ORCH a MS-NOTIF |
 
 **DB:**
 
@@ -1946,23 +2161,21 @@ CREATE POLICY reports_org_isolation ON reports
     USING (org_id = current_setting('app.current_org_id')::UUID);
 ```
 
-**TODO:**
-
-- [ ] Report types: jaké typy reportů existují? (OPEX, CAPEX, Revenue, Custom?)
-- [ ] Submission checklist: jaká konkrétní validační pravidla?
-- [ ] Má rejection automaticky resetovat checklist?
-- [ ] Workflow customizace: různé report_type = různý N8N workflow?
+- [ ] Report types: jaké typy reportů existují?  ano, zstím takpo.OPEX, CAPEX, Revenue, Custom? Nechat možnost definovat kategorii reportů
+- [ ] Submission checklist: jaká konkrétní validační pravidla? Nejsou, každý report je validován až výsledkem flow
+- [ ] Má rejection automaticky resetovat checklist? ne, je potřeba jej ukázat uživateli. reset manuálně eboi přo nahrání nové verze souboru
+- [ ] Workflow customizace: různé report_type = různý MS-ORCH JSON workflow definition? ANO
 
 ---
 
-##### N8N Lifecycle Workflows (MS-N8N rozšíření) – 15 MD
+##### MS-ORCH Lifecycle Workflows (MS-ORCH rozšíření) – 15 MD
 
 | # | Story | Effort | Popis |
 |---|---|---|---|
-| 1 | Submission Workflow | 5 MD | Event `SUBMITTED` → validace dat → notifikace HoldingAdmin |
-| 2 | Approval Workflow | 4 MD | Event `APPROVED` → zahrnutí do centrálního reportingu → notifikace Editor |
-| 3 | Rejection Workflow | 3 MD | Event `REJECTED` → notifikace Editor s komentářem |
-| 4 | Deadline Reminder Workflow | 3 MD | Cron: X dní před deadline → notifikace všem s DRAFT |
+| 1 | Submission Workflow | 5 MD | Dapr Pub/Sub event `SUBMITTED` → validace dat → Dapr gRPC notifikace HoldingAdmin |
+| 2 | Approval Workflow | 4 MD | Dapr Pub/Sub event `APPROVED` → zahrnutí do centrálního reportingu → notifikace Editor |
+| 3 | Rejection Workflow | 3 MD | Dapr Pub/Sub event `REJECTED` → notifikace Editor s komentářem |
+| 4 | Deadline Reminder Workflow | 3 MD | Cron: X dní před deadline → Dapr Pub/Sub notifikace všem s DRAFT |
 
 ---
 
@@ -1976,10 +2189,9 @@ CREATE POLICY reports_org_isolation ON reports
 | 4 | Status Timeline | 3 MD | Historie stavových přechodů per report (timeline komponenta) |
 | 5 | Bulk Action UI | 3 MD | Checkbox select + hromadné schválení/zamítnutí |
 
-**TODO:**
 
-- [ ] Wireframe pro Report Status Dashboard (matice společnosti × perioda)?
-- [ ] Vizuální design submission flow – stepper nebo wizard?
+- [ ] Wireframe pro Report Status Dashboard (matice společnosti × perioda)? ano
+- [ ] Vizuální design submission flow – stepper nebo wizard? Wizzard
 
 ---
 
@@ -2017,11 +2229,9 @@ CREATE TABLE periods (
 );
 ```
 
-**TODO:**
-
-- [ ] Může mít organizace více aktivních period současně?
-- [ ] Automatické uzavření: hard close (nelze vůbec) nebo soft close (lze s override)?
-- [ ] Eskalace: jen notifikace nebo i automatická akce (email vedení)?
+- [ ] Může mít organizace více aktivních period současně? Ano
+- [ ] Automatické uzavření: hard close (nelze vůbec) nebo soft close (lze s override)? Soft Close
+- [ ] Eskalace: jen notifikace nebo i automatická akce (email vedení)? jen notifikace. zatím.
 
 ---
 
@@ -2092,12 +2302,10 @@ CREATE POLICY form_responses_org_isolation ON form_responses
     USING (org_id = current_setting('app.current_org_id')::UUID);
 ```
 
-**TODO:**
-
-- [ ] Form definition JSON schema: jaký formát? (JSON Schema, custom, nebo hotová knihovna jako react-jsonschema-form?)
-- [ ] Auto-save interval: 30 s nebo konfigurovatelný?
-- [ ] Má být `table` field type plnohodnotný spreadsheet, nebo jednoduchá tabulka s pevnými sloupci?
-- [ ] File attachment: max počet a velikost příloh per formulář?
+- [ ] Form definition JSON schema: jaký formát? JSON Schema
+- [ ] Auto-save interval: 30 s nebo konfigurovatelný? 30 sec
+- [ ] Má být `table` field type plnohodnotný spreadsheet, nebo jednoduchá tabulka s pevnými sloupci? Jednoduchá tebulka
+- [ ] File attachment: max počet a velikost příloh per formulář? 0-1 s daty, 0-5 s doplňky
 
 ---
 
@@ -2125,11 +2333,9 @@ CREATE POLICY form_responses_org_isolation ON form_responses
 | 4 | Excel Import Review UI | 3 MD | Po importu: zobrazení dat v UI k vizuální kontrole |
 | 5 | Field Comments UI | 3 MD | Inline komentáře u každého pole |
 
-**TODO:**
-
-- [ ] Form builder: vlastní implementace nebo knihovna (FormIO, SurveyJS)?
-- [ ] Drag & drop knihovna: dnd-kit nebo react-beautiful-dnd?
-- [ ] Wireframe pro form filling UI?
+- [ ] Form builder: vlastní implementace nebo knihovna (FormIO, SurveyJS)? Radeji knihovna, šetříme práci - co jde použít, použijeme
+- [ ] Drag & drop knihovna: dnd-kit nebo react-beautiful-dnd? react-beautiful-dnd
+- [ ] Wireframe pro form filling UI? plochá struktura tabulky.
 
 ---
 
@@ -2152,15 +2358,14 @@ CREATE POLICY form_responses_org_isolation ON form_responses
 | # | Story | Effort | Popis |
 |---|---|---|---|
 | 1 | In-app Notifications (WebSocket/SSE) | 5 MD | Push notifikace do FE při events (processing done, report approved, ...) |
-| 2 | Email Notifications | 4 MD | SendGrid/SMTP integrace pro kritické events (deadline, rejection) |
+| 2 | Email Notifications | 4 MD | SMTP integrace pro kritické events (deadline, rejection) |
 | 3 | Notification Preferences | 3 MD | Opt-in/opt-out per event type per uživatel |
 | 4 | FE: Notification Bell | 3 MD | Bell icon v top baru, dropdown se seznamem notifikací, read/unread |
 
-**TODO:**
 
-- [ ] Email provider: SendGrid, Azure Communication Services, nebo SMTP server?
-- [ ] Email šablony: kdo dodá HTML šablony?
-- [ ] Notification types: kompletní seznam eventů k notifikaci?
+- [ ] Email provider: SendGrid, Azure Communication Services, nebo SMTP server? SMTP server
+- [ ] Email šablony: kdo dodá HTML šablony? připravit v admin sekci možnost nahrát a spravovat šablony
+- [ ] Notification types: kompletní seznam eventů k notifikaci? ano, ale necháme možnost úpravy v aplikaci
 
 ---
 
@@ -2176,10 +2381,9 @@ CREATE POLICY form_responses_org_isolation ON form_responses
 | 2 | Diff Engine | 6 MD | Porovnání dvou verzí: přidané/odebrané/změněné řádky, delta hodnoty |
 | 3 | FE: Diff Viewer | 5 MD | Side-by-side zobrazení verzí s highlighting změn |
 
-**TODO:**
 
-- [ ] Granularita verzování: per tabulka, per slide, nebo per soubor?
-- [ ] Diff zobrazení: side-by-side nebo inline (git-style)?
+- [ ] Granularita verzování: per tabulka, per slide, nebo per soubor? per soubor
+- [ ] Diff zobrazení: side-by-side nebo inline (git-style)? side-by-side
 
 ---
 
@@ -2239,11 +2443,9 @@ CREATE POLICY form_responses_org_isolation ON form_responses
 | 4 | Template Preview | 3 MD | Náhled šablony s ukázkovými hodnotami |
 | 5 | Template Assignment | 3 MD | Přiřazení šablony ke konkrétním periodám a report types |
 
-**TODO:**
-
-- [ ] Placeholder syntax: `{{variable}}` pro text, `{{TABLE:name}}` pro tabulky, `{{CHART:metric}}` pro grafy – je to dostačující?
-- [ ] Podporované typy grafů: bar, line, pie – další?
-- [ ] Kdo definuje mapování placeholder → datový zdroj? HoldingAdmin?
+- [ ] Placeholder syntax: `{{variable}}` pro text, `{{TABLE:name}}` pro tabulky, `{{CHART:metric}}` pro grafy – je to dostačující? Ano
+- [ ] Podporované typy grafů: bar, line, pie – další? tyto postačují
+- [ ] Kdo definuje mapování placeholder → datový zdroj? HoldingAdmin? HoldingAdmin je moc vysoko, Admin
 
 ---
 
@@ -2257,14 +2459,12 @@ CREATE POLICY form_responses_org_isolation ON form_responses
 | 2 | Chart Generation | 8 MD | matplotlib/plotly: generování grafů a vložení do PPTX |
 | 3 | Missing Data Handling | 3 MD | Chybějící data → `DATA MISSING` vizuální upozornění (červený rámeček) |
 | 4 | Batch Generation | 5 MD | Generování PPTX pro všechny schválené reporty v periodě |
-| 5 | N8N Generation Workflow | 3 MD | Workflow: event `APPROVED` → generate PPTX → notify |
+| 5 | MS-ORCH Generation Workflow | 3 MD | JSON workflow definition: Dapr Pub/Sub event `APPROVED` → Dapr gRPC generate PPTX → Dapr Pub/Sub notify |
 | 6 | FE: Generator UI | 3 MD | Trigger generování, stav, download výsledného PPTX |
 
-**TODO:**
-
-- [ ] Grafové styly: kdo definuje barevné schéma a styling grafů?
-- [ ] Batch generation: paralelně nebo sekvenčně?
-- [ ] Výsledný PPTX: veřejný download link nebo autentizovaný?
+- [ ] Grafové styly: kdo definuje barevné schéma a styling grafů? Bude součístí configUI.json
+- [ ] Batch generation: paralelně nebo sekvenčně? sekvenčně
+- [ ] Výsledný PPTX: veřejný download link nebo autentizovaný? Všechny linky autentizovaně.
 
 ---
 
@@ -2274,8 +2474,8 @@ CREATE POLICY form_responses_org_isolation ON form_responses
 
 | # | Story | Effort | Popis |
 |---|---|---|---|
-| 1 | OpenTelemetry E2E Tracing | 5 MD | Trace přes FE → GW → N8N → ATM → Sink |
-| 2 | Prometheus Metrics | 5 MD | Metriky: chybovost, latence, N8N fronta, DB pool |
+| 1 | OpenTelemetry E2E Tracing | 5 MD | Trace přes FE → GW → MS-ORCH → ATM → Sink |
+| 2 | Prometheus Metrics | 5 MD | Metriky: chybovost, latence, MS-ORCH workflow queue, DB pool |
 | 3 | Grafana Dashboards | 5 MD | Operační dashboardy pro monitoring |
 | 4 | Centralized Logging (Loki) | 5 MD | Structured JSON logy ze všech služeb |
 | 5 | CI/CD Pipeline | 8 MD | Lint → Test → Build → Docker → Push to Registry |
@@ -2283,12 +2483,10 @@ CREATE POLICY form_responses_org_isolation ON form_responses
 | 7 | Onboarding Documentation | 3 MD | Runbook pro onboarding první holdingové společnosti |
 | 8 | Performance Testing | 5 MD | Load testy: upload, parsing, dashboard rendering |
 
-**TODO:**
-
-- [ ] CI/CD: GitHub Actions nebo Azure DevOps?
-- [ ] Container registry: ACR (Azure Container Registry) nebo GitHub Container Registry?
-- [ ] Monitoring alerting: PagerDuty, Opsgenie, nebo email?
-- [ ] Onboarding: jaký je proces pro přidání nového holdingu? (tenant provisioning)
+- [ ] CI/CD: GitHub Actions nebo Azure DevOps? Azure DevOps
+- [ ] Container registry: ACR (Azure Container Registry) nebo GitHub Container Registry? ACR
+- [ ] Monitoring alerting: PagerDuty, Opsgenie, nebo email? email
+- [ ] Onboarding: jaký je proces pro přidání nového holdingu? (tenant provisioning) - manualni vložení nového TenetID mezi povolené
 
 ---
 
@@ -2306,9 +2504,8 @@ CREATE POLICY form_responses_org_isolation ON form_responses
 | 6 | Basic Period Comparison | 8 MD | Srovnání metriky napříč periodami (Q1/2024 vs Q1/2025) |
 | 7 | FE: Local Scope UI | TBD | UI pro lokální formuláře, šablony, release flow |
 
-**TODO:**
 
-- [ ] CompanyAdmin: je to nová role vedle Admin/Editor/Viewer, nebo sub-role?
+- [ ] CompanyAdmin: je to nová role vedle Admin/Editor/Viewer, nebo sub-role? Role Admin, jen jinak pojenovaný
 - [ ] Release flow: push (CompanyAdmin posílá) nebo pull (HoldingAdmin si stahuje)?
 - [ ] Advanced Period Comparison (FS22): detailní specifikace po zkušenostech z provozu
 
@@ -2318,7 +2515,7 @@ CREATE POLICY form_responses_org_isolation ON form_responses
 
 | Phase | Effort (MD) | AI (MD) | Savings | Key Milestones |
 |---|---|---|---|---|
-| **P1** MVP Core | 193 | 80 | 113 | Upload + PPTX parsing + viewer |
+| **P1** MVP Core | 213 | 88 | 125 | Upload + PPTX parsing + viewer |
 | **P2** Extended Parsing | 86 | 43 | 43 | All formats + dashboards |
 | **P3a** Intelligence | 90 | 52 | 38 | Admin + AI + Schema Mapping |
 | **P3b** Lifecycle | 75 | 40 | 35 | Report state machine + periods |
@@ -2327,47 +2524,119 @@ CREATE POLICY form_responses_org_isolation ON form_responses
 | **P4b** PPTX Gen | 75 | 35 | 40 | Template-based report generation |
 | **P5** DevOps | 41 | 20 | 21 | Production monitoring + CI/CD |
 | **P6** Local + Analytics | 63+ | TBD | TBD | Subsidiary internal use |
-| **TOTAL** | **~775** | **~345** | **~430** | |
+| **TOTAL** | **~795** | **~353** | **~442** | |
 
 ---
 
-## TODO Summary – Rozhodnutí vyžadující vstup
+### Rozhodnuto ✅
 
-### Infrastruktura & DevOps
+| Téma | Rozhodnutí |
+|---|---|
+| **Komunikace** | |
+| Interní protokol | **Dapr gRPC** – veškerá service-to-service komunikace přes Dapr sidecars (gRPC) |
+| Externí protokol | **REST** – pouze edge služby (MS-AUTH, MS-ING, MS-QRY, MS-DASH, MS-ADMIN, MS-LIFECYCLE) přes API Gateway |
+| Eventy | **Dapr Pub/Sub** – async události (file-uploaded, report.status_changed, notify) |
+| Atomizery/Sinky | **Pouze Dapr gRPC** – žádné REST endpointy, volány výhradně z MS-ORCH |
+| Proto definice | Sdílený `packages/protos/` modul, protoc generování do Java/Python stubs |
+| **Infrastruktura** | |
+| API Gateway | Nginx (Host-based routing) + Azure Front Door (WAF + SSL) |
+| Rate limiting | 100 req/s per IP (API), 10 req/s per IP (Auth/Upload), burst 20 |
+| CORS | Whitelist: `https://*.company.cz` + `localhost:3000` (dev) |
+| SSL (produkce) | Azure Front Door – holding standard |
+| CI/CD | Azure DevOps |
+| Container registry | ACR (Azure Container Registry) |
+| Lokální dev | Docker Compose (Tilt/Skaffold až v P5) |
+| PostgreSQL | Sdílená instance, různá schémata per service |
+| Workflow engine | Spring State Machine (finální rozhodnutí CTO) |
+| Redis | Sdílená instance s MS-AUTH |
+| ClamAV | clamd TCP socket (port 3310), freshclam sidecar s cron |
+| Blob Storage | Azure Blob Storage (lokálně Azurite v Dockeru) |
+| Blob naming | `{org_id}/{yyyy}/{MM}/{file_id}/{original_filename}` |
+| Max file size | 50 MB (PPTX), 100 MB (PDF s OCR) |
+| Retention (raw) | 90 dní pro audit, pak smazat. Sanitizované trvale |
+| Monitoring alerting | Email |
+| Onboarding (tenant) | Manuální vložení nového TenantID |
+| **RBAC & Org** | |
+| RBAC permission matice | Admin (vše v Org), Editor (Upload/Edit), Viewer (Read-only), HoldingAdmin (Cross-org Read) |
+| Organizační hierarchie | Fixní 3 úrovně: Holding → Společnost → Divize/Nákladové středisko |
+| Org metadata granularita | `org_id`, `division_id`, `cost_center_id` |
+| Invitation flow | Azure AD sync |
+| CompanyAdmin (P6) | = Admin role, jen jinak pojmenovaný |
+| Editor viditelnost | Vidí vše v rámci org + data z nižších org. jednotek |
+| **Processing** | |
+| Rendering engine | LibreOffice Headless (`--convert-to png`) |
+| PNG rozlišení | 1280×720 (720p), ~200KB per slide |
+| MetaTable threshold | Confidence > 0.85, jinak plain text + `low_confidence` flag |
+| MetaTable volání | Na request (flag `detect_meta_tables: true`) |
+| Atomizer file size | Stejný jako upload limit |
+| Download timeout | 30 s |
+| Sanitizace | VBA makra, ActiveX, embedded executables, external data connections |
+| Artifact retention | 24h pro všechny temporary |
+| **AI & Data** | |
+| Embedding model | OpenAI `text-embedding-3-small` (1536 dims) via Azure Foundry AI Services |
+| LLM provider | Multi-provider (Azure OpenAI, OpenAI API, Ollama) – konfigurovatelné |
+| Token quota | Default 0, nastavitelné v konfiguraci per org |
+| OCR jazyky | Angličtina |
+| Schema Mapping learning | TF-IDF + embeddings similarity + rule-based |
+| Priorita pravidel | explicit rule > learned suggestion > user confirmation |
+| MCP SDK | Microsoft Azure MCP SDK |
+| MCP tools | query_tables, search_documents, summarize_report, import_report, proced_flow |
+| **Frontend & UX** | |
+| UI component library | FluentUI (based on MS) |
+| Monorepo | NX |
+| Chart library | Recharts (standardní) + Nivo (heatmaps, komplexní) |
+| Real-time feedback | P1: Polling (React Query, 3s), P2: SSE |
+| Dark mode | P1 |
+| Branding / barvy | Definováno v `configUI.json` |
+| Wireframy | Figma |
+| Viewer layout | Three-Pane Layout (slide PNG + data vedle sebe) |
+| Slide notes | Nezobrazovat |
+| Form builder knihovna | Hotová knihovna (FormIO / SurveyJS) |
+| DnD knihovna | react-beautiful-dnd |
+| Form definition | JSON Schema |
+| Auto-save | 30 s |
+| Table field type | Jednoduchá tabulka s pevnými sloupci |
+| File attachments | 0-1 s daty, 0-5 s doplňky |
+| Admin UI | Separátní aplikace |
+| Submission flow design | Wizard |
+| **Reporting** | |
+| Report types | Konfigurovatelné kategorie (OPEX, CAPEX, Revenue, Custom) |
+| Submission checklist | Validace výsledkem flow (ne manuální pravidla) |
+| Rejection reset | Manuálně nebo při nahrání nové verze |
+| Workflow per report_type | ANO – různý JSON workflow definition |
+| Batch vs Period | Dva různé objekty |
+| Period soft/hard close | Soft Close (s override) |
+| Více aktivních period | ANO |
+| Placeholder syntax | `{{variable}}`, `{{TABLE:name}}`, `{{CHART:metric}}` |
+| Placeholder mapování | Admin role (ne HoldingAdmin) |
+| Chart types (PPTX Gen) | bar, line, pie |
+| Grafové styly | Definováno v `configUI.json` |
+| Batch generation | Sekvenčně |
+| Download linky | Vždy autentizované |
+| Versioning granularita | Per soubor |
+| Diff zobrazení | Side-by-side |
+| Excel merged cells | Rozdělit a zkopírovat do sloupců |
+| Excel formátování čísel | Normalizovat |
+| Prázdné řádky/sloupce | Skipovat |
+| Cleanup CronJob logging | Ne (neloguje do MS-SINK-LOG) |
+| API key rate limiting | Per klíč |
+| Email provider | SMTP server |
+| Email šablony | Správa v admin sekci |
+| Notification types | Konfigurovatelné v aplikaci |
+| Eskalace (FS20) | Jen notifikace (zatím) |
+| File list endpoint | V MS-ING |
+| Filtrování souborů | Dle typu, data, statusu |
+
+### Otevřené – čekají na infra provisioning
 - [ ] Azure Entra ID: Tenant ID, App Registration Client ID, Security Groups → role mapping
-- [ ] Azure KeyVault URL a seznam secrets
-- [ ] Blob Storage: Azure Blob, S3, nebo MinIO (lokální dev)?
-- [ ] SSL strategie (produkce): Azure Front Door, Let's Encrypt, vlastní?
-- [ ] CI/CD: GitHub Actions nebo Azure DevOps?
-- [ ] Container registry: ACR nebo GHCR?
-- [ ] Lokální dev: Docker Compose, Tilt, nebo Skaffold?
-- [ ] PostgreSQL: sdílená instance (různá schémata per service) nebo oddělené instance?
+- [ ] Azure KeyVault URL a kompletní seznam secrets
+- [ ] Prod PostgreSQL: Azure Database for PostgreSQL Flexible Server – provisioning
+- [ ] Managed Identity setup
 
-### Business pravidla
-- [ ] RBAC permission matice: kompletní seznam akcí per role
-- [ ] Organizační hierarchie: kolik úrovní? (holding → dceřiná → divize?)
-- [ ] Max file size pro upload (20/50/100 MB?)
-- [ ] Report types: jaké typy reportů existují?
-- [ ] Submission checklist: konkrétní validační pravidla
-- [ ] Notification events: kompletní seznam eventů k notifikaci
-- [ ] Token quota per organizace: výchozí hodnota?
+### Otevřené – čekají na UX/design
+- [ ] Wireframy ve Figma pro klíčové obrazovky (Viewer, Dashboard, Form Builder, Report Status)
+- [ ] Report Status Dashboard wireframe (matice společnosti × perioda)
 
-### UX & Design
-- [ ] Wireframy / mockupy pro klíčové obrazovky
-- [ ] Barevné schéma a branding
-- [ ] UI component library: Shadcn/UI + Radix?
-- [ ] Form builder: vlastní implementace nebo knihovna (FormIO, SurveyJS)?
-- [ ] Chart library: Recharts, Nivo, ECharts?
-- [ ] Dark mode: v P1 nebo později?
-
-### AI & Data
-- [ ] LLM provider: Azure OpenAI, OpenAI API, open-source?
-- [ ] Embedding model a dimenze (1536 vs 768)
-- [ ] OCR jazyky (čeština + angličtina + další?)
-- [ ] Schema Mapping learning algoritmus
-
-### Retention & Security
-- [ ] Originální soubory (s makry): trvale nebo s expirací?
-- [ ] Artifact retention: 24h PNG, jiné typy?
-- [ ] ClamAV: ICAP nebo clamd socket?
-- [ ] Virus DB update strategie
+### Otevřené – odložené (P6+)
+- [ ] Release flow (P6): push (CompanyAdmin posílá) nebo pull (HoldingAdmin si stahuje)?
+- [ ] Advanced Period Comparison (FS22): specifikace po zkušenostech z provozu

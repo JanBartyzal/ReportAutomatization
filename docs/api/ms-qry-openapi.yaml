@@ -1,0 +1,478 @@
+openapi: 3.0.3
+info:
+  title: Query Service API (MS-QRY)
+  description: CQRS read model - optimized data retrieval for frontend
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: Base API server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/query/files/{file_id}/data:
+    get:
+      operationId: getFileData
+      summary: Get parsed data for a file
+      description: >
+        Returns all parsed data associated with a file, including extracted
+        tables and document summaries.
+      tags:
+        - File Data
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique file identifier
+      responses:
+        "200":
+          description: Parsed file data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileData"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/query/files/{file_id}/slides:
+    get:
+      operationId: getFileSlides
+      summary: Get slide-by-slide content for PPTX
+      description: >
+        Returns slide-by-slide parsed content for a PowerPoint file, including
+        text, tables, notes, and image references for each slide.
+      tags:
+        - File Data
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique file identifier (must reference a PPTX file)
+      responses:
+        "200":
+          description: Slide-by-slide content
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SlideContent"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/query/tables:
+    get:
+      operationId: queryTables
+      summary: Query structured table data
+      description: >
+        Query and retrieve structured table data across files and forms,
+        filtered by organization, period, and source type. Returns paginated
+        results.
+      tags:
+        - Tables
+      parameters:
+        - name: org_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter by organization ID
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by reporting period (e.g. "2026-Q1")
+        - name: source_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - FILE
+              - FORM
+          description: Filter by data source type
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of items per page
+      responses:
+        "200":
+          description: Paginated table data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedTableData"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/query/documents/{document_id}:
+    get:
+      operationId: getDocument
+      summary: Get specific document
+      description: >
+        Returns a specific parsed document by its unique identifier, including
+        full content and associated metadata.
+      tags:
+        - Documents
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique document identifier
+      responses:
+        "200":
+          description: Document details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/query/processing-logs/{file_id}:
+    get:
+      operationId: getProcessingLogs
+      summary: Get processing logs for a file
+      description: >
+        Returns the processing pipeline log entries for a file, showing each
+        step's status, duration, and any errors encountered.
+      tags:
+        - Processing Logs
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique file identifier
+      responses:
+        "200":
+          description: Processing log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProcessingLog"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Azure Entra ID v2.0 JWT token
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    FileData:
+      type: object
+      required:
+        - file_id
+        - tables
+        - documents
+      properties:
+        file_id:
+          type: string
+          format: uuid
+          description: File identifier
+        tables:
+          type: array
+          description: Extracted table data
+          items:
+            $ref: "#/components/schemas/TableData"
+        documents:
+          type: array
+          description: Document summaries extracted from the file
+          items:
+            $ref: "#/components/schemas/DocumentSummary"
+
+    TableData:
+      type: object
+      required:
+        - table_id
+        - name
+        - columns
+        - rows
+      properties:
+        table_id:
+          type: string
+          format: uuid
+          description: Table unique identifier
+        name:
+          type: string
+          description: Table name or label
+        columns:
+          type: array
+          description: Column definitions
+          items:
+            $ref: "#/components/schemas/ColumnDefinition"
+        rows:
+          type: array
+          description: Table rows as arrays of cell values
+          items:
+            type: array
+            items:
+              oneOf:
+                - type: string
+                - type: number
+                - type: boolean
+                - type: "null"
+        source_type:
+          type: string
+          enum:
+            - FILE
+            - FORM
+          description: Origin of the table data
+        period:
+          type: string
+          description: Reporting period (e.g. "2026-Q1")
+        org_id:
+          type: string
+          format: uuid
+          description: Owning organization ID
+
+    ColumnDefinition:
+      type: object
+      required:
+        - name
+        - data_type
+      properties:
+        name:
+          type: string
+          description: Column name
+        data_type:
+          type: string
+          enum:
+            - STRING
+            - NUMBER
+            - BOOLEAN
+            - DATE
+            - CURRENCY
+          description: Column data type
+
+    DocumentSummary:
+      type: object
+      required:
+        - document_id
+        - document_type
+        - title
+      properties:
+        document_id:
+          type: string
+          format: uuid
+          description: Document unique identifier
+        document_type:
+          type: string
+          description: Type of document (e.g. REPORT, MEMO, STATEMENT)
+        title:
+          type: string
+          description: Document title or heading
+
+    Document:
+      type: object
+      required:
+        - document_id
+        - file_id
+        - document_type
+        - content
+        - metadata
+      properties:
+        document_id:
+          type: string
+          format: uuid
+          description: Document unique identifier
+        file_id:
+          type: string
+          format: uuid
+          description: Source file identifier
+        document_type:
+          type: string
+          description: Type of document (e.g. REPORT, MEMO, STATEMENT)
+        content:
+          type: string
+          description: Full document content (text or structured markup)
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional document metadata (author, date, tags, etc.)
+
+    SlideContent:
+      type: object
+      required:
+        - slide_index
+        - title
+        - texts
+        - tables
+      properties:
+        slide_index:
+          type: integer
+          description: Zero-based slide index
+        title:
+          type: string
+          description: Slide title
+        texts:
+          type: array
+          description: Text blocks extracted from the slide
+          items:
+            type: string
+        tables:
+          type: array
+          description: Tables present on the slide
+          items:
+            $ref: "#/components/schemas/TableData"
+        notes:
+          type: string
+          description: Speaker notes for the slide
+        image_url:
+          type: string
+          format: uri
+          description: URL to the rendered slide image
+
+    ProcessingLog:
+      type: object
+      required:
+        - log_id
+        - step_name
+        - status
+        - recorded_at
+      properties:
+        log_id:
+          type: string
+          format: uuid
+          description: Log entry unique identifier
+        step_name:
+          type: string
+          description: Name of the processing pipeline step
+        status:
+          type: string
+          enum:
+            - PENDING
+            - RUNNING
+            - COMPLETED
+            - FAILED
+            - SKIPPED
+          description: Step execution status
+        duration_ms:
+          type: integer
+          format: int64
+          description: Step execution duration in milliseconds
+        error_detail:
+          type: string
+          description: Error details if the step failed
+        recorded_at:
+          type: string
+          format: date-time
+          description: Timestamp when the log entry was recorded
+
+    PaginatedTableData:
+      type: object
+      required:
+        - items
+        - page
+        - page_size
+        - total_items
+        - total_pages
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TableData"
+        page:
+          type: integer
+          description: Current page number
+        page_size:
+          type: integer
+          description: Number of items per page
+        total_items:
+          type: integer
+          description: Total number of items across all pages
+        total_pages:
+          type: integer
+          description: Total number of pages

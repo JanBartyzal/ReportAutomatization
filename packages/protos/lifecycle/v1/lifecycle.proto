@@ -1,0 +1,40 @@
+syntax = "proto3";
+package lifecycle.v1;
+
+import "common/v1/common.proto";
+
+option java_package = "com.reportplatform.proto.lifecycle.v1";
+option java_multiple_files = true;
+
+// Note: MS-LIFECYCLE exposes REST for frontend via API Gateway
+// and publishes Dapr Pub/Sub events consumed by MS-ORCH.
+// This proto defines the Pub/Sub event schemas only.
+
+// Published on topic "report.status_changed"
+message ReportStatusChangedEvent {
+  string report_id = 1;
+  string org_id = 2;
+  string period_id = 3;
+  string report_type = 4;
+  ReportStatus from_status = 5;
+  ReportStatus to_status = 6;
+  string changed_by = 7;   // user_id
+  string comment = 8;       // mandatory on REJECTED
+  string changed_at = 9;
+}
+
+enum ReportStatus {
+  REPORT_STATUS_UNSPECIFIED = 0;
+  REPORT_STATUS_DRAFT = 1;
+  REPORT_STATUS_SUBMITTED = 2;
+  REPORT_STATUS_UNDER_REVIEW = 3;
+  REPORT_STATUS_APPROVED = 4;
+  REPORT_STATUS_REJECTED = 5;
+}
+
+// Published on topic "report.data_locked"
+message ReportDataLockedEvent {
+  string report_id = 1;
+  string org_id = 2;
+  string locked_at = 3;
+}

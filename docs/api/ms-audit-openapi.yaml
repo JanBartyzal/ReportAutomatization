@@ -1,0 +1,304 @@
+openapi: 3.0.3
+info:
+  title: Audit & Compliance API (MS-AUDIT)
+  description: Audit logging, compliance tracking, and log export
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: Base API server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/audit/logs:
+    get:
+      operationId: getAuditLogs
+      summary: Get audit logs
+      description: >
+        Returns a paginated list of audit log entries filtered by the provided
+        criteria. All parameters are optional; omitting a parameter means no
+        filtering on that dimension.
+      tags:
+        - Audit
+      parameters:
+        - name: user_id
+          in: query
+          required: false
+          description: Filter by the user who performed the action
+          schema:
+            type: string
+            format: uuid
+        - name: entity_type
+          in: query
+          required: false
+          description: Filter by entity type
+          schema:
+            type: string
+            example: report
+        - name: entity_id
+          in: query
+          required: false
+          description: Filter by entity identifier
+          schema:
+            type: string
+            format: uuid
+        - name: action
+          in: query
+          required: false
+          description: Filter by action type
+          schema:
+            type: string
+            enum:
+              - CREATE
+              - READ
+              - UPDATE
+              - DELETE
+              - STATE_CHANGE
+              - AI_QUERY
+        - name: from_date
+          in: query
+          required: false
+          description: Start of date range (inclusive)
+          schema:
+            type: string
+            format: date-time
+        - name: to_date
+          in: query
+          required: false
+          description: End of date range (inclusive)
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          required: false
+          description: Page number (1-based)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          required: false
+          description: Number of entries per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Paginated list of audit log entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLogPage"
+              example:
+                items:
+                  - id: "d290f1ee-6c54-4b01-90e6-d701748f0851"
+                    user_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                    user_email: "admin@example.com"
+                    action: UPDATE
+                    entity_type: report
+                    entity_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                    details:
+                      field: status
+                      old_value: DRAFT
+                      new_value: SUBMITTED
+                    ip_address: "192.168.1.42"
+                    timestamp: "2026-03-01T09:15:00Z"
+                page: 1
+                page_size: 20
+                total_items: 1
+                total_pages: 1
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permissions (admin-only endpoint)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: FORBIDDEN
+                message: Audit log access requires ADMIN role
+
+  /api/audit/export:
+    get:
+      operationId: exportAuditLogs
+      summary: Export audit logs
+      description: >
+        Exports audit logs as a downloadable file in the requested format.
+        The response is a binary stream with the appropriate Content-Type header.
+      tags:
+        - Audit
+      parameters:
+        - name: format
+          in: query
+          required: true
+          description: Export file format
+          schema:
+            type: string
+            enum:
+              - CSV
+              - JSON
+        - name: from_date
+          in: query
+          required: true
+          description: Start of date range (inclusive)
+          schema:
+            type: string
+            format: date-time
+        - name: to_date
+          in: query
+          required: true
+          description: End of date range (inclusive)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Binary file download
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              description: Attachment filename
+              schema:
+                type: string
+                example: 'attachment; filename="audit-logs-2026-03-01.csv"'
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: BAD_REQUEST
+                message: "from_date must be before to_date"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permissions (admin-only endpoint)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Azure Entra ID v2.0 JWT token
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    AuditEntry:
+      type: object
+      required:
+        - id
+        - user_id
+        - user_email
+        - action
+        - entity_type
+        - entity_id
+        - timestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique audit log entry identifier
+        user_id:
+          type: string
+          format: uuid
+          description: Identifier of the user who performed the action
+        user_email:
+          type: string
+          format: email
+          description: Email of the user who performed the action
+        action:
+          type: string
+          enum:
+            - CREATE
+            - READ
+            - UPDATE
+            - DELETE
+            - STATE_CHANGE
+            - AI_QUERY
+          description: Type of action performed
+        entity_type:
+          type: string
+          description: Type of the entity acted upon
+        entity_id:
+          type: string
+          format: uuid
+          description: Identifier of the entity acted upon
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional context about the action (e.g. changed fields)
+        ip_address:
+          type: string
+          description: IP address of the client that initiated the action
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the action occurred
+
+    AuditLogPage:
+      type: object
+      required:
+        - items
+        - page
+        - page_size
+        - total_items
+        - total_pages
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEntry"
+        page:
+          type: integer
+          description: Current page number
+        page_size:
+          type: integer
+          description: Number of items per page
+        total_items:
+          type: integer
+          description: Total number of matching audit entries
+        total_pages:
+          type: integer
+          description: Total number of pages

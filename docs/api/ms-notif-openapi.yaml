@@ -1,0 +1,294 @@
+openapi: 3.0.3
+info:
+  title: Notification Service API (MS-NOTIF)
+  description: |
+    In-app and email notification delivery, user notification preferences,
+    and real-time Server-Sent Events (SSE) streaming.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Notifications
+    description: Notification listing and marking as read
+  - name: Settings
+    description: User notification preferences
+  - name: Streaming
+    description: Real-time SSE notification stream
+
+paths:
+  # ── Notifications ─────────────────────────────────────────────────────
+  /api/notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications
+      operationId: listNotifications
+      parameters:
+        - name: read
+          in: query
+          description: Filter by read status
+          schema:
+            type: boolean
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Paginated list of notifications
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginationResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Notification"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    put:
+      tags: [Notifications]
+      summary: Mark notifications as read
+      operationId: markNotificationsRead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [notification_ids]
+              properties:
+                notification_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+      responses:
+        "200":
+          description: Notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated_count:
+                    type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ── Settings ──────────────────────────────────────────────────────────
+  /api/notifications/settings:
+    get:
+      tags: [Settings]
+      summary: Get user notification preferences
+      operationId: getNotificationSettings
+      responses:
+        "200":
+          description: Current notification settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    put:
+      tags: [Settings]
+      summary: Update notification settings
+      operationId: updateNotificationSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationSettings"
+      responses:
+        "200":
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # ── SSE Stream ────────────────────────────────────────────────────────
+  /api/notifications/stream:
+    get:
+      tags: [Streaming]
+      summary: Real-time notification stream (SSE)
+      description: |
+        Opens a Server-Sent Events connection for real-time push notifications.
+        The client receives events as they happen. Each event has type `notification`
+        and a JSON-encoded `Notification` object as data.
+      operationId: streamNotifications
+      responses:
+        "200":
+          description: SSE event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  Server-Sent Events stream. Each event has the following format:
+                  ```
+                  event: notification
+                  data: {"id":"...","type":"...","title":"...","body":"...","read":false,"data":{},"created_at":"..."}
+                  ```
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+# ═════════════════════════════════════════════════════════════════════════
+# Components
+# ═════════════════════════════════════════════════════════════════════════
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      description: Page number (1-based)
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: page_size
+      in: query
+      description: Items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  schemas:
+    # ── Common ────────────────────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    PaginationResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_items:
+          type: integer
+        total_pages:
+          type: integer
+
+    # ── Notification ──────────────────────────────────────────────────
+    NotificationType:
+      type: string
+      enum:
+        - FILE_PROCESSED
+        - FILE_FAILED
+        - REPORT_SUBMITTED
+        - REPORT_APPROVED
+        - REPORT_REJECTED
+        - DEADLINE_APPROACHING
+        - DEADLINE_MISSED
+        - BATCH_COMPLETED
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/NotificationType"
+        title:
+          type: string
+        body:
+          type: string
+        read:
+          type: boolean
+        data:
+          type: object
+          additionalProperties: true
+          description: Arbitrary payload associated with the notification
+        created_at:
+          type: string
+          format: date-time
+
+    # ── Settings ──────────────────────────────────────────────────────
+    ChannelPreference:
+      type: object
+      properties:
+        email:
+          type: boolean
+        in_app:
+          type: boolean
+
+    NotificationSettings:
+      type: object
+      properties:
+        email_enabled:
+          type: boolean
+          description: Global email notification toggle
+        in_app_enabled:
+          type: boolean
+          description: Global in-app notification toggle
+        preferences:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ChannelPreference"
+          description: |
+            Per-type channel preferences. Keys are NotificationType values.
+            Example: { "FILE_PROCESSED": { "email": true, "in_app": true } }
+
+  responses:
+    BadRequest:
+      description: Invalid request body or parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

@@ -1,0 +1,98 @@
+syntax = "proto3";
+package atomizer.v1;
+
+import "common/v1/common.proto";
+
+option java_package = "com.reportplatform.proto.atomizer.v1";
+option java_multiple_files = true;
+
+service PptxAtomizerService {
+  // Extract PPTX structure (slide list, metadata)
+  rpc ExtractStructure(ExtractRequest) returns (PptxStructureResponse);
+
+  // Extract content from a specific slide
+  rpc ExtractSlideContent(SlideRequest) returns (SlideContentResponse);
+
+  // Render slide as PNG image
+  rpc RenderSlideImage(SlideRequest) returns (SlideImageResponse);
+
+  // Batch extract all slides (orchestrator typically calls this)
+  rpc ExtractAll(ExtractRequest) returns (PptxFullExtractionResponse);
+}
+
+message ExtractRequest {
+  common.v1.RequestContext context = 1;
+  string file_id = 2;
+  string blob_url = 3;
+}
+
+message SlideRequest {
+  common.v1.RequestContext context = 1;
+  string file_id = 2;
+  string blob_url = 3;
+  int32 slide_index = 4;
+}
+
+message PptxStructureResponse {
+  string file_id = 1;
+  int32 total_slides = 2;
+  repeated SlideMetadata slides = 3;
+  map<string, string> document_properties = 4;  // author, title, etc.
+}
+
+message SlideMetadata {
+  int32 slide_index = 1;
+  string title = 2;
+  string layout_name = 3;
+  bool has_tables = 4;
+  bool has_text = 5;
+  bool has_images = 6;
+  bool has_charts = 7;
+  bool has_notes = 8;
+}
+
+message SlideContentResponse {
+  int32 slide_index = 1;
+  repeated TextBlock texts = 2;
+  repeated TableData tables = 3;
+  string notes = 4;
+}
+
+message TextBlock {
+  string shape_name = 1;
+  string text = 2;
+  bool is_title = 3;
+  int32 position_x = 4;
+  int32 position_y = 5;
+}
+
+message TableData {
+  string table_id = 1;
+  repeated string headers = 2;
+  repeated TableRow rows = 3;
+  double confidence = 4;  // MetaTable confidence threshold
+}
+
+message TableRow {
+  repeated string cells = 1;
+}
+
+message SlideImageResponse {
+  int32 slide_index = 1;
+  common.v1.BlobReference image = 2;  // PNG URL in Blob Storage
+}
+
+message PptxFullExtractionResponse {
+  string file_id = 1;
+  common.v1.ProcessingStatus status = 2;
+  PptxStructureResponse structure = 3;
+  repeated SlideContentResponse slide_contents = 4;
+  repeated SlideImageResponse slide_images = 5;
+  repeated ExtractionError errors = 6;
+}
+
+message ExtractionError {
+  int32 slide_index = 1;
+  string error_code = 2;
+  string error_message = 3;
+}

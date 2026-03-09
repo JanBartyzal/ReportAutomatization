@@ -1,0 +1,228 @@
+openapi: 3.0.3
+info:
+  title: Auth Service API (MS-AUTH)
+  description: Azure Entra ID token validation and user context management
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: Base API server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/auth/verify:
+    post:
+      operationId: verifyToken
+      summary: Validate JWT token
+      description: >
+        Called by Nginx auth_request sub-request. Validates the Bearer JWT token
+        issued by Azure Entra ID v2.0. On success, returns empty body with
+        X-User-Id, X-Org-Id, and X-Roles response headers that Nginx forwards
+        to upstream services.
+      tags:
+        - Authentication
+      responses:
+        "200":
+          description: Token is valid. Headers are set for upstream propagation.
+          headers:
+            X-User-Id:
+              description: Authenticated user's UUID
+              schema:
+                type: string
+                format: uuid
+            X-Org-Id:
+              description: User's currently active organization UUID
+              schema:
+                type: string
+                format: uuid
+            X-Roles:
+              description: Comma-separated list of user roles
+              schema:
+                type: string
+                example: ADMIN,EDITOR
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: UNAUTHORIZED
+                message: Token is invalid or has expired
+        "403":
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: FORBIDDEN
+                message: Insufficient permissions to access this resource
+
+  /api/auth/me:
+    get:
+      operationId: getCurrentUser
+      summary: Get current user context
+      description: >
+        Returns the full user context for the currently authenticated user,
+        including all organization memberships and assigned roles.
+      tags:
+        - User Context
+      responses:
+        "200":
+          description: Current user context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserContext"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/auth/switch-org:
+    post:
+      operationId: switchOrganization
+      summary: Switch active organization
+      description: >
+        Switches the user's active organization context. The user must be
+        a member of the target organization.
+      tags:
+        - User Context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - org_id
+              properties:
+                org_id:
+                  type: string
+                  format: uuid
+                  description: Target organization ID to switch to
+            example:
+              org_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      responses:
+        "200":
+          description: Organization switched successfully. Returns updated user context.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserContext"
+        "401":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: User is not a member of the specified organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: FORBIDDEN
+                message: User is not a member of the specified organization
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Azure Entra ID v2.0 JWT token
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    UserContext:
+      type: object
+      required:
+        - user_id
+        - email
+        - display_name
+        - organizations
+        - active_org_id
+        - roles
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+        email:
+          type: string
+          format: email
+          description: User's email address
+        display_name:
+          type: string
+          description: User's display name
+        organizations:
+          type: array
+          description: All organizations the user belongs to
+          items:
+            $ref: "#/components/schemas/Organization"
+        active_org_id:
+          type: string
+          format: uuid
+          description: Currently active organization ID
+        roles:
+          type: array
+          description: Roles assigned to the user in the active organization
+          items:
+            $ref: "#/components/schemas/Role"
+
+    Organization:
+      type: object
+      required:
+        - id
+        - name
+        - type
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Organization unique identifier
+        name:
+          type: string
+          description: Organization display name
+        type:
+          type: string
+          enum:
+            - HOLDING
+            - COMPANY
+            - DIVISION
+          description: Organization hierarchy type
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Parent organization ID (null for top-level)
+
+    Role:
+      type: string
+      enum:
+        - ADMIN
+        - EDITOR
+        - VIEWER
+        - HOLDING_ADMIN
+        - REVIEWER
+      description: User role within an organization

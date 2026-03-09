@@ -1,0 +1,25 @@
+# Dapr Access Control Policy
+# Defines which services can invoke which other services via Dapr service invocation.
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: platform-access-control
+spec:
+  accessControl:
+    defaultAction: deny
+    trustDomain: "public"
+    policies:
+      # MS-ORCH (Orchestrator) can call all internal gRPC services
+      - appId: ms-orch
+        defaultAction: allow
+
+      # MS-ING can call MS-SCAN for antivirus scanning
+      - appId: ms-ing
+        defaultAction: deny
+        operations:
+          - name: /scanner.v1.ScannerService/*
+            action: allow
+
+      # MS-QRY can read from PostgreSQL (direct, not via Dapr invocation)
+      # MS-DASH can read from PostgreSQL (direct, not via Dapr invocation)
+      # No Dapr service invocation policies needed for read services

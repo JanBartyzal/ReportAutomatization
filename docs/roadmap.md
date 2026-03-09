@@ -4,26 +4,26 @@ Goal: Obtaining approval for implementation using MS Azure
 Prior to commencing implementation, the necessary groundwork must be established to formally initiate a new platform initiative intended to serve a broad base of target users across the group. Preliminary assessment confirms that no comparable solution of this scope is currently deployed within the group.
 Phase 1 – MVP: End-to-End ingestion (M1–2) 
 Goal: Prove the core data pipeline works end-to-end for a single file. 
-Infrastructure: Azure ACA, PostgreSQL + pgVector, Blob Storage, Traefik API Gateway/Azure API manager (APIM). 
-Dev: File Ingestor (streaming upload, MIME validation), PPTX Atomizer (text + table extraction), basic N8N pipeline (ingest → parse → store), Auth Service (Azure Entra ID, RBAC). 
-Security: ForwardAuth on API Gateway, KeyVault for secrets. 
+Infrastructure: Azure ACA, PostgreSQL + pgVector, Blob Storage, Nginx API Gateway + Azure Front Door (WAF + SSL). 
+Dev: File Ingestor (streaming upload, MIME validation – REST edge endpoint), PPTX Atomizer (text + table extraction – Dapr gRPC only), Custom Orchestrator MS-ORCH (Spring State Machine, Saga Pattern, Dapr gRPC for all internal service calls, ingest → parse → store), Auth Service (Azure Entra ID, RBAC – REST for auth_request). All internal communication via Dapr gRPC sidecars; REST exposed only on edge services (upload, query, auth).
+Security: ForwardAuth on API Gateway, KeyVault for secrets.
 Output: User uploads a PPTX file, extracted text and tables appear in DB and basic viewer.
 Note: phase 1 covers approximately 75% of the original assignment
 
-Phase 2 – Intelligence & visualization (M3–4) 
+Phase 2 – Intelligence & visualization (M3–4)
 Goal: Full format support, dashboards, and data normalization. Infrastructure: N/A. 
-Dev: Excel Atomizer (per-sheet parsing, partial success handling), PDF/OCR Atomizer, Schema Mapping Registry (column normalization across subsidiaries), React dashboards with drill-down and period-on-period comparison, Azure OpenAI integration for data cleaning and semantic analysis. 
-Security: Row-Level Security in PostgreSQL (tenant isolation), ClamAV antivirus sidecar. 
+Dev: Excel Atomizer (per-sheet parsing, partial success – Dapr gRPC), PDF/OCR Atomizer (Dapr gRPC), Schema Mapping Registry (column normalization – Dapr gRPC from MS-ORCH), MS-QRY + MS-DASH (CQRS read model – REST edge endpoints for frontend), React dashboards with drill-down and period-on-period comparison, Azure OpenAI integration for data cleaning and semantic analysis.
+Security: Row-Level Security in PostgreSQL (tenant isolation), ClamAV antivirus sidecar.
 Output: All major file formats parsed, data normalized, holding-level dashboards live.
 
 Phase 3 – Reporting lifecycle (M5–6) 
 Goal: Replace the email-Excel workflow with a managed reporting cycle. Infrastructure: N/A. 
-Dev: Report Lifecycle Service (state machine: Draft → Submitted → Approved/Rejected), Reporting Period Manager (deadlines, automatic form closure, escalation reminders), Form Builder – central scope (dynamic forms, Excel template export/import, validation rules, submission checklist), N8N workflows for lifecycle events (approval flow, rejection with comments, deadline notifications). 
+Dev: Report Lifecycle Service (state machine: Draft → Submitted → Approved/Rejected – REST edge API for frontend, Dapr Pub/Sub events to MS-ORCH), Reporting Period Manager (deadlines, automatic form closure, escalation reminders), Form Builder – central scope (dynamic forms, Excel template export/import, validation rules, submission checklist), MS-ORCH workflows for lifecycle events (Dapr Pub/Sub subscription, Dapr gRPC orchestration of approval flow, rejection with comments, deadline notifications).
 Output: Subsidiaries collect and submit OPEX data through the platform. HoldingAdmin has a real-time matrix of who delivered and what state each report is in.
 
 Phase 4 – Report generation & production hardening (M7–8) 
 Goal: Close the loop from approved data to standardized output report, and prepare for production load. Infrastructure: WAF (Azure Front Door), autoscaling rules for Atomizer layer, monitoring (OpenTelemetry, Prometheus, Grafana, Loki). 
-Dev: PPTX Template Manager (upload central template, define placeholder mappings), PPTX Generator (automated report rendering from approved data, batch generation), Versioning & Diff Tool, Audit & Compliance Log, Notifications (SendGrid), Dead Letter Queue for failed processes. 
+Dev: PPTX Template Manager (upload central template, define placeholder mappings – REST via MS-ADMIN proxy), PPTX Generator (automated report rendering from approved data, batch generation – Dapr gRPC from MS-ORCH), Versioning & Diff Tool, Audit & Compliance Log, Notifications (Dapr Pub/Sub + SMTP), Dead Letter Queue for failed processes.
 Output: Approved data automatically generates a standardized PPTX report. Full audit trail. System is production-ready.
 
 Phase 5 – Rollout & optimization (M9–10) 
@@ -43,7 +43,7 @@ Goal: End-to-end traversal of a single PPTX file – upload, parsing, saving, ba
 
 Unit ID | Function ID | Name | Tech Stack | MD | MD (AI) | Savings
 --------|---------|------|----------|----|---------|--------
-MS-GW | MS-GW | API Gateway | Traefik (config) | 1 | 1 | 0
+MS-GW | MS-GW | API Gateway | Nginx (config) | 1 | 1 | 0
 MS-CORE | MS-AUTH | Auth Service | Java 21 + Spring Boot | 30 | 9 | 21
 MS-INGESTOR | MS-ING | File Ingestor | Java 21 + Spring Boot | 25 | 8 | 17
 MS-INGESTOR | MS-SCAN | Security Scanner | ClamAV (sidecar) | 5 | 4 | 1
@@ -51,7 +51,7 @@ MS-PROCESSOR | MS-ATM-PPTX | PPTX Atomizer | Python + FastAPI | 35 | 16 | 19
 MS-DATA | MS-SINK-TBL | Table API (Sink) | Java 21 + Spring Boot | 12 | 5 | 7
 MS-DATA | MS-SINK-DOC | Document API (Sink) | Java 21 + Spring Boot | 10 | 5 | 5
 MS-DATA | MS-SINK-LOG | Log API (Sink) | Java 21 + Spring Boot | 5 | 2 | 3
-MS-N8N | MS-N8N | N8N Orchestrator | N8N (JSON workflows) | 25 | 10 | 15
+MS-ORCH | MS-ORCH | Custom Orchestrator | Java 21 + Spring Boot (Spring State Machine) | 45 | 18 | 27
 MS-FE | MS-FE | Frontend SPA (MD zahrnuje všechny fáze) | React 18 + Vite + TS + Tailwind | 45 | 20 | 25
 
 
@@ -87,7 +87,7 @@ Unit ID | Function ID | Name | Tech Stack | MD | MD (AI) | Savings
 --------|---------|------|----------|----|---------|--------
 MS-REPORTING | MS-LIFECYCLE | Report Lifecycle Service | Java 21 + Spring Boot | 25 | 12 | 13
 MS-REPORTING | MS-PERIOD | Reporting Period Manager | Java 21 + Spring Boot | 15 | 8 | 7
-MS-N8N | MS-N8N (rozšíření) | N8N – Lifecycle Workflows | N8N (JSON workflows) | 15 | 12 | 3
+MS-ORCH | MS-ORCH (rozšíření) | Orchestrator – Lifecycle Workflows | Java 21 + Spring Boot | 15 | 12 | 3
 MS-FE | MS-FE (rozšíření) | Frontend – Lifecycle UI | React | 20 | 8 | 12
 
 Phase 3c – Form builder
@@ -117,7 +117,7 @@ Unit ID | Function ID | Name | Tech Stack | MD | MD (AI) | Savings
 --------|---------|------|----------|----|---------|--------
 MS-REPORTING | MS-TMPL-PPTX | PPTX Template Manager | Java 21 + Spring Boot | 20 | 9 | 11
 MS-AI | MS-GEN-PPTX | PPTX Generator | Python + FastAPI (python-pptx, matplotlib) | 32 | 16 | 16
-MS-N8N | MS-N8N (rozšíření) | N8N – Generation Workflow | N8N (JSON workflows) | 8 | 6 | 2
+MS-ORCH | MS-ORCH (rozšíření) | Orchestrator – Generation Workflow | Java 21 + Spring Boot | 8 | 6 | 2
 MS-FE | MS-FE (rozšíření) | Frontend – Generator UI | React | 15 | 4 | 11
 
 Phase5 - onboarding
@@ -140,11 +140,11 @@ MS-FE | MS-FE (rozšíření) | Frontend – Local Scope UI | React | TBD | TBD 
 | # | Unit ID | Function ID | Název | Popis | FeatureSet | Tech Stack | Effort |
 |---|---------|-------------|-------|-------|------------|------------|--------|
 | 1 | MS-FE | **MS-FE** | Frontend SPA | React SPA – upload, viewer, dashboardy, notifikace (WebSocket/SSE), MSAL auth | FS09, FS11 | React 18 + Vite + TS + Tailwind | **XL** |
-| 2 | MS-GW | **MS-GW** | API Gateway | Traefik reverse proxy – routing, SSL terminace, rate limiting, ForwardAuth | FS01 | Traefik (config) | **S** |
+| 2 | MS-GW | **MS-GW** | API Gateway | Nginx – Host-based routing, Azure Front Door (WAF + SSL), rate limiting (100/10 req/s, burst 20), ForwardAuth | FS01 | Nginx (config) | **S** |
 | 3 | MS-CORE | **MS-AUTH** | Auth Service | Validace Azure Entra ID tokenů, RBAC engine, KeyVault integrace, API key validace | FS01, FS07 | Java 21 + Spring Boot | **L** |
-| 4 | MS-INGESTOR | **MS-ING** | File Ingestor | Streaming upload do Blob, MIME validace, metadata zápis, sanitizace, trigger N8N webhook | FS02 | Java 21 + Spring Boot | **L** |
+| 4 | MS-INGESTOR | **MS-ING** | File Ingestor | Streaming upload do Blob, MIME validace, metadata zápis, sanitizace, trigger MS-ORCH (Dapr PubSub / gRPC) | FS02 | Java 21 + Spring Boot | **L** |
 | 5 | MS-INGESTOR | **MS-SCAN** | Security Scanner | Antivirová kontrola přes ICAP/ClamAV sidecar | FS02 | ClamAV (sidecar/container) | **S** |
-| 6 | MS-N8N | **MS-N8N** | N8N Orchestrator | Business workflow engine – routing, batch processing, retry, circuit breaker, DLQ | FS04 | N8N (JSON workflows) | **L** |
+| 6 | MS-ORCH | **MS-ORCH** | Custom Orchestrator | Workflow engine (Spring State Machine), Saga Pattern, Type-Safe Contracts, gRPC, Redis state, exponential backoff retry, DLQ | FS04 | Java 21 + Spring Boot | **XL** |
 | 7 | MS-PROCESSOR | **MS-ATM-PPTX** | PPTX Atomizer | Extrakce struktury, textů, tabulek a slide images z PPTX souborů | FS03 | Python + FastAPI | **L** |
 | 8 | MS-PROCESSOR | **MS-ATM-XLS** | Excel Atomizer | Parsování Excel souborů per-sheet do JSON, partial success handling | FS03, FS10 | Python + FastAPI | **M** |
 | 9 | MS-PROCESSOR | **MS-ATM-PDF** | PDF/OCR Atomizer | OCR a extrakce textu ze skenovaných PDF dokumentů | FS03 | Python + FastAPI | **M** |
@@ -158,8 +158,8 @@ MS-FE | MS-FE (rozšíření) | Frontend – Local Scope UI | React | TBD | TBD 
 | 17 | MS-DATA | **MS-DASH** | Dashboard Aggregation | Endpointy pro grafy, souhrny, Group By / Sort, SQL nad JSON tabulkami | FS06, FS11 | Java 21 + Spring Boot | **L** |
 | 18 | MS-DATA | **MS-SRCH** | Search Service | Full-text search přes ElasticSearch / PostgreSQL FTS + vector search | FS06 | Java 21 + Spring Boot | **M** |
 | 19 | MS-CORE | **MS-ADMIN** | Admin Backend | Správa rolí (Admin/Editor/Viewer), holdingová hierarchie, secrets, API keys, Failed Jobs UI | FS07, FS08 | Java 21 + Spring Boot | **L** |
-| 20 | MS-CORE | **MS-NOTIF** | Notification Center | In-app notifikace (WebSocket/SSE), e-mail alerty (SMTP/SendGrid), granulární nastavení | FS13 | Java 21 + Spring Boot | **M** |
-| 21 | MS-DATA | **MS-TMPL** | Template & Schema Registry | UI pro mapování sloupců, learning z historie, voláno z N8N před uložením | FS15 | Java 21 + Spring Boot | **L** |
+| 20 | MS-CORE | **MS-NOTIF** | Notification Center | In-app notifikace (WebSocket/SSE), e-mail alerty (SMTP), granulární nastavení | FS13 | Java 21 + Spring Boot | **M** |
+| 21 | MS-DATA | **MS-TMPL** | Template & Schema Registry | UI pro mapování sloupců, learning z historie, voláno z MS-ORCH (gRPC) před uložením | FS15 | Java 21 + Spring Boot | **L** |
 | 22 | MS-CORE | **MS-VER** | Versioning Service | Verzování dat (v1→v2), diff tool pro zobrazení změn mezi verzemi | FS14 | Java 21 + Spring Boot | **M** |
 | 23 | MS-CORE | **MS-AUDIT** | Audit & Compliance | Immutable logy (kdo-kdy-co), read access log, AI audit (prompty/odpovědi), export | FS16 | Java 21 + Spring Boot | **M** |
 | 24 | MS-AI | **MS-MCP** | MCP Server (AI Agent) | Integrace AI agentů, On-Behalf-Of flow, token dědění, quotas | FS12 | Python + FastAPI | **L** |
