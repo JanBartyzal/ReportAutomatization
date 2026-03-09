@@ -1,0 +1,19 @@
+apiVersion: v2
+name: base-service
+description: CloudInfraMap Base Service Helm Chart for gRPC Micro-Units
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - cloudinframap
+  - microservice
+  - grpc
+  - dapr
+
+maintainers:
+  - name: CloudInfraMap Team
+    email: team@cloudinframap.com
+
+annotations:
+  category: "Infrastructure"

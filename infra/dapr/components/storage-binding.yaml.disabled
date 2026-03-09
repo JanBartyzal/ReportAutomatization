@@ -1,0 +1,16 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: infrastructure-storage
+spec:
+  type: bindings.azure.blobstorage
+  version: v1
+  metadata:
+  - name: storageAccount
+    value: ${AZURE_STORAGE_ACCOUNT}
+  - name: storageKey
+    value: ${AZURE_STORAGE_KEY}
+  - name: container
+    value: infra-plans
+  - name: decodeBase64
+    value: "true"

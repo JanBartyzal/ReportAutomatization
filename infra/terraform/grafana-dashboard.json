@@ -1,0 +1,146 @@
+{
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+            }
+        ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+        {
+            "title": "SaaS: Active Organizations (Tenants)",
+            "type": "stat",
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 0,
+                "y": 0
+            },
+            "targets": [
+                {
+                    "expr": "count(count by (organization_id) (http_requests_total))",
+                    "refId": "A"
+                }
+            ],
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto"
+            }
+        },
+        {
+            "title": "Security: Blocked Unauthorized Hosts",
+            "type": "stat",
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 6,
+                "y": 0
+            },
+            "targets": [
+                {
+                    "expr": "sum(increase(http_requests_total{status='400'}[1h]))",
+                    "refId": "A"
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 5
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "title": "AI: Token Usage by Model",
+            "type": "timeseries",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 0
+            },
+            "targets": [
+                {
+                    "expr": "sum(rate(llm_token_usage_total[5m])) by (model)",
+                    "legendFormat": "{{model}}"
+                }
+            ]
+        },
+        {
+            "title": "Pipeline: Ingestion Status Distribution",
+            "type": "piechart",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 4
+            },
+            "targets": [
+                {
+                    "expr": "sum(plan_status_count) by (status)",
+                    "legendFormat": "{{status}}"
+                }
+            ]
+        },
+        {
+            "title": "API: Average Response Time (p95)",
+            "type": "timeseries",
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 12
+            },
+            "targets": [
+                {
+                    "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, handler))",
+                    "legendFormat": "{{handler}}"
+                }
+            ]
+        }
+    ],
+    "schemaVersion": 38,
+    "style": "dark",
+    "tags": [
+        "cloudinframap",
+        "saas",
+        "production"
+    ],
+    "templating": {
+        "list": []
+    },
+    "time": {
+        "from": "now-6h",
+        "to": "now"
+    },
+    "title": "CloudInfraMap SaaS Operations Dashboard",
+    "uid": "cim-ops-01"
+}

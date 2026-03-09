@@ -1,0 +1,14 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: price-scraping-cron
+scopes:
+  - worker
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+  - name: schedule
+    value: "0 0 */14 * *" # Every 14 days (bi-weekly) at midnight UTC
+  - name: direction
+    value: "input"

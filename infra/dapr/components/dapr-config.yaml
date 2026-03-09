@@ -1,0 +1,15 @@
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: dapr-config
+spec:
+  # mTLS disabled for local Docker Desktop Kubernetes
+  # Enable in production with proper Sentry certificates
+  mtls:
+    enabled: false
+    controlPlaneTrustDomain: cluster.local
+    sentryAddress: dapr-sentry.dapr-system.svc.cluster.local:443
+  tracing:
+    samplingRate: "1"
+  metric:
+    enabled: true

@@ -1,0 +1,12 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: telemetry-sync-cron
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+  - name: schedule
+    value: "0 4 * * *" # Daily at 4:00 AM
+  - name: direction
+    value: "input"

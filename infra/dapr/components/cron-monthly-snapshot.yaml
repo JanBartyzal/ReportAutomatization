@@ -1,0 +1,15 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: cron-monthly-snapshot
+scopes:
+  - worker
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+  - name: schedule
+    # Run on the 1st of every month at midnight
+    value: "0 0 1 * *"
+  - name: direction
+    value: "input"

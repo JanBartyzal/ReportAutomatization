@@ -1,0 +1,28 @@
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: iac-parse-requested-subscription
+spec:
+  pubsubname: pubsub
+  topic: iac-parse-requested
+  route: /api/iac-parse
+  # CloudEvents format
+  metadata:
+    rawPayload: "false"
+scopes:
+  - iac-parser  # Only the parser function subscribes
+
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: iac-parse-completed-subscription
+spec:
+  pubsubname: pubsub
+  topic: iac-parse-completed
+  route: /api/parser/callback
+  metadata:
+    rawPayload: "false"
+scopes:
+  - cim-api      # Main API subscribes to completion events
+  - iac-parser   # IaC Parser gateway also subscribes for sync callbacks

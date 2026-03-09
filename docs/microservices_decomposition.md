@@ -5,6 +5,28 @@
 
 ---
 
+## 0. HighLevel
+
+```mermaid
+graph TD
+    User[User / React App] -->|HTTPS| FrontDoor[Azure Front Door / WAF]
+    FrontDoor -->|Private Link| ACAEnv[Azure Container Apps Environment]
+    
+    subgraph "Compute Layer (ACA)"
+        Ingress[Ingress Controller] --> Ingest[Ingestor Service]
+        Ingest -->|Dapr PubSub| N8N[N8N Orchestrator]
+        N8N -->|HTTP| AtomJava[Java Atomizer]
+        N8N -->|HTTP| AtomPy[Python Atomizer]
+    end
+
+    subgraph "Data Layer"
+        Ingest -->|Stream| Blob[Blob Storage]
+        AtomJava -->|Read| Blob
+        AtomPy -->|Read| Blob
+```
+
+---
+
 ## 1. Celkový přehled architektury (High-Level)
 
 ```mermaid

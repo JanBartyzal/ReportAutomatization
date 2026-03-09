@@ -1,0 +1,21 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: mv-refresh-schedule
+  # TASK-WG-CQRS-001: Dapr cron binding for standalone MV refresh job.
+  # Triggers POST /refresh-mv on unit-mv-refresh-job every 5 minutes.
+  # This replaces the embedded cron in unit-web-gateway when MV refresh
+  # is extracted to a standalone scale-to-zero job.
+scopes:
+  - unit-mv-refresh-job
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+  - name: schedule
+    # Every 5 minutes — matches TASK-ABF-006 requirement
+    value: "*/5 * * * *"
+  - name: route
+    value: /refresh-mv
+  - name: direction
+    value: "input"

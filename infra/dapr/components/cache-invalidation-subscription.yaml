@@ -1,0 +1,56 @@
+# TASK-WG-CACHE-001: Dapr PubSub subscriptions for cache invalidation events.
+# Routes events from various units to unit-cache-invalidator endpoints.
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: cache-invalidation-plan-created
+spec:
+  pubsubname: pubsub
+  topic: plan.created
+  route: /events/plan-created
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: cache-invalidation-plan-updated
+spec:
+  pubsubname: pubsub
+  topic: plan.updated
+  route: /events/plan-updated
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: cache-invalidation-approval
+spec:
+  pubsubname: pubsub
+  topic: approval.action
+  route: /events/approval-action
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: cache-invalidation-cost
+spec:
+  pubsubname: pubsub
+  topic: cost.recalculated
+  route: /events/cost-recalculated
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: cache-invalidation-policy
+spec:
+  pubsubname: pubsub
+  topic: policy.changed
+  route: /events/policy-changed
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: cache-invalidation-billing
+spec:
+  pubsubname: pubsub
+  topic: billing.synced
+  route: /events/billing-synced

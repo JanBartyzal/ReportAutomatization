@@ -1,0 +1,14 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: stripe-sync-cron
+scopes:
+  - worker
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+  - name: schedule
+    value: "@every 1h"  # Run every hour
+  - name: route
+    value: /jobs/stripe-sync

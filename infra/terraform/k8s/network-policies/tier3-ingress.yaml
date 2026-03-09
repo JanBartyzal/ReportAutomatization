@@ -1,0 +1,126 @@
+# TASK-MVP-Tier-08: Kubernetes NetworkPolicy for Tier 3 pods
+# Restricts Tier 3 pod communication to only the internal gateway and RBAC enforcer.
+# Tier 3 units can ONLY receive traffic from:
+#   1. unit-web-gateway (for beta-enabled org proxying)
+#   2. unit-rbac-enforcer (for permission checks)
+# All other ingress traffic is denied.
+#
+# Prerequisites:
+#   - All Tier 3 unit Helm charts must have label: tier: "3"
+#   - Network plugin must support NetworkPolicy (e.g., Calico, Cilium)
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tier3-ingress-policy
+  namespace: cloudinframap
+  labels:
+    app.kubernetes.io/part-of: cloudinframap
+    app.kubernetes.io/component: network-policy
+    tier: "3"
+  annotations:
+    description: "TASK-MVP-Tier-08: Restrict Tier 3 pod ingress to gateway and RBAC enforcer only"
+spec:
+  podSelector:
+    matchLabels:
+      tier: "3"
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        # Allow traffic from the web gateway (for beta org proxying)
+        - podSelector:
+            matchLabels:
+              app: unit-web-gateway
+        # Allow traffic from the RBAC enforcer (for permission checks)
+        - podSelector:
+            matchLabels:
+              app: unit-rbac-enforcer
+      ports:
+        - protocol: TCP
+          port: 5001  # gRPC port
+        - protocol: TCP
+          port: 8080  # HTTP health check port
+    - from:
+        # Allow Dapr sidecar communication (required for Dapr service mesh)
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: daprd
+      ports:
+        - protocol: TCP
+          port: 3500  # Dapr HTTP port
+        - protocol: TCP
+          port: 50001 # Dapr gRPC port
+
+---
+
+# Egress policy: Tier 3 pods can only communicate with specific services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tier3-egress-policy
+  namespace: cloudinframap
+  labels:
+    app.kubernetes.io/part-of: cloudinframap
+    app.kubernetes.io/component: network-policy
+    tier: "3"
+  annotations:
+    description: "TASK-MVP-Tier-08: Restrict Tier 3 pod egress to internal services only"
+spec:
+  podSelector:
+    matchLabels:
+      tier: "3"
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        # Allow DNS resolution
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        # Allow communication with other Tier 3 pods (inter-service)
+        - podSelector:
+            matchLabels:
+              tier: "3"
+        # Allow communication with core services (identity, pricing, etc.)
+        - podSelector:
+            matchLabels:
+              tier: "1"
+      ports:
+        - protocol: TCP
+          port: 5001  # gRPC
+        - protocol: TCP
+          port: 8080  # HTTP
+    - to:
+        # Allow Dapr sidecar communication
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: daprd
+      ports:
+        - protocol: TCP
+          port: 3500
+        - protocol: TCP
+          port: 50001
+    - to:
+        # Allow PostgreSQL access
+        - podSelector:
+            matchLabels:
+              app: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        # Allow Redis access
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379

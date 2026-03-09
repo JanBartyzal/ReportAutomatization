@@ -1,0 +1,135 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "base-service.fullname" . }}
+  labels:
+    {{- include "base-service.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "base-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- include "base-service.daprAnnotations" . | nindent 8 }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "base-service.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "base-service.serviceAccountName" . }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.initContainers }}
+      {{- if or (and .Values.initContainers.waitForConfigDistributor .Values.initContainers.waitForConfigDistributor.enabled) (and .Values.initContainers.waitForVaultConnector .Values.initContainers.waitForVaultConnector.enabled) }}
+      initContainers:
+      {{- if and .Values.initContainers.waitForConfigDistributor .Values.initContainers.waitForConfigDistributor.enabled }}
+      {{- include "unit.initContainer.waitFor" (dict "targetService" .Values.initContainers.waitForConfigDistributor.targetService "image" .Values.initContainers.waitForConfigDistributor.image "targetPort" .Values.initContainers.waitForConfigDistributor.targetPort "maxAttempts" .Values.initContainers.waitForConfigDistributor.maxAttempts "sleepSeconds" .Values.initContainers.waitForConfigDistributor.sleepSeconds) | nindent 8 }}
+      {{- end }}
+      {{- if and .Values.initContainers.waitForVaultConnector .Values.initContainers.waitForVaultConnector.enabled }}
+      {{- include "unit.initContainer.waitFor" (dict "targetService" .Values.initContainers.waitForVaultConnector.targetService "image" .Values.initContainers.waitForVaultConnector.image "targetPort" .Values.initContainers.waitForVaultConnector.targetPort "maxAttempts" .Values.initContainers.waitForVaultConnector.maxAttempts "sleepSeconds" .Values.initContainers.waitForVaultConnector.sleepSeconds) | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.unitName }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.httpPort | default 8080 }}
+              protocol: TCP
+            - name: grpc
+              containerPort: {{ .Values.service.grpcPort | default 5000 }}
+              protocol: TCP
+
+          env:
+            {{- toYaml .Values.env | nindent 12 }}
+            - name: ConfigBootstrap__ServiceToken
+              valueFrom:
+                secretKeyRef:
+                  name: clouply-service-token
+                  key: service-token
+                  optional: true
+            - name: Authorization__ServiceToken
+              valueFrom:
+                secretKeyRef:
+                  name: clouply-service-token
+                  key: service-token
+                  optional: true
+            {{- if .Values.debug.enabled }}
+            - name: Logging__MinimumLevel__Default
+              value: {{ .Values.debug.logLevel | default "Debug" | quote }}
+            - name: Logging__Console__Enabled
+              value: "true"
+            - name: Serilog__MinimumLevel__Default
+              value: {{ .Values.debug.logLevel | default "Debug" | quote }}
+            {{- end }}
+            {{- if .Values.database.enabled }}
+            - name: ConnectionStrings__Database
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.secretName }}
+                  key: connection-string
+            {{- end }}
+            {{- if .Values.redis.enabled }}
+            - name: ConnectionStrings__Redis
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.secretName }}
+                  key: connection-string
+            {{- end }}
+          {{- with .Values.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.healthCheck }}
+          {{- include "unit.probes" . | nindent 10 }}
+          {{- else }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- if .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
+          {{- end }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- toYaml .Values.volumeMounts | nindent 12 }}
+      volumes:
+        {{- toYaml .Values.volumes | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,1 @@
+kubectl create secret generic azure-identity --namespace cim --from-literal=tenant-id=$env:AZURE_TENANT_ID --from-literal=client-id=$env:AZURE_CLIENT_ID --from-literal=client-secret=$env:AZURE_CLIENT_SECRET

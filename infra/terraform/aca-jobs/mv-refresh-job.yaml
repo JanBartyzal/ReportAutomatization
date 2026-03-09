@@ -1,0 +1,58 @@
+# TASK-WG-CQRS-001: Azure Container Apps Job for MV Refresh
+# Runs as a scheduled job every 5 minutes with scale-to-zero.
+# Replaces always-on MV refresh in unit-web-gateway.
+#
+# Cost savings: ~95% (runs 5s every 5min vs always-on 0.1 vCPU)
+#
+# Deploy:
+#   az containerapp job create --resource-group <rg> --name mv-refresh-job \
+#     --yaml infra/aca-jobs/mv-refresh-job.yaml
+
+apiVersion: apps.containerapps.azure.com/v1
+kind: ContainerAppJob
+metadata:
+  name: mv-refresh-job
+  labels:
+    app: mv-refresh-job
+    unit-id: U-MVR-001
+    domain: data
+    task: TASK-WG-CQRS-001
+spec:
+  environmentId: /subscriptions/{subscription-id}/resourceGroups/{rg}/providers/Microsoft.App/managedEnvironments/{env-name}
+  configuration:
+    # Schedule trigger — runs every 5 minutes
+    triggerType: Schedule
+    scheduleTriggerConfig:
+      cronExpression: "*/5 * * * *"
+      parallelism: 1
+    # Job execution limits
+    replicaTimeout: 300       # 5 minutes max execution time
+    replicaRetryLimit: 2      # Retry up to 2 times on failure
+  template:
+    containers:
+      - name: mv-refresh
+        image: cloudinframap.azurecr.io/unit-mv-refresh-job:latest
+        resources:
+          cpu: 0.25
+          memory: 256Mi
+        env:
+          - name: ConnectionStrings__PortfolioDb
+            secretRef: portfolio-db-connection
+          - name: ASPNETCORE_ENVIRONMENT
+            value: Production
+        # Startup probe — ensure the app is ready before triggering refresh
+        probes:
+          - type: startup
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            failureThreshold: 10
+    # Init container to run the refresh and exit
+    initContainers: []
+  # Secrets referenced by env vars
+  secrets:
+    - name: portfolio-db-connection
+      keyVaultUrl: https://{keyvault-name}.vault.azure.net/secrets/portfolio-db-connection
+      identity: system

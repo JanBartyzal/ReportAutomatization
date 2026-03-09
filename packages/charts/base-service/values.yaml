@@ -1,0 +1,250 @@
+# CloudInfraMap Base Service - Default Values
+# Override these in unit-specific values.yaml
+
+# Unit identification
+unitId: "U-XXX-000"
+unitName: "base-service"
+domain: "common"
+region: "default"
+
+# Replicas
+replicaCount: 1
+
+# Container image
+image:
+  repository: cloudinframap/base-service
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Image pull secrets (if using private registry)
+imagePullSecrets: []
+
+# Service account
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# Service configuration
+service:
+  type: ClusterIP
+  httpPort: 8080
+  # gRPC port (if exposing gRPC directly)
+  grpcPort: 5000
+
+# Dapr sidecar configuration
+dapr:
+  enabled: true
+  appId: "base-service"
+  appPort: 5000
+  protocol: "grpc"
+  logLevel: "info"
+  config: "dapr-config"
+  # Disable app health check to prevent deadlock: Dapr waits for app port,
+  # but app waits for Dapr gRPC API during ConfigBootstrap.
+  # ACA-compatible — ACA Dapr config also supports this setting.
+  enableAppHealthCheck: false
+  # Sidecar resource limits
+  cpuLimit: "500m"
+  memoryLimit: "256Mi"
+  cpuRequest: "100m"
+  memoryRequest: "128Mi"
+
+
+
+# Ingress (disabled by default for internal units)
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations: {}
+  hosts: []
+  tls: []
+
+# Resource limits
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# Horizontal Pod Autoscaler
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Health probes
+livenessProbe:
+  httpGet:
+    path: /live
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 15
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+startupProbe:
+  httpGet:
+    path: /live
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 30
+
+# Environment variables
+env:
+  - name: ASPNETCORE_ENVIRONMENT
+    value: "Production"
+  - name: Unit__Id
+    value: "U-XXX-000"
+  - name: Unit__Name
+    value: "base-service"
+
+# Environment from ConfigMaps/Secrets
+envFrom: []
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+# Pod labels
+podLabels: {}
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity rules
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: "base-service"
+          topologyKey: kubernetes.io/hostname
+
+# Security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# Volumes (for read-only root filesystem)
+volumes:
+  - name: tmp
+    emptyDir: {}
+
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+# ConfigMap (optional)
+configMap:
+  enabled: false
+  data: {}
+
+# Secrets (optional)
+secrets:
+  enabled: false
+  data: {}
+
+# Database connection (optional)
+database:
+  enabled: false
+  host: ""
+  port: 5432
+  name: ""
+  secretName: ""
+
+# Redis connection (optional)
+redis:
+  enabled: false
+  host: ""
+  port: 6379
+  secretName: ""
+
+# Priority class
+priorityClassName: ""
+
+# Topology spread constraints
+topologySpreadConstraints: []
+
+# US/EU deployment region
+region: "us"
+
+# Health check endpoints
+healthCheck:
+  health:
+    path: /health
+    port: 8080
+  ready:
+    path: /ready
+    port: 8080
+  live:
+    path: /live
+    port: 8080
+
+# Probe configuration
+probes:
+  startup:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 30
+  readiness:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 3
+  liveness:
+    initialDelaySeconds: 30
+    periodSeconds: 30
+    failureThreshold: 3
+
+# Init containers configuration
+initContainers:
+  waitForConfigDistributor:
+    enabled: true
+    image: curlimages/curl:8.5.0
+    targetService: unit-config-secrets-service
+    targetPort: 8080
+    maxAttempts: 60
+    sleepSeconds: 2
+
+# Debug / verbose logging (disabled by default)
+# Enable per-unit via: --set base-service.debug.enabled=true
+debug:
+  enabled: false
+  logLevel: "Debug"                 # Serilog MinimumLevel: Verbose | Debug | Information | Warning
+  daprLogLevel: "debug"             # Dapr sidecar: debug | info | warn | error
+  aspnetEnvironment: "Development"  # ASPNETCORE_ENVIRONMENT override

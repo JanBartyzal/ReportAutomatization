@@ -1,0 +1,16 @@
+log:
+  level: DEBUG  
+
+accessLog:
+  filePath: "/var/log/traefik/access.log"
+
+providers:
+  docker:
+    exposedByDefault: false
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+entryPoints:
+  web:
+    address: ":80"

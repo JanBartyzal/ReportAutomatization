@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s # Globální interval, pro development stačí 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Metriky z .NET WebApi (Node 1 & 2 Core)
+  - job_name: 'api'
+    scrape_interval: 5s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['api:8080'] # Cílíme na port 8080 definovaný v docker-compose
+
+  # Metriky z .NET Workeru (Billing & Ingestion)
+  - job_name: 'worker'
+    scrape_interval: 5s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['worker:8080'] # Worker v kontejneru běží také na 8080
+
+  # Metriky z Dapr sidecarů (Sledování latence a chyb volání)
+  - job_name: 'dapr-sidecars'
+    static_configs:
+      - targets: 
+          - 'api:9090' # Dapr standardně vystavuje metriky na portu 9090
+          - 'iac-parser:9090'
+
+  # Metriky z Traefik Gateway (Sledování HTTP provozu a Landing Page)
+  - job_name: 'traefik'
+    static_configs:
+      - targets: ['gateway:8080'] # Dashboard port pro metriky Traefiku

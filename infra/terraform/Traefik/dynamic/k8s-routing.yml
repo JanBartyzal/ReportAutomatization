@@ -1,0 +1,15 @@
+http:
+  routers:
+    to-kubernetes:
+      rule: "Host(`localhost`) && (PathPrefix(`/api`) || PathPrefix(`/auth`))"
+      service: k8s-service
+      entryPoints:
+        - web
+      priority: 100
+
+  services:
+    k8s-service:
+      loadBalancer:
+        servers:
+          # host.docker.internal = localhost z pohledu Docker kontejneru
+          - url: "http://host.docker.internal:8000" 
