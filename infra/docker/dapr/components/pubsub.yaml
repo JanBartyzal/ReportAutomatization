@@ -1,0 +1,42 @@
+# Dapr Pub/Sub Component Configuration
+# Uses Redis Streams for pub/sub messaging
+# Updated for P8 consolidated architecture
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: reportplatform-pubsub
+  namespace: default
+spec:
+  type: pubsub.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: "redis:6379"
+    - name: redisPassword
+      value: "${REDIS_PASSWORD:-redis_pass}"
+    - name: consumerGroup
+      value: "dapr-pubsub"
+    - name: enableDeadLettering
+      value: "true"
+    - name: maxDeliveryAttempts
+      value: "10"
+    - name: publishTimeout
+      value: "5000"
+    - name: subscribeTimeout
+      value: "5000"
+    - name: retention
+      value: "86400"
+    - name: ttlInSeconds
+      value: "3600"
+scopes:
+  # Consolidated units (P8)
+  - engine-core
+  - engine-data
+  - engine-reporting
+  - engine-orchestrator
+  - engine-integrations
+  - processor-atomizers
+  - processor-generators
+  # Standalone services
+  - ms-ing
+  - ms-scan

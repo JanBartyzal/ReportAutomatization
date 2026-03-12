@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /i/Codes/GCP/ReportAutomatization/docs/tasks/*.md)",
+      "Bash(find /i/Codes/GCP/ReportAutomatization/apps/engine/microservices/units -name \"pom.xml\" -exec head -30 {} +)",
+      "Bash(grep -oE 'ms-[a-z-]+$')",
+      "Bash(find /i/Codes/GCP/ReportAutomatization -name *.proto -type f)",
+      "Bash(xargs -I {} dirname {})",
+      "Bash(grep -E \"\\\\.java$\")",
+      "Bash(xargs grep:*)",
+      "Bash(xargs head:*)",
+      "Bash(chmod +x \"i:/Codes/GCP/ReportAutomatization/scripts/build.sh\" \"i:/Codes/GCP/ReportAutomatization/scripts/deploy.sh\" \"i:/Codes/GCP/ReportAutomatization/scripts/test.sh\")",
+      "Bash(find /i/Codes/GCP/ReportAutomatization/apps/engine -type f -name *.xml -o -name *.gradle -o -name *.toml -o -name *.txt)",
+      "Bash(find /i/Codes/GCP/ReportAutomatization/packages/protos -name \"*.proto\" -type f -exec wc -l {} +)",
+      "Bash(find /i/Codes/GCP/ReportAutomatization/packages/python-base -type f -name *.py)",
+      "Bash(cat /i/Codes/GCP/ReportAutomatization/infra/docker/dapr/components/*.yaml)",
+      "Read(//c/Users/janba/.claude/projects/i--Codes-GCP-ReportAutomatization/b9203e58-61de-4b87-9395-8d30c1903ae9/tool-results/**)",
+      "Bash(for f:*)",
+      "Bash(do)",
+      "Bash(echo \"===FILE: $f===\")",
+      "Read(//i/Codes/GCP/ReportAutomatization/**)",
+      "Bash(done)"
+    ]
+  }
+}

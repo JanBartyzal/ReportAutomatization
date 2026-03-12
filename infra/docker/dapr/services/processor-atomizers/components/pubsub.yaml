@@ -1,0 +1,17 @@
+# Dapr PubSub configuration for processor-atomizers
+# processor-atomizers: ms-atm-pptx + ms-atm-xls + ms-atm-pdf + ms-atm-csv + ms-atm-ai + ms-atm-cln
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: reportplatform-pubsub
+  namespace: default
+spec:
+  type: pubsub.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: redis:6379
+    - name: redisPassword
+      value: ""
+    - name: consumerGroup
+      value: processor-atomizers-group

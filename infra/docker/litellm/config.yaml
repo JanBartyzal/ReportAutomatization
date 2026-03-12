@@ -1,0 +1,25 @@
+# LiteLLM Proxy Configuration
+# Routes LLM requests to Azure OpenAI deployments
+
+model_list:
+  - model_name: gpt-4o
+    litellm_params:
+      model: azure/gpt-4o
+      api_base: ${AZURE_OPENAI_ENDPOINT:-https://your-endpoint.openai.azure.com}
+      api_key: ${AZURE_OPENAI_API_KEY:-sk-placeholder}
+      api_version: "2024-06-01"
+
+  - model_name: text-embedding-3-small
+    litellm_params:
+      model: azure/text-embedding-3-small
+      api_base: ${AZURE_OPENAI_ENDPOINT:-https://your-endpoint.openai.azure.com}
+      api_key: ${AZURE_OPENAI_API_KEY:-sk-placeholder}
+      api_version: "2024-06-01"
+
+general_settings:
+  master_key: ${LITELLM_MASTER_KEY:-sk-local-dev-key}
+
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+  request_timeout: 120

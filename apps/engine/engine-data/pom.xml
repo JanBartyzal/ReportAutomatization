@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.reportplatform</groupId>
+        <artifactId>java-base</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../../../packages/java-base/pom.xml</relativePath>
+    </parent>
+
+    <groupId>com.reportplatform</groupId>
+    <artifactId>engine-data</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>Report Platform - Engine Data (Consolidated)</name>
+    <description>Consolidated multi-module service for data sinks, query, dashboard, search, and template mapping</description>
+
+    <modules>
+        <module>common</module>
+        <module>sink-tbl</module>
+        <module>sink-doc</module>
+        <module>sink-log</module>
+        <module>query</module>
+        <module>dashboard</module>
+        <module>search</module>
+        <module>template</module>
+        <module>app</module>
+    </modules>
+
+    <properties>
+        <java.version>21</java.version>
+        <protobuf.version>3.25.5</protobuf.version>
+        <grpc.version>1.65.1</grpc.version>
+        <grpc-spring-boot.version>2.15.0.RELEASE</grpc-spring-boot.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Internal engine-data modules -->
+            <dependency>
+                <groupId>com.reportplatform</groupId>
+                <artifactId>engine-data-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

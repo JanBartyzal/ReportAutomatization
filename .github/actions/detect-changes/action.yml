@@ -1,0 +1,260 @@
+name: Detect Changed Services
+description: Detects which services have changed in a monorepo push/PR (supports both legacy individual services and P8 consolidated units)
+
+outputs:
+  java-base-changed:
+    description: Whether java-base package changed
+    value: ${{ steps.filter.outputs.java-base }}
+  python-base-changed:
+    description: Whether python-base package changed
+    value: ${{ steps.filter.outputs.python-base }}
+  frontend-changed:
+    description: Whether frontend changed
+    value: ${{ steps.filter.outputs.frontend }}
+  types-changed:
+    description: Whether shared types package changed
+    value: ${{ steps.filter.outputs.types }}
+  infra-changed:
+    description: Whether infrastructure changed
+    value: ${{ steps.filter.outputs.infra }}
+  java-services:
+    description: JSON list of changed legacy Java service names
+    value: ${{ steps.java-services.outputs.services }}
+  python-services:
+    description: JSON list of changed legacy Python service names
+    value: ${{ steps.python-services.outputs.services }}
+  # P8 Consolidated Units
+  java-units:
+    description: JSON list of changed Java consolidated units
+    value: ${{ steps.java-units.outputs.units }}
+  python-units:
+    description: JSON list of changed Python consolidated units
+    value: ${{ steps.python-units.outputs.units }}
+
+runs:
+  using: composite
+  steps:
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          java-base:
+            - 'packages/java-base/**'
+          python-base:
+            - 'packages/python-base/**'
+          frontend:
+            - 'apps/frontend/**'
+          types:
+            - 'packages/types/**'
+          infra:
+            - 'infra/**'
+          ms-auth:
+            - 'apps/engine/microservices/units/ms-auth/**'
+          ms-ing:
+            - 'apps/engine/microservices/units/ms-ing/**'
+          ms-orch:
+            - 'apps/engine/microservices/units/ms-orch/**'
+          ms-scan:
+            - 'apps/engine/microservices/units/ms-scan/**'
+          ms-sink-tbl:
+            - 'apps/engine/microservices/units/ms-sink-tbl/**'
+          ms-sink-doc:
+            - 'apps/engine/microservices/units/ms-sink-doc/**'
+          ms-sink-log:
+            - 'apps/engine/microservices/units/ms-sink-log/**'
+          ms-qry:
+            - 'apps/engine/microservices/units/ms-qry/**'
+          ms-tmpl:
+            - 'apps/engine/microservices/units/ms-tmpl/**'
+          ms-dash:
+            - 'apps/engine/microservices/units/ms-dash/**'
+          ms-admin:
+            - 'apps/engine/microservices/units/ms-admin/**'
+          ms-batch:
+            - 'apps/engine/microservices/units/ms-batch/**'
+          ms-lifecycle:
+            - 'apps/engine/microservices/units/ms-lifecycle/**'
+          ms-period:
+            - 'apps/engine/microservices/units/ms-period/**'
+          ms-notif:
+            - 'apps/engine/microservices/units/ms-notif/**'
+          ms-form:
+            - 'apps/engine/microservices/units/ms-form/**'
+          ms-ver:
+            - 'apps/engine/microservices/units/ms-ver/**'
+          ms-audit:
+            - 'apps/engine/microservices/units/ms-audit/**'
+          ms-srch:
+            - 'apps/engine/microservices/units/ms-srch/**'
+          ms-tmpl-pptx:
+            - 'apps/engine/microservices/units/ms-tmpl-pptx/**'
+          ms-atm-pptx:
+            - 'apps/processor/microservices/units/ms-atm-pptx/**'
+          ms-atm-xls:
+            - 'apps/processor/microservices/units/ms-atm-xls/**'
+          ms-atm-pdf:
+            - 'apps/processor/microservices/units/ms-atm-pdf/**'
+          ms-atm-csv:
+            - 'apps/processor/microservices/units/ms-atm-csv/**'
+          ms-atm-ai:
+            - 'apps/processor/microservices/units/ms-atm-ai/**'
+          ms-atm-cln:
+            - 'apps/processor/microservices/units/ms-atm-cln/**'
+          ms-mcp:
+            - 'apps/processor/microservices/units/ms-mcp/**'
+          ms-gen-pptx:
+            - 'apps/processor/microservices/units/ms-gen-pptx/**'
+          # P8 Consolidated Java Units
+          engine-core:
+            - 'apps/engine/engine-core/**'
+            - 'apps/engine/microservices/units/ms-auth/**'
+            - 'apps/engine/microservices/units/ms-admin/**'
+            - 'apps/engine/microservices/units/ms-batch/**'
+            - 'apps/engine/microservices/units/ms-ver/**'
+            - 'apps/engine/microservices/units/ms-audit/**'
+          engine-ingestor:
+            - 'apps/engine/microservices/units/ms-ing/**'
+          engine-orchestrator:
+            - 'apps/engine/microservices/units/ms-orch/**'
+          engine-data:
+            - 'apps/engine/engine-data/**'
+            - 'apps/engine/microservices/units/ms-sink-tbl/**'
+            - 'apps/engine/microservices/units/ms-sink-doc/**'
+            - 'apps/engine/microservices/units/ms-sink-log/**'
+            - 'apps/engine/microservices/units/ms-qry/**'
+            - 'apps/engine/microservices/units/ms-dash/**'
+            - 'apps/engine/microservices/units/ms-srch/**'
+            - 'apps/engine/microservices/units/ms-tmpl/**'
+          engine-reporting:
+            - 'apps/engine/engine-reporting/**'
+            - 'apps/engine/microservices/units/ms-lifecycle/**'
+            - 'apps/engine/microservices/units/ms-period/**'
+            - 'apps/engine/microservices/units/ms-form/**'
+            - 'apps/engine/microservices/units/ms-tmpl-pptx/**'
+            - 'apps/engine/microservices/units/ms-notif/**'
+          engine-integrations:
+            - 'apps/engine/microservices/units/ms-ext-snow/**'
+          # P8 Consolidated Python Units
+          processor-atomizers:
+            - 'apps/processor/processor-atomizers/**'
+            - 'apps/processor/microservices/units/ms-atm-pptx/**'
+            - 'apps/processor/microservices/units/ms-atm-xls/**'
+            - 'apps/processor/microservices/units/ms-atm-pdf/**'
+            - 'apps/processor/microservices/units/ms-atm-csv/**'
+            - 'apps/processor/microservices/units/ms-atm-ai/**'
+            - 'apps/processor/microservices/units/ms-atm-cln/**'
+          processor-generators:
+            - 'apps/processor/processor-generators/**'
+            - 'apps/processor/microservices/units/ms-gen-pptx/**'
+            - 'apps/processor/microservices/units/ms-gen-xls/**'
+            - 'apps/processor/microservices/units/ms-mcp/**'
+
+    - name: Determine changed Java services
+      id: java-services
+      shell: bash
+      run: |
+        JAVA_SERVICES='["ms-auth","ms-ing","ms-orch","ms-scan","ms-sink-tbl","ms-sink-doc","ms-sink-log","ms-qry","ms-tmpl","ms-dash","ms-admin","ms-batch","ms-lifecycle","ms-period","ms-notif","ms-form","ms-ver","ms-audit","ms-srch","ms-tmpl-pptx"]'
+        CHANGED='[]'
+
+        # If java-base changed, all Java services are affected
+        if [ "${{ steps.filter.outputs.java-base }}" = "true" ]; then
+          CHANGED="$JAVA_SERVICES"
+        else
+          CHANGED=$(echo "$JAVA_SERVICES" | jq -c '[.[] | select(
+            . as $svc |
+            "${{ steps.filter.outputs[.] }}" == "true"
+          )]' 2>/dev/null || echo '[]')
+
+          # Build list by checking each service individually
+          CHANGED='['
+          FIRST=true
+          for svc in ms-auth ms-ing ms-orch ms-scan ms-sink-tbl ms-sink-doc ms-sink-log ms-qry ms-tmpl ms-dash ms-admin ms-batch ms-lifecycle ms-period ms-notif ms-form ms-ver ms-audit ms-srch ms-tmpl-pptx; do
+            FILTER_KEY=$(echo "$svc" | tr '-' '_')
+            if [ "${{ steps.filter.outputs[env.svc] }}" = "true" ]; then
+              if [ "$FIRST" = true ]; then FIRST=false; else CHANGED+=','; fi
+              CHANGED+="\"$svc\""
+            fi
+          done
+          CHANGED+=']'
+        fi
+
+        echo "services=$CHANGED" >> "$GITHUB_OUTPUT"
+
+    - name: Determine changed Python services
+      id: python-services
+      shell: bash
+      run: |
+        PYTHON_SERVICES='["ms-atm-pptx","ms-atm-xls","ms-atm-pdf","ms-atm-csv","ms-atm-ai","ms-atm-cln","ms-mcp","ms-gen-pptx"]'
+        CHANGED='[]'
+
+        if [ "${{ steps.filter.outputs.python-base }}" = "true" ]; then
+          CHANGED="$PYTHON_SERVICES"
+        else
+          CHANGED='['
+          FIRST=true
+          for svc in ms-atm-pptx ms-atm-xls ms-atm-pdf ms-atm-csv ms-atm-ai ms-atm-cln ms-mcp ms-gen-pptx; do
+            if [ "${{ steps.filter.outputs[env.svc] }}" = "true" ]; then
+              if [ "$FIRST" = true ]; then FIRST=false; else CHANGED+=','; fi
+              CHANGED+="\"$svc\""
+            fi
+          done
+          CHANGED+=']'
+        fi
+
+        echo "services=$CHANGED" >> "$GITHUB_OUTPUT"
+
+    # ============================================================================
+    # P8 Consolidated Units Detection
+    # ============================================================================
+
+    - name: Determine changed Java consolidated units
+      id: java-units
+      shell: bash
+      run: |
+        # P8 Consolidated Java Units
+        JAVA_UNITS='["engine-core","engine-ingestor","engine-orchestrator","engine-data","engine-reporting","engine-integrations"]'
+        CHANGED='[]'
+
+        # If java-base changed, all Java units are affected
+        if [ "${{ steps.filter.outputs.java-base }}" = "true" ]; then
+          CHANGED="$JAVA_UNITS"
+        else
+          # Check each consolidated unit
+          CHANGED='['
+          FIRST=true
+          for unit in engine-core engine-ingestor engine-orchestrator engine-data engine-reporting engine-integrations; do
+            if [ "${{ steps.filter.outputs.$unit }}" = "true" ]; then
+              if [ "$FIRST" = true ]; then FIRST=false; else CHANGED+=','; fi
+              CHANGED+="\"$unit\""
+            fi
+          done
+          CHANGED+=']'
+        fi
+
+        echo "units=$CHANGED" >> "$GITHUB_OUTPUT"
+
+    - name: Determine changed Python consolidated units
+      id: python-units
+      shell: bash
+      run: |
+        # P8 Consolidated Python Units
+        PYTHON_UNITS='["processor-atomizers","processor-generators"]'
+        CHANGED='[]'
+
+        # If python-base changed, all Python units are affected
+        if [ "${{ steps.filter.outputs.python-base }}" = "true" ]; then
+          CHANGED="$PYTHON_UNITS"
+        else
+          # Check each consolidated unit
+          CHANGED='['
+          FIRST=true
+          for unit in processor-atomizers processor-generators; do
+            if [ "${{ steps.filter.outputs.$unit }}" = "true" ]; then
+              if [ "$FIRST" = true ]; then FIRST=false; else CHANGED+=','; fi
+              CHANGED+="\"$unit\""
+            fi
+          done
+          CHANGED+=']'
+        fi
+
+        echo "units=$CHANGED" >> "$GITHUB_OUTPUT"

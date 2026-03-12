@@ -1,0 +1,47 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ms-srch
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:reportplatform}
+    username: ${DB_USERNAME:srch_user}
+    password: ${DB_PASSWORD:srch_pass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# Dapr configuration
+app:
+  dapr:
+    pubsub-name: reportplatform-pubsub
+    statestore-name: reportplatform-statestore
+
+# Search configuration
+search:
+  fts:
+    # Full-text search configuration
+    min-word-length: 3
+    language: czech,english
+  vector:
+    # Vector search configuration
+    similarity-threshold: 0.7
+    embedding-dimension: 1536
+
+# Logging
+logging:
+  level:
+    com.reportplatform: DEBUG
+    org.springframework.web: INFO
+    org.hibernate: WARN

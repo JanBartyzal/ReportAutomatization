@@ -59,4 +59,87 @@ export interface WorkflowStep {
 /** Query parameters for listing files */
 export interface FileListParams extends PaginationParams {
   status?: FileStatus;
+  mime_type?: string;
+  sort_by?: 'filename' | 'size_bytes' | 'uploaded_at';
+  sort_order?: 'asc' | 'desc';
+}
+
+export enum FileContentType {
+  EXCEL = 'EXCEL',
+  PDF = 'PDF',
+  CSV = 'CSV',
+  PPTX = 'PPTX',
+}
+
+/** Column data type information */
+export interface ColumnDataType {
+  col_index: number;
+  column_name: string;
+  detected_type: 'STRING' | 'NUMBER' | 'DATE' | 'CURRENCY' | 'PERCENTAGE';
+}
+
+/** Excel sheet content */
+export interface ExcelSheet {
+  sheet_name: string;
+  headers: string[];
+  rows: Record<string, unknown>[];
+  row_count: number;
+  data_types?: ColumnDataType[];
+}
+
+/** PDF page content */
+export interface PdfPage {
+  page_number: number;
+  text: string;
+  tables: ExtractedTable[];
+  ocr_confidence?: number;
+  is_ocr: boolean;
+}
+
+/** CSV content */
+export interface CsvContent {
+  headers: string[];
+  rows: Record<string, unknown>[];
+  delimiter: string;
+  encoding: string;
+  row_count: number;
+  data_types?: ColumnDataType[];
+}
+
+/** PPTX slide content */
+export interface PptxSlide {
+  slide_number: number;
+  text: string;
+  speaker_notes?: string;
+  tables: ExtractedTable[];
+}
+
+/** Extracted table from any source */
+export interface ExtractedTable {
+  table_id: string;
+  source_type: FileContentType;
+  source_page?: number;
+  source_sheet?: string;
+  headers: string[];
+  rows: Record<string, unknown>[];
+  row_count: number;
+  data_types?: ColumnDataType[];
+}
+
+/** Full extracted file content */
+export interface FileContent {
+  file_id: string;
+  content_type: FileContentType;
+  sheets?: ExcelSheet[];
+  pages?: PdfPage[];
+  csv?: CsvContent;
+  slides?: PptxSlide[];
+  tables: ExtractedTable[];
+  metadata: {
+    total_pages?: number;
+    total_sheets?: number;
+    total_rows?: number;
+    has_ocr?: boolean;
+    ocr_languages?: string[];
+  };
 }

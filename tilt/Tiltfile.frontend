@@ -1,0 +1,33 @@
+# =============================================================================
+# Tiltfile.frontend - React Frontend Configuration
+# =============================================================================
+# Labels the frontend service and sets up dependencies.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Frontend Resource
+# ---------------------------------------------------------------------------
+dc_resource(
+    "ms-fe",
+    labels=["frontend"],
+    resource_deps=["ms-gw"],
+)
+
+# ---------------------------------------------------------------------------
+# Live Update for Frontend
+# ---------------------------------------------------------------------------
+# The frontend container mounts the source via a volume in docker-compose.yml
+# and runs `npm run dev -- --host` with Vite, so hot-module-replacement (HMR)
+# is already handled natively by Vite. No additional live_update is needed.
+#
+# If you switch to a production Dockerfile build instead:
+#
+# docker_build(
+#     ref="ms-fe",
+#     context="./apps/frontend",
+#     dockerfile="./apps/frontend/Dockerfile",
+#     live_update=[
+#         sync("./apps/frontend/src/", "/app/src/"),
+#         sync("./apps/frontend/public/", "/app/public/"),
+#     ],
+# )

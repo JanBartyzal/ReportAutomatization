@@ -1,9 +1,10 @@
 /** User roles in the platform */
 export enum Role {
+  HOLDING_ADMIN = 'HOLDING_ADMIN',
   ADMIN = 'ADMIN',
+  COMPANY_ADMIN = 'COMPANY_ADMIN',
   EDITOR = 'EDITOR',
   VIEWER = 'VIEWER',
-  HOLDING_ADMIN = 'HOLDING_ADMIN',
   REVIEWER = 'REVIEWER',
 }
 

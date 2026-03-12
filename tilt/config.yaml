@@ -1,0 +1,37 @@
+# =============================================================================
+# Tilt Configuration
+# =============================================================================
+# Default settings for the Tilt local development environment.
+# =============================================================================
+
+# Default resource groups to enable on startup.
+# Tilt will start all groups by default; use `tilt up <resource>` to
+# selectively start individual services.
+default_groups:
+  - infra
+  - core-java
+  - processors-python
+  - frontend
+
+# Build timeouts (seconds)
+timeouts:
+  # Maximum time to wait for a Docker image build
+  build: 600
+  # Maximum time to wait for a resource to become ready
+  ready: 300
+
+# Observability stack is disabled by default.
+# Enable with: tilt up -- --enable-observability
+enable_observability: false
+
+# Maximum parallel builds.
+# Increase this if your machine has plenty of CPU/RAM.
+max_parallel_updates: 4
+
+# Resource startup order (P8 Consolidated):
+#   1. infra              - postgres, redis, azurite, clamav, dapr, litellm, mailhog
+#   2. core-java          - engine-core, engine-data, engine-reporting, engine-orchestrator,
+#                           engine-integrations, ms-ing, ms-scan
+#   3. processors-python  - processor-atomizers, processor-generators
+#   4. frontend           - ms-fe (depends on ms-gw)
+#   5. observability (optional) - otel-collector, tempo, loki, prometheus, grafana

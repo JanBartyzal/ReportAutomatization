@@ -1,0 +1,122 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Trace Search",
+      "description": "Search traces by file_id, user_id, or org_id using Tempo query",
+      "type": "traces",
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "targets": [
+        {
+          "queryType": "traceqlSearch",
+          "query": "{ span.file_id = $file_id || span.user_id = $user_id || span.org_id = $org_id }",
+          "limit": 20
+        }
+      ]
+    },
+    {
+      "title": "End-to-End Latency Distribution",
+      "type": "histogram",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(reportplatform_traces_spanmetrics_latency_bucket{span_name=~\".*upload.*|.*ingest.*\"}[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(reportplatform_traces_spanmetrics_latency_bucket{span_name=~\".*upload.*|.*ingest.*\"}[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(reportplatform_traces_spanmetrics_latency_bucket{span_name=~\".*upload.*|.*ingest.*\"}[5m])))",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "title": "Service Dependency Graph",
+      "type": "nodeGraph",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "targets": [
+        {
+          "queryType": "serviceMap"
+        }
+      ]
+    },
+    {
+      "title": "Span Duration by Service",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, service_name) (rate(reportplatform_traces_spanmetrics_latency_bucket[5m])))",
+          "legendFormat": "{{service_name}} p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "title": "Error Traces",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 28 },
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "targets": [
+        {
+          "queryType": "traceqlSearch",
+          "query": "{ status = error }",
+          "limit": 50
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["reportplatform", "traces"],
+  "templating": {
+    "list": [
+      {
+        "name": "file_id",
+        "type": "textbox",
+        "label": "File ID",
+        "current": { "value": "" }
+      },
+      {
+        "name": "user_id",
+        "type": "textbox",
+        "label": "User ID",
+        "current": { "value": "" }
+      },
+      {
+        "name": "org_id",
+        "type": "textbox",
+        "label": "Org ID",
+        "current": { "value": "" }
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "ReportPlatform - Traces",
+  "uid": "reportplatform-traces",
+  "version": 1
+}

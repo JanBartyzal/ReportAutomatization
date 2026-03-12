@@ -1,0 +1,17 @@
+# Dapr StateStore configuration for engine-reporting
+# engine-reporting: ms-lifecycle + ms-period + ms-form + ms-tmpl-pptx + ms-notif
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: reportplatform-statestore
+  namespace: default
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: redis:6379
+    - name: redisPassword
+      value: ""
+    - name: keyPrefix
+      value: engine-reporting

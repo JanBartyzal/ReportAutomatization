@@ -1,0 +1,11 @@
+{
+  "name": "@reportplatform/performance-tests",
+  "private": true,
+  "scripts": {
+    "test:upload": "k6 run scripts/upload-throughput.js",
+    "test:query": "k6 run scripts/query-latency.js",
+    "test:dashboard": "k6 run scripts/dashboard-aggregation.js",
+    "test:all": "bash run-all.sh",
+    "test:smoke": "k6 run --vus 1 --duration 10s scripts/query-latency.js"
+  }
+}

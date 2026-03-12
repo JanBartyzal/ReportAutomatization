@@ -1,0 +1,73 @@
+syntax = "proto3";
+package generator.v1;
+
+import "common/v1/common.proto";
+
+option java_package = "com.reportplatform.proto.generator.v1";
+option java_multiple_files = true;
+
+// Excel report generation service
+service ExcelGeneratorService {
+  // Generate a single Excel report from template + data
+  rpc GenerateExcel(GenerateExcelRequest) returns (GenerateExcelResponse);
+
+  // Batch generate multiple Excel reports
+  rpc BatchGenerateExcel(BatchGenerateExcelRequest) returns (BatchGenerateExcelResponse);
+}
+
+message GenerateExcelRequest {
+  common.v1.RequestContext context = 1;
+  string template_id = 2;          // Blob reference to .xlsx template (optional)
+  string report_id = 3;
+  map<string, string> text_placeholders = 4;
+  repeated ExcelTableData tables = 5;
+  repeated ExcelChartData charts = 6;
+  repeated ExcelSheetConfig sheets = 7;
+}
+
+message ExcelSheetConfig {
+  string name = 1;
+  string source_query = 2;  // query identifier for data source
+}
+
+message ExcelTableData {
+  string placeholder_key = 1;  // "TABLE:table_name"
+  repeated string headers = 2;
+  repeated ExcelTableRow rows = 3;
+  string target_sheet = 4;
+}
+
+message ExcelTableRow {
+  repeated string cells = 1;
+}
+
+message ExcelChartData {
+  string placeholder_key = 1;  // "CHART:metric_name"
+  string chart_type = 2;       // "BAR", "LINE", "PIE"
+  repeated string labels = 3;
+  repeated ExcelChartSeries series = 4;
+  string target_sheet = 5;
+}
+
+message ExcelChartSeries {
+  string name = 1;
+  repeated double values = 2;
+}
+
+message GenerateExcelResponse {
+  string report_id = 1;
+  common.v1.BlobReference generated_file = 2;
+  repeated string missing_placeholders = 3;
+  string generated_at = 4;
+}
+
+message BatchGenerateExcelRequest {
+  common.v1.RequestContext context = 1;
+  repeated GenerateExcelRequest requests = 2;
+}
+
+message BatchGenerateExcelResponse {
+  repeated GenerateExcelResponse results = 1;
+  int32 successful = 2;
+  int32 failed = 3;
+}

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMsal } from '@azure/msal-react';
 import { getMe, switchOrg } from '../api/auth';
 import type { UserContext } from '@reportplatform/types';
 
@@ -18,4 +19,32 @@ export function useSwitchOrg() {
       queryClient.invalidateQueries();
     },
   });
+}
+
+export function useLogout() {
+  const { instance } = useMsal();
+
+  return {
+    mutate: () => {
+      instance.logoutPopup().catch((error) => {
+        console.error('Logout failed:', error);
+      });
+    },
+    mutateAsync: async () => {
+      await instance.logoutPopup();
+    },
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+  };
+}
+
+// Combined auth hook for convenience
+export function useAuth() {
+  const me = useMe();
+  const logout = useLogout();
+  return {
+    ...me,
+    logout,
+  };
 }

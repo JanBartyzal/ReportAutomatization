@@ -1,0 +1,20 @@
+# Dapr PubSub configuration for engine-ingestor
+# engine-ingestor: File upload and processing (was ms-ing)
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: reportplatform-pubsub
+  namespace: default
+spec:
+  type: pubsub.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: redis:6379
+    - name: redisPassword
+      value: ""
+    - name: consumerGroup
+      value: engine-ingestor-group
+# Subscriptions for engine-ingestor
+scopes:
+  - engine-ingestor

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Rejected</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: #d13438;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .content {
+            background-color: #f9f9f9;
+            padding: 30px;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .rejected-badge {
+            display: inline-block;
+            background-color: #d13438;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+
+        .rejection-info {
+            background-color: #fff0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #d13438;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Report Rejected</h1>
+    </div>
+    <div class="content">
+        <span class="rejected-badge">REJECTED</span>
+        <h2 th:text="${title}">Report Has Been Rejected</h2>
+        <div class="rejection-info">
+            <p><strong>Your report has been rejected.</strong></p>
+            <p th:text="${body}">Body</p>
+        </div>
+        <div th:if="${data != null}">
+            <p><strong>Rejection Details:</strong></p>
+            <ul>
+                <li th:if="${data.get('company')}" th:text="'Company: ' + ${data.get('company')}"></li>
+                <li th:if="${data.get('period')}" th:text="'Period: ' + ${data.get('period')}"></li>
+                <li th:if="${data.get('rejectedBy')}" th:text="'Rejected by: ' + ${data.get('rejectedBy')}"></li>
+                <li th:if="${data.get('comment')}" th:text="'Comment: ' + ${data.get('comment')}"></li>
+            </ul>
+        </div>
+        <p>Please log in to review the rejection comments and submit a revised report.</p>
+    </div>
+    <div class="footer">
+        <p>Report Platform - Financial Reporting System</p>
+    </div>
+</body>
+
+</html>

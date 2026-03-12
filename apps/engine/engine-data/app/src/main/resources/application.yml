@@ -1,0 +1,112 @@
+server:
+  port: 8100
+
+spring:
+  application:
+    name: engine-data
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:engine_data_db}
+    username: ${DB_USERNAME:engine_data}
+    password: ${DB_PASSWORD:engine_data_pass}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: engine-data-pool
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:redis_pass}
+      timeout: 2000
+
+# gRPC server
+grpc:
+  server:
+    port: 50052
+
+# Cache config (used by query module)
+cache:
+  ttl-minutes: 5
+
+# Dapr configuration
+dapr:
+  app-id: engine-data
+  pubsub:
+    name: ${DAPR_PUBSUB_NAME:reportplatform-pubsub}
+    embedding-topic: document-embedding
+  method:
+    invocation:
+      enabled: true
+
+# AI mapping configuration (used by template module)
+mapping:
+  ai:
+    enabled: ${MAPPING_AI_ENABLED:true}
+    min-confidence: 0.8
+    dapr-app-id: ${MAPPING_AI_DAPR_APP_ID:ms-atm-ai}
+
+# Search configuration
+search:
+  fts:
+    min-word-length: 3
+    language: czech,english
+  vector:
+    similarity-threshold: 0.7
+    embedding-dimension: 1536
+
+# Dapr state store (used by search module)
+app:
+  dapr:
+    pubsub-name: reportplatform-pubsub
+    statestore-name: reportplatform-statestore
+
+# JWT configuration
+jwt:
+  issuer: ${JWT_ISSUER:report-platform}
+  secret: ${JWT_SECRET:change-me-in-production}
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+      group:
+        readiness:
+          include: db,redis,diskSpace
+        liveness:
+          include: ping
+  metrics:
+    tags:
+      application: engine-data
+
+# Logging
+logging:
+  level:
+    com.reportplatform: INFO
+    org.springframework.web: INFO
+    org.hibernate: WARN
+    org.flywaydb: INFO

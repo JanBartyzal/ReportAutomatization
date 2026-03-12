@@ -1,0 +1,78 @@
+spring:
+  application:
+    name: ms-form
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:reportplatform}
+    username: ${DB_USERNAME:form_user}
+    password: ${DB_PASSWORD:form_pass}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 55MB
+
+dapr:
+  sidecar:
+    host: ${DAPR_HOST:localhost}
+    http-port: ${DAPR_HTTP_PORT:3500}
+    grpc-port: ${DAPR_GRPC_PORT:50001}
+  pubsub:
+    name: ${DAPR_PUBSUB_NAME:reportplatform-pubsub}
+  statestore:
+    name: ${DAPR_STATESTORE_NAME:reportplatform-statestore}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ms-form
+
+server:
+  port: ${HTTP_PORT:8080}
+
+logging:
+  level:
+    com.reportplatform.form: ${LOG_LEVEL:INFO}
+    io.dapr: INFO
+
+# Feature flags configuration (P6-W3-002)
+feature-flags:
+  enable-local-scope: ${ENABLE_LOCAL_SCOPE:false}
+  enable-advanced-comparison: ${ENABLE_ADVANCED_COMPARISON:false}

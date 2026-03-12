@@ -1,0 +1,17 @@
+# Dapr PubSub configuration for engine-reporting
+# engine-reporting: ms-lifecycle + ms-period + ms-form + ms-tmpl-pptx + ms-notif
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: reportplatform-pubsub
+  namespace: default
+spec:
+  type: pubsub.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: redis:6379
+    - name: redisPassword
+      value: ""
+    - name: consumerGroup
+      value: engine-reporting-group

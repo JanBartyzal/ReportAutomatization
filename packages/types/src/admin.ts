@@ -35,6 +35,22 @@ export interface ApiKeyCreated {
   created_at: string;
 }
 
+/** Role assignment request (for admin role management) */
+export interface RoleAssignmentRequest {
+  target_user_id: string;
+  org_id: string;
+  role: string;
+}
+
+/** Role assignment response */
+export interface RoleAssignmentResponse {
+  target_user_id: string;
+  org_id: string;
+  role: string;
+  assigned_by: string;
+  assigned_at: string;
+}
+
 /** Failed job from DLQ */
 export interface FailedJob {
   id: string;

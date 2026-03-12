@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listFiles, getFile, uploadFile } from '../api/files';
-import type { FileListParams, FileDetails, UploadPurpose } from '@reportplatform/types';
+import { listFiles, getFile, uploadFile, getFileContent, getFileTables } from '../api/files';
+import type { FileListParams, FileDetails, UploadPurpose, FileContent } from '@reportplatform/types';
 
 export function useFiles(params: FileListParams = {}) {
   return useQuery({
@@ -9,10 +9,32 @@ export function useFiles(params: FileListParams = {}) {
   });
 }
 
-export function useFile(fileId: string) {
+export function useFile(fileId: string, options?: { pollingInterval?: number }) {
+  const { pollingInterval = 0 } = options || {};
+
   return useQuery<FileDetails>({
     queryKey: ['files', fileId],
-    queryFn: () => getFile(fileId),
+    enabled: !!fileId,
+    refetchInterval: pollingInterval > 0 ? pollingInterval : undefined,
+    queryFn: async () => {
+      const file = await getFile(fileId);
+      return file;
+    },
+  });
+}
+
+export function useFileContent(fileId: string) {
+  return useQuery<FileContent>({
+    queryKey: ['files', fileId, 'content'],
+    queryFn: () => getFileContent(fileId),
+    enabled: !!fileId,
+  });
+}
+
+export function useFileTables(fileId: string) {
+  return useQuery({
+    queryKey: ['files', fileId, 'tables'],
+    queryFn: () => getFileTables(fileId),
     enabled: !!fileId,
   });
 }

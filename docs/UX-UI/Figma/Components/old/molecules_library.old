@@ -1,0 +1,50 @@
+<svg width="1000" height="800" viewBox="0 0 1000 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- CIM Design System - Molecules Library -->
+  <rect width="1000" height="800" fill="#F8F8F8"/>
+  
+  <text x="40" y="50" font-family="Inter, sans-serif" font-size="24" font-weight="bold" fill="#242424">02 — Molecules Library</text>
+  
+  <!-- KPI Card Section -->
+  <text x="40" y="100" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="#616161">2.1 KPI Card</text>
+  
+  <g transform="translate(40, 130)">
+    <rect width="240" height="140" rx="8" fill="#FFFFFF" stroke="#E1DFDD" stroke-width="1"/>
+    <text x="16" y="30" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#616161">Měsíční náklady</text>
+    <rect x="170" y="16" width="55" height="20" rx="10" fill="#DFF6DD"/>
+    <text x="178" y="31" font-family="Inter, sans-serif" font-size="10" font-weight="bold" fill="#107C10">↑ +12%</text>
+    
+    <text x="16" y="75" font-family="Inter, sans-serif" font-size="24" font-weight="bold" fill="#242424">Kč 1 234 567</text>
+    <text x="16" y="95" font-family="Inter, sans-serif" font-size="12" fill="#9E9E9E">vs. minulý měsíc</text>
+    
+    <!-- Sparkline -->
+    <path d="M16 125 L40 115 L70 120 L100 105 L130 115 L160 100 L190 110 L220 105" fill="none" stroke="#0078D4" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Form Field Section -->
+  <text x="40" y="320" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="#616161">2.2 Form Field</text>
+  
+  <g transform="translate(40, 350)">
+    <text x="0" y="15" font-family="Inter, sans-serif" font-size="14" font-weight="500" fill="#242424">Název projektu *</text>
+    <rect x="0" y="25" width="400" height="36" rx="4" fill="#FFFFFF" stroke="#E1DFDD" stroke-width="1"/>
+    <text x="12" y="48" font-family="Inter, sans-serif" font-size="14" fill="#9E9E9E">Zadejte název...</text>
+    <text x="0" y="75" font-family="Inter, sans-serif" font-size="12" fill="#9E9E9E">Použijte unikátní identifikátor bez mezer.</text>
+  </g>
+  
+  <!-- Nav Item Section -->
+  <text x="40" y="480" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="#616161">2.3 Sidebar Nav Items</text>
+  
+  <g transform="translate(40, 510)">
+    <!-- Active State -->
+    <rect x="0" y="0" width="220" height="40" rx="8" fill="#F3F2F1"/>
+    <rect x="0" y="8" width="4" height="24" rx="2" fill="#0078D4"/>
+    <text x="40" y="25" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="#0078D4">Dashboard</text>
+    
+    <!-- Default State -->
+    <text x="40" y="65" font-family="Inter, sans-serif" font-size="14" fill="#616161">Infrastruktura</text>
+    
+    <!-- Locked State -->
+    <text x="40" y="105" font-family="Inter, sans-serif" font-size="14" fill="#616161">Designer</text>
+    <rect x="150" y="88" width="45" height="20" rx="4" fill="#EDE9FE"/>
+    <text x="157" y="102" font-family="Inter, sans-serif" font-size="10" font-weight="bold" fill="#6D28D9">PRO</text>
+  </g>
+</svg>

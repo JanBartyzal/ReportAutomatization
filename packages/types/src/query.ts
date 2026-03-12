@@ -73,4 +73,19 @@ export interface TableQueryParams extends PaginationParams {
   org_id?: string;
   period?: string;
   source_type?: 'FILE' | 'FORM';
+  scope?: 'CENTRAL' | 'LOCAL' | 'ALL';
+}
+
+/** Multi-org comparison result */
+export interface ComparisonResult {
+  metric: string;
+  period_id: string | null;
+  values: OrgMetricValue[];
+}
+
+export interface OrgMetricValue {
+  org_id: string;
+  org_name: string;
+  value: number;
+  scope: string;
 }

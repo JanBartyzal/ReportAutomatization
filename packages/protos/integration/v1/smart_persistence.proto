@@ -1,0 +1,83 @@
+syntax = "proto3";
+package integration.v1;
+
+import "common/v1/common.proto";
+
+option java_package = "com.reportplatform.proto.integration.v1";
+option java_multiple_files = true;
+
+// Smart Persistence promotion service
+service SmartPersistenceService {
+  // Get list of promotion candidates
+  rpc GetPromotionCandidates(GetCandidatesRequest) returns (GetCandidatesResponse);
+
+  // Approve a promotion candidate and trigger table creation
+  rpc ApprovePromotion(ApprovePromotionRequest) returns (ApprovePromotionResponse);
+
+  // Check if a mapping has a promoted table for transparent routing
+  rpc GetRoutingInfo(GetRoutingInfoRequest) returns (GetRoutingInfoResponse);
+
+  // Migrate historical data from JSONB to promoted table
+  rpc MigrateData(MigrateDataRequest) returns (MigrateDataResponse);
+}
+
+message GetCandidatesRequest {
+  common.v1.RequestContext context = 1;
+  string status_filter = 2;  // Optional: CANDIDATE, PENDING_REVIEW, APPROVED, etc.
+  common.v1.PaginationRequest pagination = 3;
+}
+
+message GetCandidatesResponse {
+  repeated PromotionCandidate candidates = 1;
+  common.v1.PaginationResponse pagination = 2;
+}
+
+message PromotionCandidate {
+  string id = 1;
+  string mapping_template_id = 2;
+  string status = 3;
+  int64 usage_count = 4;
+  string proposed_table_name = 5;
+  string proposed_ddl = 6;
+  string proposed_indexes = 7;
+  string column_type_analysis = 8;  // JSON string
+  string created_at = 9;
+  string reviewed_by = 10;
+  string reviewed_at = 11;
+}
+
+message ApprovePromotionRequest {
+  common.v1.RequestContext context = 1;
+  string promotion_id = 2;
+  string final_ddl = 3;  // Admin-modified DDL (or empty to use proposed)
+}
+
+message ApprovePromotionResponse {
+  bool success = 1;
+  string table_name = 2;
+  string message = 3;
+}
+
+message GetRoutingInfoRequest {
+  common.v1.RequestContext context = 1;
+  string mapping_template_id = 2;
+}
+
+message GetRoutingInfoResponse {
+  bool has_promoted_table = 1;
+  string table_name = 2;
+  bool in_dual_write_period = 3;
+  string dual_write_until = 4;  // ISO 8601
+}
+
+message MigrateDataRequest {
+  common.v1.RequestContext context = 1;
+  string promotion_id = 2;
+}
+
+message MigrateDataResponse {
+  string migration_id = 1;
+  common.v1.ProcessingStatus status = 2;
+  int32 records_migrated = 3;
+  string message = 4;
+}

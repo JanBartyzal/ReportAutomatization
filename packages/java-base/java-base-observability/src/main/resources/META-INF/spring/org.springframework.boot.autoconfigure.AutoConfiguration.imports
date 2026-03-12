@@ -1,0 +1,2 @@
+com.reportplatform.base.observability.ObservabilityAutoConfiguration
+com.reportplatform.base.observability.OtelTracingConfig

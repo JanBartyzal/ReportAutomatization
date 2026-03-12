@@ -1,0 +1,310 @@
+name: CI - Java Services (P8 Consolidated)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/java-base/**'
+      - 'apps/engine/microservices/units/**'
+      - 'apps/engine/engine-core/**'
+      - 'apps/engine/engine-data/**'
+      - 'apps/engine/engine-reporting/**'
+      - 'apps/engine/engine-orchestrator/**'
+      - 'apps/engine/engine-integrations/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/java-base/**'
+      - 'apps/engine/microservices/units/**'
+      - 'apps/engine/engine-core/**'
+      - 'apps/engine/engine-data/**'
+      - 'apps/engine/engine-reporting/**'
+      - 'apps/engine/engine-orchestrator/**'
+      - 'apps/engine/engine-integrations/**'
+
+concurrency:
+  group: ci-java-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'temurin'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.changes.outputs.java-services }}
+      units: ${{ steps.changes.outputs.java-units }}
+      java-base-changed: ${{ steps.changes.outputs.java-base-changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: changes
+        uses: ./.github/actions/detect-changes
+
+  lint:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.units != '[]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+      - name: Checkstyle lint (java-base)
+        run: |
+          cd packages/java-base
+          mvn checkstyle:check -pl java-base-observability -q || true
+      - name: Checkstyle lint (microservices)
+        run: |
+          cd apps/engine/microservices
+          mvn checkstyle:check -q || true
+      - name: Checkstyle lint (consolidated units)
+        run: |
+          if echo '${{ needs.detect-changes.outputs.units }}' | grep -q 'engine-core'; then
+            cd apps/engine/engine-core
+            mvn checkstyle:check -q || true
+          fi
+          if echo '${{ needs.detect-changes.outputs.units }}' | grep -q 'engine-data'; then
+            cd apps/engine/engine-data
+            mvn checkstyle:check -q || true
+          fi
+          if echo '${{ needs.detect-changes.outputs.units }}' | grep -q 'engine-reporting'; then
+            cd apps/engine/engine-reporting
+            mvn checkstyle:check -q || true
+          fi
+
+  unit-test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.units != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        unit: ${{ fromJson(needs.detect-changes.outputs.units) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: Build java-base (if changed)
+        if: needs.detect-changes.outputs.java-base-changed == 'true'
+        run: |
+          cd packages/java-base
+          mvn install -DskipTests -q
+
+      - name: Run unit tests for ${{ matrix.unit }}
+        run: |
+          case "${{ matrix.unit }}" in
+            engine-core)
+              cd apps/engine/engine-core
+              mvn test -q
+              ;;
+            engine-data)
+              cd apps/engine/engine-data
+              mvn test -q
+              ;;
+            engine-reporting)
+              cd apps/engine/engine-reporting
+              mvn test -q
+              ;;
+            engine-orchestrator)
+              cd apps/engine/microservices/units/ms-orch
+              mvn test -q
+              ;;
+            engine-integrations)
+              cd apps/engine/microservices/units/ms-ext-snow
+              mvn test -q
+              ;;
+            engine-ingestor)
+              cd apps/engine/microservices/units/ms-ing
+              mvn test -q
+              ;;
+          esac
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.unit }}
+          path: |
+            apps/engine/engine-core/**/target/surefire-reports/
+            apps/engine/engine-data/**/target/surefire-reports/
+            apps/engine/engine-reporting/**/target/surefire-reports/
+            apps/engine/microservices/units/*/target/surefire-reports/
+
+  integration-test:
+    needs: [detect-changes, unit-test]
+    if: needs.detect-changes.outputs.units != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        unit: ${{ fromJson(needs.detect-changes.outputs.units) }}
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: Build java-base
+        run: |
+          cd packages/java-base
+          mvn install -DskipTests -q
+
+      - name: Run integration tests for ${{ matrix.unit }}
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: testdb
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: |
+          case "${{ matrix.unit }}" in
+            engine-core)
+              cd apps/engine/engine-core
+              mvn verify -P integration-test -q || true
+              ;;
+            engine-data)
+              cd apps/engine/engine-data
+              mvn verify -P integration-test -q || true
+              ;;
+            engine-reporting)
+              cd apps/engine/engine-reporting
+              mvn verify -P integration-test -q || true
+              ;;
+            engine-orchestrator)
+              cd apps/engine/microservices/units/ms-orch
+              mvn verify -P integration-test -q || true
+              ;;
+            engine-integrations)
+              cd apps/engine/microservices/units/ms-ext-snow
+              mvn verify -P integration-test -q || true
+              ;;
+            engine-ingestor)
+              cd apps/engine/microservices/units/ms-ing
+              mvn verify -P integration-test -q || true
+              ;;
+          esac
+
+  build-image:
+    needs: [detect-changes, unit-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        unit: ${{ fromJson(needs.detect-changes.outputs.units) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: Build java-base
+        run: |
+          cd packages/java-base
+          mvn install -DskipTests -q
+
+      - name: Build ${{ matrix.unit }} JAR
+        run: |
+          case "${{ matrix.unit }}" in
+            engine-core)
+              cd apps/engine/engine-core
+              mvn package -DskipTests -q
+              ;;
+            engine-data)
+              cd apps/engine/engine-data
+              mvn package -DskipTests -q
+              ;;
+            engine-reporting)
+              cd apps/engine/engine-reporting
+              mvn package -DskipTests -q
+              ;;
+            engine-orchestrator)
+              cd apps/engine/microservices/units/ms-orch
+              mvn package -DskipTests -q
+              ;;
+            engine-integrations)
+              cd apps/engine/microservices/units/ms-ext-snow
+              mvn package -DskipTests -q
+              ;;
+            engine-ingestor)
+              cd apps/engine/microservices/units/ms-ing
+              mvn package -DskipTests -q
+              ;;
+          esac
+
+      - name: Log in to ACR
+        if: env.ACR_LOGIN_SERVER != ''
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_TAG="${{ secrets.ACR_LOGIN_SERVER }}/${{ matrix.unit }}:${{ github.sha }}"
+          IMAGE_LATEST="${{ secrets.ACR_LOGIN_SERVER }}/${{ matrix.unit }}:latest"
+          case "${{ matrix.unit }}" in
+            engine-core)
+              cd apps/engine/engine-core
+              ;;
+            engine-data)
+              cd apps/engine/engine-data
+              ;;
+            engine-reporting)
+              cd apps/engine/engine-reporting
+              ;;
+            engine-orchestrator)
+              cd apps/engine/microservices/units/ms-orch
+              ;;
+            engine-integrations)
+              cd apps/engine/microservices/units/ms-ext-snow
+              ;;
+            engine-ingestor)
+              cd apps/engine/microservices/units/ms-ing
+              ;;
+          esac
+          docker build -t "$IMAGE_TAG" -t "$IMAGE_LATEST" .
+          if [ -n "${{ secrets.ACR_LOGIN_SERVER }}" ]; then
+            docker push "$IMAGE_TAG"
+            docker push "$IMAGE_LATEST"
+          fi

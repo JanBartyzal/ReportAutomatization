@@ -1,161 +1,1223 @@
+# ReportAutomatization P1+P2 - Full Topology Docker Compose
+# This file defines the complete infrastructure with all microservices
+#
+# Usage:
+#   docker compose up -d              # Start all services
+#   docker compose up -d -f docker-compose.override.yml  # With debug ports
+#   docker compose down               # Stop all services
+#
+# Services:
+#   - nginx (ms-gw): API Gateway on port 80/443
+#   - ms-auth: Authentication service
+#   - ms-ing: File ingestion service
+#   - ms-orch: Workflow orchestration
+#   - ms-scan: Security scanner (ClamAV client)
+#   - ms-sink-tbl: Table data sink
+#   - ms-sink-doc: Document sink
+#   - ms-sink-log: Log sink
+#   - ms-atm-pptx: PPTX processor (Python)
+#   - ms-atm-xls: Excel processor (Python)        [P2]
+#   - ms-qry: Query API / CQRS read model (Java)  [P2]
+#   - ms-dash: Dashboard aggregation (Java)        [P2]
+#   - postgres: PostgreSQL 16 with pgVector
+#   - redis: Redis for caching and state
+#   - azurite: Azure Blob storage emulator
+#   - clamav: Virus scanner
+#   - dapr: Dapr sidecar services
+
 services:
-  # 1. FRONTEND (React)
-  frontend:
-    image: node:20-alpine
-    container_name: frontend
-    working_dir: /app
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+  # =============================================================================
+  # API GATEWAY - Nginx
+  # =============================================================================
+  ms-gw:
+    build:
+      context: ../../apps/engine/microservices/units/ms-gw
+      dockerfile: Dockerfile
+    image: nginx:alpine
+    container_name: ms-gw
     ports:
-      - "5173:5173"
-    command: sh -c "npm cache clean --force && npm install && npm run dev -- --host"
-    environment:
-      - VITE_API_URL=${API_URL}
-      - VITE_AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
-      - VITE_AZURE_TENANT_ID=${AZURE_TENANT_ID}
-      - VITE_AZURE_REDIRECT_URI=${AZURE_REDIRECT_URI}
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
     depends_on:
-      - api
+      ms-auth:
+        condition: service_healthy
+      ms-ing:
+        condition: service_healthy
     networks:
       - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
-  # 2. BACKEND API (FastAPI)
-  api:
-    build: ./backend
-    container_name: api
-    env_file:
-      - .env
-    volumes:
-      - ./backend:/app
-      - ./local_data:/app/local_data
+  # =============================================================================
+  # JAVA MICROSERVICES
+  # =============================================================================
+
+  # MS-AUTH - Authentication Service
+  ms-auth:
+    build:
+      context: ../../apps/engine/microservices/units/ms-auth
+      dockerfile: Dockerfile
+    container_name: ms-auth
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=auth_db
+      - DB_USERNAME=auth_user
+      - DB_PASSWORD=auth_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID:-common}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-}
+      - LOG_LEVEL=INFO
     ports:
-      - "8000:8000"
+      - "8081:8080"
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # MS-ING - File Ingestion Service
+  ms-ing:
+    build:
+      context: ../../apps/engine/microservices/units/ms-ing
+      dockerfile: Dockerfile
+    container_name: ms-ing
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=ms_ing
+      - DB_USERNAME=ms_ing
+      - DB_PASSWORD=ms_ing_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
+      - AZURE_STORAGE_CONTAINER=file-uploads
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - CLAMAV_HOST=clamav
+      - CLAMAV_PORT=3310
+      - LOG_LEVEL=INFO
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      azurite:
+        condition: service_healthy
+      clamav:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-ORCH - Workflow Orchestration
+  ms-orch:
+    build:
+      context: ../../apps/engine/microservices/units/ms-orch
+      dockerfile: Dockerfile
+    container_name: ms-orch
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=orch_db
+      - DB_USERNAME=orch_user
+      - DB_PASSWORD=orch_pass
+      - GRPC_PORT=50051
+      - HTTP_PORT=8080
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_pass}
+      - LOG_LEVEL=INFO
+    ports:
+      - "8083:8080"
+      - "50051:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-SCAN - Security Scanner
+  ms-scan:
+    build:
+      context: ../../apps/engine/microservices/units/ms-scan
+      dockerfile: Dockerfile
+    container_name: ms-scan
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8080
+      - CLAMAV_HOST=clamav
+      - CLAMAV_PORT=3310
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
+      - AZURE_STORAGE_CONTAINER=file-uploads
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - LOG_LEVEL=INFO
+    ports:
+      - "8084:8080"
+    depends_on:
+      clamav:
+        condition: service_healthy
+      azurite:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-SINK-TBL - Table Data Sink
+  ms-sink-tbl:
+    build:
+      context: ../../apps/engine/microservices/units/ms-sink-tbl
+      dockerfile: Dockerfile
+    container_name: ms-sink-tbl
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=ms_sink_tbl
+      - DB_USERNAME=ms_sink_tbl
+      - DB_PASSWORD=ms_sink_tbl_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - LOG_LEVEL=INFO
+    ports:
+      - "8085:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-SINK-DOC - Document Sink
+  ms-sink-doc:
+    build:
+      context: ../../apps/engine/microservices/units/ms-sink-doc
+      dockerfile: Dockerfile
+    container_name: ms-sink-doc
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=ms_sink_doc
+      - DB_USERNAME=ms_sink_doc
+      - DB_PASSWORD=ms_sink_doc_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - LOG_LEVEL=INFO
+    ports:
+      - "8086:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-SINK-LOG - Log Sink
+  ms-sink-log:
+    build:
+      context: ../../apps/engine/microservices/units/ms-sink-log
+      dockerfile: Dockerfile
+    container_name: ms-sink-log
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=ms_sink_log
+      - DB_USERNAME=ms_sink_log
+      - DB_PASSWORD=ms_sink_log_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - LOG_LEVEL=INFO
+    ports:
+      - "8087:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-QRY - Query API (CQRS Read Model)
+  ms-qry:
+    build:
+      context: ../../apps/engine/microservices/units/ms-qry
+      dockerfile: Dockerfile
+    container_name: ms-qry
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=reportplatform
+      - DB_USERNAME=${MS_QRY_DB_USER:-ms_qry}
+      - DB_PASSWORD=${MS_QRY_DB_PASS:-ms_qry_pass}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_pass}
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - LOG_LEVEL=INFO
+    ports:
+      - "8091:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-TMPL - Template & Schema Mapping Registry
+  ms-tmpl:
+    build:
+      context: ../../apps/engine/microservices/units/ms-tmpl
+      dockerfile: Dockerfile
+    container_name: ms-tmpl
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=reportplatform
+      - DB_USERNAME=ms_tmpl
+      - DB_PASSWORD=ms_tmpl_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - MAPPING_AI_ENABLED=true
+      - MAPPING_AI_DAPR_APP_ID=ms-atm-ai
+      - LOG_LEVEL=INFO
+    ports:
+      - "8094:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-DASH - Dashboard Aggregation
+  ms-dash:
+    build:
+      context: ../../apps/engine/microservices/units/ms-dash
+      dockerfile: Dockerfile
+    container_name: ms-dash
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=reportplatform
+      - DB_USERNAME=${MS_DASH_DB_USER:-ms_dash}
+      - DB_PASSWORD=${MS_DASH_DB_PASS:-ms_dash_pass}
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - LOG_LEVEL=INFO
+    ports:
+      - "8092:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-ADMIN - Admin Service (P3a)
+  ms-admin:
+    build:
+      context: ../../apps/engine/microservices/units/ms-admin
+      dockerfile: Dockerfile
+    container_name: ms-admin
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=admin_db
+      - DB_USERNAME=admin_user
+      - DB_PASSWORD=admin_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - LOG_LEVEL=INFO
+    ports:
+      - "8095:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-BATCH - Batch Management Service (P3a)
+  ms-batch:
+    build:
+      context: ../../apps/engine/microservices/units/ms-batch
+      dockerfile: Dockerfile
+    container_name: ms-batch
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=batch_db
+      - DB_USERNAME=batch_user
+      - DB_PASSWORD=batch_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - LOG_LEVEL=INFO
+    ports:
+      - "8096:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-LIFECYCLE - Report Lifecycle Service (P3b)
+  ms-lifecycle:
+    build:
+      context: ../../apps/engine/microservices/units/ms-lifecycle
+      dockerfile: Dockerfile
+    container_name: ms-lifecycle
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=reportplatform
+      - DB_USERNAME=lifecycle_user
+      - DB_PASSWORD=lifecycle_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - LOG_LEVEL=INFO
+    ports:
+      - "8097:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-PERIOD - Reporting Period Manager (P3b)
+  ms-period:
+    build:
+      context: ../../apps/engine/microservices/units/ms-period
+      dockerfile: Dockerfile
+    container_name: ms-period
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=reportplatform
+      - DB_USERNAME=period_user
+      - DB_PASSWORD=period_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - LOG_LEVEL=INFO
+    ports:
+      - "8098:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-NOTIF - Notification Service (P3b)
+  ms-notif:
+    build:
+      context: ../../apps/engine/microservices/units/ms-notif
+      dockerfile: Dockerfile
+    container_name: ms-notif
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=reportplatform
+      - DB_USERNAME=notif_user
+      - DB_PASSWORD=notif_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - LOG_LEVEL=INFO
+    ports:
+      - "8099:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-FORM - Form Builder & Data Collection Service (P3c)
+  ms-form:
+    build:
+      context: ../../apps/engine/microservices/units/ms-form
+      dockerfile: Dockerfile
+    container_name: ms-form
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=reportplatform
+      - DB_USERNAME=form_user
+      - DB_PASSWORD=form_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - LOG_LEVEL=INFO
+    ports:
+      - "8100:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-VER - Versioning Service (P4a)
+  ms-ver:
+    build:
+      context: ../../apps/engine/microservices/units/ms-ver
+      dockerfile: Dockerfile
+    container_name: ms-ver
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=reportplatform
+      - DB_USERNAME=ver_user
+      - DB_PASSWORD=ver_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - LOG_LEVEL=INFO
+    ports:
+      - "8101:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-AUDIT - Audit & Compliance Service (P4a)
+  ms-audit:
+    build:
+      context: ../../apps/engine/microservices/units/ms-audit
+      dockerfile: Dockerfile
+    container_name: ms-audit
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=reportplatform
+      - DB_USERNAME=audit_user
+      - DB_PASSWORD=audit_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - LOG_LEVEL=INFO
+    ports:
+      - "8102:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-SRCH - Search Service (P4a)
+  ms-srch:
+    build:
+      context: ../../apps/engine/microservices/units/ms-srch
+      dockerfile: Dockerfile
+    container_name: ms-srch
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=reportplatform
+      - DB_USERNAME=srch_user
+      - DB_PASSWORD=srch_pass
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - LOG_LEVEL=INFO
+    ports:
+      - "8103:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-TMPL-PPTX - PPTX Template Manager (P4b)
+  ms-tmpl-pptx:
+    build:
+      context: ../../apps/engine/microservices/units/ms-tmpl-pptx
+      dockerfile: Dockerfile
+    container_name: ms-tmpl-pptx
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=reportplatform
+      - DB_USERNAME=tmpl_pptx_user
+      - DB_PASSWORD=tmpl_pptx_pass
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
+      - AZURE_STORAGE_CONTAINER=templates
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - LOG_LEVEL=INFO
+    ports:
+      - "8104:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      azurite:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =============================================================================
+  # PYTHON MICROSERVICES
+  # =============================================================================
+
+  # MS-ATM-PPTX - PPTX Processing Service
+  ms-atm-pptx:
+    build:
+      context: ../../apps/processor/microservices/units/ms-atm-pptx
+      dockerfile: Dockerfile
+    container_name: ms-atm-pptx
+    environment:
+      - PYTHONUNBUFFERED=1
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
+      - AZURE_STORAGE_CONTAINER=file-uploads
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - LOG_LEVEL=INFO
+    ports:
+      - "8088:8000"
+    depends_on:
+      azurite:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-ATM-XLS - Excel Processing Service
+  ms-atm-xls:
+    build:
+      context: ../../apps/processor/microservices/units/ms-atm-xls
+      dockerfile: Dockerfile
+    container_name: ms-atm-xls
+    environment:
+      - PYTHONUNBUFFERED=1
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
+      - AZURE_STORAGE_CONTAINER=file-uploads
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - LOG_LEVEL=INFO
+    ports:
+      - "8089:8000"
+    depends_on:
+      azurite:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-ATM-PDF - PDF/OCR Processing Service
+  ms-atm-pdf:
+    build:
+      context: ../../apps/processor/microservices/units/ms-atm-pdf
+      dockerfile: Dockerfile
+    container_name: ms-atm-pdf
+    environment:
+      - PYTHONUNBUFFERED=1
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
+      - AZURE_STORAGE_CONTAINER=file-uploads
+      - TEMP_CONTAINER=temp
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - LOG_LEVEL=INFO
+    ports:
+      - "8090:50051"
+    volumes:
+      - tesseract_data:/usr/share/tesseract-ocr/5/tessdata
+    depends_on:
+      azurite:
+        condition: service_healthy
+    networks:
+      - report-net
+
+  # MS-ATM-CSV - CSV Processing Service
+  ms-atm-csv:
+    build:
+      context: ../../apps/processor/microservices/units/ms-atm-csv
+      dockerfile: Dockerfile
+    container_name: ms-atm-csv
+    environment:
+      - PYTHONUNBUFFERED=1
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
+      - AZURE_STORAGE_CONTAINER=file-uploads
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - LOG_LEVEL=INFO
+    ports:
+      - "8093:50051"
+    depends_on:
+      azurite:
+        condition: service_healthy
+    networks:
+      - report-net
+
+  # MS-ATM-AI - AI Gateway (LiteLLM integration)
+  ms-atm-ai:
+    build:
+      context: ../../apps/processor/microservices/units/ms-atm-ai
+      dockerfile: Dockerfile
+    container_name: ms-atm-ai
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SERVICE_NAME=ms-atm-ai
+      - GRPC_PORT=50051
+      - LITELLM_BASE_URL=http://litellm:4000
+      - LITELLM_API_KEY=${LITELLM_API_KEY:-sk-local-dev-key}
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - DEFAULT_MONTHLY_TOKEN_QUOTA=1000000
+      - MAX_CONCURRENT_PER_ORG=5
+      - LOG_LEVEL=INFO
+    ports:
+      - "8095:50051"
+    depends_on:
+      litellm:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import grpc; ch = grpc.insecure_channel('localhost:50051'); grpc.channel_ready_future(ch).result(timeout=2)" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-ATM-CLN - Cleanup Worker (CronJob)
+  ms-atm-cln:
+    build:
+      context: ../../apps/processor/microservices/units/ms-atm-cln
+      dockerfile: Dockerfile
+    container_name: ms-atm-cln
+    environment:
+      - PYTHONUNBUFFERED=1
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
+      - TEMP_CONTAINER=temp
+      - FILES_CONTAINER=files
+      - GENERATOR_CONTAINER=generator-output
+      - CRON_SCHEDULE="0 * * * *"
+      - DRY_RUN=false
+      - LOG_LEVEL=INFO
+    networks:
+      - report-net
+
+  # MS-MCP - MCP Server (AI Agent Interface)
+  ms-mcp:
+    build:
+      context: ../../apps/processor/microservices/units/ms-mcp
+      dockerfile: Dockerfile
+    container_name: ms-mcp
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SERVICE_NAME=ms-mcp
+      - HTTP_PORT=8000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=reportplatform
+      - DB_USER=ms_qry
+      - DB_PASSWORD=ms_qry_pass
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID:-common}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET:-}
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - LOG_LEVEL=INFO
+    ports:
+      - "8096:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MS-GEN-PPTX - PPTX Report Generator (P4b)
+  ms-gen-pptx:
+    build:
+      context: ../../apps/processor/microservices/units/ms-gen-pptx
+      dockerfile: Dockerfile
+    container_name: ms-gen-pptx
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SERVICE_NAME=ms-gen-pptx
+      - GRPC_PORT=50051
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
+      - TEMPLATES_CONTAINER=templates
+      - GENERATED_CONTAINER=generated-reports
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - MPLBACKEND=Agg
+      - LOG_LEVEL=INFO
+    ports:
+      - "8105:50051"
+    depends_on:
+      azurite:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import grpc; ch = grpc.insecure_channel('localhost:50051'); grpc.channel_ready_future(ch).result(timeout=3)" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # MS-EXT-SNOW - ServiceNow Integration Service (P7)
+  ms-ext-snow:
+    build:
+      context: ../../
+      dockerfile: apps/engine/microservices/units/ms-ext-snow/Dockerfile
+    container_name: ms-ext-snow
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=reportplatform
+      - DB_USERNAME=snow_user
+      - DB_PASSWORD=snow_pass
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_pass}
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - AZURE_KEYVAULT_URI=${AZURE_KEYVAULT_URI:-}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID:-}
+      - JWT_ISSUER=${JWT_ISSUER:-https://login.microsoftonline.com/common/v2.0}
+      - JWT_AUDIENCE=${JWT_AUDIENCE:-}
+      - JWT_JWKS_URI=${JWT_JWKS_URI:-https://login.microsoftonline.com/common/discovery/v2.0/keys}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "8107:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # MS-GEN-XLS - Excel Report Generator (P7)
+  ms-gen-xls:
+    build:
+      context: ../../
+      dockerfile: apps/processor/microservices/units/ms-gen-xls/Dockerfile
+    container_name: ms-gen-xls
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SERVICE_NAME=ms-gen-xls
+      - GRPC_PORT=50051
+      - HTTP_PORT=8000
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
+      - TEMPLATES_CONTAINER=templates
+      - GENERATED_CONTAINER=generated-reports
+      - DAPR_HOST=dapr
+      - DAPR_HTTP_PORT=3500
+      - DAPR_GRPC_PORT=50001
+      - DAPR_PUBSUB_NAME=reportplatform-pubsub
+      - DAPR_STATESTORE_NAME=reportplatform-statestore
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "8108:50051"
+      - "8109:8000"
+    depends_on:
+      azurite:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # =============================================================================
+  # FRONTEND
+  # =============================================================================
+
+  ms-fe:
+    image: node:20-alpine
+    container_name: ms-fe
+    working_dir: /app
+    volumes:
+      - ../../apps/frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost
+      - VITE_AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-}
+      - VITE_AZURE_TENANT_ID=${AZURE_TENANT_ID:-common}
+      - VITE_AZURE_REDIRECT_URI=http://localhost
+    command: sh -c "npm install && npm run dev -- --host"
+    depends_on:
+      ms-gw:
+        condition: service_started
+    networks:
+      - report-net
+
+  # =============================================================================
+  # INFRASTRUCTURE
+  # =============================================================================
+
+  # PostgreSQL 16 with pgVector
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=reportplatform
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d reportplatform" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - report-net
+
+  # Redis for caching and state
   redis:
     image: redis:alpine
     container_name: redis
+    command: redis-server --save 60 1 --loglevel warning --requirepass ${REDIS_PASSWORD:-redis_pass}
+    volumes:
+      - redis_data:/data
     ports:
       - "6379:6379"
-    command: redis-server --save 60 1 --loglevel warning --requirepass "{REDIS_PASSWORD}"
-    volumes:
-      - ./redis_data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "{REDIS_PASSWORD}", "ping" ]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_pass}", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5
     networks:
       - report-net
 
-  # 5. WORKFLOW AUTOMATION (N8N)
-  n8n:
-    image: docker.n8n.io/n8nio/n8n
-    container_name: n8n
-    ports:
-      - "8001:5678"
-    environment:
-      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE}
-      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
-      - N8N_HOST=${N8N_HOST}
-      - N8N_PORT=${N8N_PORT}
-      - N8N_PROTOCOL=${N8N_PROTOCOL}
-      - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE}
-      - WEBHOOK_URL=${WEBHOOK_URL}
-      - DB_POSTGRESDB_HOST=${POSTGRES_HOST}
-      - DB_POSTGRESDB_PORT=${POSTGRES_PORT}
-      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
-      - DB_POSTGRESDB_USER=${POSTGRES_USER}
-      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+  # Azurite - Azure Blob Storage Emulator
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite
+    command: azurite-blob --blobHost 0.0.0.0 --blobPort 10000 --silent
     volumes:
-      - ./n8n_data:/home/node/.n8n
-    depends_on:
-      - postgres
-    networks:
-      - report-net
-
-  # 6. DATABÁZE (PostgreSQL)
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: postgres
+      - azurite_data:/data
     ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-    volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - "10000:10000"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
-      interval: 5s
+      test: [ "CMD", "curl", "-f", "http://localhost:10000/" ]
+      interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - report-net
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin
+  # ClamAV - Virus Scanner
+  clamav:
+    image: clamav/clamav:latest
+    container_name: clamav
     environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
-
-    ports:
-      - "5050:80"
-    depends_on:
-      - postgres
-    networks:
-      - report-net
-
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    # ports: - ODSTRANĚNO
+      - CLAMAV_NO_CLAMD=false
+      - CLAMAV_NO_FRESHCLAMD=true
+      - CLAMAV_NO_MILTERD=true
     volumes:
-      - ollama_storage:/root/.ollama
-    restart: unless-stopped
+      - clamav_data:/var/lib/clamav
+      - ./clamav/freshclam.conf:/etc/clamav/freshclam.conf:ro
     ports:
-      - "11434:11434"
-    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 10 && ollama pull llava && ollama pull mistral && ollama pull qwen3-vl:4b && ollama pull glm-ocr:latest && tail -f /dev/null" ]
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [ gpu ]
+      - "3310:3310"
+    command: clamd --config-file=/etc/clamav/clamd.conf --Foreground=true
+    healthcheck:
+      test: [ "CMD", "clamdscan", "--ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     networks:
       - report-net
 
-  open-webui:
-    container_name: open-webui
-    image: ghcr.io/open-webui/open-webui:main
+  # LiteLLM - AI Gateway Proxy (OpenAI-compatible)
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm
+    command: --config /app/config.yaml --port 4000
+    environment:
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-https://placeholder.openai.azure.com}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-sk-placeholder}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-local-dev-key}
     volumes:
-      - ./owebui-data:/app/backend/data
-    init: true
+      - ./litellm/config.yaml:/app/config.yaml:ro
     ports:
-      - "3000:8080"
-    depends_on:
-      - ollama
+      - "4000:4000"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:4000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - report-net
+
+  # MailHog - SMTP Test Server
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - "1025:1025" # SMTP port
+      - "8025:8025" # Web UI
+    environment:
+      - MH_MAILDIR_PATH=/mail
+    volumes:
+      - mailhog_data:/mail
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8025" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Dapr Sidecar (Placements service)
+  dapr:
+    image: daprio/dapr:1.14.0
+    container_name: dapr
+    command: "./placement -port 50006 -0.0.0.0"
+    ports:
+      - "50006:50006"
+      - "3500:3500"
+      - "50001:50001"
+      - "8080:8080"
+    volumes:
+      - ./dapr/components:/components:ro
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3500/v1.0/healthz" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # LibreOffice - Headless for PPTX validation (P4b)
+  libreoffice:
+    image: libreoffice/stable:7.6.4
+    container_name: libreoffice
+    command: --headless --invisible --norestore --convert-to pdf --outdir /tmp
+    networks:
+      - report-net
+    # Note: LibreOffice doesn't need a healthcheck as it's used on-demand
+    # It's called from MS-GEN-PPTX for validation purposes
+
+    # =============================================================================
+    # GENERATED REPORTS STORAGE (P4b)
+    # =============================================================================
+
+    # Blob container for generated PPTX reports
+    # Note: Uses azurite (already defined above) with container 'generated-reports'
 
 networks:
   report-net:
     driver: bridge
 
 volumes:
-  ollama_storage:
-  n8n_data:
   postgres_data:
   redis_data:
-  owebui-data:
-
-
+  azurite_data:
+  clamav_data:
+  tesseract_data:
+  mailhog_data:

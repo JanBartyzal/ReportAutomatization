@@ -5,6 +5,14 @@ export enum ReportStatus {
   UNDER_REVIEW = 'UNDER_REVIEW',
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
+  COMPLETED = 'COMPLETED',
+}
+
+/** Report scope */
+export enum ReportScope {
+  CENTRAL = 'CENTRAL',
+  LOCAL = 'LOCAL',
+  ALL = 'ALL',
 }
 
 /** Report entity */
@@ -14,8 +22,29 @@ export interface Report {
   period_id: string;
   report_type: string;
   status: ReportStatus;
+  scope: ReportScope;
+  locked: boolean;
+  submitted_by?: string;
+  submitted_at?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  approved_by?: string;
+  approved_at?: string;
+  completed_by?: string;
+  completed_at?: string;
+  released_by?: string;
+  released_at?: string;
+  created_by: string;
   created_at: string;
   updated_at: string;
+}
+
+/** Report creation request */
+export interface ReportCreateRequest {
+  org_id: string;
+  period_id: string;
+  report_type: string;
+  scope?: ReportScope;
 }
 
 /** Status transition in report history */
@@ -35,6 +64,7 @@ export interface ReportMatrix {
 export interface MatrixRow {
   org_id: string;
   org_name: string;
+  scope: ReportScope;
   periods: Record<string, ReportStatus>;
 }
 

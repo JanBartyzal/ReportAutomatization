@@ -78,3 +78,67 @@ export interface PeriodDelta {
   absolute_change: number;
   percentage_change: number;
 }
+
+/** Comparison KPI definition */
+export interface ComparisonKpi {
+  id: string;
+  name: string;
+  description?: string;
+  value_field: string;
+  aggregation: 'SUM' | 'AVG' | 'COUNT' | 'MIN' | 'MAX';
+  group_by: string[];
+  source_type: 'FILE' | 'FORM' | 'ALL';
+  normalization: 'NONE' | 'MONTHLY' | 'DAILY' | 'ANNUAL';
+  active: boolean;
+  created_at: string;
+}
+
+/** Multi-org comparison request */
+export interface MultiOrgComparisonRequest {
+  org_ids: string[];
+  group_by: string[];
+  aggregation: string;
+  value_field: string;
+  date_from?: string;
+  date_to?: string;
+  source_type?: string;
+  normalization?: string;
+}
+
+/** Multi-org comparison response */
+export interface MultiOrgComparisonResponse {
+  rows: OrgComparisonRow[];
+  metadata: Record<string, unknown>;
+}
+
+export interface OrgComparisonRow {
+  org_id: string;
+  group_key: Record<string, unknown>;
+  value: number;
+  normalized_value?: number;
+}
+
+/** Cross-type period comparison context */
+export interface CrossTypeComparison {
+  periods: CrossTypePeriodInfo[];
+  normalizations: NormalizationInfo[];
+}
+
+export interface CrossTypePeriodInfo {
+  id: string;
+  name: string;
+  period_type: string;
+  period_code: string;
+  start_date: string;
+  end_date: string;
+  duration_days: number;
+  monthly_normalization_factor: number;
+  daily_normalization_factor: number;
+}
+
+export interface NormalizationInfo {
+  from_period_id: string;
+  to_period_id: string;
+  duration_ratio: number;
+  hint: string;
+}

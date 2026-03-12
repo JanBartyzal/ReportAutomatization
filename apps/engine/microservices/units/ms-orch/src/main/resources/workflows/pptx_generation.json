@@ -1,0 +1,100 @@
+{
+  "name": "pptx_generation",
+  "description": "Generate PPTX report from approved data using template with placeholder substitution",
+  "version": "1.0.0",
+  "trigger": {
+    "type": "pubsub",
+    "topic": "pptx.generation_requested",
+    "pubsub_name": "reportplatform-pubsub"
+  },
+  "steps": [
+    {
+      "name": "load_template",
+      "order": 1,
+      "description": "Load template configuration and placeholder mappings from engine-reporting (PPTX template)",
+      "service": "engine-reporting",
+      "method": "api/templates/pptx/{templateId}",
+      "http_method": "GET",
+      "timeout_ms": 10000,
+      "retryable": true,
+      "max_retries": 2,
+      "input_keys": ["templateId"],
+      "output_keys": ["templateConfig", "placeholders", "mappings", "blobUrl"],
+      "on_failure": "abort"
+    },
+    {
+      "name": "load_report_data",
+      "order": 2,
+      "description": "Load approved report data from engine-data (query)",
+      "service": "engine-data",
+      "method": "api/query/report/{reportId}/data",
+      "http_method": "GET",
+      "timeout_ms": 30000,
+      "retryable": true,
+      "max_retries": 2,
+      "input_keys": ["reportId"],
+      "output_keys": ["textData", "tableData", "chartData"],
+      "on_failure": "abort"
+    },
+    {
+      "name": "apply_mapping",
+      "order": 3,
+      "description": "Transform raw data using placeholder mapping configuration",
+      "service": "internal",
+      "method": "applyPlaceholderMapping",
+      "timeout_ms": 5000,
+      "retryable": false,
+      "input_keys": ["templateConfig", "mappings", "textData", "tableData", "chartData"],
+      "output_keys": ["generationRequest"],
+      "on_failure": "abort"
+    },
+    {
+      "name": "generate_pptx",
+      "order": 4,
+      "description": "Call processor-generators to render the PPTX report",
+      "service": "processor-generators",
+      "method": "GenerateReport",
+      "protocol": "grpc",
+      "timeout_ms": 120000,
+      "retryable": true,
+      "max_retries": 2,
+      "input_keys": ["generationRequest"],
+      "output_keys": ["generatedFileUrl", "missingPlaceholders", "generatedAt"],
+      "on_failure": "retry",
+      "compensate": null
+    },
+    {
+      "name": "store_result",
+      "order": 5,
+      "description": "Store generated file URL on report entity via engine-reporting (lifecycle)",
+      "service": "engine-reporting",
+      "method": "api/reports/{reportId}/generated",
+      "http_method": "POST",
+      "timeout_ms": 10000,
+      "retryable": true,
+      "max_retries": 2,
+      "input_keys": ["reportId", "generatedFileUrl", "generatedAt"],
+      "output_keys": [],
+      "on_failure": "retry"
+    },
+    {
+      "name": "notify_completion",
+      "order": 6,
+      "description": "Publish generation completion event for notification",
+      "service": "pubsub",
+      "method": "publish",
+      "topic": "pptx.generation_completed",
+      "timeout_ms": 5000,
+      "retryable": false,
+      "input_keys": ["reportId", "orgId", "generatedFileUrl", "missingPlaceholders"],
+      "output_keys": [],
+      "on_failure": "log_warning"
+    }
+  ],
+  "error_handling": {
+    "max_workflow_retries": 2,
+    "retry_delay_ms": 2000,
+    "dead_letter_topic": "workflow-dlq",
+    "partial_batch_continue": true
+  }
+}

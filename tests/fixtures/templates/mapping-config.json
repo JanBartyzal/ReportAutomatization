@@ -1,0 +1,107 @@
+{
+    "template_name": "Sample Financial Report",
+    "template_version": "1.0.0",
+    "description": "Sample PPTX template demonstrating text, table, and chart placeholders",
+    "placeholders": {
+        "{{company_name}}": {
+            "type": "TEXT",
+            "source": "form_field",
+            "field": "organization_name",
+            "description": "Organization name"
+        },
+        "{{period}}": {
+            "type": "TEXT",
+            "source": "form_field",
+            "field": "reporting_period",
+            "description": "Reporting period (e.g., Q1 2026)"
+        },
+        "{{total_opex}}": {
+            "type": "TEXT",
+            "source": "aggregated",
+            "calculation": "sum",
+            "field": "opex_amount",
+            "format": "#,##0 CZK",
+            "description": "Total OPEX for the period"
+        },
+        "{{TABLE:opex_summary}}": {
+            "type": "TABLE",
+            "source": "table",
+            "table_name": "opex_details",
+            "aggregation": "detail",
+            "columns": [
+                "Category",
+                "Q1",
+                "Q2",
+                "Q3",
+                "Q4",
+                "Total"
+            ],
+            "description": "OPEX summary table with quarterly breakdown"
+        },
+        "{{CHART:monthly_trend}}": {
+            "type": "CHART",
+            "source": "time_series",
+            "metric": "monthly_costs",
+            "chart_type": "LINE",
+            "labels": "months",
+            "series": [
+                "Costs"
+            ],
+            "description": "Monthly costs trend line chart"
+        }
+    },
+    "sample_data": {
+        "company_name": "Acme Corporation",
+        "period": "Q1 2026",
+        "total_opex": "1,234,567 CZK",
+        "opex_summary": [
+            {
+                "category": "Personnel",
+                "q1": "300,000",
+                "q2": "310,000",
+                "q3": "320,000",
+                "q4": "330,000",
+                "total": "1,260,000"
+            },
+            {
+                "category": "Materials",
+                "q1": "150,000",
+                "q2": "155,000",
+                "q3": "160,000",
+                "q4": "165,000",
+                "total": "630,000"
+            },
+            {
+                "category": "Services",
+                "q1": "80,000",
+                "q2": "85,000",
+                "q3": "90,000",
+                "q4": "95,000",
+                "total": "350,000"
+            }
+        ],
+        "monthly_trend": {
+            "labels": [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun"
+            ],
+            "series": [
+                {
+                    "name": "Costs",
+                    "values": [
+                        180000,
+                        195000,
+                        210000,
+                        185000,
+                        200000,
+                        215000
+                    ]
+                }
+            ]
+        }
+    }
+}

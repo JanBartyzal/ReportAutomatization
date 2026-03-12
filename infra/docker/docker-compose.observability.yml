@@ -1,0 +1,353 @@
+# ReportAutomatization - Observability Stack Overlay
+# Usage: docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d
+#
+# Services:
+#   - otel-collector: OpenTelemetry Collector (receives traces/metrics/logs from all services)
+#   - tempo: Grafana Tempo (distributed tracing backend)
+#   - loki: Grafana Loki (log aggregation)
+#   - prometheus: Prometheus (metrics collection)
+#   - grafana: Grafana (visualization UI on port 3000)
+
+services:
+  # =============================================================================
+  # OBSERVABILITY STACK
+  # =============================================================================
+
+  # OpenTelemetry Collector - Central telemetry pipeline
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.96.0
+    container_name: otel-collector
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "9411:9411"   # Zipkin receiver (Dapr backward compat)
+      - "8889:8889"   # Prometheus exporter metrics
+      - "13133:13133" # Health check
+      - "55679:55679" # zPages
+    networks:
+      - report-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:13133/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Grafana Tempo - Distributed Tracing Backend
+  tempo:
+    image: grafana/tempo:2.4.1
+    container_name: tempo
+    command: ["-config.file=/etc/tempo/config.yaml"]
+    volumes:
+      - ./tempo-config.yaml:/etc/tempo/config.yaml:ro
+      - tempo_data:/var/tempo
+    ports:
+      - "3200:3200"   # Tempo HTTP API / Query frontend
+    networks:
+      - report-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3200/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Grafana Loki - Log Aggregation
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: loki
+    command: ["-config.file=/etc/loki/config.yaml"]
+    volumes:
+      - ./loki-config.yaml:/etc/loki/config.yaml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - report-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Prometheus - Metrics Collection
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-remote-write-receiver"
+      - "--enable-feature=exemplar-storage"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-alerts.yml:/etc/prometheus/prometheus-alerts.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - report-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Grafana - Visualization & Dashboards
+  grafana:
+    image: grafana/grafana:10.4.1
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      tempo:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Promtail - Docker Log Collection Agent
+  promtail:
+    image: grafana/promtail:2.9.4
+    container_name: promtail
+    command: ["-config.file=/etc/promtail/config.yaml"]
+    volumes:
+      - ./promtail-config.yaml:/etc/promtail/config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+    networks:
+      - report-net
+    restart: unless-stopped
+
+  # =============================================================================
+  # OTEL ENVIRONMENT VARIABLES FOR ALL SERVICES
+  # =============================================================================
+
+  # Java Microservices - OTEL configuration overrides
+  ms-auth:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-auth
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-ing:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-ing
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-orch:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-orch
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-scan:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-scan
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-sink-tbl:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-sink-tbl
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-sink-doc:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-sink-doc
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-sink-log:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-sink-log
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-qry:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-qry
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-tmpl:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-tmpl
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-dash:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-dash
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-admin:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-admin
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-batch:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-batch
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-lifecycle:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-lifecycle
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-period:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-period
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-notif:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-notif
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-form:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-form
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-ver:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-ver
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-audit:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-audit
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-srch:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-srch
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  ms-tmpl-pptx:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-tmpl-pptx
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+      - MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+
+  # Python Microservices - OTEL configuration overrides
+  ms-atm-pptx:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-atm-pptx
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+
+  ms-atm-xls:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-atm-xls
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+
+  ms-atm-pdf:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-atm-pdf
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+
+  ms-atm-csv:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-atm-csv
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+
+  ms-atm-ai:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-atm-ai
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+
+  ms-atm-cln:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-atm-cln
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+
+  ms-mcp:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-mcp
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+
+  ms-gen-pptx:
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=ms-gen-pptx
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=reportplatform,deployment.environment=local
+
+  # Frontend - OTEL collector URL
+  ms-fe:
+    environment:
+      - VITE_OTEL_COLLECTOR_URL=http://localhost:4318
+
+volumes:
+  tempo_data:
+  loki_data:
+  prometheus_data:
+  grafana_data:

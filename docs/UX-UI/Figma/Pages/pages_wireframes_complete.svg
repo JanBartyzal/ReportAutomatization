@@ -1,0 +1,141 @@
+<svg width="10000" height="8000" viewBox="0 0 10000 8000" xmlns="http://www.w3.org/2000/svg">
+  <!-- CloudInfraMap (CIM) — Full Vector Page Wireframes (Rev 5 - Grid System Master) -->
+  <rect width="10000" height="8000" fill="#F3F2F1"/>
+  
+  <defs>
+    <!-- 12-Column Grid Guide (Desktop: 1140px safe area) -->
+    <pattern id="grid12" width="95" height="100" patternUnits="userSpaceOnUse">
+      <rect width="75" height="100" fill="rgba(255,100,100,0.03)" stroke="rgba(255,100,100,0.1)" stroke-width="0.5"/>
+    </pattern>
+  </defs>
+
+  <text x="100" y="80" font-family="Inter, sans-serif" font-size="64" font-weight="bold" fill="#1B1A19">CIM Master Wireframes (12/12 Pages — Strict Grid Implementation)</text>
+
+  <!-- ROW 1: ANALYTICS & DASHBOARDS -->
+  <!-- 01 DASHBOARD -->
+  <g transform="translate(100, 200) scale(0.5)">
+    <text x="0" y="-30" font-family="Inter" font-size="32" font-weight="bold" fill="#616161">01 — Dashboard (Grid 12)</text>
+    <rect width="1440" height="900" rx="8" fill="#1B1A19"/>
+    <!-- Sidebar (Grid slot 1-2) -->
+    <rect width="260" height="900" fill="#111111"/>
+    <!-- Content Area (Grid slot 3-12) -->
+    <g transform="translate(300, 64)">
+      <rect width="1100" height="200" rx="16" fill="#00355E"/>
+      <rect x="0" y="240" width="350" height="150" rx="8" fill="#252423"/>
+      <rect x="375" y="240" width="350" height="150" rx="8" fill="#252423"/>
+      <rect x="750" y="240" width="350" height="150" rx="8" fill="#252423"/>
+    </g>
+  </g>
+
+  <!-- 02 EXECUTIVE -->
+  <g transform="translate(900, 200) scale(0.5)">
+    <text x="0" y="-30" font-family="Inter" font-size="32" font-weight="bold" fill="#616161">02 — Executive Overview (Grid 12)</text>
+    <rect width="1440" height="900" rx="8" fill="#FFFFFF" stroke="#E1DFDD"/>
+    <g transform="translate(300, 64)">
+      <rect width="540" height="350" rx="12" fill="#F8F8F8" stroke="#E1DFDD"/>
+      <rect x="560" width="540" height="350" rx="12" fill="#F8F8F8" stroke="#E1DFDD"/>
+      <rect y="370" width="1100" height="400" rx="12" fill="#F8F8F8" stroke="#E1DFDD"/>
+    </g>
+  </g>
+
+  <!-- 08 REPORTS (Now Grid-defined) -->
+  <g transform="translate(1700, 200) scale(0.5)">
+    <text x="0" y="-30" font-family="Inter" font-size="32" font-weight="bold" fill="#616161">08 — Cost Reports (Grid 12)</text>
+    <rect width="1440" height="900" rx="8" fill="#FFFFFF" stroke="#E1DFDD"/>
+    <g transform="translate(300, 100)">
+        <rect width="1100" height="60" fill="#F3F2F1"/> <!-- Toolbar -->
+        <rect y="80" width="350" height="150" rx="8" fill="#FBFBFB" stroke="#0078D4" stroke-dasharray="4 2"/>
+        <rect x="375" y="80" width="350" height="150" rx="8" fill="#FBFBFB" stroke="#E1DFDD"/>
+        <rect x="750" y="80" width="350" height="150" rx="8" fill="#FBFBFB" stroke="#E1DFDD"/>
+        <rect y="250" width="1100" height="500" fill="#FFFFFF" stroke="#E1DFDD"/>
+    </g>
+  </g>
+
+  <!-- ROW 2: INFRASTRUCTURE & TOOLS -->
+  <!-- 03 RESOURCE LIST -->
+  <g transform="translate(100, 1000) scale(0.5)">
+    <text x="0" y="-30" font-family="Inter" font-size="32" font-weight="bold" fill="#616161">03 — Resource Inventory</text>
+    <rect width="1440" height="900" rx="8" fill="#FFFFFF" stroke="#E1DFDD"/>
+    <g transform="translate(300, 100)">
+      <rect width="1100" height="700" fill="#FFFFFF" stroke="#E1DFDD"/>
+    </g>
+  </g>
+
+  <!-- 05 DESIGNER -->
+  <g transform="translate(900, 1000) scale(0.5)">
+    <text x="0" y="-30" font-family="Inter" font-size="32" font-weight="bold" fill="#616161">05 — Infra Designer (Canvas Grid)</text>
+    <rect width="1440" height="900" rx="8" fill="#FFFFFF" stroke="#E1DFDD"/>
+    <rect x="260" y="64" width="1180" height="836" fill="#F9F9F9" stroke="#E1DFDD"/>
+    <rect x="1140" y="64" width="300" height="836" fill="#FFFFFF" stroke="#E1DFDD"/> <!-- Prop Panel -->
+  </g>
+
+  <!-- 09 AI ASSISTANT (Grid Fixed) -->
+  <g transform="translate(1700, 1000) scale(0.5)">
+    <text x="0" y="-30" font-family="Inter" font-size="32" font-weight="bold" fill="#616161">09 — AI Intelligence Hub (Centered Grid)</text>
+    <rect width="1440" height="900" rx="8" fill="#1B1A19"/>
+    <g transform="translate(420, 100)"> <!-- Centered on 11 columns -->
+        <rect width="800" height="700" rx="16" fill="rgba(255,255,255,0.05)"/>
+        <rect x="40" y="620" width="720" height="50" rx="25" fill="#323130"/>
+    </g>
+  </g>
+
+  <!-- ROW 3: ADMIN & SETUP -->
+  <!-- 06 ADMIN PANEL (Grid Fixed) -->
+  <g transform="translate(100, 1800) scale(0.5)">
+    <text x="0" y="-30" font-family="Inter" font-size="32" font-weight="bold" fill="#616161">06 — Admin: Identity & Access (Grid 12)</text>
+    <rect width="1440" height="900" rx="8" fill="#FFFFFF" stroke="#E1DFDD"/>
+    <g transform="translate(300, 100)">
+        <text x="0" y="30" font-size="24" font-weight="bold">User Management</text>
+        <rect y="60" width="180" height="36" rx="4" fill="#0078D4"/>
+        <rect y="120" width="1100" height="600" fill="#FFFFFF" stroke="#E1DFDD"/>
+    </g>
+  </g>
+
+  <!-- 07 ONBOARDING (Grid Centered) -->
+  <g transform="translate(900, 1800) scale(0.5)">
+    <text x="0" y="-30" font-family="Inter" font-size="32" font-weight="bold" fill="#616161">07 — Personal Onboarding (Centric Grid)</text>
+    <rect width="1440" height="900" rx="8" fill="#FFFFFF" stroke="#E1DFDD"/>
+    <g transform="translate(370, 150)"> <!-- Centered 5-column width -->
+        <circle cx="350" cy="100" r="50" fill="#0078D4"/>
+        <text x="350" y="200" font-size="32" font-weight="bold" text-anchor="middle">Vítejte, Jane!</text>
+        <rect y="250" width="700" height="400" rx="12" fill="#F8F8F8" stroke="#E1DFDD"/>
+    </g>
+  </g>
+
+  <!-- 12 IMPORT WIZARD -->
+  <g transform="translate(1700, 1800) scale(0.5)">
+    <text x="0" y="-30" font-family="Inter" font-size="32" font-weight="bold" fill="#616161">12 — Cloud Import Wizard (Step Grid)</text>
+    <rect width="1440" height="900" rx="8" fill="#F8F8F8" stroke="#E1DFDD"/>
+    <g transform="translate(370, 150)">
+        <rect width="700" height="500" rx="12" fill="#FFFFFF" stroke="#E1DFDD"/>
+    </g>
+  </g>
+
+  <!-- ROW 4: AUTH & COMPLIANCE -->
+  <!-- 04 COMPLIANCE -->
+  <g transform="translate(100, 2600) scale(0.5)">
+    <text x="0" y="-30" font-family="Inter" font-size="32" font-weight="bold" fill="#616161">04 — Compliance & Audit</text>
+    <rect width="1440" height="900" rx="8" fill="#FFFFFF" stroke="#E1DFDD"/>
+    <g transform="translate(300, 100)">
+        <rect width="1100" height="700" fill="#FBFBFB" stroke="#E1DFDD"/>
+    </g>
+  </g>
+
+  <!-- 10 LOGIN -->
+  <g transform="translate(900, 2600) scale(0.5)">
+    <text x="0" y="-30" font-family="Inter" font-size="32" font-weight="bold" fill="#616161">10 — Login Layout</text>
+    <rect width="1440" height="900" rx="8" fill="#F5F5F5"/>
+    <rect x="520" y="200" width="400" height="500" rx="12" fill="#FFFFFF" style="filter: drop-shadow(0 8px 32px rgba(0,0,0,0.1));"/>
+  </g>
+
+  <!-- 11 PRICING -->
+  <g transform="translate(1700, 2600) scale(0.5)">
+    <text x="0" y="-30" font-family="Inter" font-size="32" font-weight="bold" fill="#616161">11 — Tier Selection</text>
+    <rect width="1440" height="900" rx="8" fill="#F8F8F8"/>
+    <g transform="translate(120, 200)">
+        <rect width="280" height="500" rx="8" fill="#FFFFFF"/>
+        <rect x="300" width="280" height="500" rx="8" fill="#FFFFFF"/>
+        <rect x="600" width="320" height="560" y="-30" rx="12" fill="#FFFFFF" stroke="#0078D4"/>
+    </g>
+  </g>
+</svg>

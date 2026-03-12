@@ -1,0 +1,58 @@
+# Promtail Configuration - Docker Container Log Collection
+# Collects logs from all Docker containers and ships to Loki
+
+server:
+  http_listen_port: 9080
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    tenant_id: ""
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: network
+            values: ["docker_report-net"]
+    relabel_configs:
+      # Extract container name as label
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: "container"
+      # Extract service name from container name
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: "service_name"
+      # Extract compose service label
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: "compose_service"
+    pipeline_stages:
+      # Try to parse JSON-formatted logs (structured logging from Java/Python services)
+      - json:
+          expressions:
+            level: level
+            service: service
+            trace_id: trace_id
+            user_id: user_id
+            org_id: org_id
+            message: message
+      # Fallback: if JSON parsing fails, keep the raw log line
+      - labels:
+          level:
+          service:
+      # Map log level to Loki severity
+      - label_allow:
+          - container
+          - service_name
+          - compose_service
+          - level
+          - service
+      # Drop debug logs in production (can be toggled)
+      # - match:
+      #     selector: '{level="DEBUG"}'
+      #     action: drop

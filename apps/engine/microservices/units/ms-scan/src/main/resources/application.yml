@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ms-scan
+
+# ClamAV configuration
+clamav:
+  host: ${CLAMAV_HOST:localhost}
+  port: ${CLAMAV_PORT:3310}
+  timeout: 30000
+
+# Azure Blob Storage
+azure:
+  storage:
+    blob:
+      connection-string: ${AZURE_STORAGE_CONNECTION_STRING:DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1}
+      container-name: ${AZURE_STORAGE_CONTAINER:file-uploads}
+
+# Dapr configuration
+dapr:
+  app-id: ms-scan
+  blob-service:
+    app-id: ${DAPR_BLOB_APP_ID:ms-blob}
+
+# Sanitization settings
+sanitize:
+  remove-vba-macros: true
+  remove-external-links: true
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

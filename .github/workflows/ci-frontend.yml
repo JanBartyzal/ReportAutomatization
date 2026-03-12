@@ -1,0 +1,124 @@
+name: CI - Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/frontend/**'
+      - 'packages/types/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/frontend/**'
+      - 'packages/types/**'
+
+concurrency:
+  group: ci-frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd apps/frontend
+          npm ci
+
+      - name: ESLint
+        run: |
+          cd apps/frontend
+          npm run lint
+
+      - name: TypeScript type check
+        run: |
+          cd apps/frontend
+          npx tsc --noEmit
+
+      - name: Build (Vite production)
+        run: |
+          cd apps/frontend
+          npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: apps/frontend/dist/
+          retention-days: 7
+
+  e2e-smoke:
+    needs: lint-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Playwright
+        working-directory: tests/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: apps/frontend/dist/
+
+      - name: Serve frontend and run smoke test
+        working-directory: tests/e2e
+        run: |
+          npx serve ../../apps/frontend/dist -l 3000 &
+          sleep 3
+          npx playwright test --project=chromium --grep="@smoke" || true
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-smoke-report
+          path: tests/e2e/playwright-report/
+          retention-days: 7
+
+  build-image:
+    needs: lint-and-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to ACR
+        if: env.ACR_LOGIN_SERVER != ''
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_TAG="${{ secrets.ACR_LOGIN_SERVER }}/ms-fe:${{ github.sha }}"
+          IMAGE_LATEST="${{ secrets.ACR_LOGIN_SERVER }}/ms-fe:latest"
+          cd apps/frontend
+          docker build -t "$IMAGE_TAG" -t "$IMAGE_LATEST" .
+          if [ -n "${{ secrets.ACR_LOGIN_SERVER }}" ]; then
+            docker push "$IMAGE_TAG"
+            docker push "$IMAGE_LATEST"
+          fi

@@ -1,0 +1,85 @@
+syntax = "proto3";
+package generator.v1;
+
+import "common/v1/common.proto";
+
+option java_package = "com.reportplatform.proto.generator.v1";
+option java_multiple_files = true;
+
+// Service for aggregating report data for PPTX generation
+service ReportDataService {
+  // Get aggregated data for a specific report (form responses + uploaded files)
+  rpc GetReportData(GetReportDataRequest) returns (GetReportDataResponse);
+  
+  // Batch get data for multiple reports
+  rpc GetBatchReportData(GetBatchReportDataRequest) returns (GetBatchReportDataResponse);
+}
+
+message GetReportDataRequest {
+  string report_id = 1;
+  common.v1.RequestContext context = 2;
+  string template_id = 3;  // Optional: to filter data based on template requirements
+}
+
+message GetReportDataResponse {
+  string report_id = 1;
+  map<string, string> text_placeholders = 2;  // Simple text replacements
+  repeated GeneratorTableData tables = 3;
+  repeated GeneratorChartData charts = 4;
+  repeated string available_fields = 5;  // List of available data fields
+  int64 cached_at = 6;  // Timestamp when data was cached
+}
+
+message GetBatchReportDataRequest {
+  repeated string report_ids = 1;
+  common.v1.RequestContext context = 2;
+  string template_id = 3;
+}
+
+message GetBatchReportDataResponse {
+  repeated GetReportDataResponse results = 1;
+  int32 successful = 2;
+  int32 failed = 3;
+}
+
+// Data for table placeholders
+message GeneratorTableData {
+  string placeholder_key = 1;  // "TABLE:table_name"
+  repeated string headers = 2;
+  repeated GeneratorTableRow rows = 3;
+  TableAggregationType aggregation = 4;  // How data was aggregated
+}
+
+message GeneratorTableRow {
+  repeated string cells = 1;
+}
+
+enum TableAggregationType {
+  TABLE_AGGREGATION_TYPE_UNSPECIFIED = 0;
+  TABLE_AGGREGATION_TYPE_NONE = 1;       // Raw data, no aggregation
+  TABLE_AGGREGATION_TYPE_SUM = 2;        // Summed values
+  TABLE_AGGREGATION_TYPE_AVG = 3;        // Average values
+  TABLE_AGGREGATION_TYPE_DETAIL = 4;     // Detailed breakdown
+}
+
+// Data for chart placeholders
+message GeneratorChartData {
+  string placeholder_key = 1;  // "CHART:metric_name"
+  string chart_type = 2;        // "BAR", "LINE", "PIE", "AREA"
+  repeated string labels = 3;   // X-axis labels (e.g., months)
+  repeated ChartSeries series = 4;
+  ChartAggregationType aggregation = 5;  // How data was aggregated
+}
+
+message ChartSeries {
+  string name = 1;
+  repeated double values = 2;
+}
+
+enum ChartAggregationType {
+  CHART_AGGREGATION_TYPE_UNSPECIFIED = 0;
+  CHART_AGGREGATION_TYPE_NONE = 1;       // Raw time series
+  CHART_AGGREGATION_TYPE_SUM = 2;        // Summed per period
+  CHART_AGGREGATION_TYPE_AVG = 3;        // Average per period
+  CHART_AGGREGATION_TYPE_CUMULATIVE = 4; // Cumulative sum
+}

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.reportplatform</groupId>
+        <artifactId>java-base</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../../../packages/java-base/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>engine-reporting</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>Engine Reporting - Consolidated Reporting Services</name>
+    <description>Consolidated multi-module: lifecycle, period, form, pptx-template, notification</description>
+
+    <modules>
+        <module>common</module>
+        <module>lifecycle</module>
+        <module>period</module>
+        <module>form</module>
+        <module>pptx-template</module>
+        <module>notification</module>
+        <module>app</module>
+    </modules>
+
+    <properties>
+        <spring-statemachine.version>4.0.0</spring-statemachine.version>
+        <poi.version>5.2.5</poi.version>
+        <openpdf.version>1.3.35</openpdf.version>
+        <azure-storage-blob.version>12.25.1</azure-storage-blob.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Internal modules -->
+            <dependency>
+                <groupId>com.reportplatform</groupId>
+                <artifactId>engine-reporting-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.reportplatform</groupId>
+                <artifactId>engine-reporting-lifecycle</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.reportplatform</groupId>
+                <artifactId>engine-reporting-period</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.reportplatform</groupId>
+                <artifactId>engine-reporting-form</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.reportplatform</groupId>
+                <artifactId>engine-reporting-pptx-template</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.reportplatform</groupId>
+                <artifactId>engine-reporting-notification</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Spring State Machine -->
+            <dependency>
+                <groupId>org.springframework.statemachine</groupId>
+                <artifactId>spring-statemachine-core</artifactId>
+                <version>${spring-statemachine.version}</version>
+            </dependency>
+
+            <!-- Apache POI -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+
+            <!-- OpenPDF -->
+            <dependency>
+                <groupId>com.github.librepdf</groupId>
+                <artifactId>openpdf</artifactId>
+                <version>${openpdf.version}</version>
+            </dependency>
+
+            <!-- Azure Blob Storage -->
+            <dependency>
+                <groupId>com.azure</groupId>
+                <artifactId>azure-storage-blob</artifactId>
+                <version>${azure-storage-blob.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

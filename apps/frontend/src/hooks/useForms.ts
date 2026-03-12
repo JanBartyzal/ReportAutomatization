@@ -4,9 +4,8 @@ import {
   listForms, getForm, createForm, updateForm, deleteForm,
   publishForm, closeForm, listFormResponses, getFormResponse,
   createFormResponse, updateFormResponse, autoSaveFormResponse,
-  importExcel, type FormListParams,
+  importExcel, getFormAssignments, assignOrganizations, type FormListParams,
 } from '../api/forms';
-import type { FormDefinition, FormResponse, PaginationParams } from '@reportplatform/types';
 
 export function useForms(params: FormListParams = {}) {
   return useQuery({
@@ -63,6 +62,24 @@ export function useCloseForm() {
   return useMutation({
     mutationFn: (formId: string) => closeForm(formId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['forms'] }),
+  });
+}
+
+// --- Form Assignments ---
+
+export function useFormAssignments(formId: string) {
+  return useQuery({
+    queryKey: ['forms', formId, 'assignments'],
+    queryFn: () => getFormAssignments(formId),
+    enabled: !!formId,
+  });
+}
+
+export function useAssignOrganizations(formId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (orgIds: string[]) => assignOrganizations(formId, orgIds),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['forms', formId, 'assignments'] }),
   });
 }
 

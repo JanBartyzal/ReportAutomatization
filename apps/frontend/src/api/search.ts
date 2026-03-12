@@ -1,9 +1,13 @@
 import apiClient from './axios';
 import type { PaginationParams } from '@reportplatform/types';
 
+export type SearchMode = 'text' | 'semantic';
+export type EntityType = 'FILE' | 'DOCUMENT' | 'REPORT' | 'FORM';
+
 export interface SearchParams extends PaginationParams {
   q: string;
-  type?: 'FILE' | 'DOCUMENT' | 'REPORT' | 'FORM';
+  type?: EntityType;
+  mode?: SearchMode;
 }
 
 export interface SearchResult {
@@ -22,7 +26,15 @@ export interface SearchSuggestion {
   id: string;
 }
 
-export async function search(params: SearchParams): Promise<{ data: SearchResult[]; pagination: { page: number; page_size: number; total_items: number; total_pages: number } }> {
+export async function search(params: SearchParams): Promise<{
+  data: SearchResult[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total_items: number;
+    total_pages: number
+  }
+}> {
   const { data } = await apiClient.get('/search', { params });
   return data;
 }

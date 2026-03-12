@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.reportplatform</groupId>
+        <artifactId>engine-core</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>engine-core-app</artifactId>
+    <name>Engine Core - Application</name>
+    <description>Unified Spring Boot application assembling all engine-core modules</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.reportplatform</groupId>
+            <artifactId>engine-core-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.reportplatform</groupId>
+            <artifactId>engine-core-auth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.reportplatform</groupId>
+            <artifactId>engine-core-admin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.reportplatform</groupId>
+            <artifactId>engine-core-batch</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.reportplatform</groupId>
+            <artifactId>engine-core-versioning</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.reportplatform</groupId>
+            <artifactId>engine-core-audit</artifactId>
+        </dependency>
+
+        <!-- PostgreSQL runtime -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.reportplatform.enginecore.EngineCoreApplication</mainClass>
+                    <layers>
+                        <enabled>true</enabled>
+                    </layers>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,21 @@
+{
+  "name": "lifecycle_rejected",
+  "description": "Workflow triggered when a report is rejected",
+  "trigger": {
+    "topic": "report.status_changed",
+    "filter": { "toStatus": "REJECTED" }
+  },
+  "steps": [
+    {
+      "name": "notify_editor",
+      "action": "publish_event",
+      "topic": "notify",
+      "payload": {
+        "type": "report_rejected",
+        "reportId": "{reportId}",
+        "orgId": "{orgId}"
+      },
+      "on_failure": "retry_3"
+    }
+  ]
+}

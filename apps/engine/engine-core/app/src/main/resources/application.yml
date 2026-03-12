@@ -1,0 +1,106 @@
+server:
+  port: ${HTTP_PORT:8081}
+  tomcat:
+    threads:
+      max: 200
+    accept-count: 100
+
+spring:
+  application:
+    name: engine-core
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:default}
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:engine_core_db}
+    username: ${DB_USERNAME:engine_core_user}
+    password: ${DB_PASSWORD:engine_core_pass}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 25
+      minimum-idle: 5
+      idle-timeout: 600000
+      connection-timeout: 30000
+      max-lifetime: 1800000
+      pool-name: engine-core-pool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+
+# Dapr configuration
+dapr:
+  sidecar:
+    host: ${DAPR_HOST:localhost}
+    http-port: ${DAPR_HTTP_PORT:3500}
+    grpc-port: ${DAPR_GRPC_PORT:50001}
+  pubsub:
+    name: ${DAPR_PUBSUB_NAME:reportplatform-pubsub}
+  statestore:
+    name: ${DAPR_STATESTORE_NAME:reportplatform-statestore}
+
+# Azure Entra ID (AAD) Configuration
+azure:
+  entra:
+    tenant-id: ${AZURE_TENANT_ID:}
+    client-id: ${AZURE_CLIENT_ID:}
+    jwks-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:common}/discovery/v2.0/keys
+    issuer: https://login.microsoftonline.com/${AZURE_TENANT_ID:common}/v2.0
+  keyvault:
+    uri: ${AZURE_KEYVAULT_URI:}
+    enabled: ${AZURE_KEYVAULT_ENABLED:false}
+
+# Auth service settings
+auth:
+  jwks:
+    cache-ttl-minutes: 5
+  api-key:
+    header-name: X-API-Key
+
+# Actuator / Management
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+  health:
+    db:
+      enabled: true
+  metrics:
+    tags:
+      application: engine-core
+
+# Logging
+logging:
+  level:
+    com.reportplatform: ${LOG_LEVEL:INFO}
+    com.reportplatform.auth: ${LOG_LEVEL_AUTH:INFO}
+    com.reportplatform.admin: ${LOG_LEVEL_ADMIN:INFO}
+    com.reportplatform.batch: ${LOG_LEVEL_BATCH:INFO}
+    com.reportplatform.ver: ${LOG_LEVEL_VER:INFO}
+    com.reportplatform.audit: ${LOG_LEVEL_AUDIT:INFO}
+    org.springframework.security: WARN
+    io.dapr: INFO

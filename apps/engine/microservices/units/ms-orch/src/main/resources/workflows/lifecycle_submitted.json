@@ -1,0 +1,26 @@
+{
+  "name": "lifecycle_submitted",
+  "description": "Workflow triggered when a report is submitted for review",
+  "trigger": {
+    "topic": "report.status_changed",
+    "filter": { "toStatus": "SUBMITTED" }
+  },
+  "steps": [
+    {
+      "name": "validate_data_completeness",
+      "action": "service_invoke",
+      "target": "engine-data",
+      "method": "GET",
+      "path": "api/query/validate/{reportId}",
+      "on_failure": "log_warning"
+    },
+    {
+      "name": "run_automated_checks",
+      "action": "service_invoke",
+      "target": "engine-reporting",
+      "method": "GET",
+      "path": "api/reports/{reportId}/checklist",
+      "on_failure": "log_warning"
+    }
+  ]
+}

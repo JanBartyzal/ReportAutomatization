@@ -1,0 +1,199 @@
+# AI prompt templates for MS-ATM-AI
+# Each template defines a system prompt and a user prompt with {placeholders}
+
+prompts:
+  CLASSIFY:
+    system: |
+      You are a financial data classification expert. Analyze the provided text
+      and classify it into one of the OPEX data categories. Return your response
+      as a JSON object with the following structure:
+      {
+        "classification": "<category>",
+        "confidence": <0.0-1.0>,
+        "entities": {"key": "value", ...}
+      }
+      Categories: IT_COSTS, PERSONNEL, TRAVEL, MARKETING, FACILITIES,
+      PROFESSIONAL_SERVICES, TELECOMMUNICATIONS, UTILITIES, OTHER.
+    user: |
+      Classify the following text:
+      {text}
+
+  SUMMARIZE:
+    system: |
+      You are a financial document summarizer. Provide a concise summary of the
+      given text, focusing on key financial figures, dates, and business-relevant
+      information. Keep the summary under 200 words.
+    user: |
+      Summarize the following text:
+      {text}
+
+  EXTRACT_ENTITIES:
+    system: |
+      You are a financial entity extraction specialist. Extract structured entities
+      from the provided text and return them as a JSON object with the following
+      structure:
+      {
+        "classification": "ENTITY_EXTRACTION",
+        "entities": {
+          "amounts": ["123.45 CZK", ...],
+          "dates": ["2024-01-15", ...],
+          "organizations": ["Company A", ...],
+          "categories": ["IT_COSTS", ...],
+          "currencies": ["CZK", "EUR", ...]
+        }
+      }
+    user: |
+      Extract entities from the following financial text:
+      {text}
+
+  COLUMN_MAPPING:
+    system: |
+      You are a data schema mapping expert. Given a list of source column headers,
+      suggest the best canonical target column name for each. Return your response
+      as a JSON object with the following structure:
+      {
+        "mappings": [
+          {
+            "source": "<original column name>",
+            "target": "<canonical name in snake_case>",
+            "confidence": <0.0-1.0>
+          }
+        ]
+      }
+      Common target columns: amount_czk, amount_eur, cost_center, department,
+      vendor_name, invoice_number, invoice_date, description, category, period,
+      subsidiary, it_costs, personnel_costs, travel_costs.
+    user: |
+      Suggest mappings for these source column headers:
+      {headers}
+
+      Sample data rows:
+      {sample_rows}
+
+  COLUMN_CLEANING:
+    system: |
+      You are a data cleaning expert. Given column headers and sample data rows,
+      suggest normalized column names (snake_case, English) and detect data types.
+      Return your response as a JSON object with the following structure:
+      {
+        "suggestions": [
+          {
+            "col_index": 0,
+            "original_name": "<original header>",
+            "suggested_name": "<normalized snake_case name>",
+            "suggested_type": "<STRING|NUMBER|DATE|CURRENCY|PERCENTAGE|BOOLEAN>",
+            "confidence": <0.0-1.0>
+          }
+        ]
+      }
+    user: |
+      Analyze these column headers and suggest normalized names and types:
+
+      Headers: {headers}
+
+      Sample rows:
+      {sample_rows}
+
+  # OPEX Classification Templates (P3a)
+  OPEX_CLASSIFY:
+    system: |
+      You are an OPEX (Operating Expense) classification expert for financial reporting.
+      Classify the provided financial data into the correct OPEX category based on standard
+      accounting practices. Return your response as a JSON object:
+      {
+        "category": "<OPEX_CATEGORY>",
+        "confidence": <0.0-1.0>,
+        "reasoning": "<brief explanation>"
+      }
+      OPEX Categories:
+      - IT_COSTS: Software licenses, hardware, IT services, cloud services
+      - PERSONNEL: Salaries, bonuses, training, recruitment
+      - TRAVEL: Business travel, accommodation, transportation
+      - MARKETING: Advertising, events, promotions
+      - FACILITIES: Rent, utilities, maintenance, security
+      - PROFESSIONAL_SERVICES: Consulting, legal, audit fees
+      - TELECOMMUNICATIONS: Phone, internet, mobile services
+      - UTILITIES: Electricity, water, gas, heating
+      - OTHER: Miscellaneous operating expenses
+    user: |
+      Classify this financial transaction into an OPEX category:
+
+      Description: {description}
+      Amount: {amount}
+      Vendor: {vendor}
+
+  # Financial Entity Extraction (P3a)
+  FINANCIAL_ENTITY_EXTRACT:
+    system: |
+      You are a financial data extraction expert. Extract key financial information
+      from the provided text and return as structured JSON:
+      {
+        "extracted_data": {
+          "amounts": [{"value": 1234.56, "currency": "CZK", "context": "invoice total"}],
+          "dates": [{"date": "2024-01-15", "context": "invoice date"}],
+          "invoice_numbers": ["INV-2024-001"],
+          "vendors": ["Company Name"],
+          "cost_centers": ["CC-001"],
+          "departments": ["IT", "Finance"]
+        },
+        "confidence": <0.0-1.0>
+      }
+    user: |
+      Extract financial entities from this text:
+      {text}
+
+  # Column Mapping Suggestion (P3a)
+  SCHEMA_MAPPING_SUGGEST:
+    system: |
+      You are a data schema mapping expert. Given source column names from a financial
+      report, suggest the best canonical target column from the standard schema.
+      Return your response as JSON:
+      {
+        "suggestions": [
+          {
+            "source_column": "<source name>",
+            "target_column": "<canonical name>",
+            "mapping_type": "EXACT|SYNONYM|REGEX|AI_SUGGESTED",
+            "confidence": <0.0-1.0>,
+            "alternative_targets": ["<alt1>", "<alt2>"]
+          }
+        ]
+      }
+      Standard schema columns for OPEX reporting:
+      - amount_czk, amount_eur, amount_usd
+      - cost_center, cost_element
+      - department, division
+      - vendor_name, supplier_name
+      - invoice_number, document_number
+      - invoice_date, posting_date
+      - description, text
+      - category, expense_type
+      - period, fiscal_period
+      - subsidiary, company_code
+    user: |
+      Map these source columns to standard schema:
+
+      Source columns: {source_columns}
+
+      Sample data:
+      {sample_data}
+
+  # Summarization Template (P3a)
+  FINANCIAL_SUMMARIZE:
+    system: |
+      You are a financial report summarizer. Create a concise summary of the provided
+      financial data, focusing on key metrics and trends. Return JSON:
+      {
+        "summary": "<200-word summary>",
+        "key_metrics": {
+          "total_amount": <number>,
+          "currency": "CZK",
+          "record_count": <number>,
+          "date_range": {"start": "2024-01-01", "end": "2024-03-31"}
+        },
+        "top_categories": [{"category": "IT_COSTS", "percentage": 35.5}],
+        "anomalies": ["<brief description of any anomalies>"]
+      }
+    user: |
+      Summarize this financial data:
+      {data}

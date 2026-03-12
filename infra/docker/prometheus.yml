@@ -1,0 +1,75 @@
+# Prometheus Configuration - Metrics Collection
+# Scrapes OTEL Collector metrics + Spring Boot Actuator + Python services + Dapr metrics
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/prometheus-alerts.yml
+
+scrape_configs:
+  # OTEL Collector exported metrics (all services aggregated)
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["otel-collector:8889"]
+
+  # OTEL Collector internal metrics
+  - job_name: otel-collector-internal
+    static_configs:
+      - targets: ["otel-collector:8888"]
+
+  # Java microservices - Spring Boot Actuator Prometheus endpoint
+  - job_name: java-services
+    scrape_interval: 10s
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - "ms-auth:8080"
+          - "ms-ing:8080"
+          - "ms-orch:8080"
+          - "ms-scan:8080"
+          - "ms-sink-tbl:8080"
+          - "ms-sink-doc:8080"
+          - "ms-sink-log:8080"
+          - "ms-qry:8080"
+          - "ms-tmpl:8080"
+          - "ms-dash:8080"
+          - "ms-admin:8080"
+          - "ms-batch:8080"
+          - "ms-lifecycle:8080"
+          - "ms-period:8080"
+          - "ms-notif:8080"
+          - "ms-form:8080"
+          - "ms-ver:8080"
+          - "ms-audit:8080"
+          - "ms-srch:8080"
+          - "ms-tmpl-pptx:8080"
+
+  # Python microservices - prometheus_client HTTP endpoint
+  - job_name: python-services
+    scrape_interval: 10s
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "ms-atm-pptx:9090"
+          - "ms-atm-xls:9090"
+          - "ms-atm-pdf:9090"
+          - "ms-atm-csv:9090"
+          - "ms-atm-ai:9090"
+          - "ms-atm-cln:9090"
+          - "ms-gen-pptx:9090"
+          - "ms-mcp:9090"
+
+  # Dapr sidecar metrics
+  - job_name: dapr
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["dapr:9090"]
+
+  # Redis metrics (if redis-exporter is present)
+  - job_name: redis
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["redis-exporter:9121"]

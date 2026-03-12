@@ -1,0 +1,99 @@
+# Docker Compose Override for Consolidated Architecture - Debug Mode
+# Usage:
+#   docker compose -f docker-compose.consolidated.yml -f docker-compose.consolidated.override.yml up -d
+
+services:
+  # =============================================================================
+  # DEBUG CONSOLIDATED JAVA SERVICES
+  # =============================================================================
+
+  engine-core:
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+      - SPRING_PROFILES_ACTIVE=docker,debug
+    ports:
+      - "5005:5005"
+
+  engine-data:
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+      - SPRING_PROFILES_ACTIVE=docker,debug
+    ports:
+      - "5006:5005"
+
+  engine-reporting:
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+      - SPRING_PROFILES_ACTIVE=docker,debug
+    ports:
+      - "5007:5005"
+
+  engine-orchestrator:
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+      - SPRING_PROFILES_ACTIVE=docker,debug
+    ports:
+      - "5008:5005"
+
+  ms-ing:
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+      - SPRING_PROFILES_ACTIVE=docker,debug
+    ports:
+      - "5009:5005"
+
+  ms-scan:
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+      - SPRING_PROFILES_ACTIVE=docker,debug
+    ports:
+      - "5010:5005"
+
+  engine-integrations:
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+      - LOG_LEVEL=DEBUG
+    ports:
+      - "5011:5005"
+
+  # =============================================================================
+  # DEBUG CONSOLIDATED PYTHON SERVICES
+  # =============================================================================
+
+  processor-atomizers:
+    environment:
+      - DEBUG=1
+      - LOG_LEVEL=DEBUG
+      - PYTHONBREAKPOINT=pdb.set_trace
+    ports:
+      - "5678:5678"
+
+  processor-generators:
+    environment:
+      - LOG_LEVEL=DEBUG
+
+  # =============================================================================
+  # INFRASTRUCTURE DEBUG PORTS
+  # =============================================================================
+
+  postgres:
+    ports:
+      - "5433:5432"
+
+  redis:
+    ports:
+      - "6380:6379"
+
+  dapr:
+    ports:
+      - "3501:3500"
+      - "9090:8080"
+
+  ms-gw:
+    volumes:
+      - ./nginx.consolidated.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-error-logs:/var/log/nginx:rw
+
+  ms-fe:
+    environment:
+      - VITE_DEBUG=true

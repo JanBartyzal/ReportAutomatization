@@ -8,3 +8,5 @@ export * from './forms';
 export * from './periods';
 export * from './notifications';
 export * from './admin';
+export * from './integration';
+export * from './promotion';

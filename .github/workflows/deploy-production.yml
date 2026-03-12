@@ -1,0 +1,100 @@
+name: Deploy - Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag (git SHA) to deploy'
+        required: true
+        type: string
+      confirm:
+        description: 'Type "deploy-production" to confirm'
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  AZURE_RESOURCE_GROUP: rg-reportplatform-production
+  ACA_ENVIRONMENT: reportplatform-production
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate confirmation
+        if: inputs.confirm != 'deploy-production'
+        run: |
+          echo "::error::Confirmation text must be 'deploy-production'. Got: '${{ inputs.confirm }}'"
+          exit 1
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy infrastructure (Bicep)
+        run: |
+          az deployment group create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --template-file infra/terraform/main.bicep \
+            --parameters \
+              environment=production \
+              imageTag=${{ inputs.image_tag }} \
+            --mode Incremental
+
+      - name: Deploy services
+        run: |
+          IMAGE_TAG=${{ inputs.image_tag }}
+          ACR=${{ secrets.ACR_LOGIN_SERVER }}
+
+          APPS=$(az containerapp list \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "[].name" -o tsv)
+
+          for APP in $APPS; do
+            IMAGE_EXISTS=$(az acr repository show-tags \
+              --name ${ACR%%.*} \
+              --repository "$APP" \
+              --query "[?@ == '$IMAGE_TAG']" -o tsv 2>/dev/null || echo "")
+
+            if [ -n "$IMAGE_EXISTS" ]; then
+              echo "Updating $APP to image tag $IMAGE_TAG..."
+              az containerapp update \
+                --name "$APP" \
+                --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+                --image "$ACR/$APP:$IMAGE_TAG"
+            fi
+          done
+
+      - name: Post-deploy health check
+        run: |
+          FQDN=$(az containerapp show \
+            --name ms-gw \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" -o tsv 2>/dev/null || echo "")
+
+          if [ -n "$FQDN" ]; then
+            echo "Running health check against https://$FQDN..."
+            for i in 1 2 3; do
+              HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://$FQDN/health" || echo "000")
+              echo "Attempt $i: status $HTTP_STATUS"
+              if [ "$HTTP_STATUS" -eq 200 ]; then
+                echo "Production deployment healthy!"
+                exit 0
+              fi
+              sleep 10
+            done
+            echo "::warning::Production health check did not return 200 after 3 attempts"
+          fi

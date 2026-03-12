@@ -1,0 +1,24 @@
+package com.reportplatform.enginedata;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+/**
+ * Main application class for the consolidated engine-data service.
+ * Assembles all data-related modules: sink-tbl, sink-doc, sink-log,
+ * query, dashboard, search, and template.
+ */
+@SpringBootApplication(scanBasePackages = {
+    "com.reportplatform.enginedata",
+    "com.reportplatform.sink",
+    "com.reportplatform.qry",
+    "com.reportplatform.dash",
+    "com.reportplatform.srch",
+    "com.reportplatform.template"
+})
+public class EngineDataApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(EngineDataApplication.class, args);
+    }
+}

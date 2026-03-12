@@ -1,0 +1,20 @@
+# =============================================================================
+# Tiltfile.python - Python Service Configuration (P8 Consolidated)
+# =============================================================================
+# Consolidated Python services
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Consolidated Python Services
+# ---------------------------------------------------------------------------
+# (service_name, extra_deps)
+CONSOLIDATED_PYTHON_SERVICES = [
+    ("processor-atomizers",   ["azurite", "litellm"]),
+    ("processor-generators",  ["azurite", "postgres"]),
+]
+
+# ---------------------------------------------------------------------------
+# Apply labels and dependencies
+# ---------------------------------------------------------------------------
+for svc, extra_deps in CONSOLIDATED_PYTHON_SERVICES:
+    dc_resource(svc, labels=["processors-python"], resource_deps=extra_deps)

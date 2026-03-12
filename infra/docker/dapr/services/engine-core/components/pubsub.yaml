@@ -1,0 +1,20 @@
+# Dapr PubSub configuration for engine-core
+# engine-core: ms-auth + ms-admin + ms-batch + ms-ver + ms-audit
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: reportplatform-pubsub
+  namespace: default
+spec:
+  type: pubsub.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: redis:6379
+    - name: redisPassword
+      value: ""
+    - name: consumerGroup
+      value: engine-core-group
+    - name: # Dapr PubSub for engine-core consolidated service
+      # Routes: file.uploaded -> for triggering processing after upload
+pubsubname: reportplatform-pubsub

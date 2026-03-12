@@ -1,0 +1,106 @@
+{
+    "workflowName": "pdf-processing",
+    "version": "1.0.0",
+    "description": "Workflow definition for processing PDF (.pdf) files through the report platform pipeline",
+    "fileType": "PDF",
+    "steps": [
+        {
+            "name": "SCAN",
+            "order": 1,
+            "service": "processor-atomizers",
+            "method": "scan",
+            "description": "Virus and malware scan of the uploaded PDF file",
+            "timeout_ms": 30000,
+            "retryable": true,
+            "max_retries": 2,
+            "compensate": {
+                "method": null,
+                "description": "No compensation needed for scan step"
+            }
+        },
+        {
+            "name": "PARSE",
+            "order": 2,
+            "service": "processor-atomizers",
+            "method": "extract",
+            "description": "Extract structured content from PDF: text, tables, OCR for scanned pages",
+            "timeout_ms": 180000,
+            "retryable": true,
+            "max_retries": 3,
+            "output_keys": [
+                "pages",
+                "tables",
+                "metadata"
+            ],
+            "compensate": {
+                "method": null,
+                "description": "No compensation needed; parsed data is transient"
+            }
+        },
+        {
+            "name": "MAP",
+            "order": 3,
+            "service": "engine-data",
+            "method": "map",
+            "description": "Map parsed PDF content to the organization's report template schema",
+            "timeout_ms": 60000,
+            "retryable": true,
+            "max_retries": 2,
+            "input_keys": [
+                "pages",
+                "tables",
+                "metadata"
+            ],
+            "output_keys": [
+                "mappedData",
+                "templateId"
+            ],
+            "compensate": {
+                "method": null,
+                "description": "No compensation needed; mapping is stateless"
+            }
+        },
+        {
+            "name": "STORE_TABLE",
+            "order": 4,
+            "service": "engine-data",
+            "method": "store",
+            "description": "Persist mapped tabular data to the relational data store",
+            "timeout_ms": 60000,
+            "retryable": true,
+            "max_retries": 2,
+            "input_keys": [
+                "mappedData",
+                "templateId"
+            ],
+            "compensate": {
+                "method": "rollback",
+                "description": "Delete stored tabular records for this file"
+            }
+        },
+        {
+            "name": "STORE_DOC",
+            "order": 5,
+            "service": "engine-data",
+            "method": "store",
+            "description": "Persist mapped document data to the document store",
+            "timeout_ms": 60000,
+            "retryable": true,
+            "max_retries": 2,
+            "input_keys": [
+                "mappedData",
+                "templateId"
+            ],
+            "compensate": {
+                "method": "rollback",
+                "description": "Delete stored document records for this file"
+            }
+        }
+    ],
+    "errorHandling": {
+        "strategy": "SAGA",
+        "compensationOrder": "REVERSE",
+        "deadLetterTopic": "workflow-dlq",
+        "alertOnFailure": true
+    }
+}

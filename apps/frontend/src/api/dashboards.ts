@@ -41,3 +41,25 @@ export async function comparePeriods(params: PeriodComparisonRequest): Promise<C
   const { data } = await apiClient.post<ComparisonData>('/dashboards/period-comparison', params);
   return data;
 }
+
+export async function cloneDashboard(dashboardId: string, newName?: string): Promise<DashboardConfig> {
+  const { data } = await apiClient.post<DashboardConfig>(`/dashboards/${dashboardId}/clone`, { name: newName });
+  return data;
+}
+
+export async function updateDashboardSharing(
+  dashboardId: string,
+  isPublic: boolean,
+  shareLink?: string
+): Promise<{ share_url: string }> {
+  const { data } = await apiClient.put<{ share_url: string }>(`/dashboards/${dashboardId}/sharing`, {
+    is_public: isPublic,
+    share_link: shareLink,
+  });
+  return data;
+}
+
+export async function executeRawSql(sql: string): Promise<{ columns: string[]; rows: unknown[][] }> {
+  const { data } = await apiClient.post<{ columns: string[]; rows: unknown[][] }>('/dashboards/sql/execute', { sql });
+  return data;
+}

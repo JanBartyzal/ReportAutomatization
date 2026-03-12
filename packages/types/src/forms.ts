@@ -40,6 +40,9 @@ export interface FieldDependency {
   condition: string; // e.g., "> 0"
 }
 
+/** Form scope */
+export type FormScope = 'CENTRAL' | 'LOCAL' | 'SHARED_WITHIN_HOLDING';
+
 /** Form definition */
 export interface FormDefinition {
   id?: string;
@@ -47,8 +50,10 @@ export interface FormDefinition {
   description?: string;
   report_type: string;
   status: FormStatus;
-  scope: 'CENTRAL' | 'LOCAL' | 'SHARED_WITHIN_HOLDING';
+  scope: FormScope;
   owner_org_id?: string;
+  released_at?: string;
+  released_by?: string;
   fields: FormField[];
   created_at?: string;
   updated_at?: string;

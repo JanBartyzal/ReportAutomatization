@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.reportplatform</groupId>
+        <artifactId>java-base</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../../../../../../packages/java-base/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>ms-scan</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>Report Platform - Security Scanner Service</name>
+    <description>Security scanner using ClamAV for virus detection and file sanitization</description>
+
+    <properties>
+        <protobuf.version>3.25.5</protobuf.version>
+        <grpc.version>1.65.1</grpc.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.reportplatform</groupId>
+            <artifactId>java-base-grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.reportplatform</groupId>
+            <artifactId>java-base-observability</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-protobuf</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-stub</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-spring-boot-starter</artifactId>
+            <version>2.15.0.RELEASE</version>
+        </dependency>
+
+        <!-- ClamAV client -->
+        <dependency>
+            <groupId>io.github.clamav</groupId>
+            <artifactId>clamav-client</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
+        <!-- Apache POI for sanitization -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.5</version>
+        </dependency>
+
+        <!-- Azure Blob Storage -->
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-storage-blob</artifactId>
+            <version>12.25.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.github.os72</groupId>
+                <artifactId>protoc-jar-maven-plugin</artifactId>
+                <version>3.11.4</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <protocExecutable>protoc</protocExecutable>
+                            <inputDirectories>
+                                <inputDirectory>${project.basedir}/../../../../protos</inputDirectory>
+                            </inputDirectories>
+                            <includeDirectories>
+                                <includeDirectory>${project.basedir}/../../../../protos</includeDirectory>
+                            </includeDirectories>
+                            <outputTargets>
+                                <outputTarget>
+                                    <type>java</type>
+                                    <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
+                                </outputTarget>
+                                <outputTarget>
+                                    <type>grpc-java</type>
+                                    <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
+                                    <pluginArtifact>io.grpc:grpc-stub:${grpc.version}</pluginArtifact>
+                                </outputTarget>
+                            </outputTargets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.reportplatform.scan.MsScanApplication</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

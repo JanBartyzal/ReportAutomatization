@@ -1,0 +1,22 @@
+{
+  "name": "lifecycle_approved",
+  "description": "Workflow triggered when a report is approved",
+  "trigger": {
+    "topic": "report.status_changed",
+    "filter": { "toStatus": "APPROVED" }
+  },
+  "steps": [
+    {
+      "name": "include_in_central_reporting",
+      "action": "publish_event",
+      "topic": "report.data_locked",
+      "on_failure": "retry_3"
+    },
+    {
+      "name": "trigger_pptx_generation",
+      "action": "publish_event",
+      "topic": "pptx.generation_requested",
+      "on_failure": "log_warning"
+    }
+  ]
+}

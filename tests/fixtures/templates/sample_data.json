@@ -1,0 +1,89 @@
+{
+    "report_id": "sample-report-001",
+    "company_name": "Acme Corporation",
+    "period": "Q1 2026",
+    "total_opex": "1,234,567 CZK",
+    "generated_at": "2026-03-12T12:00:00Z",
+    "opex_summary": {
+        "headers": [
+            "Category",
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4",
+            "Total"
+        ],
+        "rows": [
+            {
+                "cells": [
+                    "Personnel",
+                    "300,000",
+                    "310,000",
+                    "320,000",
+                    "330,000",
+                    "1,260,000"
+                ]
+            },
+            {
+                "cells": [
+                    "Materials",
+                    "150,000",
+                    "155,000",
+                    "160,000",
+                    "165,000",
+                    "630,000"
+                ]
+            },
+            {
+                "cells": [
+                    "Services",
+                    "80,000",
+                    "85,000",
+                    "90,000",
+                    "95,000",
+                    "350,000"
+                ]
+            },
+            {
+                "cells": [
+                    "TOTAL",
+                    "530,000",
+                    "550,000",
+                    "570,000",
+                    "590,000",
+                    "2,240,000"
+                ]
+            }
+        ]
+    },
+    "monthly_trend": {
+        "chart_type": "LINE",
+        "labels": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun"
+        ],
+        "series": [
+            {
+                "name": "Costs",
+                "values": [
+                    180000,
+                    195000,
+                    210000,
+                    185000,
+                    200000,
+                    215000
+                ]
+            }
+        ]
+    },
+    "additional_fields": {
+        "prepared_by": "Finance Department",
+        "approved_by": "CFO",
+        "currency": "CZK",
+        "version": "1.0"
+    }
+}

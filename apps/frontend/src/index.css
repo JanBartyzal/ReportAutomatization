@@ -1,0 +1,48 @@
+/**
+ * ReportAutomatization Global Styles
+ * Per docs/UX-UI/02-design-system.md - Anti-patterns section:
+ * - No Tailwind utility classes
+ * - Use Fluent tokens via makeStyles
+ */
+
+/* Chart Palette CSS Custom Properties per 00-project-color-overrides.md */
+:root {
+    --chart-1: #C4314B;
+    --chart-2: #107C10;
+    --chart-3: #0078D4;
+    --chart-4: #D83B01;
+    --chart-5: #6D28D9;
+    --chart-6: #008272;
+    --chart-7: #E3008C;
+    --chart-8: #986F0B;
+}
+
+/* Base styles */
+html {
+    font-family: 'Inter', 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+}
+
+#root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Dark mode support - respects system preference */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1B1A19;
+        color: #FFFFFF;
+    }
+}

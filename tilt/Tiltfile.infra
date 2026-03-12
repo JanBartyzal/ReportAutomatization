@@ -1,0 +1,33 @@
+# =============================================================================
+# Tiltfile.infra - Infrastructure Resource Configuration (P8 Consolidated)
+# =============================================================================
+# Labels infrastructure services and sets up startup ordering.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Infrastructure Resources
+# ---------------------------------------------------------------------------
+INFRA_RESOURCES = [
+    "postgres",
+    "redis",
+    "azurite",
+    "clamav",
+    "dapr",
+    "litellm",
+    "mailhog",
+]
+
+for res in INFRA_RESOURCES:
+    dc_resource(res, labels=["infra"])
+
+# ---------------------------------------------------------------------------
+# Gateway (depends on consolidated engine-core for auth)
+# ---------------------------------------------------------------------------
+dc_resource("ms-gw", labels=["infra"], resource_deps=["engine-core", "ms-ing"])
+
+# ---------------------------------------------------------------------------
+# Infrastructure Dependency Ordering
+# ---------------------------------------------------------------------------
+dc_resource("redis", resource_deps=["postgres"])
+dc_resource("litellm", resource_deps=[])
+dc_resource("dapr", resource_deps=[])

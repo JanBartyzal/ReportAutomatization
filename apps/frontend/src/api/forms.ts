@@ -13,6 +13,7 @@ import type {
 
 export interface FormListParams extends PaginationParams {
   status?: string;
+  scope?: 'CENTRAL' | 'LOCAL' | 'SHARED';
 }
 
 export async function listForms(params: FormListParams = {}): Promise<PaginatedResponse<FormDefinition>> {

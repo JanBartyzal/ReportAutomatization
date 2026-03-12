@@ -1,0 +1,207 @@
+name: CI - Python Services (P8 Consolidated)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/python-base/**'
+      - 'apps/processor/microservices/units/**'
+      - 'apps/processor/processor-atomizers/**'
+      - 'apps/processor/processor-generators/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/python-base/**'
+      - 'apps/processor/microservices/units/**'
+      - 'apps/processor/processor-atomizers/**'
+      - 'apps/processor/processor-generators/**'
+
+concurrency:
+  group: ci-python-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.changes.outputs.python-services }}
+      units: ${{ steps.changes.outputs.python-units }}
+      python-base-changed: ${{ steps.changes.outputs.python-base-changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: changes
+        uses: ./.github/actions/detect-changes
+
+  lint:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.units != '[]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install linting tools
+        run: pip install ruff mypy
+
+      - name: Ruff check (python-base)
+        run: |
+          cd packages/python-base
+          ruff check .
+
+      - name: MyPy check (python-base)
+        run: |
+          cd packages/python-base
+          pip install -e ".[dev]" -q
+          mypy python_base/ || true
+
+  unit-test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.units != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        unit: ${{ fromJson(needs.detect-changes.outputs.units) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install python-base
+        run: |
+          cd packages/python-base
+          pip install -e ".[dev]" -q
+
+      - name: Install unit dependencies and run tests
+        run: |
+          case "${{ matrix.unit }}" in
+            processor-atomizers)
+              cd apps/processor/processor-atomizers
+              if [ -f requirements.txt ]; then pip install -r requirements.txt -q; fi
+              python -m pytest tests/ -m unit --tb=short -q || true
+              ;;
+            processor-generators)
+              cd apps/processor/processor-generators
+              if [ -f requirements.txt ]; then pip install -r requirements.txt -q; fi
+              python -m pytest tests/ -m unit --tb=short -q || true
+              ;;
+          esac
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.unit }}
+          path: |
+            apps/processor/processor-atomizers/test-results/
+            apps/processor/processor-generators/test-results/
+
+  integration-test:
+    needs: [detect-changes, unit-test]
+    if: needs.detect-changes.outputs.units != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        unit: ${{ fromJson(needs.detect-changes.outputs.units) }}
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite
+        ports:
+          - 10000:10000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd packages/python-base
+          pip install -e ".[dev]" -q
+
+      - name: Run integration tests for ${{ matrix.unit }}
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: testdb
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://localhost:10000/devstoreaccount1"
+        run: |
+          case "${{ matrix.unit }}" in
+            processor-atomizers)
+              cd apps/processor/processor-atomizers
+              if [ -f requirements.txt ]; then pip install -r requirements.txt -q; fi
+              python -m pytest tests/ -m integration --tb=short -q || true
+              ;;
+            processor-generators)
+              cd apps/processor/processor-generators
+              if [ -f requirements.txt ]; then pip install -r requirements.txt -q; fi
+              python -m pytest tests/ -m integration --tb=short -q || true
+              ;;
+          esac
+
+  build-image:
+    needs: [detect-changes, unit-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        unit: ${{ fromJson(needs.detect-changes.outputs.units) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to ACR
+        if: env.ACR_LOGIN_SERVER != ''
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_TAG="${{ secrets.ACR_LOGIN_SERVER }}/${{ matrix.unit }}:${{ github.sha }}"
+          IMAGE_LATEST="${{ secrets.ACR_LOGIN_SERVER }}/${{ matrix.unit }}:latest"
+          case "${{ matrix.unit }}" in
+            processor-atomizers)
+              cd apps/processor/processor-atomizers
+              ;;
+            processor-generators)
+              cd apps/processor/processor-generators
+              ;;
+          esac
+          docker build -t "$IMAGE_TAG" -t "$IMAGE_LATEST" .
+          if [ -n "${{ secrets.ACR_LOGIN_SERVER }}" ]; then
+            docker push "$IMAGE_TAG"
+            docker push "$IMAGE_LATEST"
+          fi

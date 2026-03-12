@@ -788,6 +788,24 @@ Po nasazení centrálního reportingového cyklu vznikne přirozená poptávka z
 - Export srovnávacích reportů jako PPTX (napojení na FS18 generátor).
 
 *Tento FS bude detailně specifikován až po nasazení FS20 a prvních zkušenostech z provozu.*
+
+**Fáze:** P7 (rozvojová aktivita)  
+## FS23 – Service-Now API Integration & Automation
+Priorita: STŘEDNÍ Pokrývající microservices: MS-EXT-SNOW, MS-GEN-XLS, MS-NOTIF
+- Napojení na API: Integrace se Service-Now (REST API) pro automatizovaný export dat (např. IT ticketing, asset management).
+- Auth & Security: Přihlašovací údaje (OAuth2/Basic) uloženy v Azure KeyVault; komunikace probíhá přes šifrovaný kanál.
+- Plánované úlohy (Scheduler): Možnost nastavit pravidelné intervaly stahování (denně, týdně).
+- Report Distribution: Automatické generování Excel reportů z čerstvých dat (MS-GEN-XLS) a jejich odesílání na definované e-mailové adresy přes MS-NOTIF.
+- BI Dashboardy: Data jsou po stažení dostupná pro vizualizaci v MS-DASH stejně jako data z PPTX/XLS.
+
+## FS24 – Smart Persistence Promotion (Managed Tables)
+Priorita: STŘEDNÍ Pokrývající microservices: MS-ADMIN, MS-SINK-TBL, MS-TMPL
+- Detekce frekvence: Systém sleduje využití konkrétních Schema Mappings (FS15). Pokud je stejná struktura nahrána více než X-krát (např. 5x), označí mapování jako "Candidate for Promotion".
+- Návrh pro Admina: V Admin UI se zobrazí notifikace: "Tato šablona je používána často. Chcete pro ni vytvořit dedikovanou tabulku pro vyšší výkon?".
+- Konverzní asistent: Systém vygeneruje návrh SQL schématu (názvy sloupců, optimální datové typy místo JSONB) na základě analýzy historicky nahraných dat.
+- Admin Approval: Admin může návrh upravit (změnit délku polí, přidat indexy) a potvrdit. Až poté systém fyzicky vytvoří tabulku v PostgreSQL.
+- Transparentní Routing: Po vytvoření tabulky MS-ORCH automaticky přesměruje budoucí importy z obecného Sink-u do této nové struktury bez nutnosti měnit frontend.
+
 ---
 
 ### FS99 – DevOps & Observability

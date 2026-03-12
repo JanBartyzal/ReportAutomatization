@@ -1,0 +1,131 @@
+spring:
+  application:
+    name: engine-reporting
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:engine_reporting_db}
+    username: ${DB_USERNAME:engine_reporting_user}
+    password: ${DB_PASSWORD:engine_reporting_pass}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 25
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+      file-size-threshold: 256KB
+
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_AUTH:false}
+          starttls:
+            enable: ${MAIL_STARTTLS:false}
+
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+
+# Azure Blob Storage (PPTX templates)
+azure:
+  storage:
+    blob:
+      connection-string: ${AZURE_STORAGE_CONNECTION_STRING:DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
+      container-name: ${AZURE_STORAGE_CONTAINER:templates}
+
+# Dapr configuration
+dapr:
+  sidecar:
+    host: ${DAPR_HOST:localhost}
+    http-port: ${DAPR_HTTP_PORT:3500}
+    grpc-port: ${DAPR_GRPC_PORT:50001}
+  pubsub:
+    name: ${DAPR_PUBSUB_NAME:reportplatform-pubsub}
+  statestore:
+    name: ${DAPR_STATESTORE_NAME:reportplatform-statestore}
+  app-id: engine-reporting
+
+# Actuator / Health
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: engine-reporting
+
+server:
+  port: ${HTTP_PORT:8105}
+
+# Logging
+logging:
+  level:
+    com.reportplatform.lifecycle: ${LOG_LEVEL:INFO}
+    com.reportplatform.period: ${LOG_LEVEL:INFO}
+    com.reportplatform.form: ${LOG_LEVEL:INFO}
+    com.reportplatform.tmplpptx: ${LOG_LEVEL:INFO}
+    com.reportplatform.notif: ${LOG_LEVEL:INFO}
+    com.reportplatform.enginereporting: ${LOG_LEVEL:INFO}
+    org.springframework.statemachine: WARN
+    io.dapr: INFO
+
+# Period deadline configuration
+period:
+  deadline:
+    reminder-days: 7,3,1
+    check-cron: "0 0 8 * * *"
+
+# Feature flags configuration
+feature-flags:
+  enable-local-scope: ${ENABLE_LOCAL_SCOPE:false}
+  enable-advanced-comparison: ${ENABLE_ADVANCED_COMPARISON:false}
+
+# Mail application settings
+app:
+  mail:
+    from: ${MAIL_FROM:noreply@reportplatform.local}
+    enabled: ${MAIL_ENABLED:false}
+  dapr:
+    period-service: engine-reporting
+    lifecycle-service: engine-reporting
+  websocket:
+    allowed-origins: "*"

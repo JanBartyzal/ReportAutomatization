@@ -1,0 +1,17 @@
+# Dapr PubSub configuration for processor-generators
+# processor-generators: ms-gen-pptx + ms-gen-xls + ms-mcp
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: reportplatform-pubsub
+  namespace: default
+spec:
+  type: pubsub.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: redis:6379
+    - name: redisPassword
+      value: ""
+    - name: consumerGroup
+      value: processor-generators-group

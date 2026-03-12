@@ -1,0 +1,85 @@
+name: CI - GraalVM Native Image (Release)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ci-graalvm-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  JAVA_VERSION: '21'
+  GRAALVM_VERSION: '21'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.list.outputs.services }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        name: List all Java services
+        run: |
+          echo 'services=["ms-auth","ms-ing","ms-orch","ms-scan","ms-sink-tbl","ms-sink-doc","ms-sink-log","ms-qry","ms-tmpl","ms-dash","ms-admin","ms-batch","ms-lifecycle","ms-period","ms-notif","ms-form","ms-ver","ms-audit","ms-srch","ms-tmpl-pptx"]' >> "$GITHUB_OUTPUT"
+
+  native-build:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: ${{ env.GRAALVM_VERSION }}
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build java-base
+        run: |
+          cd packages/java-base
+          mvn install -DskipTests -q
+
+      - name: Build native image for ${{ matrix.service }}
+        run: |
+          cd apps/engine/microservices/units/${{ matrix.service }}
+          mvn -Pnative native:compile -DskipTests -q
+        timeout-minutes: 30
+
+      - name: Log in to ACR
+        if: env.ACR_LOGIN_SERVER != ''
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+
+      - name: Build native Docker image
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          IMAGE_TAG="${{ secrets.ACR_LOGIN_SERVER }}/${{ matrix.service }}:${VERSION}-native"
+          cd apps/engine/microservices/units/${{ matrix.service }}
+
+          # Build a minimal image with just the native binary
+          cat > Dockerfile.native <<'DOCKERFILE'
+          FROM debian:bookworm-slim
+          RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+          COPY target/${{ matrix.service }} /app/service
+          EXPOSE 8080
+          ENTRYPOINT ["/app/service"]
+          DOCKERFILE
+
+          docker build -f Dockerfile.native -t "$IMAGE_TAG" .
+          if [ -n "${{ secrets.ACR_LOGIN_SERVER }}" ]; then
+            docker push "$IMAGE_TAG"
+          fi

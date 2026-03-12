@@ -1,0 +1,67 @@
+<svg width="1400" height="3500" viewBox="0 0 1400 3500" xmlns="http://www.w3.org/2000/svg">
+  <!-- CloudInfraMap (CIM) Design System - Organisms Complete Library (Rev 5 - Refined) -->
+  <rect width="1400" height="3500" fill="#FBFBFB"/>
+  
+  <text x="40" y="50" font-family="Inter, sans-serif" font-size="32" font-weight="bold" fill="#1B1A19">CloudInfraMap (CIM) — Organisms Library (Rev 5)</text>
+
+  <!-- 1. RESPONSIVE SIDEBARS -->
+  <text x="40" y="100" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#323130">1. Sidebar Navigation (Breakpoint Variants)</text>
+  <g transform="translate(40, 130)">
+    <rect width="260" height="500" fill="#FFFFFF" stroke="#E1DFDD" stroke-width="1"/>
+    <text x="20" y="30" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#0078D4">CLOUDINFRAMAP</text>
+  </g>
+
+  <!-- 2. TOPNAV VARIANTS (Refined Mobile Hamburger) -->
+  <text x="40" y="700" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#323130">2. Top Navigation (CSS Breakpoint: Desktop vs Mobile)</text>
+  <g transform="translate(40, 740)">
+    <!-- Desktop TopNav -->
+    <g>
+      <text x="0" y="-15" font-family="Inter" font-size="12" font-weight="bold" fill="#616161">DESKTOP (>768px)</text>
+      <rect width="1100" height="64" fill="#1B1A19"/>
+      <text x="20" y="40" font-family="Inter" font-size="20" font-weight="bold" fill="#FFFFFF">CloudInfraMap</text>
+      <rect x="220" y="16" width="200" height="32" rx="4" fill="#323130"/>
+      <text x="240" y="37" font-family="Inter" font-size="13" fill="#FFFFFF">Acme Corp — Prod</text>
+      <text x="395" y="37" font-family="Inter" font-size="14" fill="#FFFFFF">▾</text>
+    </g>
+    <!-- Mobile TopNav (Refined) -->
+    <g transform="translate(0, 120)">
+      <text x="0" y="-15" font-family="Inter" font-size="12" font-weight="bold" fill="#616161">MOBILE (≤768px) — CSS Breakpoint View</text>
+      <rect width="375" height="56" fill="#1B1A19"/>
+      <!-- Hamburger Icon -->
+      <g transform="translate(15, 18)">
+        <rect width="24" height="2" fill="#FFFFFF"/>
+        <rect y="8" width="24" height="2" fill="#FFFFFF"/>
+        <rect y="16" width="24" height="2" fill="#FFFFFF"/>
+      </g>
+      <text x="50" y="36" font-family="Inter" font-size="16" font-weight="bold" fill="#FFFFFF">CIM Console</text>
+      <!-- Mobile Search Icon -->
+      <circle cx="300" cy="28" r="6" stroke="#FFFFFF" stroke-width="2" fill="none"/>
+      <line x1="305" y1="33" x2="310" y2="38" stroke="#FFFFFF" stroke-width="2"/>
+      <circle cx="345" cy="28" r="14" fill="#0078D4"/>
+    </g>
+  </g>
+
+  <!-- 3. ORG SWITCHER DROPDOWN -->
+  <text x="40" y="1050" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#323130">3. Organization Switcher (Expanded Panel)</text>
+  <g transform="translate(260, 1090)">
+    <rect width="320" height="300" rx="8" fill="#FFFFFF" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15));" stroke="#E1DFDD"/>
+    <text x="20" y="30" font-family="Inter" font-size="14" font-weight="bold" fill="#0078D4">Acme Corp — Prod ✓</text>
+    <text x="20" y="80" font-family="Inter" font-size="14" fill="#242424">Acme Corp — Staging</text>
+    <line x1="0" y1="240" x2="320" y2="240" stroke="#E1DFDD"/>
+    <text x="20" y="275" font-family="Inter" font-size="14" font-weight="bold" fill="#0078D4">+ Nová organizace</text>
+  </g>
+
+  <!-- 4. EXPORT & FEEDBACK -->
+  <text x="40" y="1500" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#323130">4. Functional Tools (Export & Feedback)</text>
+  <g transform="translate(40, 1540)">
+    <rect width="40" height="40" rx="4" fill="#FFFFFF" stroke="#E1DFDD"/><text x="20" y="25" font-size="10" text-anchor="middle">JSON</text>
+    <circle cx="300" cy="20" r="28" fill="#0078D4"/><text x="300" y="28" font-size="24" text-anchor="middle" fill="#FFFFFF">?</text>
+  </g>
+
+  <!-- 5. AI CHAT PANEL (Grid Fixed) -->
+  <text x="40" y="1800" font-family="Inter, sans-serif" font-size="20" font-weight="600" fill="#323130">5. AI Intelligence Assistant (Glassmorphic)</text>
+  <g transform="translate(40, 1840)">
+    <rect width="320" height="500" rx="16" fill="rgba(255,255,255,0.8)" style="backdrop-filter: blur(12px);" stroke="#E1DFDD"/>
+    <text x="20" y="40" font-family="Inter" font-size="16" font-weight="bold">Assistant</text>
+  </g>
+</svg>

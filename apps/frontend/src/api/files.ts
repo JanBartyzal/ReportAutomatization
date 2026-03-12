@@ -5,6 +5,7 @@ import type {
   FileListParams,
   PaginatedResponse,
   UploadPurpose,
+  FileContent,
 } from '@reportplatform/types';
 
 export async function uploadFile(
@@ -30,5 +31,17 @@ export async function listFiles(params: FileListParams = {}): Promise<PaginatedR
 
 export async function getFile(fileId: string): Promise<FileDetails> {
   const { data } = await apiClient.get<FileDetails>(`/files/${fileId}`);
+  return data;
+}
+
+/** Get extracted content for a file (Excel sheets, PDF pages, CSV data) */
+export async function getFileContent(fileId: string): Promise<FileContent> {
+  const { data } = await apiClient.get<FileContent>(`/files/${fileId}/content`);
+  return data;
+}
+
+/** Get extracted tables from a file */
+export async function getFileTables(fileId: string): Promise<FileContent['tables']> {
+  const { data } = await apiClient.get<FileContent['tables']>(`/files/${fileId}/tables`);
   return data;
 }

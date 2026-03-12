@@ -1,0 +1,166 @@
+import { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDropzone } from 'react-dropzone';
+import {
+    Title2,
+    Body1,
+    ProgressBar,
+    makeStyles,
+    Button,
+    tokens,
+    RadioGroup,
+    Radio,
+    Label,
+} from '@fluentui/react-components';
+import { ArrowUpload24Regular } from '@fluentui/react-icons';
+import { useUpload } from '../hooks/useFiles';
+
+/**
+ * UploadPage styles per docs/UX-UI/02-design-system.md
+ * - Using Fluent tokens throughout
+ * - No hardcoded colors
+ * - Border radius: radiusMedium (8px)
+ */
+const useStyles = makeStyles({
+    container: {
+        padding: tokens.spacingHorizontalL,
+        maxWidth: '800px',
+    },
+    title: {
+        marginBottom: tokens.spacingHorizontalL,
+    },
+    description: {
+        marginBottom: tokens.spacingHorizontalM,
+    },
+    /**
+     * Dropzone - dashed border per standard UI patterns
+     * Using tokens for colors
+     */
+    dropzone: {
+        border: `2px dashed ${tokens.colorNeutralStroke1}`,
+        borderRadius: tokens.borderRadiusMedium,
+        padding: '48px',
+        textAlign: 'center',
+        cursor: 'pointer',
+        transition: 'border-color 0.2s ease-in-out',
+        backgroundColor: tokens.colorNeutralBackground1,
+        ':hover': {
+            borderColor: tokens.colorBrandForeground1,
+        },
+    },
+    dropzoneActive: {
+        borderColor: tokens.colorBrandForeground1,
+        backgroundColor: tokens.colorBrandBackground2,
+    },
+    uploadIcon: {
+        fontSize: '48px',
+        marginBottom: tokens.spacingHorizontalM,
+        color: tokens.colorBrandForeground1,
+    },
+    supportedText: {
+        marginTop: tokens.spacingVerticalS,
+        color: tokens.colorNeutralForeground2,
+    },
+    progressSection: {
+        marginTop: tokens.spacingHorizontalL,
+    },
+    progressText: {
+        marginTop: tokens.spacingVerticalS,
+    },
+    errorText: {
+        marginTop: tokens.spacingHorizontalM,
+        color: tokens.colorPaletteRedForeground1,
+    },
+});
+
+export default function UploadPage() {
+    const styles = useStyles();
+    const navigate = useNavigate();
+    const uploadMutation = useUpload();
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+    const [selectedPurpose, setSelectedPurpose] = useState<string>('PARSE');
+
+    const onDrop = useCallback(async (acceptedFiles: File[]) => {
+        for (const file of acceptedFiles) {
+            try {
+                await uploadMutation.mutateAsync({
+                    file,
+                    purpose: selectedPurpose as any,
+                    onProgress: (event) => {
+                        if (event.total) {
+                            setUploadProgress((event.loaded / event.total) * 100);
+                        }
+                    },
+                });
+                setUploadProgress(null);
+                navigate('/files');
+            } catch (error) {
+                console.error('Upload failed:', error);
+                setUploadProgress(null);
+            }
+        }
+    }, [uploadMutation, selectedPurpose, navigate]);
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        onDrop,
+        accept: {
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+            'application/pdf': ['.pdf'],
+            'text/csv': ['.csv'],
+        },
+        maxSize: 100 * 1024 * 1024, // 100MB
+    });
+
+    return (
+        <div className={styles.container}>
+            <Title2 className={styles.title}>Upload Files</Title2>
+            <Body1 className={styles.description}>
+                Upload PPTX, XLSX, PDF, or CSV files for processing.
+            </Body1>
+
+            <div style={{ marginBottom: tokens.spacingHorizontalL }}>
+                <Label style={{ display: 'block', marginBottom: tokens.spacingVerticalS }}>
+                    Upload Purpose
+                </Label>
+                <RadioGroup
+                    value={selectedPurpose}
+                    onChange={(_, data) => setSelectedPurpose(data.value)}
+                    layout="horizontal"
+                >
+                    <Radio value="PARSE" label="Data Parsing" />
+                    <Radio value="FORM_IMPORT" label="Form Import" />
+                </RadioGroup>
+            </div>
+
+            <div
+                {...getRootProps()}
+                className={`${styles.dropzone} ${isDragActive ? styles.dropzoneActive : ''}`}
+            >
+                <input {...getInputProps()} />
+                <ArrowUpload24Regular className={styles.uploadIcon} />
+                <Body1>
+                    {isDragActive
+                        ? 'Drop the files here...'
+                        : 'Drag and drop files here, or click to select files'}
+                </Body1>
+                <Body1 className={styles.supportedText}>
+                    Supported: .pptx, .xlsx, .pdf, .csv (max 100MB)
+                </Body1>
+            </div>
+
+            {uploadProgress !== null && (
+                <div className={styles.progressSection}>
+                    <ProgressBar value={uploadProgress} />
+                    <Body1 className={styles.progressText}>Uploading... {Math.round(uploadProgress)}%</Body1>
+                </div>
+            )}
+
+            {uploadMutation.isError && (
+                <Body1 className={styles.errorText}>
+                    Upload failed. Please try again.
+                </Body1>
+            )}
+        </div>
+    );
+}
