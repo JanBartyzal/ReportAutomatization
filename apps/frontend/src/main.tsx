@@ -4,8 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MsalProvider } from '@azure/msal-react';
 import { PublicClientApplication } from '@azure/msal-browser';
-import { FluentProvider, webLightTheme } from '@fluentui/react-components';
-import { lightTheme } from './theme/brandTokens';
+import { ThemeProvider } from './theme';
 
 import App from './App';
 import { msalConfig } from './auth/msalConfig';
@@ -44,11 +43,11 @@ async function initializeApp() {
             <BrowserRouter>
                 <MsalProvider instance={msalInstance}>
                     <QueryClientProvider client={queryClient}>
-                        <FluentProvider theme={lightTheme}>
+                        <ThemeProvider>
                             <ErrorBoundary>
                                 <App />
                             </ErrorBoundary>
-                        </FluentProvider>
+                        </ThemeProvider>
                     </QueryClientProvider>
                 </MsalProvider>
             </BrowserRouter>

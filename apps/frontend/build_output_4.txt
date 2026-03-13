@@ -1,0 +1,220 @@
+
+> @reportplatform/frontend@0.1.0 build
+> tsc && vite build
+
+src/api/health.ts(7,1): error TS6133: 'apiClient' is declared but its value is never read.
+src/api/health.ts(102,13): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'ServiceHealth'.
+src/api/promotions.ts(9,5): error TS6196: 'CreatePromotionCandidateRequest' is declared but never used.
+src/App.tsx(25,1): error TS6133: 'LoadingSpinner' is declared but its value is never read.
+src/App.tsx(43,11): error TS6133: 'isAuthenticated' is declared but its value is never read.
+src/components/__tests__/ChartWrapper.test.tsx(1,32): error TS6133: 'vi' is declared but its value is never read.
+src/components/__tests__/GenerateButton.test.tsx(2,18): error TS6133: 'screen' is declared but its value is never read.
+src/components/__tests__/GenerateButton.test.tsx(4,1): error TS6133: 'React' is declared but its value is never read.
+src/components/__tests__/GenerationProgress.test.tsx(4,1): error TS6133: 'React' is declared but its value is never read.
+src/components/Admin/BatchesPanel.tsx(2,17): error TS6133: 'Button' is declared but its value is never read.
+src/components/Admin/BatchesPanel.tsx(6,11): error TS6133: 'getAccessToken' is declared but its value is never read.
+src/components/Admin/BatchesPanel.tsx(6,13): error TS2339: Property 'getAccessToken' does not exist on type '{ logout: { mutate: () => void; mutateAsync: () => Promise<void>; isPending: boolean; isError: boolean; isSuccess: boolean; }; data: UserContext; error: Error; isError: true; ... 22 more ...; promise: Promise<...>; } | ... 4 more ... | { ...; }'.
+src/components/Admin/BatchesPanel.tsx(9,13): error TS6133: 'data' is declared but its value is never read.
+src/components/Admin/FailedJobsPanel.tsx(2,17): error TS6133: 'Button' is declared but its value is never read.
+src/components/Admin/FailedJobsPanel.tsx(5,13): error TS6133: 'data' is declared but its value is never read.
+src/components/Admin/FailedJobsPanel.tsx(6,11): error TS6133: 'reprocessJob' is declared but its value is never read.
+src/components/Admin/UsersPanel.tsx(1,20): error TS6133: 'useAssignRole' is declared but its value is never read.
+src/components/Admin/UsersPanel.tsx(2,17): error TS6133: 'Button' is declared but its value is never read.
+src/components/Admin/UsersPanel.tsx(5,13): error TS6133: 'data' is declared but its value is never read.
+src/components/AdvancedComparison/AdvancedComparison.tsx(12,5): error TS6133: 'Subtitle1' is declared but its value is never read.
+src/components/AdvancedComparison/AdvancedComparison.tsx(13,5): error TS6133: 'Subtitle2' is declared but its value is never read.
+src/components/AdvancedComparison/AdvancedComparison.tsx(39,5): error TS6133: 'Calendar24Regular' is declared but its value is never read.
+src/components/AdvancedComparison/AdvancedComparison.tsx(50,5): error TS6133: 'Legend' is declared but its value is never read.
+src/components/AdvancedComparison/AdvancedComparison.tsx(55,1): error TS6133: 'LoadingSpinner' is declared but its value is never read.
+src/components/AdvancedComparison/AdvancedComparison.tsx(180,11): error TS6133: 'colors' is declared but its value is never read.
+src/components/AdvancedComparison/AdvancedComparison.tsx(432,68): error TS6133: 'entry' is declared but its value is never read.
+src/components/AuditLog/AuditLogViewer.tsx(19,5): error TS6133: 'Filter24Regular' is declared but its value is never read.
+src/components/AuditLog/AuditLogViewer.tsx(180,30): error TS6133: 'refetch' is declared but its value is never read.
+src/components/forms/FormField.tsx(46,3): error TS6133: 'htmlFor' is declared but its value is never read.
+src/components/Generation/GenerateButton.tsx(97,9): error TS2554: Expected 2-4 arguments, but got 5.
+src/components/Generation/GenerateButton.tsx(149,41): error TS2322: Type '{ progress: { value: number; label: string; }; thickness: "medium"; style: CSSProperties; }' is not assignable to type 'IntrinsicAttributes & Omit<ComponentProps<ProgressBarSlots>, "size"> & { shape?: "rounded" | "square" | undefined; value?: number | undefined; max?: number | undefined; thickness?: "medium" | ... 1 more ... | undefined; color?: "error" | ... 3 more ... | undefined; } & RefAttributes<...>'.
+  Property 'progress' does not exist on type 'IntrinsicAttributes & Omit<ComponentProps<ProgressBarSlots>, "size"> & { shape?: "rounded" | "square" | undefined; value?: number | undefined; max?: number | undefined; thickness?: "medium" | ... 1 more ... | undefined; color?: "error" | ... 3 more ... | undefined; } & RefAttributes<...>'. Did you mean 'onProgress'?
+src/components/Generation/GenerationProgress.tsx(39,11): error TS6133: 'isIndeterminate' is declared but its value is never read.
+src/components/Layout/AppLayout.tsx(112,28): error TS2339: Property 'name' does not exist on type 'UserContext'.
+src/components/Layout/AppLayout.tsx(112,68): error TS2551: Property 'organization' does not exist on type 'UserContext'. Did you mean 'organizations'?
+src/components/Lifecycle/CountdownWidget.tsx(6,5): error TS6133: 'Body1' is declared but its value is never read.
+src/components/Lifecycle/RejectionDialog.tsx(4,5): error TS6133: 'DialogTrigger' is declared but its value is never read.
+src/components/Lifecycle/RejectionDialog.tsx(38,44): error TS6133: 'e' is declared but its value is never read.
+src/components/Lifecycle/RejectionDialog.tsx(51,40): error TS6133: 'e' is declared but its value is never read.
+src/components/Lifecycle/RejectionDialog.tsx(60,29): error TS2322: Type '"danger"' is not assignable to type '"outline" | "transparent" | "subtle" | "secondary" | "primary" | undefined'.
+src/components/LoadingSpinner.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/components/LocalScope/ReleaseDialog.tsx(20,5): error TS6133: 'InfoLabel' is declared but its value is never read.
+src/components/LocalScope/ReleaseDialog.tsx(41,63): error TS6133: 'dataId' is declared but its value is never read.
+src/components/LocalScope/ReleaseDialog.tsx(91,29): error TS2322: Type '{ children: string; appearance: "primary"; style: { backgroundColor: string; }; onClick: () => Promise<void>; loading: boolean; disabled: boolean; }' is not assignable to type 'IntrinsicAttributes & (ButtonProps & RefAttributes<HTMLButtonElement | HTMLAnchorElement>)'.
+  Property 'loading' does not exist on type 'IntrinsicAttributes & (ButtonProps & RefAttributes<HTMLButtonElement | HTMLAnchorElement>)'.
+src/components/LocalScope/ShareDialog.tsx(49,59): error TS6133: 'itemId' is declared but its value is never read.
+src/components/PeriodComparison/PeriodComparison.tsx(4,5): error TS2724: '"@fluentui/react-components"' has no exported member named 'Title4'. Did you mean 'Title1'?
+src/components/PeriodComparison/PeriodComparison.tsx(6,5): error TS6133: 'Card' is declared but its value is never read.
+src/components/PeriodComparison/PeriodComparison.tsx(7,5): error TS6133: 'CardHeader' is declared but its value is never read.
+src/components/PeriodComparison/PeriodComparison.tsx(12,5): error TS2305: Module '"@fluentui/react-components"' has no exported member 'DropdownTrigger'.
+src/components/PeriodComparison/PeriodComparison.tsx(12,5): error TS6133: 'DropdownTrigger' is declared but its value is never read.
+src/components/PeriodComparison/PeriodComparison.tsx(15,5): error TS6133: 'Dialog' is declared but its value is never read.
+src/components/PeriodComparison/PeriodComparison.tsx(16,5): error TS6133: 'DialogTrigger' is declared but its value is never read.
+src/components/PeriodComparison/PeriodComparison.tsx(17,5): error TS6133: 'DialogSurface' is declared but its value is never read.
+src/components/PeriodComparison/PeriodComparison.tsx(18,5): error TS6133: 'DialogTitle' is declared but its value is never read.
+src/components/PeriodComparison/PeriodComparison.tsx(19,5): error TS6133: 'DialogBody' is declared but its value is never read.
+src/components/PeriodComparison/PeriodComparison.tsx(20,5): error TS6133: 'DialogActions' is declared but its value is never read.
+src/components/PeriodComparison/PeriodComparison.tsx(21,5): error TS6133: 'DialogContent' is declared but its value is never read.
+src/components/PeriodComparison/PeriodComparison.tsx(40,10): error TS2305: Module '"../../theme/brandTokens"' has no exported member 'chartPalette'.
+src/components/PeriodComparison/PeriodComparison.tsx(44,40): error TS6196: 'FileListParams' is declared but never used.
+src/components/PeriodComparison/PeriodComparison.tsx(128,42): error TS2304: Cannot find name 'ComparisonData'.
+src/components/PeriodComparison/PeriodComparison.tsx(130,34): error TS2339: Property 'items' does not exist on type 'PaginatedResponse<Period>'.
+src/components/PeriodComparison/PeriodComparison.tsx(187,47): error TS7006: Parameter 'period' implicitly has an 'any' type.
+src/components/PeriodComparison/PeriodComparison.tsx(201,47): error TS7006: Parameter 'period' implicitly has an 'any' type.
+src/components/PeriodComparison/PeriodComparison.tsx(263,57): error TS7006: Parameter 'delta' implicitly has an 'any' type.
+src/components/PeriodComparison/PeriodComparison.tsx(263,64): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/components/SchemaMapping/MappingEditor.tsx(14,22): error TS6133: 'ColumnCardType' is declared but its value is never read.
+src/components/SchemaMapping/MappingEditor.tsx(38,12): error TS6133: 'selectedTarget' is declared but its value is never read.
+src/components/SchemaMapping/MappingEditor.tsx(66,11): error TS6133: 'getMapping' is declared but its value is never read.
+src/components/SchemaMapping/MappingEditor.tsx(73,11): error TS6133: 'unmappedCount' is declared but its value is never read.
+src/components/ScopeBadge/ScopeBadge.tsx(88,17): error TS2322: Type 'string' is not assignable to type '"medium" | "large" | "small" | "tiny" | "extra-small" | "extra-large" | undefined'.
+src/components/shared/ConfirmDialog.tsx(31,5): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/components/shared/ConfirmDialog.tsx(35,7): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/components/shared/DataTable.tsx(8,1): error TS6133: 'ReactNode' is declared but its value is never read.
+src/components/shared/KpiCard.tsx(7,3): error TS2724: '"@fluentui/react-icons"' has no exported member named 'ArrowTrendingUp24Regular'. Did you mean 'ArrowTrending24Regular'?
+src/hooks/useDashboards.ts(13,5): error TS6196: 'DashboardSummary' is declared but never used.
+src/hooks/useDashboards.ts(15,5): error TS6196: 'AggregatedData' is declared but never used.
+src/hooks/useDashboards.ts(17,5): error TS6196: 'ComparisonData' is declared but never used.
+src/hooks/useFeatureFlags.ts(17,6): error TS6196: 'FeatureFlagValue' is declared but never used.
+src/hooks/useForms.ts(36,68): error TS2304: Cannot find name 'FormDefinition'.
+src/hooks/useForms.ts(88,58): error TS2304: Cannot find name 'PaginationParams'.
+src/hooks/useForms.ts(115,84): error TS2552: Cannot find name 'FormResponse'. Did you mean 'Response'?
+src/hooks/useForms.ts(127,26): error TS2552: Cannot find name 'FormResponse'. Did you mean 'Response'?
+src/hooks/useForms.ts(131,14): error TS2552: Cannot find name 'FormResponse'. Did you mean 'Response'?
+src/hooks/useForms.ts(139,14): error TS2552: Cannot find name 'FormResponse'. Did you mean 'Response'?
+src/hooks/useGeneration.ts(2,31): error TS6133: 'useCallback' is declared but its value is never read.
+src/hooks/useGeneration.ts(7,5): error TS6133: 'BatchGenerateResponse' is declared but its value is never read.
+src/hooks/useGeneration.ts(8,5): error TS6133: 'GeneratedReport' is declared but its value is never read.
+src/hooks/useGeneration.ts(9,5): error TS6133: 'GenerationStatus' is declared but its value is never read.
+src/hooks/useSearch.ts(2,74): error TS6133: 'SearchResult' is declared but its value is never read.
+src/hooks/useTemplates.ts(3,5): error TS6133: 'Template' is declared but its value is never read.
+src/hooks/useTemplates.ts(4,5): error TS6133: 'TemplateDetail' is declared but its value is never read.
+src/hooks/useTemplates.ts(5,5): error TS6133: 'Placeholder' is declared but its value is never read.
+src/hooks/useTemplates.ts(6,5): error TS6133: 'PlaceholderMapping' is declared but its value is never read.
+src/hooks/useTemplates.ts(8,5): error TS6133: 'TemplateUploadResponse' is declared but its value is never read.
+src/pages/__tests__/FilesPage.test.tsx(100,15): error TS6133: 'user' is declared but its value is never read.
+src/pages/BatchGenerationPage.tsx(36,1): error TS6133: 'useNavigate' is declared but its value is never read.
+src/pages/BatchGenerationPage.tsx(274,33): error TS2339: Property 'jobId' does not exist on type 'BatchGenerateResponse'.
+src/pages/BatchGenerationPage.tsx(290,38): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string | URL | undefined'.
+src/pages/DashboardEditorPage.tsx(84,7): error TS2322: Type '"TABLE"' is not assignable to type 'WidgetType'.
+src/pages/DashboardEditorPage.tsx(85,7): error TS2322: Type '"BAR_CHART"' is not assignable to type 'WidgetType'.
+src/pages/DashboardEditorPage.tsx(86,7): error TS2820: Type '"LINE_CHART"' is not assignable to type 'WidgetType'. Did you mean 'WidgetType.PIE_CHART'?
+src/pages/DashboardEditorPage.tsx(87,7): error TS2820: Type '"PIE_CHART"' is not assignable to type 'WidgetType'. Did you mean 'WidgetType.LINE_CHART'?
+src/pages/DashboardEditorPage.tsx(88,7): error TS2322: Type '"HEATMAP"' is not assignable to type 'WidgetType'.
+src/pages/DashboardEditorPage.tsx(375,102): error TS7053: Element implicitly has an 'any' type because expression of type '0' can't be used to index type '{}'.
+  Property '0' does not exist on type '{}'.
+src/pages/DashboardEditorPage.tsx(393,49): error TS2322: Type '{}' is not assignable to type 'number'.
+src/pages/DashboardEditorPage.tsx(407,49): error TS2322: Type '{}' is not assignable to type 'number'.
+src/pages/DashboardListPage.tsx(39,31): error TS2339: Property 'shadowLevel2' does not exist on type 'Record<ColorPaletteRed | ColorPaletteGreen | ColorPaletteDarkOrange | ColorPaletteYellow | ... 47 more ... | keyof ZIndexTokens, string>'.
+src/pages/DashboardListPage.tsx(148,68): error TS2322: Type '"neutral"' is not assignable to type '"success" | "subtle" | "danger" | "brand" | "important" | "informative" | "severe" | "warning" | undefined'.
+src/pages/DistributionRulesPage.tsx(39,5): error TS6196: 'TableRowId' is declared but never used.
+src/pages/DistributionRulesPage.tsx(335,57): error TS2339: Property 'items' does not exist on type 'PaginatedResponse<DistributionHistory>'.
+src/pages/DistributionRulesPage.tsx(340,52): error TS2339: Property 'items' does not exist on type 'PaginatedResponse<DistributionHistory>'.
+src/pages/ExcelImportPage.tsx(1,41): error TS6133: 'useEffect' is declared but its value is never read.
+src/pages/ExcelImportPage.tsx(9,5): error TS6133: 'Input' is declared but its value is never read.
+src/pages/ExcelImportPage.tsx(32,1): error TS6133: 'useSchemaMapping' is declared but its value is never read.
+src/pages/ExcelImportPage.tsx(34,1): error TS6133: 'LoadingSpinner' is declared but its value is never read.
+src/pages/ExcelImportPage.tsx(42,36): error TS6133: 'isLoadingForm' is declared but its value is never read.
+src/pages/FileDetailPage.tsx(68,26): error TS2339: Property 'fontSizeBody2' does not exist on type 'Record<ColorPaletteRed | ColorPaletteGreen | ColorPaletteDarkOrange | ColorPaletteYellow | ... 47 more ... | keyof ZIndexTokens, string>'.
+src/pages/FileDetailPage.tsx(72,26): error TS2339: Property 'fontSizeBody1' does not exist on type 'Record<ColorPaletteRed | ColorPaletteGreen | ColorPaletteDarkOrange | ColorPaletteYellow | ... 47 more ... | keyof ZIndexTokens, string>'.
+src/pages/FilesPage.tsx(73,45): error TS2339: Property 'items' does not exist on type 'PaginatedResponse<FileDetails>'.
+src/pages/FilesPage.tsx(176,48): error TS2322: Type 'Dispatch<SetStateAction<FileListParams>>' is not assignable to type '(filters: { status?: "" | FileStatus | undefined; mime_type?: string | undefined; sort_by?: string | undefined; sort_order?: "asc" | "desc" | undefined; }) => void'.
+  Types of parameters 'value' and 'filters' are incompatible.
+    Type '{ status?: "" | FileStatus | undefined; mime_type?: string | undefined; sort_by?: string | undefined; sort_order?: "asc" | "desc" | undefined; }' is not assignable to type 'SetStateAction<FileListParams>'.
+      Type '{ status?: "" | FileStatus | undefined; mime_type?: string | undefined; sort_by?: string | undefined; sort_order?: "asc" | "desc" | undefined; }' is not assignable to type 'FileListParams'.
+        Types of property 'status' are incompatible.
+          Type '"" | FileStatus | undefined' is not assignable to type 'FileStatus | undefined'.
+            Type '""' is not assignable to type 'FileStatus | undefined'.
+src/pages/FormAssignmentPage.tsx(8,5): error TS6133: 'Spinner' is declared but its value is never read.
+src/pages/FormAssignmentPage.tsx(13,5): error TS6133: 'Divider' is declared but its value is never read.
+src/pages/FormAssignmentPage.tsx(23,69): error TS2307: Cannot find module '../../hooks/useForms' or its corresponding type declarations.
+src/pages/FormAssignmentPage.tsx(24,34): error TS2307: Cannot find module '../../hooks/useAdmin' or its corresponding type declarations.
+src/pages/FormAssignmentPage.tsx(26,28): error TS2307: Cannot find module '../LoadingSpinner' or its corresponding type declarations.
+src/pages/FormEditorPage.tsx(14,5): error TS6133: 'Spinner' is declared but its value is never read.
+src/pages/FormEditorPage.tsx(34,71): error TS2307: Cannot find module '../../hooks/useForms' or its corresponding type declarations.
+src/pages/FormEditorPage.tsx(36,28): error TS2307: Cannot find module '../LoadingSpinner' or its corresponding type declarations.
+src/pages/FormEditorPage.tsx(219,44): error TS2339: Property 'mainPanel' does not exist on type 'Record<"container" | "header" | "sectionHeader" | "editorLayout" | "fieldCard" | "fieldActions" | "propPanel", string>'.
+src/pages/FormFillerPage.tsx(13,5): error TS6133: 'Checkbox' is declared but its value is never read.
+src/pages/FormFillerPage.tsx(15,5): error TS2305: Module '"@fluentui/react-components"' has no exported member 'Progress'.
+src/pages/FormFillerPage.tsx(25,101): error TS2307: Cannot find module '../../hooks/useForms' or its corresponding type declarations.
+src/pages/FormFillerPage.tsx(26,28): error TS2307: Cannot find module '../LoadingSpinner' or its corresponding type declarations.
+src/pages/FormFillerPage.tsx(54,28): error TS6133: 'saveNow' is declared but its value is never read.
+src/pages/FormFillerPage.tsx(178,22): error TS18046: 'sectionFields' is of type 'unknown'.
+src/pages/FormFillerPage.tsx(180,30): error TS18046: 'sectionFields' is of type 'unknown'.
+src/pages/FormFillerPage.tsx(184,22): error TS18046: 'sectionFields' is of type 'unknown'.
+src/pages/FormsListPage.tsx(2,10): error TS6133: 'Link' is declared but its value is never read.
+src/pages/FormsListPage.tsx(20,5): error TS6133: 'Spinner' is declared but its value is never read.
+src/pages/FormsListPage.tsx(30,41): error TS2307: Cannot find module '../../hooks/useForms' or its corresponding type declarations.
+src/pages/FormsListPage.tsx(31,31): error TS2307: Cannot find module '../../hooks/useFeatureFlags' or its corresponding type declarations.
+src/pages/FormsListPage.tsx(32,28): error TS2307: Cannot find module '../../components/ScopeBadge' or its corresponding type declarations.
+src/pages/FormsListPage.tsx(34,28): error TS2307: Cannot find module '../LoadingSpinner' or its corresponding type declarations.
+src/pages/FormsListPage.tsx(68,11): error TS6133: 'handleDelete' is declared but its value is never read.
+src/pages/FormsListPage.tsx(168,47): error TS7006: Parameter 'form' implicitly has an 'any' type.
+src/pages/GeneratedReportsListPage.tsx(19,5): error TS6133: 'CardHeader' is declared but its value is never read.
+src/pages/HealthDashboardPage.tsx(76,26): error TS2339: Property 'fontSizeTitle1' does not exist on type 'Record<ColorPaletteRed | ColorPaletteGreen | ColorPaletteDarkOrange | ColorPaletteYellow | ... 47 more ... | keyof ZIndexTokens, string>'.
+src/pages/HealthDashboardPage.tsx(83,26): error TS2339: Property 'fontSizeSmall' does not exist on type 'Record<ColorPaletteRed | ColorPaletteGreen | ColorPaletteDarkOrange | ColorPaletteYellow | ... 47 more ... | keyof ZIndexTokens, string>'.
+src/pages/HealthDashboardPage.tsx(107,23): error TS2551: Property 'colorPaletteOrangeForeground1' does not exist on type 'Record<ColorPaletteRed | ColorPaletteGreen | ColorPaletteDarkOrange | ColorPaletteYellow | ... 47 more ... | keyof ZIndexTokens, string>'. Did you mean 'colorPaletteDarkOrangeForeground1'?
+src/pages/HealthDashboardPage.tsx(137,44): error TS2322: Type '"neutral"' is not assignable to type '"success" | "subtle" | "danger" | "brand" | "important" | "informative" | "severe" | "warning" | undefined'.
+src/pages/HealthDashboardPage.tsx(217,21): error TS2322: Type '{ children: string; appearance: "subtle"; icon: Element; onClick: () => Promise<QueryObserverResult<HealthDashboard, Error>>; loading: boolean; }' is not assignable to type 'IntrinsicAttributes & (ButtonProps & RefAttributes<HTMLButtonElement | HTMLAnchorElement>)'.
+  Property 'loading' does not exist on type 'IntrinsicAttributes & (ButtonProps & RefAttributes<HTMLButtonElement | HTMLAnchorElement>)'.
+src/pages/HealthDashboardPage.tsx(322,121): error TS2339: Property 'fontSizeSmall' does not exist on type 'Record<ColorPaletteRed | ColorPaletteGreen | ColorPaletteDarkOrange | ColorPaletteYellow | ... 47 more ... | keyof ZIndexTokens, string>'.
+src/pages/IntegrationPage.tsx(9,5): error TS6133: 'Title3' is declared but its value is never read.
+src/pages/IntegrationPage.tsx(19,5): error TS6133: 'TableCellLayout' is declared but its value is never read.
+src/pages/IntegrationPage.tsx(40,5): error TS6196: 'MessageBarIntent' is declared but never used.
+src/pages/IntegrationPage.tsx(43,5): error TS6196: 'TableRowId' is declared but never used.
+src/pages/IntegrationPage.tsx(69,5): error TS6196: 'SyncJobHistory' is declared but never used.
+src/pages/IntegrationPage.tsx(508,45): error TS2339: Property 'items' does not exist on type 'PaginatedResponse<SyncJobHistory>'.
+src/pages/LocalDashboardPage.tsx(73,31): error TS2339: Property 'shadowLevel4' does not exist on type 'Record<ColorPaletteRed | ColorPaletteGreen | ColorPaletteDarkOrange | ColorPaletteYellow | ... 47 more ... | keyof ZIndexTokens, string>'.
+src/pages/LocalDashboardPage.tsx(131,11): error TS6196: 'LocalForm' is declared but never used.
+src/pages/LocalDashboardPage.tsx(141,11): error TS6196: 'LocalTemplate' is declared but never used.
+src/pages/LocalDashboardPage.tsx(191,30): error TS2339: Property 'content' does not exist on type 'PaginatedResponse<FormDefinition>'.
+src/pages/LocalDashboardPage.tsx(249,45): error TS7006: Parameter 'form' implicitly has an 'any' type.
+src/pages/MatrixDashboard.tsx(128,44): error TS2322: Type '{ children: string; strong: true; }' is not assignable to type 'IntrinsicAttributes & TextPresetProps'.
+  Property 'strong' does not exist on type 'IntrinsicAttributes & TextPresetProps'.
+src/pages/NotificationSettingsPage.tsx(12,33): error TS6196: 'NotificationSettings' is declared but never used.
+src/pages/NotificationSettingsPage.tsx(53,26): error TS2551: Property 'fontSizeBase13' does not exist on type 'Record<ColorPaletteRed | ColorPaletteGreen | ColorPaletteDarkOrange | ColorPaletteYellow | ... 47 more ... | keyof ZIndexTokens, string>'. Did you mean 'fontSizeBase100'?
+src/pages/NotificationSettingsPage.tsx(64,7): error TS2322: Type '"FILE_PROCESSED"' is not assignable to type 'NotificationType'.
+src/pages/NotificationSettingsPage.tsx(65,7): error TS2322: Type '"FILE_FAILED"' is not assignable to type 'NotificationType'.
+src/pages/NotificationSettingsPage.tsx(66,7): error TS2322: Type '"REPORT_SUBMITTED"' is not assignable to type 'NotificationType'.
+src/pages/NotificationSettingsPage.tsx(67,7): error TS2322: Type '"REPORT_APPROVED"' is not assignable to type 'NotificationType'.
+src/pages/NotificationSettingsPage.tsx(68,7): error TS2322: Type '"REPORT_REJECTED"' is not assignable to type 'NotificationType'.
+src/pages/NotificationSettingsPage.tsx(69,7): error TS2322: Type '"DEADLINE_APPROACHING"' is not assignable to type 'NotificationType'.
+src/pages/NotificationSettingsPage.tsx(70,7): error TS2322: Type '"DEADLINE_MISSED"' is not assignable to type 'NotificationType'.
+src/pages/NotificationSettingsPage.tsx(71,7): error TS2322: Type '"BATCH_COMPLETED"' is not assignable to type 'NotificationType'.
+src/pages/PeriodDetailPage.tsx(147,103): error TS2339: Property 'end_date' does not exist on type 'Period'.
+src/pages/PromotionPage.tsx(202,48): error TS2339: Property 'items' does not exist on type 'PaginatedResponse<PromotionCandidate>'.
+src/pages/ReportDetailPage.tsx(13,5): error TS6133: 'Badge' is declared but its value is never read.
+src/pages/ReportDetailPage.tsx(219,85): error TS2339: Property 'org_name' does not exist on type 'Report'.
+src/pages/ReportDetailPage.tsx(227,85): error TS2339: Property 'period_name' does not exist on type 'Report'.
+src/pages/ReportDetailPage.tsx(237,48): error TS2339: Property 'report_code' does not exist on type 'Report'.
+src/pages/ReportDetailPage.tsx(241,50): error TS2339: Property 'completeness_score' does not exist on type 'Report'.
+src/pages/ReportDetailPage.tsx(283,17): error TS2322: Type '(comment: string) => void' is not assignable to type '() => void'.
+  Target signature provides too few arguments. Expected 1 or more, but got 0.
+src/pages/SchemaMappingPage.tsx(8,5): error TS6133: 'Title3' is declared but its value is never read.
+src/pages/SchemaMappingPage.tsx(42,28): error TS6133: 'setSelectedFileId' is declared but its value is never read.
+src/pages/SchemaMappingPage.tsx(223,40): error TS6133: 'e' is declared but its value is never read.
+src/pages/SchemaMappingPage.tsx(264,48): error TS6133: 'e' is declared but its value is never read.
+src/pages/SchemaMappingPage.tsx(278,64): error TS6133: 'e' is declared but its value is never read.
+src/pages/SearchResultsPage.tsx(19,27): error TS2307: Cannot find module '../../hooks/useSearch' or its corresponding type declarations.
+src/pages/SearchResultsPage.tsx(20,45): error TS2307: Cannot find module '../../api/search' or its corresponding type declarations.
+src/pages/SearchResultsPage.tsx(195,47): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/pages/SearchResultsPage.tsx(195,52): error TS7006: Parameter 'result' implicitly has an 'any' type.
+src/pages/TemplateDetailPage.tsx(4,5): error TS2305: Module '"@fluentui/react-components"' has no exported member 'Page'.
+src/pages/TemplateDetailPage.tsx(14,5): error TS6133: 'CardHeader' is declared but its value is never read.
+src/pages/TemplateListPage.tsx(268,71): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/pages/TemplateListPage.tsx(268,74): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/pages/TemplateListPage.tsx(286,57): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/pages/TemplateListPage.tsx(286,60): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/pages/TemplateListPage.tsx(293,57): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/pages/TemplateListPage.tsx(293,60): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/pages/UploadPage.tsx(29,9): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/pages/UploadPage.tsx(30,9): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/pages/UploadPage.tsx(31,9): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/pages/UploadPage.tsx(39,13): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/pages/UploadPage.tsx(43,9): error TS2322: Type 'string' is not assignable to type 'undefined'.
+../../packages/types/src/files.ts(1,15): error TS6196: 'ProcessingStatus' is declared but never used.

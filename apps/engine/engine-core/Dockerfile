@@ -38,6 +38,15 @@ RUN mvn clean package -DskipTests -B --enable-preview
 # ============================================================
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
+# Download and install OpenTelemetry Java agent
+RUN apk add --no-cache wget curl
+
+# Create agent directory
+RUN mkdir -p /app/agent && \
+    wget -q -O /app/agent/opentelemetry-javaagent.jar \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.9.0/opentelemetry-javaagent.jar && \
+    chmod 644 /app/agent/opentelemetry-javaagent.jar
+
 # Create non-root user
 RUN addgroup -g 1001 appgroup && \
     adduser -u 1001 -G appgroup -D appuser
@@ -47,13 +56,20 @@ WORKDIR /app
 # Copy the fat JAR from builder
 COPY --from=builder /build/app/target/*.jar app.jar
 
+# Copy OTEL agent
+COPY --from=runtime /app/agent/opentelemetry-javaagent.jar /app/agent/
+
 # Change ownership
 RUN chown -R appuser:appgroup /app
 
 USER appuser
 
-# JVM flags
-ENV JAVA_OPTS="-XX:+UseZGC -XX:MaxRAMPercentage=75.0 --enable-preview"
+# JVM flags with OTEL agent
+ENV JAVA_OPTS="-XX:+UseZGC -XX:MaxRAMPercentage=75.0 --enable-preview \
+    -javaagent:/app/agent/opentelemetry-javaagent.jar \
+    -Dotel.service.name=engine-core \
+    -Dotel.exporter.otlp.endpoint=http://otel-collector:4317 \
+    -Dotel.resource.attributes=service.namespace=reportplatform,deployment.environment=local"
 
 EXPOSE 8081
 

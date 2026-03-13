@@ -1,7 +1,10 @@
+import { AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useIsAuthenticated, AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react';
 
 import AppLayout from './components/Layout/AppLayout';
+import AdminGuard from './components/auth/AdminGuard';
+import ToastContainer from './components/NotificationCenter/ToastContainer';
+
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import DashboardListPage from './pages/DashboardListPage';
@@ -11,7 +14,6 @@ import FilesPage from './pages/FilesPage';
 import FileDetailPage from './pages/FileDetailPage';
 import UploadPage from './pages/UploadPage';
 import SettingsPage from './pages/SettingsPage';
-import NotFoundPage from './pages/NotFoundPage';
 import ReportsPage from './pages/ReportsPage';
 import ReportDetailPage from './pages/ReportDetailPage';
 import PeriodsPage from './pages/PeriodsPage';
@@ -22,14 +24,12 @@ import FormFillerPage from './pages/FormFillerPage';
 import ExcelImportPage from './pages/ExcelImportPage';
 import FormEditorPage from './pages/FormEditorPage';
 import FormAssignmentPage from './pages/FormAssignmentPage';
-import LoadingSpinner from './components/LoadingSpinner';
 import NotificationSettingsPage from './pages/NotificationSettingsPage';
 import SearchResultsPage from './pages/SearchResultsPage';
 import TemplateListPage from './pages/TemplateListPage';
 import TemplateDetailPage from './pages/TemplateDetailPage';
 import BatchGenerationPage from './pages/BatchGenerationPage';
 import GeneratedReportsListPage from './pages/GeneratedReportsListPage';
-import ToastContainer from './components/NotificationCenter/ToastContainer';
 import LocalDashboardPage from './pages/LocalDashboardPage';
 import ComparisonPage from './pages/ComparisonPage';
 import HoldingAdminOverviewPage from './pages/HoldingAdminOverviewPage';
@@ -37,11 +37,9 @@ import HealthDashboardPage from './pages/HealthDashboardPage';
 import IntegrationPage from './pages/IntegrationPage';
 import DistributionRulesPage from './pages/DistributionRulesPage';
 import PromotionPage from './pages/PromotionPage';
-import AdminGuard from './components/auth/AdminGuard';
+import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
-    const isAuthenticated = useIsAuthenticated();
-
     return (
         <>
             <ToastContainer />

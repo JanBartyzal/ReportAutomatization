@@ -34,6 +34,15 @@ RUN java -Djarmode=layertools -jar *.jar extract --destination /extracted
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre
+
+# Download and install OpenTelemetry Java agent
+RUN apt-get update && apt-get install -y --no-install-recommends wget curl && \
+    mkdir -p /app/agent && \
+    wget -q -O /app/agent/opentelemetry-javaagent.jar \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.9.0/opentelemetry-javaagent.jar && \
+    chmod 644 /app/agent/opentelemetry-javaagent.jar && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Copy extracted layers
@@ -42,8 +51,15 @@ COPY --from=builder /extracted/spring-boot-loader/ ./
 COPY --from=builder /extracted/snapshot-dependencies/ ./
 COPY --from=builder /extracted/application/ ./
 
-# JVM flags
-ENV JAVA_OPTS="--enable-preview -XX:+UseZGC -XX:MaxRAMPercentage=75.0"
+# Copy OTEL agent
+COPY --from=runtime /app/agent/opentelemetry-javaagent.jar /app/agent/
+
+# JVM flags with OTEL agent
+ENV JAVA_OPTS="--enable-preview -XX:+UseZGC -XX:MaxRAMPercentage=75.0 \
+    -javaagent:/app/agent/opentelemetry-javaagent.jar \
+    -Dotel.service.name=engine-reporting \
+    -Dotel.exporter.otlp.endpoint=http://otel-collector:4317 \
+    -Dotel.resource.attributes=service.namespace=reportplatform,deployment.environment=local"
 
 EXPOSE 8105
 

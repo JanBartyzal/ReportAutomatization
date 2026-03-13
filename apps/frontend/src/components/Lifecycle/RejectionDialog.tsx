@@ -1,7 +1,7 @@
 import React from 'react';
 import {
     Dialog,
-    DialogTrigger,
+    // DialogTrigger,
     DialogSurface,
     DialogTitle,
     DialogBody,
@@ -10,6 +10,7 @@ import {
     Button,
     Textarea,
     Body1,
+    tokens,
 } from '@fluentui/react-components';
 
 interface RejectionDialogProps {
@@ -35,7 +36,7 @@ export const RejectionDialog: React.FC<RejectionDialogProps> = ({
     const isValid = comment.trim().length > 0;
 
     return (
-        <Dialog open={open} onOpenChange={(e, data) => !data.open && onClose()}>
+        <Dialog open={open} onOpenChange={(_e, data) => !data.open && onClose()}>
             <DialogSurface>
                 <DialogBody>
                     <DialogTitle>
@@ -48,7 +49,7 @@ export const RejectionDialog: React.FC<RejectionDialogProps> = ({
                         <Textarea
                             placeholder="Enter rejection reason..."
                             value={comment}
-                            onChange={(e, data) => onCommentChange(data.value)}
+                            onChange={(_e, data) => onCommentChange(data.value)}
                             style={{ width: '100%', minHeight: '100px' }}
                         />
                     </DialogContent>
@@ -57,9 +58,10 @@ export const RejectionDialog: React.FC<RejectionDialogProps> = ({
                             Cancel
                         </Button>
                         <Button
-                            appearance="danger"
+                            appearance="primary"
                             onClick={onConfirm}
                             disabled={!isValid}
+                            style={{ backgroundColor: tokens.colorPaletteRedBackground3, color: tokens.colorNeutralForegroundOnBrand }}
                         >
                             Reject
                         </Button>

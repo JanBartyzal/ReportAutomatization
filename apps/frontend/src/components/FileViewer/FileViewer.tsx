@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     makeStyles,
     tokens,
@@ -6,9 +6,9 @@ import {
     TabList,
     Title3,
     Body1,
-    ProgressBar,
 } from '@fluentui/react-components';
-import type { FileContent, FileContentType, ExcelSheet, PdfPage, CsvContent } from '@reportplatform/types';
+import { FileContentType } from '@reportplatform/types';
+import type { FileContent, ExcelSheet, PdfPage, CsvContent } from '@reportplatform/types';
 import { UnifiedTableView } from '../UnifiedTableView/UnifiedTableView';
 
 /**
@@ -49,14 +49,14 @@ const useStyles = makeStyles({
         alignItems: 'center',
         padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalS}`,
         borderRadius: tokens.borderRadiusSmall,
-        fontSize: tokens.fontSizeBody2,
+        fontSize: tokens.fontSizeBase200,
         fontWeight: '500',
     },
     textContent: {
         whiteSpace: 'pre-wrap',
         fontFamily: tokens.fontFamilyMonospace,
-        fontSize: tokens.fontSizeBody2,
-        lineHeight: tokens.lineHeightBody2,
+        fontSize: tokens.fontSizeBase200,
+        lineHeight: tokens.lineHeightBase200,
         maxHeight: '500px',
         overflowY: 'auto',
     },
@@ -73,11 +73,11 @@ const useStyles = makeStyles({
     },
     metadataLabel: {
         color: tokens.colorNeutralForeground2,
-        fontSize: tokens.fontSizeBody2,
+        fontSize: tokens.fontSizeBase200,
     },
     metadataValue: {
         color: tokens.colorNeutralForeground1,
-        fontSize: tokens.fontSizeBody2,
+        fontSize: tokens.fontSizeBase200,
         fontWeight: '500',
     },
     sheetInfo: {
@@ -141,7 +141,7 @@ function ExcelViewer({ sheets }: { sheets: ExcelSheet[] }) {
                     tables={[
                         {
                             table_id: `sheet-${selectedSheet}`,
-                            source_type: 'EXCEL',
+                            source_type: FileContentType.EXCEL,
                             source_sheet: currentSheet.sheet_name,
                             headers: currentSheet.headers,
                             rows: currentSheet.rows,
@@ -259,7 +259,7 @@ function CsvViewer({ csv }: { csv: CsvContent }) {
                 tables={[
                     {
                         table_id: 'csv-main',
-                        source_type: 'CSV',
+                        source_type: FileContentType.CSV,
                         headers: csv.headers,
                         rows: csv.rows,
                         row_count: csv.row_count,
@@ -411,7 +411,7 @@ export function FileViewer({ content }: FileViewerProps) {
             <TabList
                 className={styles.tabs}
                 selectedValue={selectedTab}
-                onTabSelect={(_e: any, d: { value: string | number }) => setSelectedTab(d.value as ViewTab)}
+                onTabSelect={(_e: any, d: any) => setSelectedTab(d.value as ViewTab)}
             >
                 <Tab value="content">Content</Tab>
                 <Tab value="tables">Extracted Tables ({content.tables?.length || 0})</Tab>

@@ -13,8 +13,17 @@ from typing import TYPE_CHECKING
 import grpc
 
 # Generated proto stubs
+import sys
+import os
+
+# Add project root to path for proto imports
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.abspath(os.path.join(_current_dir, "../../../../.."))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 from common.v1 import common_pb2  # type: ignore[import-untyped]
-from generator.v1 import excel_generator_pb2, excel_generator_pb2_grpc  # type: ignore[import-untyped]
+from generator.v1 import generator_pb2 as excel_generator_pb2, generator_pb2_grpc as excel_generator_pb2_grpc  # type: ignore[import-untyped]
 
 from src.common.blob_client import GenXlsBlobClient
 from src.generators.xls.models.context import extract_context_from_grpc

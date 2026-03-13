@@ -5,14 +5,15 @@
 
 import React, { useState } from 'react';
 import {
+    Title2,
+    Title3,
     Body1,
-    Subtitle1,
-    Subtitle2,
     Divider,
     DataGrid,
     DataGridHeader,
     DataGridRow,
     DataGridCell,
+    DataGridBody,
     TableColumnDefinition,
     createTableColumn,
     Button,
@@ -24,7 +25,6 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    DialogOpenChangeEventArgs,
     Input,
     Label,
     Select,
@@ -33,7 +33,11 @@ import {
     Tag,
     TagGroup,
 } from '@fluentui/react-components';
-import { AddRegular, DeleteRegular, EditRegular, DownloadRegular } from '@fluentui/react-icons';
+import type { 
+    DialogOpenChangeEvent, 
+    DialogOpenChangeData,
+} from '@fluentui/react-components';
+import { AddRegular, DeleteRegular, EditRegular, ArrowDownloadRegular } from '@fluentui/react-icons';
 import {
     useDistributionRules,
     useCreateDistributionRule,
@@ -138,7 +142,7 @@ const DistributionRulesPage: React.FC = () => {
         createTableColumn<DistributionRule>({
             columnId: 'schedule',
             renderHeaderCell: () => 'Schedule',
-            renderCell: (item) => schedules?.find(s => s.id === item.schedule_id)?.cron_expression || item.schedule_id,
+            renderCell: (item) => schedules?.find((s: any) => s.id === item.schedule_id)?.cron_expression || item.schedule_id,
         }),
         createTableColumn<DistributionRule>({
             columnId: 'template',
@@ -187,16 +191,16 @@ const DistributionRulesPage: React.FC = () => {
     ];
 
     return (
-        <div className="distribution-page">
+        <div className="distribution-page" style={{ padding: '24px' }}>
             <div className="page-header">
-                <Subtitle1>Report Distribution</Subtitle1>
+                <Title2>Report Distribution</Title2>
                 <Body1>Configure automated report delivery to email recipients after sync</Body1>
             </div>
 
-            <Divider className="divider" />
+            <Divider className="divider" style={{ margin: '16px 0' }} />
 
-            <div className="action-bar">
-                <Dialog open={isDialogOpen} onOpenChange={(_: unknown, data: DialogOpenChangeEventArgs) => !data.open && handleCloseDialog()}>
+            <div className="action-bar" style={{ marginBottom: '16px' }}>
+                <Dialog open={isDialogOpen} onOpenChange={(_: DialogOpenChangeEvent, data: DialogOpenChangeData) => !data.open && handleCloseDialog()}>
                     <DialogTrigger disableButtonEnhancement>
                         <Button
                             appearance="primary"
@@ -212,57 +216,71 @@ const DistributionRulesPage: React.FC = () => {
                                 {editingRule ? 'Edit Distribution Rule' : 'New Distribution Rule'}
                             </DialogTitle>
                             <DialogContent>
-                                <div className="form-fields">
-                                    <Label required>Schedule</Label>
-                                    <Select
-                                        value={formData.schedule_id}
-                                        onChange={(_, data) => setFormData({ ...formData, schedule_id: data.value })}
-                                    >
-                                        {schedules?.map(schedule => (
-                                            <Option key={schedule.id} value={schedule.id}>
-                                                {schedule.cron_expression}
-                                            </Option>
-                                        ))}
-                                    </Select>
-
-                                    <Label required>Report Template</Label>
-                                    <Select
-                                        value={formData.report_template_id}
-                                        onChange={(_, data) => setFormData({ ...formData, report_template_id: data.value })}
-                                    >
-                                        <Option value="">Select a template...</Option>
-                                        {templates?.map((t: Template) => (
-                                            <Option key={t.id} value={t.id}>{t.name}</Option>
-                                        ))}
-                                    </Select>
-
-                                    <Label required>Format</Label>
-                                    <Select
-                                        value={formData.format}
-                                        onChange={(_, data) => setFormData({ ...formData, format: data.value as 'xlsx' | 'pdf' | 'pptx' })}
-                                    >
-                                        <Option value="xlsx">Excel (XLSX)</Option>
-                                        <Option value="pdf">PDF</Option>
-                                        <Option value="pptx">PowerPoint (PPTX)</Option>
-                                    </Select>
-
-                                    <Label>Recipients</Label>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <Input
-                                            value={recipientInput}
-                                            onChange={(_, data) => setRecipientInput(data.value)}
-                                            placeholder="email@example.com"
-                                            onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
-                                        />
-                                        <Button onClick={handleAddRecipient}>Add</Button>
+                                <div className="form-fields" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <div>
+                                        <Label required>Schedule</Label>
+                                        <Select
+                                            style={{ width: '100%' }}
+                                            value={formData.schedule_id}
+                                            onChange={(_, data) => setFormData({ ...formData, schedule_id: data.value })}
+                                        >
+                                            <Option value="">Select a schedule...</Option>
+                                            {schedules?.map(schedule => (
+                                                <Option key={schedule.id} value={schedule.id}>
+                                                    {schedule.cron_expression}
+                                                </Option>
+                                            ))}
+                                        </Select>
                                     </div>
+
+                                    <div>
+                                        <Label required>Report Template</Label>
+                                        <Select
+                                            style={{ width: '100%' }}
+                                            value={formData.report_template_id}
+                                            onChange={(_, data) => setFormData({ ...formData, report_template_id: data.value })}
+                                        >
+                                            <Option value="">Select a template...</Option>
+                                            {templates?.map((t: Template) => (
+                                                <Option key={t.id} value={t.id}>{t.name}</Option>
+                                            ))}
+                                        </Select>
+                                    </div>
+
+                                    <div>
+                                        <Label required>Format</Label>
+                                        <Select
+                                            style={{ width: '100%' }}
+                                            value={formData.format}
+                                            onChange={(_, data) => setFormData({ ...formData, format: data.value as 'xlsx' | 'pdf' | 'pptx' })}
+                                        >
+                                            <Option value="xlsx">Excel (XLSX)</Option>
+                                            <Option value="pdf">PDF</Option>
+                                            <Option value="pptx">PowerPoint (PPTX)</Option>
+                                        </Select>
+                                    </div>
+
+                                    <div>
+                                        <Label>Recipients</Label>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <Input
+                                                style={{ flex: 1 }}
+                                                value={recipientInput}
+                                                onChange={(_, data) => setRecipientInput(data.value)}
+                                                placeholder="email@example.com"
+                                                onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
+                                            />
+                                            <Button onClick={handleAddRecipient}>Add</Button>
+                                        </div>
+                                    </div>
+                                    
                                     {formData.recipients.length > 0 && (
                                         <TagGroup>
-                                            {formData.recipients.map(recipient => (
+                                            {formData.recipients.map((recipient: string) => (
                                                 <Tag
                                                     key={recipient}
                                                     dismissible
-                                                    onDismiss={() => handleRemoveRecipient(recipient)}
+                                                    onClick={() => handleRemoveRecipient(recipient)}
                                                 >
                                                     {recipient}
                                                 </Tag>
@@ -300,47 +318,45 @@ const DistributionRulesPage: React.FC = () => {
                             )}
                         </DataGridRow>
                     </DataGridHeader>
-                    <DataGridRow<DistributionRule>>
-                        {({ item }) => (
-                            <>
-                                {columns.map(col => (
-                                    <DataGridCell key={col.columnId}>
-                                        {col.renderCell?.(item)}
-                                    </DataGridCell>
-                                ))}
-                            </>
+                    <DataGridBody<DistributionRule>>
+                        {({ item, rowId }) => (
+                            <DataGridRow<DistributionRule> key={rowId}>
+                                {({ renderCell }) => (
+                                    <DataGridCell>{renderCell(item)}</DataGridCell>
+                                )}
+                            </DataGridRow>
                         )}
-                    </DataGridRow>
+                    </DataGridBody>
                 </DataGrid>
             )}
 
-            {distributionHistory && distributionHistory.items.length > 0 && (
-                <>
-                    <Divider style={{ marginTop: '32px' }} />
-                    <Subtitle2>Distribution History</Subtitle2>
+            {distributionHistory && distributionHistory.data.length > 0 && (
+                <div style={{ marginTop: '32px' }}>
+                    <Divider style={{ margin: '16px 0' }} />
+                    <Title3>Distribution History</Title3>
                     <DataGrid
-                        items={distributionHistory.items}
+                        items={distributionHistory.data}
                         columns={[
                             createTableColumn({
                                 columnId: 'rule_id',
                                 renderHeaderCell: () => 'Rule',
-                                renderCell: (item) => rules?.find(r => r.id === item.rule_id)?.report_template_name || item.rule_id,
+                                renderCell: (item: any) => rules?.find((r: any) => r.id === item.rule_id)?.report_template_name || item.rule_id,
                             }),
                             createTableColumn({
                                 columnId: 'recipients',
                                 renderHeaderCell: () => 'Recipients',
-                                renderCell: (item) => item.recipients.join(', '),
+                                renderCell: (item: any) => item.recipients.join(', '),
                             }),
                             createTableColumn({
                                 columnId: 'timestamp',
                                 renderHeaderCell: () => 'Timestamp',
-                                renderCell: (item) => new Date(item.timestamp).toLocaleString(),
+                                renderCell: (item: any) => new Date(item.timestamp).toLocaleString(),
                             }),
                             createTableColumn({
                                 columnId: 'status',
                                 renderHeaderCell: () => 'Status',
-                                renderCell: (item) => (
-                                    <Badge appearance="filled" color={item.status === 'sent' ? 'success' : item.status === 'failed' ? 'error' : 'warning'}>
+                                renderCell: (item: any) => (
+                                    <Badge appearance="filled" color={item.status === 'sent' ? 'success' : item.status === 'failed' ? 'danger' : 'warning'}>
                                         {item.status}
                                     </Badge>
                                 ),
@@ -348,11 +364,11 @@ const DistributionRulesPage: React.FC = () => {
                             createTableColumn({
                                 columnId: 'file',
                                 renderHeaderCell: () => 'File',
-                                renderCell: (item) => item.file_url ? (
+                                renderCell: (item: any) => item.file_url ? (
                                     <Button
                                         size="small"
                                         appearance="subtle"
-                                        icon={<DownloadRegular />}
+                                        icon={<ArrowDownloadRegular />}
                                         onClick={() => window.open(item.file_url!, '_blank')}
                                     >
                                         Download
@@ -369,9 +385,17 @@ const DistributionRulesPage: React.FC = () => {
                                 )}
                             </DataGridRow>
                         </DataGridHeader>
-                        <DataGridRow />
+                        <DataGridBody<any>>
+                            {({ item, rowId }) => (
+                                <DataGridRow key={rowId}>
+                                    {({ renderCell }) => (
+                                        <DataGridCell>{renderCell(item)}</DataGridCell>
+                                    )}
+                                </DataGridRow>
+                            )}
+                        </DataGridBody>
                     </DataGrid>
-                </>
+                </div>
             )}
         </div>
     );

@@ -18,7 +18,7 @@ import {
 import { ChevronLeft24Regular, ChevronRight24Regular, HistoryRegular } from '@fluentui/react-icons';
 import { useFile } from '../hooks/useFiles';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { getStatusColors } from '../theme/statusColors';
+import { StatusBadge } from '../components/shared/StatusBadge';
 import { useNavigate } from 'react-router-dom';
 
 /**
@@ -65,11 +65,11 @@ const useStyles = makeStyles({
     },
     metadataLabel: {
         color: tokens.colorNeutralForeground2,
-        fontSize: tokens.fontSizeBody2,
+        fontSize: tokens.fontSizeBase300,
     },
     metadataValue: {
         color: tokens.colorNeutralForeground1,
-        fontSize: tokens.fontSizeBody1,
+        fontSize: tokens.fontSizeBase200,
     },
     navigation: {
         display: 'flex',
@@ -211,7 +211,7 @@ export default function FileDetailPage() {
                     <div className={styles.metadataItem}>
                         <Body1 className={styles.metadataLabel}><strong>Status:</strong></Body1>
                         <div style={{ marginTop: tokens.spacingVerticalXS }}>
-                            <Badge color={getStatusColors(file.status).color as any}>{file.status}</Badge>
+                            <StatusBadge status={file.status} />
                         </div>
                     </div>
                     <div className={styles.metadataItem}>

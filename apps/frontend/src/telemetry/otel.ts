@@ -27,7 +27,9 @@ import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { W3CTraceContextPropagator, trace, context, propagation } from '@opentelemetry/api';
+import { trace, context, propagation, Span } from '@opentelemetry/api';
+// @ts-ignore - Propagator might be moved or in a different package version
+import { W3CTraceContextPropagator } from '@opentelemetry/core';
 
 let initialized = false;
 
@@ -73,7 +75,7 @@ export function getSessionInfo(): { sessionId: string; sessionStart: number } {
 export function getTraceId(): string {
     const span = trace.getActiveSpan();
     if (!span) return '';
-    return span.spanContext().traceId;
+    return (span.spanContext().traceId as string) || '';
 }
 
 /**
@@ -104,7 +106,7 @@ export function reportError(error: Error, contextData?: Record<string, string>):
 
     // Also log to console in development
     if (import.meta.env.DEV) {
-        console.error('[OTEL] Error reported:', error.message, contextData, 'TraceID:', span.spanContext().traceId);
+        console.error('[OTEL] Error reported:', error.message, contextData, 'TraceID:', String(span.spanContext().traceId));
     }
 }
 
@@ -156,8 +158,9 @@ export function initTelemetry(): void {
                 clearTimingResources: true,
                 // Add custom span attributes for API calls
                 applyCustomAttributesOnSpan: (span, request) => {
-                    span.setAttribute('http.url', request.url);
-                    span.setAttribute('http.method', request.method || 'GET');
+                    const url = (request as any).url || '';
+                    span.setAttribute('http.url', url);
+                    span.setAttribute('http.method', (request as any).method || 'GET');
                 },
             }),
             new XMLHttpRequestInstrumentation({
@@ -168,8 +171,8 @@ export function initTelemetry(): void {
                 applyCustomAttributesOnSpan: (span, xhr) => {
                     const url = xhr.responseURL || '';
                     span.setAttribute('http.url', url);
-                    if (xhr.method) {
-                        span.setAttribute('http.method', xhr.method);
+                    if ((xhr as any).method) {
+                        span.setAttribute('http.method', (xhr as any).method);
                     }
                     if (xhr.status) {
                         span.setAttribute('http.status_code', xhr.status.toString());
@@ -343,7 +346,7 @@ export function getTraceHeaders(): Record<string, string> {
  * }
  * ```
  */
-export function startCustomSpan(name: string, attributes?: Record<string, string>): ReturnType<typeof getTracer>['startSpan'] {
+export function startCustomSpan(name: string, attributes?: Record<string, string>): Span {
     const tracer = getTracer();
     const span = tracer.startSpan(name);
 

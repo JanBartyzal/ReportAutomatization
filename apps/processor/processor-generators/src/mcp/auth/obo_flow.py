@@ -85,7 +85,7 @@ def validate_token(token: str) -> TokenClaims:
                 roles=payload.get("roles", ["admin"]),
                 name=payload.get("name", "Dev User"),
             )
-        except jwt.DecodeError as e:
+        except jwt.DecodeError:
             # Accept placeholder tokens in dev mode
             logger.debug("Dev mode: accepting token without validation")
             return TokenClaims(

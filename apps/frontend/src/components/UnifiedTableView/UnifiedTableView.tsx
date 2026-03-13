@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     tokens,
     makeStyles,
@@ -53,12 +52,12 @@ const useStyles = makeStyles({
         alignItems: 'center',
         padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalS}`,
         borderRadius: tokens.borderRadiusSmall,
-        fontSize: tokens.fontSizeBody2,
+        fontSize: tokens.fontSizeBase200,
         fontWeight: '500',
         marginBottom: tokens.spacingVerticalS,
     },
     typeBadge: {
-        fontSize: tokens.fontSizeCaption1,
+        fontSize: tokens.fontSizeBase100,
         color: tokens.colorNeutralForeground4,
         fontWeight: 'normal',
         marginLeft: tokens.spacingHorizontalXS,
@@ -153,7 +152,7 @@ export function UnifiedTableView({ tables, title = 'Extracted Tables' }: Unified
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {table.rows.map((row: any[], rowIdx: number) => (
+                                        {table.rows.map((row: Record<string, unknown>, rowIdx: number) => (
                                             <TableRow
                                                 key={rowIdx}
                                                 className={`${styles.row} ${rowIdx % 2 === 0 ? styles.rowEven : styles.rowOdd}`}
@@ -167,7 +166,7 @@ export function UnifiedTableView({ tables, title = 'Extracted Tables' }: Unified
                                                             key={colIdx} 
                                                             className={`${styles.cell} ${isNumeric ? styles.numericCell : ''}`}
                                                         >
-                                                            {String(row[colIdx] ?? '')}
+                                                            {String(row[header] ?? '')}
                                                         </TableCell>
                                                     );
                                                 })}

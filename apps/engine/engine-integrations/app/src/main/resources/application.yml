@@ -1,0 +1,126 @@
+server:
+  port: ${HTTP_PORT:8106}
+  forward-headers-strategy: framework
+  tomcat:
+    threads:
+      max: 200
+    accept-count: 100
+
+spring:
+  application:
+    name: engine-integrations
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:default}
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:engine_integrations_db}
+    username: ${DB_USERNAME:engine_integrations_user}
+    password: ${DB_PASSWORD:engine_integrations_pass}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 3
+      idle-timeout: 600000
+      connection-timeout: 30000
+      max-lifetime: 1800000
+      pool-name: engine-integrations-pool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:5000}
+
+# Dapr configuration
+dapr:
+  app-id: ${DAPR_APP_ID:engine-integrations}
+  sidecar:
+    host: ${DAPR_HOST:localhost}
+    http-port: ${DAPR_HTTP_PORT:3500}
+    grpc-port: ${DAPR_GRPC_PORT:50001}
+  pubsub:
+    name: ${DAPR_PUBSUB_NAME:reportplatform-pubsub}
+  statestore:
+    name: ${DAPR_STATESTORE_NAME:reportplatform-statestore}
+
+# Azure Key Vault
+azure:
+  keyvault:
+    uri: ${AZURE_KEYVAULT_URI:}
+
+# JWT validation
+jwt:
+  issuer: ${JWT_ISSUER:https://login.microsoftonline.com/${AZURE_TENANT_ID:common}/v2.0}
+  audience: ${JWT_AUDIENCE:}
+  jwks-uri: ${JWT_JWKS_URI:https://login.microsoftonline.com/common/discovery/v2.0/keys}
+
+# Service-Now configuration
+servicenow:
+  connect-timeout-ms: ${SNOW_CONNECT_TIMEOUT:10000}
+  response-timeout-ms: ${SNOW_RESPONSE_TIMEOUT:30000}
+  max-page-size: ${SNOW_MAX_PAGE_SIZE:1000}
+  retry-max-attempts: ${SNOW_RETRY_MAX_ATTEMPTS:3}
+  retry-backoff-ms: ${SNOW_RETRY_BACKOFF_MS:1000}
+  scheduler:
+    poll-interval-ms: ${SNOW_SCHEDULER_POLL_INTERVAL:60000}
+    lock-ttl-ms: ${SNOW_SCHEDULER_LOCK_TTL:300000}
+
+# Actuator / Management
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+  health:
+    db:
+      enabled: true
+  metrics:
+    tags:
+      application: engine-integrations
+
+# Logging
+logging:
+  level:
+    com.reportplatform: ${LOG_LEVEL:INFO}
+    com.reportplatform.engineintegrations: ${LOG_LEVEL_INTEGRATIONS:INFO}
+    com.reportplatform.snow: ${LOG_LEVEL_SNOW:INFO}
+    org.springframework.security: WARN
+    io.dapr: INFO
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+  show-actuator: false

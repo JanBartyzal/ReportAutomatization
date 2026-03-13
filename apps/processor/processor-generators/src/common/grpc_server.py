@@ -6,12 +6,19 @@ Registers PptxGeneratorService and ExcelGeneratorService on a single gRPC server
 from __future__ import annotations
 
 import logging
+import sys
+import os
+
+# Add project root to path for proto imports (go up from common/grpc_server.py)
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.abspath(os.path.join(_current_dir, "../../../../.."))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
 from python_base import GrpcServer
 
-# Generated proto stubs
-from generator.v1 import pptx_generator_pb2_grpc  # type: ignore[import-untyped]
-from generator.v1 import excel_generator_pb2_grpc  # type: ignore[import-untyped]
+# Generated proto stubs - both services are in the same module now
+from generator.v1 import generator_pb2_grpc
 
 from src.common.config import GRPC_PORT, SERVICE_NAME
 from src.generators.pptx.service.generator_service import PptxGeneratorServiceImpl

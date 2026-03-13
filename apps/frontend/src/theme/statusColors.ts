@@ -1,17 +1,18 @@
 /**
  * Status colors for report lifecycle states
- * Based on docs/UX-UI/00-project-color-overrides.md section 5
+ * Driven by theme-config.json — section "status"
  */
+import themeConfig from './theme-config.json';
 
-export const STATUS_COLORS = {
-    DRAFT: { bg: '#F3F2F1', text: '#616161' },
-    SUBMITTED: { bg: '#FEF3C7', text: '#92400E' },
-    UNDER_REVIEW: { bg: '#E0F2FE', text: '#0369A1' },
-    IN_REVIEW: { bg: '#E0F2FE', text: '#0369A1' },
-    APPROVED: { bg: '#DFF6DD', text: '#107C10' },
-    REJECTED: { bg: '#FDE7E9', text: '#D13438' },
-    OVERDUE: { bg: '#FDEBE2', text: '#D83B01' },
-} as const;
+export const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  DRAFT: themeConfig.status.DRAFT,
+  SUBMITTED: themeConfig.status.SUBMITTED,
+  UNDER_REVIEW: themeConfig.status.IN_REVIEW,
+  IN_REVIEW: themeConfig.status.IN_REVIEW,
+  APPROVED: themeConfig.status.APPROVED,
+  REJECTED: themeConfig.status.REJECTED,
+  OVERDUE: themeConfig.status.OVERDUE,
+};
 
 export type ReportStatusKey = keyof typeof STATUS_COLORS;
 
@@ -19,26 +20,26 @@ export type ReportStatusKey = keyof typeof STATUS_COLORS;
  * Get status colors for a given status
  */
 export function getStatusColors(status: string): { bg: string; text: string } {
-    const upperStatus = status.toUpperCase() as ReportStatusKey;
-    return STATUS_COLORS[upperStatus] || STATUS_COLORS.DRAFT;
+  const upperStatus = status.toUpperCase();
+  return STATUS_COLORS[upperStatus] || STATUS_COLORS.DRAFT;
 }
 
 /**
  * Status display labels
  */
 export const STATUS_LABELS: Record<string, string> = {
-    DRAFT: 'Draft',
-    SUBMITTED: 'Submitted',
-    UNDER_REVIEW: 'Under Review',
-    IN_REVIEW: 'In Review',
-    APPROVED: 'Approved',
-    REJECTED: 'Rejected',
-    OVERDUE: 'Overdue',
+  DRAFT: 'Draft',
+  SUBMITTED: 'Submitted',
+  UNDER_REVIEW: 'Under Review',
+  IN_REVIEW: 'In Review',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
+  OVERDUE: 'Overdue',
 };
 
 /**
  * Get status display label
  */
 export function getStatusLabel(status: string): string {
-    return STATUS_LABELS[status] || status;
+  return STATUS_LABELS[status] || status;
 }

@@ -11,7 +11,8 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Centralized Dapr client configuration for the consolidated reporting service.
- * Provides a single shared DaprClient bean instead of each module creating its own.
+ * Provides a single shared DaprClient bean instead of each module creating its
+ * own.
  */
 @Configuration
 public class DaprConfig {
@@ -35,7 +36,7 @@ public class DaprConfig {
     }
 
     @PreDestroy
-    void destroy() {
+    void destroy() throws Exception {
         if (daprClient != null) {
             daprClient.close();
             log.info("Closed shared DaprClient");

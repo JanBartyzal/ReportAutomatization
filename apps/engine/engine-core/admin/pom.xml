@@ -21,6 +21,19 @@
             <artifactId>engine-core-common</artifactId>
         </dependency>
 
+        <!-- Protocol Buffers -->
+        <dependency>
+            <groupId>com.reportplatform</groupId>
+            <artifactId>java-base-protos</artifactId>
+        </dependency>
+
+        <!-- gRPC Spring Boot Starter -->
+        <dependency>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-spring-boot-starter</artifactId>
+            <version>3.1.0.RELEASE</version>
+        </dependency>
+
         <!-- Azure Key Vault -->
         <dependency>
             <groupId>com.azure</groupId>

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     makeStyles,
@@ -12,7 +12,7 @@ import {
     Dismiss24Regular,
     Document24Regular,
     Folder24Regular,
-    Report24Regular,
+    Book24Regular,
     Form24Regular,
 } from '@fluentui/react-icons';
 import { useSearchSuggestions } from '../../hooks/useSearch';
@@ -67,7 +67,7 @@ const useStyles = makeStyles({
         whiteSpace: 'nowrap',
     },
     suggestionType: {
-        fontSize: tokens.fontSizeBase12,
+        fontSize: tokens.fontSizeBase100,
         color: tokens.colorNeutralForeground2,
     },
     divider: {
@@ -87,7 +87,7 @@ const getTypeIcon = (type: string) => {
         case 'FOLDER':
             return <Folder24Regular />;
         case 'REPORT':
-            return <Report24Regular />;
+            return <Book24Regular />;
         case 'FORM':
             return <Form24Regular />;
         default:

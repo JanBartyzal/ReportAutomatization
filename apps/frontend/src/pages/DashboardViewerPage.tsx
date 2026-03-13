@@ -21,7 +21,7 @@ import {
     PieChartWidget, 
     HeatmapWidget 
 } from '../components/Charts';
-import type { WidgetConfig, AggregatedData } from '@reportplatform/types';
+import { FileContentType, type WidgetConfig, type AggregatedData } from '@reportplatform/types';
 
 /**
  * DashboardViewerPage styles per docs/UX-UI/02-design-system.md
@@ -77,7 +77,6 @@ export default function DashboardViewerPage() {
     const queryDashboard = useDashboardQuery(dashboardId || '');
     const [widgetData, setWidgetData] = useState<Record<number, AggregatedData>>({});
     const [showPeriodComparison, setShowPeriodComparison] = useState(false);
-    const [fullscreenWidget, setFullscreenWidget] = useState<number | null>(null);
 
     if (isLoading) {
         return <LoadingSpinner label="Loading dashboard..." />;
@@ -139,7 +138,7 @@ export default function DashboardViewerPage() {
                         tables={[
                             {
                                 table_id: `widget-${index}`,
-                                source_type: 'CSV',
+                                source_type: FileContentType.CSV,
                                 headers: data.columns,
                                 rows: data.rows,
                                 row_count: data.total_rows,

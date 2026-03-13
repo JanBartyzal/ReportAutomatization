@@ -14,17 +14,20 @@ import org.springframework.context.event.EventListener;
 /**
  * Configures structured JSON logging for production environments.
  * <p>
- * When enabled (via {@code reportplatform.observability.structured-logging.enabled=true}),
- * replaces the default Logback console appender with a JSON encoder that outputs
- * structured log entries compatible with cloud logging systems (GCP Cloud Logging,
+ * When enabled (via
+ * {@code reportplatform.observability.structured-logging.enabled=true}),
+ * replaces the default Logback console appender with a JSON encoder that
+ * outputs
+ * structured log entries compatible with cloud logging systems (GCP Cloud
+ * Logging,
  * Azure Monitor, etc.).
  * <p>
  * JSON output includes:
  * <ul>
- *     <li>Standard fields: timestamp, level, logger, message, thread</li>
- *     <li>MDC fields: traceId, spanId, userId, orgId (when set via MDC)</li>
- *     <li>Exception stack traces as structured JSON</li>
- *     <li>Service name and version metadata</li>
+ * <li>Standard fields: timestamp, level, logger, message, thread</li>
+ * <li>MDC fields: traceId, spanId, userId, orgId (when set via MDC)</li>
+ * <li>Exception stack traces as structured JSON</li>
+ * <li>Service name and version metadata</li>
  * </ul>
  */
 public class StructuredLoggingConfig {
@@ -52,8 +55,8 @@ public class StructuredLoggingConfig {
         }
 
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        ch.qos.logback.classic.Logger rootLogger =
-                loggerContext.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
+        ch.qos.logback.classic.Logger rootLogger = loggerContext
+                .getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
 
         // Detach existing console appenders
         rootLogger.detachAppender("console");
@@ -70,7 +73,6 @@ public class StructuredLoggingConfig {
 
         // Configure field names for cloud logging compatibility
         LogstashFieldNames fieldNames = new LogstashFieldNames();
-        fieldNames.setSeverity("severity");
         fieldNames.setTimestamp("timestamp");
         fieldNames.setMessage("message");
         fieldNames.setLogger("logger");
@@ -81,8 +83,7 @@ public class StructuredLoggingConfig {
         // Add custom fields
         encoder.setCustomFields(String.format(
                 "{\"service\":\"%s\",\"version\":\"%s\"}",
-                applicationName, applicationVersion
-        ));
+                applicationName, applicationVersion));
 
         encoder.start();
         jsonAppender.setEncoder(encoder);

@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    Page,
+    Tab,
+    TabList,
+    Card,
+    Button,
+    Badge,
+    MessageBar,
+    MessageBarTitle,
+    makeStyles,
+    tokens,
+    Text,
     Title3,
     Subtitle1,
     Subtitle2,
     Body1,
     Caption1,
     Spinner,
-    TabList,
-    Tab,
-    Card,
-    CardHeader,
-    Button,
-    Badge,
-    Divider,
-    MessageBar,
-    MessageBarTitle,
 } from '@fluentui/react-components';
 import {
     ArrowLeft24Regular,
@@ -29,7 +29,95 @@ import { PlaceholderMappingItem } from '../api/templates';
 import PlaceholderMapper from '../components/Templates/PlaceholderMapper';
 import { reportBrand } from '../theme/brandTokens';
 
+const useStyles = makeStyles({
+    spinnerContainer: {
+        display: 'flex',
+        justifyContent: 'center',
+        padding: '100px',
+    },
+    errorContainer: {
+        padding: '24px',
+    },
+    backButton: {
+        marginBottom: '16px',
+    },
+    page: {
+        padding: '24px',
+        maxWidth: '1200px',
+        margin: '0 auto',
+    },
+    header: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: '24px',
+    },
+    titleRow: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+    },
+    subtitleMuted: {
+        color: tokens.colorNeutralForeground3,
+    },
+    tabList: {
+        marginBottom: '24px',
+    },
+    cardPadded: {
+        padding: '24px',
+    },
+    versionList: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+    },
+    versionItem: {
+        padding: '12px',
+        border: `1px solid ${tokens.colorNeutralStroke2}`,
+        borderRadius: '8px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    versionDate: {
+        display: 'block',
+        color: tokens.colorNeutralForeground3,
+    },
+    versionChanges: {
+        marginTop: '4px',
+    },
+    previewCenter: {
+        padding: '24px',
+        textAlign: 'center',
+    },
+    previewBody: {
+        display: 'block',
+        marginBottom: '24px',
+    },
+    slideGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+        gap: '16px',
+    },
+    slideThumbnail: {
+        height: '150px',
+        backgroundColor: tokens.colorNeutralBackground2,
+        borderRadius: '8px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: `1px solid ${tokens.colorNeutralStroke1}`,
+    },
+    slideCaption: {
+        fontSize: '10px',
+        color: tokens.colorNeutralForeground4,
+        marginTop: '8px',
+    },
+});
+
 export const TemplateDetailPage: React.FC = () => {
+    const styles = useStyles();
     const { templateId } = useParams<{ templateId: string }>();
     const navigate = useNavigate();
     const [selectedTab, setSelectedTab] = useState<'mapping' | 'history' | 'preview'>('mapping');
@@ -49,18 +137,18 @@ export const TemplateDetailPage: React.FC = () => {
 
     if (isLoading) {
         return (
-            <Page>
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
+            <div className={styles.page}>
+                <div className={styles.spinnerContainer}>
                     <Spinner label="Loading template details..." />
                 </div>
-            </Page>
+            </div>
         );
     }
 
     if (error || !template) {
         return (
-            <Page>
-                <div style={{ padding: '24px' }}>
+            <div className={styles.page}>
+                <div className={styles.errorContainer}>
                     <MessageBar intent="error">
                         <MessageBarTitle>Error</MessageBarTitle>
                         Failed to load template: {(error as Error)?.message || 'Template not found'}
@@ -68,44 +156,38 @@ export const TemplateDetailPage: React.FC = () => {
                     <Button
                         icon={<ArrowLeft24Regular />}
                         onClick={() => navigate('/templates')}
-                        style={{ marginTop: '16px' }}
+                        className={styles.backButton}
                     >
                         Back to Templates
                     </Button>
                 </div>
-            </Page>
+            </div>
         );
     }
 
     return (
-        <Page>
-            <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div className={styles.page}>
                 {/* Breadcrumbs / Back */}
                 <Button
                     appearance="subtle"
                     icon={<ArrowLeft24Regular />}
                     onClick={() => navigate('/templates')}
-                    style={{ marginBottom: '16px' }}
+                    className={styles.backButton}
                 >
                     Back to Templates
                 </Button>
 
                 {/* Header */}
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: '24px'
-                }}>
+                <div className={styles.header}>
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div className={styles.titleRow}>
                             <Title3>{template.name}</Title3>
                             <Badge appearance="filled" color="brand">v{template.version}</Badge>
                             <Badge appearance="filled" color={template.scope === 'CENTRAL' ? 'success' : 'informative'}>
                                 {template.scope}
                             </Badge>
                         </div>
-                        <Subtitle1 style={{ color: '#666' }}>
+                        <Subtitle1 className={styles.subtitleMuted}>
                             ID: {template.id} • Created {new Date(template.createdAt).toLocaleDateString()}
                         </Subtitle1>
                     </div>
@@ -114,7 +196,7 @@ export const TemplateDetailPage: React.FC = () => {
                 <TabList
                     selectedValue={selectedTab}
                     onTabSelect={(_, d) => setSelectedTab(d.value as any)}
-                    style={{ marginBottom: '24px' }}
+                    className={styles.tabList}
                 >
                     <Tab value="mapping" icon={<Settings24Regular />}>Placeholder Mapping</Tab>
                     <Tab value="history" icon={<History24Regular />}>Version History</Tab>
@@ -122,7 +204,7 @@ export const TemplateDetailPage: React.FC = () => {
                 </TabList>
 
                 {selectedTab === 'mapping' && (
-                    <Card style={{ padding: '24px' }}>
+                    <Card className={styles.cardPadded}>
                         <PlaceholderMapper
                             templateId={template.id}
                             placeholders={template.placeholders}
@@ -134,24 +216,17 @@ export const TemplateDetailPage: React.FC = () => {
                 )}
 
                 {selectedTab === 'history' && (
-                    <Card style={{ padding: '24px' }}>
+                    <Card className={styles.cardPadded}>
                         <Subtitle2 style={{ marginBottom: '16px' }}>Version History</Subtitle2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div className={styles.versionList}>
                             {template.versions?.map((v) => (
-                                <div key={v.version} style={{
-                                    padding: '12px',
-                                    border: '1px solid #f0f0f0',
-                                    borderRadius: '8px',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
-                                }}>
+                                <div key={v.version} className={styles.versionItem}>
                                     <div>
                                         <Text weight="semibold">Version {v.version}</Text>
-                                        <Caption1 style={{ display: 'block', color: '#666' }}>
+                                        <Caption1 className={styles.versionDate}>
                                             By {v.createdBy} on {new Date(v.createdAt).toLocaleString()}
                                         </Caption1>
-                                        {v.changes && <Body1 style={{ marginTop: '4px' }}>{v.changes}</Body1>}
+                                        {v.changes && <Body1 className={styles.versionChanges}>{v.changes}</Body1>}
                                     </div>
                                     <Button size="small">Revert</Button>
                                 </div>
@@ -161,30 +236,17 @@ export const TemplateDetailPage: React.FC = () => {
                 )}
 
                 {selectedTab === 'preview' && (
-                    <Card style={{ padding: '24px', textAlign: 'center' }}>
+                    <Card className={styles.previewCenter}>
                         <DocumentPdf24Regular style={{ fontSize: '64px', color: reportBrand[90], marginBottom: '16px' }} />
                         <Title3>PPTX Template Preview</Title3>
-                        <Body1 style={{ display: 'block', marginBottom: '24px' }}>
+                        <Body1 className={styles.previewBody}>
                             Visual preview of template slides with extracted placeholders.
                         </Body1>
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                            gap: '16px'
-                        }}>
+                        <div className={styles.slideGrid}>
                             {[1, 2, 3].map(i => (
-                                <div key={i} style={{
-                                    height: '150px',
-                                    backgroundColor: '#f5f5f5',
-                                    borderRadius: '8px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    border: '1px solid #e0e0e0'
-                                }}>
+                                <div key={i} className={styles.slideThumbnail}>
                                     <Caption1>Slide {i}</Caption1>
-                                    <div style={{ fontSize: '10px', color: '#999', marginTop: '8px' }}>
+                                    <div className={styles.slideCaption}>
                                         Preview not available
                                     </div>
                                 </div>
@@ -192,8 +254,7 @@ export const TemplateDetailPage: React.FC = () => {
                         </div>
                     </Card>
                 )}
-            </div>
-        </Page>
+        </div>
     );
 };
 

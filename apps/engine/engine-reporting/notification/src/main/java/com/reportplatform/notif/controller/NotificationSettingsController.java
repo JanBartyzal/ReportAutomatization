@@ -4,6 +4,7 @@ import com.reportplatform.notif.model.NotificationSettingsEntity;
 import com.reportplatform.notif.model.NotificationType;
 import com.reportplatform.notif.service.NotificationSettingsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

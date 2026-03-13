@@ -35,10 +35,11 @@ Each phase is divided into waves by complexity and target AI agent:
 | **P5** | DevOps & Onboarding | 10 | 29 | DONE | CI/CD, observability, production-ready |
 | **P6** | Local Scope & Advanced | 10 | 36.5 | DONE | Subsidiary self-service + advanced analytics |
 | **P7** | External Integrations & Data Optimization | ~18 | ~49 | TODO | Service-Now + Smart Persistence (FS23, FS24) |
-| **P8** | Microservice Consolidation | ~18 | ~55 | TODO | 29 services → 8 deployment units |
+| **P8** | Microservice Consolidation | ~21 | ~61 | TODO | 29 services → 8 deployment units + GW update |
 | **P9** | Frontend Style Unification | ~13 | ~36 | TODO | Unified design system, JSON-configurable theme |
-| **P10** | Technical Audit & Quality Gate | ~5 | ~20 | TODO | Full charter compliance verification |
-| | | **TOTAL** | **~646 MD** | | |
+| **P10** | Technical Audit & Quality Gate | ~5 | ~20 | W1 DONE | Full charter compliance verification |
+| **P11** | Audit Remediation | ~20 | ~57 | TODO | Fix all CRITICAL/HIGH gaps from P10 audit |
+| | | **TOTAL** | **~703 MD** | | |
 
 ---
 
@@ -125,7 +126,7 @@ All task files moved to `docs/tasks/done/`:
 
 ---
 
-## Active Phases (P7–P10)
+## Active Phases (P7–P11)
 
 ### P7 – External Integrations & Data Optimization (~49 MD)
 
@@ -147,7 +148,7 @@ All task files moved to `docs/tasks/done/`:
 
 | Wave | File | Agent | Effort |
 |---|---|---|---|
-| W1 | [P8_W1_consolidation_core.md](P8_W1_consolidation_core.md) | Opus | ~35 MD |
+| W1 | [P8_W1_consolidation_core.md](P8_W1_consolidation_core.md) | Opus | ~41 MD |
 | W2 | [P8_W2_consolidation_infra.md](P8_W2_consolidation_infra.md) | Sonnet | ~12 MD |
 | W3 | [P8_W3_consolidation_config.md](P8_W3_consolidation_config.md) | Haiku/Gemini | ~4 MD |
 | W4 | [P8_W4_consolidation_scripts.md](P8_W4_consolidation_scripts.md) | Flash/MiniMax | ~4 MD |
@@ -194,6 +195,7 @@ All task files moved to `docs/tasks/done/`:
 | Wave | File | Agent | Effort |
 |---|---|---|---|
 | W1 | [P10_W1_technical_audit.md](P10_W1_technical_audit.md) | Opus | ~20 MD |
+| W2 | [P10_W2_remediation.md](P10_W2_remediation.md) | Mixed | ~55 MD |
 
 **Audit Scope:**
 - FS01–FS24 feature completeness (every acceptance criterion checked)
@@ -209,6 +211,27 @@ All task files moved to `docs/tasks/done/`:
 - `docs/audit/communication-audit-report.md`
 - `docs/audit/AUDIT_SUMMARY.md`
 - `docs/tasks/P10_W2_remediation.md` (generated from findings)
+
+### P11 – Audit Remediation (~57 MD)
+
+> **Goal:** Fix all CRITICAL and HIGH gaps identified by P10 audit. Bring platform to production readiness: security hardening, observability, testing, documentation.
+
+| Wave | File | Agent | Effort |
+|---|---|---|---|
+| W1 | [P11_W1_remediation_security.md](P11_W1_remediation_security.md) | Opus | ~19 MD |
+| W2 | [P11_W2_remediation_observability.md](P11_W2_remediation_observability.md) | Sonnet | ~18 MD |
+| W3 | [P11_W3_remediation_config.md](P11_W3_remediation_config.md) | Haiku/Gemini | ~7 MD |
+| W4 | [P11_W4_remediation_frontend.md](P11_W4_remediation_frontend.md) | Flash/MiniMax | ~13 MD |
+
+**Key Deliverables:**
+- 3 CRITICAL security fixes (ForwardAuth, ClamAV ordering, orch isolation)
+- Method-level authorization (@PreAuthorize) across all controllers
+- RLS policies for 29 unprotected tables
+- OpenTelemetry distributed tracing + structured JSON logging
+- ESLint + Checkstyle + 23 Java unit tests + 12 frontend tests
+- 10 READMEs with Mermaid diagrams + 10 test-result.md files
+- Schema mapping editor UI + TypeScript type alignment
+- Legacy Dapr config cleanup + TOPICS.md update
 
 ---
 
@@ -230,6 +253,7 @@ P0 (API Contracts)
                      └─► P8 (Microservice Consolidation)
                           └─► P9 (Frontend Style Unification)
                                └─► P10 (Technical Audit)
+                                    └─► P11 (Audit Remediation)
 ```
 
 ---

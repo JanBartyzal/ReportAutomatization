@@ -1,8 +1,9 @@
-import { useUsers, useAssignRole } from '../../hooks/useAdmin';
-import { Body1, Button, Spinner } from '@fluentui/react-components';
+import React from 'react';
+import { useUsers } from '../../hooks/useAdmin';
+import { Body1, Spinner } from '@fluentui/react-components';
 
 const UsersPanel: React.FC = () => {
-    const { data, isLoading, error } = useUsers();
+    const { isLoading, error } = useUsers();
 
     if (isLoading) {
         return <Spinner label="Loading users..." />;

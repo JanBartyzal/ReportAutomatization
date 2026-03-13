@@ -5,6 +5,7 @@ import com.reportplatform.batch.repository.BatchRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +27,7 @@ public class BatchController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<List<BatchEntity>> listBatches(
             @RequestParam(required = false) UUID holdingId,
             @RequestParam(required = false) String status) {
@@ -42,6 +44,7 @@ public class BatchController {
     }
 
     @GetMapping("/{batchId}")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<BatchEntity> getBatch(@PathVariable UUID batchId) {
         return batchRepository.findById(batchId)
                 .map(ResponseEntity::ok)
@@ -49,6 +52,7 @@ public class BatchController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<BatchEntity> createBatch(@RequestBody Map<String, Object> request) {
         BatchEntity batch = new BatchEntity();
         batch.setName((String) request.get("name"));
@@ -65,6 +69,7 @@ public class BatchController {
     }
 
     @PutMapping("/{batchId}")
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<BatchEntity> updateBatch(
             @PathVariable UUID batchId,
             @RequestBody Map<String, Object> request) {
@@ -88,6 +93,7 @@ public class BatchController {
     }
 
     @DeleteMapping("/{batchId}")
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Void> deleteBatch(@PathVariable UUID batchId) {
         if (!batchRepository.existsById(batchId)) {
             return ResponseEntity.notFound().build();
@@ -98,20 +104,23 @@ public class BatchController {
     }
 
     @GetMapping("/{batchId}/status")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, Object>> getBatchStatus(@PathVariable UUID batchId) {
         return batchRepository.findById(batchId)
                 .map(batch -> {
                     int fileCount = 0; // Would query batch_files table
-                    return ResponseEntity.ok(Map.of(
-                            "batch_id", batch.getId(),
-                            "status", batch.getStatus(),
-                            "file_count", fileCount,
-                            "period", batch.getPeriod()));
+                    Map<String, Object> statusMap = new java.util.HashMap<>();
+                    statusMap.put("batch_id", batch.getId());
+                    statusMap.put("status", batch.getStatus());
+                    statusMap.put("file_count", fileCount);
+                    statusMap.put("period", batch.getPeriod());
+                    return ResponseEntity.ok(statusMap);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/health")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of("status", "UP"));
     }

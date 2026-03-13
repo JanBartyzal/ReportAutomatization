@@ -13,6 +13,7 @@ import com.reportplatform.lifecycle.service.AuditService;
 import com.reportplatform.lifecycle.service.ReportService;
 import com.reportplatform.lifecycle.service.SubmissionChecklistService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -46,6 +47,7 @@ public class ReportController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public Page<ReportResponse> listReports(
             @RequestParam(required = false) String orgId,
             @RequestParam(required = false) UUID periodId,
@@ -57,6 +59,7 @@ public class ReportController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<ReportResponse> createReport(
             @Valid @RequestBody ReportCreateRequest request,
             @RequestHeader("X-User-Id") String userId) {
@@ -69,11 +72,13 @@ public class ReportController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ReportResponse getReport(@PathVariable UUID id) {
         return ReportResponse.from(reportService.getReport(id));
     }
 
     @PostMapping("/{id}/submit")
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ReportResponse submitReport(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") String userId,
@@ -82,6 +87,7 @@ public class ReportController {
     }
 
     @PostMapping("/{id}/review")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ReportResponse startReview(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") String userId,
@@ -90,6 +96,7 @@ public class ReportController {
     }
 
     @PostMapping("/{id}/approve")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ReportResponse approveReport(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") String userId,
@@ -98,6 +105,7 @@ public class ReportController {
     }
 
     @PostMapping("/{id}/reject")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ReportResponse rejectReport(
             @PathVariable UUID id,
             @Valid @RequestBody RejectRequest request,
@@ -108,6 +116,7 @@ public class ReportController {
     }
 
     @PostMapping("/{id}/resubmit")
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ReportResponse resubmitReport(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") String userId,
@@ -116,6 +125,7 @@ public class ReportController {
     }
 
     @PostMapping("/{id}/complete")
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ReportResponse completeReport(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") String userId,
@@ -124,6 +134,7 @@ public class ReportController {
     }
 
     @PostMapping("/{id}/release")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ReportResponse releaseReport(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") String userId,
@@ -132,6 +143,7 @@ public class ReportController {
     }
 
     @GetMapping("/{id}/history")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public List<HistoryResponse> getHistory(@PathVariable UUID id) {
         return auditService.getHistory(id).stream()
                 .map(HistoryResponse::from)
@@ -139,6 +151,7 @@ public class ReportController {
     }
 
     @GetMapping("/{id}/checklist")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<ChecklistResponse> getChecklist(@PathVariable UUID id) {
         return checklistService.getChecklist(id)
                 .map(c -> ResponseEntity.ok(ChecklistResponse.from(c)))
@@ -146,6 +159,7 @@ public class ReportController {
     }
 
     @PostMapping("/bulk-approve")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public BulkActionResult bulkApprove(
             @Valid @RequestBody BulkActionRequest request,
             @RequestHeader("X-User-Id") String userId,
@@ -154,6 +168,7 @@ public class ReportController {
     }
 
     @PostMapping("/bulk-reject")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public BulkActionResult bulkReject(
             @Valid @RequestBody BulkActionRequest request,
             @RequestHeader("X-User-Id") String userId,
@@ -165,6 +180,7 @@ public class ReportController {
     }
 
     @GetMapping("/matrix")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public List<MatrixEntry> getMatrix(
             @RequestParam UUID periodId,
             @RequestParam(required = false) String scope) {

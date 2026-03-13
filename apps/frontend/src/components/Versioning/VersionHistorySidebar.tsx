@@ -4,7 +4,6 @@ import {
     makeStyles,
     tokens,
     Badge,
-    Avatar,
     Spinner,
 } from '@fluentui/react-components';
 import {
@@ -33,7 +32,7 @@ const useStyles = makeStyles({
     },
     headerTitle: {
         fontWeight: tokens.fontWeightSemibold,
-        fontSize: tokens.fontSizeBase16,
+        fontSize: tokens.fontSizeBase400,
         flex: 1,
     },
     list: {
@@ -60,13 +59,13 @@ const useStyles = makeStyles({
     },
     versionNumber: {
         fontWeight: tokens.fontWeightSemibold,
-        fontSize: tokens.fontSizeBase14,
+        fontSize: tokens.fontSizeBase300,
     },
     lockedBadge: {
         marginLeft: 'auto',
     },
     versionMeta: {
-        fontSize: tokens.fontSizeBase12,
+        fontSize: tokens.fontSizeBase100,
         color: tokens.colorNeutralForeground2,
         display: 'flex',
         flexDirection: 'column',

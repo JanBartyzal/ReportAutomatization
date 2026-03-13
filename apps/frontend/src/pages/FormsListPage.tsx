@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Title3,
     Subtitle2,
@@ -17,7 +17,7 @@ import {
     Badge,
     Input,
     Field,
-    Spinner,
+    // Spinner,
     makeStyles,
     tokens,
 } from '@fluentui/react-components';
@@ -25,13 +25,12 @@ import {
     AddRegular,
     EditRegular,
     EyeRegular,
-    PeopleRegular,
 } from '@fluentui/react-icons';
-import { useForms, useDeleteForm } from '../../hooks/useForms';
-import { useLocalScope } from '../../hooks/useFeatureFlags';
-import { ScopeBadge } from '../../components/ScopeBadge';
+import { useForms } from '../hooks/useForms';
+import { useLocalScope } from '../hooks/useFeatureFlags';
+import { ScopeBadge } from '../components/ScopeBadge';
 import { FormStatus } from '@reportplatform/types';
-import LoadingSpinner from '../LoadingSpinner';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const statusColors: Record<FormStatus, 'informative' | 'success' | 'danger' | 'warning'> = {
     DRAFT: 'informative',
@@ -63,13 +62,14 @@ export const FormsListPage: React.FC = () => {
         status: statusFilter === 'ALL' ? undefined : statusFilter,
         scope: scopeFilter === 'ALL' ? undefined : scopeFilter,
     });
-    const deleteForm = useDeleteForm();
 
+    /*
     const handleDelete = async (formId: string) => {
         if (confirm('Are you sure you want to delete this form?')) {
             await deleteForm.mutateAsync(formId);
         }
     };
+    */
 
     if (isLoading) {
         return <LoadingSpinner />;
@@ -158,17 +158,15 @@ export const FormsListPage: React.FC = () => {
                         <TableHeaderCell>Form Name</TableHeaderCell>
                         {enableLocalScope && <TableHeaderCell>Scope</TableHeaderCell>}
                         <TableHeaderCell>Status</TableHeaderCell>
-                        <TableHeaderCell>Version</TableHeaderCell>
-                        <TableHeaderCell>Assigned Orgs</TableHeaderCell>
                         <TableHeaderCell>Created</TableHeaderCell>
                         <TableHeaderCell>Actions</TableHeaderCell>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {formsData?.content?.map((form) => (
+                    {formsData?.data?.map((form) => (
                         <TableRow key={form.id}>
                             <TableCell>
-                                <Body1><strong>{form.title}</strong></Body1>
+                                <Body1><strong>{form.name}</strong></Body1>
                                 <Caption1>{form.description}</Caption1>
                             </TableCell>
                             {enableLocalScope && (
@@ -181,19 +179,8 @@ export const FormsListPage: React.FC = () => {
                                     {form.status}
                                 </Badge>
                             </TableCell>
-                            <TableCell>v{form.version || 1}</TableCell>
                             <TableCell>
-                                <Button
-                                    appearance="transparent"
-                                    icon={<PeopleRegular />}
-                                    size="small"
-                                    onClick={() => navigate(`/forms/${form.id}/assignments`)}
-                                >
-                                    {form.assigned_orgs_count || 0}
-                                </Button>
-                            </TableCell>
-                            <TableCell>
-                                <Caption1>{new Date(form.created_at).toLocaleDateString()}</Caption1>
+                                <Caption1>{form.created_at ? new Date(form.created_at).toLocaleDateString() : 'N/A'}</Caption1>
                             </TableCell>
                             <TableCell>
                                 <Button
@@ -217,7 +204,7 @@ export const FormsListPage: React.FC = () => {
                             </TableCell>
                         </TableRow>
                     ))}
-                    {(!formsData?.content || formsData.content.length === 0) && (
+                    {(!formsData?.data || formsData.data.length === 0) && (
                         <TableRow>
                             <TableCell colSpan={enableLocalScope ? 7 : 6} style={{ textAlign: 'center', padding: '32px' }}>
                                 <Body1>No forms found. Create your first form to get started.</Body1>

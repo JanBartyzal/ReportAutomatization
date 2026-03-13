@@ -1,9 +1,10 @@
-import { useFailedJobs, useReprocessFailedJob } from '../../hooks/useAdmin';
-import { Body1, Button, Spinner } from '@fluentui/react-components';
+import React from 'react';
+import { useFailedJobs } from '../../hooks/useAdmin';
+import { Body1, Spinner } from '@fluentui/react-components';
 
 const FailedJobsPanel: React.FC = () => {
-    const { data, isLoading, error } = useFailedJobs();
-    const reprocessJob = useReprocessFailedJob();
+    const { isLoading, error } = useFailedJobs();
+    // const reprocessJob = useReprocessFailedJob();
 
     if (isLoading) {
         return <Spinner label="Loading failed jobs..." />;

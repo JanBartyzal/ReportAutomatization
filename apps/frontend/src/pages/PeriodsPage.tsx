@@ -8,51 +8,53 @@ import {
     TableCell,
     TableCellLayout,
     Button,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
     Input,
     Dropdown,
     Option,
     Spinner,
     Body1,
+    Title3,
     Caption1,
     ProgressBar,
     makeStyles,
     tokens,
-    Title3,
+    Divider,
 } from '@fluentui/react-components';
 import {
     AddRegular,
     CopyRegular,
     EyeRegular,
-    CalendarLtrRegular,
+    CalendarMonthRegular,
     FilterRegular,
 } from '@fluentui/react-icons';
 import { useNavigate } from 'react-router-dom';
 import { usePeriods, useClonePeriod } from '../hooks/usePeriods';
-import { PeriodType, PeriodStatus } from '@reportplatform/types';
+
 import { StatusBadge } from '../components/Lifecycle/StatusBadge';
 
 const useStyles = makeStyles({
     container: {
         padding: tokens.spacingHorizontalL,
+        maxWidth: '1200px',
+        margin: '0 auto',
     },
     header: {
-        marginBottom: tokens.spacingHorizontalXL,
         display: 'flex',
         justifyContent: 'space-between',
+        alignItems: 'baseline',
+        marginBottom: tokens.spacingHorizontalXL,
+    },
+    filterBar: {
+        display: 'flex',
+        gap: tokens.spacingHorizontalS,
+        marginBottom: tokens.spacingHorizontalL,
         alignItems: 'center',
     },
-    toolbar: {
-        marginBottom: tokens.spacingHorizontalM,
-    },
     filterInput: {
-        width: '200px',
+        width: '300px',
     },
     filterDropdown: {
-        width: '160px',
-        marginLeft: tokens.spacingHorizontalS,
+        width: '180px',
     },
     tableContainer: {
         marginTop: tokens.spacingHorizontalM,
@@ -79,27 +81,27 @@ const useStyles = makeStyles({
     },
     progressBar: {
         width: '100px',
-    }
+    },
+    progressLabel: {
+        marginLeft: tokens.spacingHorizontalXS,
+    },
 });
 
 const typeOptions = [
     { key: '', text: 'All Types' },
-    { key: PeriodType.MONTHLY, text: 'Monthly' },
-    { key: PeriodType.QUARTERLY, text: 'Quarterly' },
-    { key: PeriodType.ANNUAL, text: 'Annual' },
+    { key: 'MONTHLY', text: 'Monthly' },
+    { key: 'QUARTERLY', text: 'Quarterly' },
+    { key: 'ANNUAL', text: 'Annual' },
 ];
 
 const statusOptions = [
     { key: '', text: 'All Statuses' },
-    { key: PeriodStatus.OPEN, text: 'Open' },
-    { key: PeriodStatus.COLLECTING, text: 'Collecting' },
-    { key: PeriodStatus.REVIEWING, text: 'Reviewing' },
-    { key: PeriodStatus.CLOSED, text: 'Closed' },
+    { key: 'OPEN', text: 'Open' },
+    { key: 'COLLECTING', text: 'Collecting' },
+    { key: 'REVIEWING', text: 'Reviewing' },
+    { key: 'CLOSED', text: 'Closed' },
 ];
 
-/**
- * Periods list page with filtering, create, and clone functionality
- */
 export const PeriodsPage: React.FC = () => {
     const styles = useStyles();
     const navigate = useNavigate();
@@ -108,17 +110,13 @@ export const PeriodsPage: React.FC = () => {
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Fetch periods using hook
     const { data: periodsData, isLoading } = usePeriods({
         type: typeFilter || undefined,
     });
 
-    // Clone mutation using hook
     const cloneMutation = useClonePeriod();
 
-    const handleClone = (periodId: string) => {
-        cloneMutation.mutate(periodId);
-    };
+    const handleClone = (periodId: string) => cloneMutation.mutate(periodId);
 
     if (isLoading) {
         return (
@@ -130,8 +128,7 @@ export const PeriodsPage: React.FC = () => {
 
     const periods = periodsData?.data || [];
 
-    // Filter by status in memory (status filter is more dynamic)
-    const filteredPeriods = periods.filter(p => {
+    const filteredPeriods = periods.filter((p: any) => {
         if (statusFilter && p.status !== statusFilter) return false;
         if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
         return true;
@@ -139,11 +136,10 @@ export const PeriodsPage: React.FC = () => {
 
     return (
         <div className={styles.container}>
-            {/* Header */}
             <div className={styles.header}>
                 <div>
                     <Title3>Reporting Periods</Title3>
-                    <Body1 block>Manage reporting periods and track completion across organizations.</Body1>
+                    <Caption1>Manage reporting periods and track completion across organizations.</Caption1>
                 </div>
                 <Button
                     appearance="primary"
@@ -154,42 +150,38 @@ export const PeriodsPage: React.FC = () => {
                 </Button>
             </div>
 
-            {/* Toolbar */}
-            <Toolbar className={styles.toolbar}>
-                <ToolbarContent>
-                    <ToolbarGroup>
-                        <Input
-                            placeholder="Search periods..."
-                            value={searchQuery}
-                            onChange={(e, data) => setSearchQuery(data.value)}
-                            className={styles.filterInput}
-                            contentAfter={<FilterRegular />}
-                        />
-                        <Dropdown
-                            placeholder="Filter by type"
-                            value={typeOptions.find(o => o.key === typeFilter)?.text}
-                            onOptionSelect={(_, data) => setTypeFilter(data.optionValue as string)}
-                            className={styles.filterDropdown}
-                        >
-                            {typeOptions.map(opt => (
-                                <Option key={opt.key} value={opt.key}>{opt.text}</Option>
-                            ))}
-                        </Dropdown>
-                        <Dropdown
-                            placeholder="Filter by status"
-                            value={statusOptions.find(o => o.key === statusFilter)?.text}
-                            onOptionSelect={(_, data) => setStatusFilter(data.optionValue as string)}
-                            className={styles.filterDropdown}
-                        >
-                            {statusOptions.map(opt => (
-                                <Option key={opt.key} value={opt.key}>{opt.text}</Option>
-                            ))}
-                        </Dropdown>
-                    </ToolbarGroup>
-                </ToolbarContent>
-            </Toolbar>
+            <Divider style={{ marginBottom: tokens.spacingHorizontalL }} />
 
-            {/* Periods Table */}
+            <div className={styles.filterBar}>
+                <Input
+                    placeholder="Search periods..."
+                    value={searchQuery}
+                    onChange={(_, data) => setSearchQuery(data.value)}
+                    className={styles.filterInput}
+                    contentAfter={<FilterRegular />}
+                />
+                <Dropdown
+                    placeholder="Filter by type"
+                    value={typeOptions.find(o => o.key === typeFilter)?.text}
+                    onOptionSelect={(_, data) => setTypeFilter(data.optionValue as string)}
+                    className={styles.filterDropdown}
+                >
+                    {typeOptions.map(opt => (
+                        <Option key={opt.key} value={opt.key}>{opt.text}</Option>
+                    ))}
+                </Dropdown>
+                <Dropdown
+                    placeholder="Filter by status"
+                    value={statusOptions.find(o => o.key === statusFilter)?.text}
+                    onOptionSelect={(_, data) => setStatusFilter(data.optionValue as string)}
+                    className={styles.filterDropdown}
+                >
+                    {statusOptions.map(opt => (
+                        <Option key={opt.key} value={opt.key}>{opt.text}</Option>
+                    ))}
+                </Dropdown>
+            </div>
+
             <div className={styles.tableContainer}>
                 <Table>
                     <TableHeader>
@@ -204,11 +196,11 @@ export const PeriodsPage: React.FC = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredPeriods.map(period => (
+                        {filteredPeriods.map((period: any) => (
                             <TableRow key={period.id}>
                                 <TableCell>
                                     <TableCellLayout>
-                                        <Body1 strong>{period.name}</Body1>
+                                        <Body1 block><strong>{period.name}</strong></Body1>
                                         <Caption1 block className={styles.periodCode}>{period.period_code}</Caption1>
                                     </TableCellLayout>
                                 </TableCell>
@@ -226,12 +218,8 @@ export const PeriodsPage: React.FC = () => {
                                 </TableCell>
                                 <TableCell>
                                     <TableCellLayout>
-                                        <Caption1 block>
-                                            Sub: {new Date(period.submission_deadline).toLocaleDateString()}
-                                        </Caption1>
-                                        <Caption1 block>
-                                            Rev: {new Date(period.review_deadline).toLocaleDateString()}
-                                        </Caption1>
+                                        <Caption1 block>Sub: {new Date(period.submission_deadline).toLocaleDateString()}</Caption1>
+                                        <Caption1 block>Rev: {new Date(period.review_deadline).toLocaleDateString()}</Caption1>
                                     </TableCellLayout>
                                 </TableCell>
                                 <TableCell>
@@ -246,7 +234,7 @@ export const PeriodsPage: React.FC = () => {
                                             className={styles.progressBar}
                                             color="brand"
                                         />
-                                        <Caption1 style={{ marginLeft: tokens.spacingHorizontalXS }}>60%</Caption1>
+                                        <Caption1 className={styles.progressLabel}>60%</Caption1>
                                     </TableCellLayout>
                                 </TableCell>
                                 <TableCell>
@@ -274,7 +262,7 @@ export const PeriodsPage: React.FC = () => {
 
             {filteredPeriods.length === 0 && (
                 <div className={styles.emptyState}>
-                    <CalendarLtrRegular className={styles.emptyIcon} />
+                    <CalendarMonthRegular className={styles.emptyIcon} />
                     <Body1 block>No periods found matching your criteria.</Body1>
                 </div>
             )}

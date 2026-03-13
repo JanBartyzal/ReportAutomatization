@@ -4,7 +4,7 @@
  * Provides service status, error logs, and system metrics
  * for the Health Dashboard (P5-W4-002).
  */
-import apiClient from './axios';
+// import apiClient from './axios';
 
 // --- Types ---
 
@@ -99,7 +99,6 @@ function getMockServices(): ServiceHealth[] {
             uptime: 99.7,
             version: '1.0.0',
             errorCount: 0,
-            description: 'File upload and processing',
         },
         {
             id: 'engine-orchestrator',

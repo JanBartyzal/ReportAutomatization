@@ -4,6 +4,7 @@ import com.reportplatform.form.dto.FormAssignmentDto;
 import com.reportplatform.form.dto.FormAssignmentRequest;
 import com.reportplatform.form.service.FormAssignmentService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,11 +29,13 @@ public class FormAssignmentController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public List<FormAssignmentDto> getAssignments(@PathVariable UUID formId) {
         return formAssignmentService.getAssignments(formId);
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<List<FormAssignmentDto>> assignForm(
             @PathVariable UUID formId,
             @Valid @RequestBody FormAssignmentRequest request,

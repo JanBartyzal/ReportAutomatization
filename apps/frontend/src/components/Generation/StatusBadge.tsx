@@ -26,7 +26,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
             case 'PROCESSING':
                 return {
                     appearance: 'filled',
-                    color: 'info',
+                    color: 'informative',
                     label: 'Processing',
                 };
             case 'COMPLETED':
@@ -44,7 +44,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
             default:
                 return {
                     appearance: 'filled',
-                    color: 'neutral',
+                    color: 'subtle',
                     label: status,
                 };
         }
@@ -77,7 +77,7 @@ export const ReportStatusBadge: React.FC<{
             case 'DRAFT':
                 return {
                     appearance: 'outline',
-                    color: 'neutral',
+                    color: 'subtle',
                     label: 'Draft',
                 };
             case 'SUBMITTED':
@@ -101,7 +101,7 @@ export const ReportStatusBadge: React.FC<{
             default:
                 return {
                     appearance: 'filled',
-                    color: 'neutral',
+                    color: 'subtle',
                     label: status,
                 };
         }

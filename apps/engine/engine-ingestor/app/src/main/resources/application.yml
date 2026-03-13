@@ -1,0 +1,101 @@
+server:
+  port: ${HTTP_PORT:8082}
+  forward-headers-strategy: framework
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 110MB
+      file-size-threshold: 256KB
+      resolve-lazily: true
+
+spring:
+  application:
+    name: engine-ingestor
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:engine_ingestor}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 3
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+azure:
+  storage:
+    blob:
+      connection-string: ${AZURE_STORAGE_CONNECTION_STRING:DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1}
+      container-name: ${AZURE_STORAGE_CONTAINER:file-uploads}
+
+upload:
+  limits:
+    application/vnd.openxmlformats-officedocument.presentationml.presentation: 52428800
+    application/vnd.openxmlformats-officedocument.spreadsheetml.sheet: 52428800
+    text/csv: 52428800
+    application/pdf: 104857600
+
+clamav:
+  host: ${CLAMAV_HOST:localhost}
+  port: ${CLAMAV_PORT:3310}
+  timeout: 30000
+
+sanitize:
+  remove-vba-macros: true
+  remove-external-links: true
+
+dapr:
+  sidecar:
+    host: ${DAPR_HOST:localhost}
+    http-port: ${DAPR_HTTP_PORT:3500}
+    grpc-port: ${DAPR_GRPC_PORT:50001}
+  pubsub:
+    name: ${DAPR_PUBSUB_NAME:reportplatform-pubsub}
+    topic:
+      file-uploaded: file-uploaded
+  app-id: engine-ingestor
+
+grpc:
+  server:
+    port: ${GRPC_PORT:50052}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: engine-ingestor
+
+logging:
+  level:
+    com.reportplatform.ing: ${LOG_LEVEL_ING:INFO}
+    com.reportplatform.scan: ${LOG_LEVEL_SCAN:INFO}
+    com.reportplatform.engineingestor: ${LOG_LEVEL_CORE:INFO}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+  show-actuator: false

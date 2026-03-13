@@ -58,6 +58,39 @@ export interface TemplateUploadResponse {
     placeholders: Placeholder[];
 }
 
+// Excel Import Types
+export interface ExcelColumn {
+    name: string;
+    sampleValues: string[];
+}
+
+export interface FormField {
+    id: string;
+    name: string;
+    label: string;
+    type: string;
+    required: boolean;
+}
+
+export interface MappingSuggestion {
+    excelColumn: string;
+    formField: string | null;
+    confidence: number;
+    suggestions: string[];
+}
+
+export interface ApplyMappingRequest {
+    fileId: string;
+    formId: string;
+    mappings: MappingSuggestion[];
+}
+
+export interface ApplyMappingResponse {
+    success: boolean;
+    importedRowCount: number;
+    errors?: string[];
+}
+
 // API functions
 const templatesApi = {
     /**
@@ -142,6 +175,76 @@ const templatesApi = {
             ...config,
             responseType: 'blob',
         });
+        return response.data;
+    },
+
+    // Excel Import API Functions
+
+    /**
+     * Get mapping suggestions for Excel file columns to form fields
+     */
+    getMappingSuggestions: async (
+        fileId: string,
+        formId: string,
+        config?: AxiosRequestConfig
+    ): Promise<MappingSuggestion[]> => {
+        const response = await axios.get('/api/templates/suggest', {
+            ...config,
+            params: { fileId, formId },
+        });
+        return response.data;
+    },
+
+    /**
+     * Apply mapping to import Excel data into form
+     */
+    applyMapping: async (
+        data: ApplyMappingRequest,
+        config?: AxiosRequestConfig
+    ): Promise<ApplyMappingResponse> => {
+        const response = await axios.post('/api/templates/map/excel-to-form', data, config);
+        return response.data;
+    },
+
+    /**
+     * Get Excel file columns (preview)
+     */
+    getExcelColumns: async (
+        fileId: string,
+        config?: AxiosRequestConfig
+    ): Promise<ExcelColumn[]> => {
+        const response = await axios.get(`/api/files/${fileId}/columns`, config);
+        return response.data;
+    },
+
+    /**
+     * Get form fields for mapping
+     */
+    getFormFields: async (
+        formId: string,
+        config?: AxiosRequestConfig
+    ): Promise<FormField[]> => {
+        const response = await axios.get(`/api/forms/${formId}/fields`, config);
+        return response.data;
+    },
+
+    /**
+     * Save mapping template for reuse
+     */
+    saveMappingTemplate: async (
+        name: string,
+        mappings: MappingSuggestion[],
+        config?: AxiosRequestConfig
+    ): Promise<{ id: string; name: string }> => {
+        const response = await axios.post('/api/templates/mapping-templates', { name, mappings }, config);
+        return response.data;
+    },
+
+    /**
+     * Get saved mapping templates
+     */
+    getMappingTemplates: async (config?: AxiosRequestConfig): Promise<{ id: string; name: string; mappings: MappingSuggestion[] }[]> => {
+        const response = await axios.get('/api/templates/mapping-templates', config);
         return response.data;
     },
 };

@@ -5,8 +5,8 @@
 
 import React, { useState } from 'react';
 import {
+    Title2,
     Body1,
-    Subtitle1,
     Divider,
     Tab,
     TabList,
@@ -15,7 +15,6 @@ import {
     DataGridRow,
     DataGridCell,
     DataGridBody,
-    TableCellLayout,
     TableColumnDefinition,
     createTableColumn,
     Button,
@@ -27,24 +26,23 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    DialogOpenChangeEventArgs,
     Input,
     Label,
     Select,
     Option,
-    Toggle,
+    Switch,
     Badge,
     MessageBar,
-    MessageBarIntent,
+} from '@fluentui/react-components';
+import type { 
+    DialogOpenChangeEvent, 
+    DialogOpenChangeData,
 } from '@fluentui/react-components';
 import {
     AddRegular,
     DeleteRegular,
     EditRegular,
     PlayRegular,
-    CheckmarkCircleRegular,
-    DismissCircleRegular,
-    ClockRegular,
 } from '@fluentui/react-icons';
 import {
     useConnections,
@@ -61,11 +59,8 @@ import {
 import type {
     ServiceNowConnection,
     CreateServiceNowConnectionRequest,
-    TestConnectionRequest,
     ServiceNowAuthType,
     SyncSchedule,
-    SyncJobHistory,
-    ServiceNowTableConfig,
 } from '@reportplatform/types';
 
 type IntegrationTab = 'connections' | 'schedules' | 'history';
@@ -216,13 +211,13 @@ const IntegrationPage: React.FC = () => {
             columnId: 'status',
             renderHeaderCell: () => 'Status',
             renderCell: (item) => {
-                const statusColors: Record<string, MessageBarIntent> = {
+                const statusColors: Record<string, 'success' | 'warning' | 'danger' | 'informative'> = {
                     active: 'success',
                     inactive: 'warning',
-                    error: 'error',
-                    testing: 'info',
+                    error: 'danger',
+                    testing: 'informative',
                 };
-                return <Badge appearance="filled" color={statusColors[item.status] || 'neutral'}>{item.status}</Badge>;
+                return <Badge appearance="filled" color={statusColors[item.status] || 'informative'}>{item.status}</Badge>;
             },
         }),
         createTableColumn<ServiceNowConnection>({
@@ -262,13 +257,13 @@ const IntegrationPage: React.FC = () => {
     ];
 
     return (
-        <div className="integration-page">
+        <div className="integration-page" style={{ padding: '24px' }}>
             <div className="page-header">
-                <Subtitle1>Service-Now Integration</Subtitle1>
+                <Title2>Service-Now Integration</Title2>
                 <Body1>Manage Service-Now connections, sync schedules, and data retrieval</Body1>
             </div>
 
-            <Divider className="divider" />
+            <Divider className="divider" style={{ margin: '16px 0' }} />
 
             <TabList
                 selectedValue={selectedTab}
@@ -281,8 +276,8 @@ const IntegrationPage: React.FC = () => {
 
             {selectedTab === 'connections' && (
                 <div className="tab-content">
-                    <div className="action-bar">
-                        <Dialog open={isDialogOpen} onOpenChange={(_: unknown, data: DialogOpenChangeEventArgs) => !data.open && handleCloseDialog()}>
+                    <div className="action-bar" style={{ margin: '16px 0' }}>
+                        <Dialog open={isDialogOpen} onOpenChange={(_: DialogOpenChangeEvent, data: DialogOpenChangeData) => !data.open && handleCloseDialog()}>
                             <DialogTrigger disableButtonEnhancement>
                                 <Button
                                     appearance="primary"
@@ -298,29 +293,38 @@ const IntegrationPage: React.FC = () => {
                                         {editingConnection ? 'Edit Connection' : 'New Connection'}
                                     </DialogTitle>
                                     <DialogContent>
-                                        <div className="form-fields">
-                                            <Label required>Instance URL</Label>
-                                            <Input
-                                                value={formData.instance_url}
-                                                onChange={(_, data) => setFormData({ ...formData, instance_url: data.value })}
-                                                placeholder="https://instance.service-now.com"
-                                            />
+                                        <div className="form-fields" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            <div>
+                                                <Label required>Instance URL</Label>
+                                                <Input
+                                                    style={{ width: '100%' }}
+                                                    value={formData.instance_url}
+                                                    onChange={(_, data) => setFormData({ ...formData, instance_url: data.value })}
+                                                    placeholder="https://instance.service-now.com"
+                                                />
+                                            </div>
 
-                                            <Label required>Authentication Type</Label>
-                                            <Select
-                                                value={formData.auth_type}
-                                                onChange={(_, data) => setFormData({ ...formData, auth_type: data.value as ServiceNowAuthType })}
-                                            >
-                                                <Option value="oauth2">OAuth 2.0</Option>
-                                                <Option value="basic">Basic Auth</Option>
-                                            </Select>
+                                            <div>
+                                                <Label required>Authentication Type</Label>
+                                                <Select
+                                                    style={{ width: '100%' }}
+                                                    value={formData.auth_type}
+                                                    onChange={(_, data) => setFormData({ ...formData, auth_type: data.value as ServiceNowAuthType })}
+                                                >
+                                                    <Option value="oauth2">OAuth 2.0</Option>
+                                                    <Option value="basic">Basic Auth</Option>
+                                                </Select>
+                                            </div>
 
-                                            <Label required>Credentials Reference (KeyVault)</Label>
-                                            <Input
-                                                value={formData.credentials_ref}
-                                                onChange={(_, data) => setFormData({ ...formData, credentials_ref: data.value })}
-                                                placeholder="servicenow-credentials"
-                                            />
+                                            <div>
+                                                <Label required>Credentials Reference (KeyVault)</Label>
+                                                <Input
+                                                    style={{ width: '100%' }}
+                                                    value={formData.credentials_ref}
+                                                    onChange={(_, data) => setFormData({ ...formData, credentials_ref: data.value })}
+                                                    placeholder="servicenow-credentials"
+                                                />
+                                            </div>
 
                                             <Label>Tables to Sync</Label>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -408,49 +412,49 @@ const IntegrationPage: React.FC = () => {
                                     )}
                                 </DataGridRow>
                             </DataGridHeader>
-                        <DataGridBody<ServiceNowConnection>>
-                            {({ item, rowId }: { item: ServiceNowConnection; rowId: string }) => (
-                                <DataGridRow<ServiceNowConnection> key={rowId}>
-                                    {({ renderCell }: { renderCell: (item: ServiceNowConnection) => React.ReactNode }) => (
-                                        <DataGridCell>{renderCell(item)}</DataGridCell>
-                                    )}
-                                </DataGridRow>
-                            )}
-                        </DataGridBody>
-                    </DataGrid>
+                            <DataGridBody<ServiceNowConnection>>
+                                {({ item, rowId }) => (
+                                    <DataGridRow<ServiceNowConnection> key={rowId}>
+                                        {({ renderCell }) => (
+                                            <DataGridCell>{renderCell(item)}</DataGridCell>
+                                        )}
+                                    </DataGridRow>
+                                )}
+                            </DataGridBody>
+                        </DataGrid>
                     )}
                 </div>
             )}
 
             {selectedTab === 'schedules' && (
-                <div className="tab-content">
+                <div className="tab-content" style={{ marginTop: '16px' }}>
                     <DataGrid
                         items={schedules || []}
                         columns={[
                             createTableColumn({
                                 columnId: 'integration_id',
                                 renderHeaderCell: () => 'Connection',
-                                renderCell: (item) => connections?.find(c => c.id === item.integration_id)?.instance_url || item.integration_id,
+                                renderCell: (item: any) => connections?.find((c: any) => c.id === item.integration_id)?.instance_url || item.integration_id,
                             }),
                             createTableColumn({
                                 columnId: 'cron_expression',
                                 renderHeaderCell: () => 'Schedule',
-                                renderCell: (item) => item.cron_expression,
+                                renderCell: (item: any) => item.cron_expression,
                             }),
                             createTableColumn({
                                 columnId: 'enabled',
                                 renderHeaderCell: () => 'Enabled',
-                                renderCell: (item) => <Badge appearance="filled" color={item.enabled ? 'success' : 'warning'}>{item.enabled ? 'Yes' : 'No'}</Badge>,
+                                renderCell: (item: any) => <Badge appearance="filled" color={item.enabled ? 'success' : 'warning'}>{item.enabled ? 'Yes' : 'No'}</Badge>,
                             }),
                             createTableColumn({
                                 columnId: 'next_run',
                                 renderHeaderCell: () => 'Next Run',
-                                renderCell: (item) => item.next_run ? new Date(item.next_run).toLocaleString() : 'N/A',
+                                renderCell: (item: any) => item.next_run ? new Date(item.next_run).toLocaleString() : 'N/A',
                             }),
                             createTableColumn({
                                 columnId: 'actions',
                                 renderHeaderCell: () => 'Actions',
-                                renderCell: (item) => (
+                                renderCell: (item: any) => (
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <Button
                                             size="small"
@@ -479,10 +483,10 @@ const IntegrationPage: React.FC = () => {
                                 )}
                             </DataGridRow>
                         </DataGridHeader>
-                        <DataGridBody<SyncJobHistory>>
-                            {({ item, rowId }: { item: SyncJobHistory; rowId: string }) => (
-                                <DataGridRow<SyncJobHistory> key={rowId}>
-                                    {({ renderCell }: { renderCell: (item: SyncJobHistory) => React.ReactNode }) => (
+                        <DataGridBody<any>>
+                            {({ item, rowId }) => (
+                                <DataGridRow key={rowId}>
+                                    {({ renderCell }) => (
                                         <DataGridCell>{renderCell(item)}</DataGridCell>
                                     )}
                                 </DataGridRow>
@@ -493,30 +497,30 @@ const IntegrationPage: React.FC = () => {
             )}
 
             {selectedTab === 'history' && (
-                <div className="tab-content">
+                <div className="tab-content" style={{ marginTop: '16px' }}>
                     <DataGrid
-                        items={syncHistory?.items || []}
+                        items={syncHistory?.data || []}
                         columns={[
                             createTableColumn({
                                 columnId: 'schedule_id',
                                 renderHeaderCell: () => 'Schedule',
-                                renderCell: (item) => schedules?.find(s => s.id === item.schedule_id)?.cron_expression || item.schedule_id,
+                                renderCell: (item: any) => schedules?.find((s: any) => s.id === item.schedule_id)?.cron_expression || item.schedule_id,
                             }),
                             createTableColumn({
                                 columnId: 'start_time',
                                 renderHeaderCell: () => 'Start Time',
-                                renderCell: (item) => new Date(item.start_time).toLocaleString(),
+                                renderCell: (item: any) => new Date(item.start_time).toLocaleString(),
                             }),
                             createTableColumn({
                                 columnId: 'records_fetched',
                                 renderHeaderCell: () => 'Records',
-                                renderCell: (item) => `${item.records_fetched} fetched, ${item.records_stored} stored`,
+                                renderCell: (item: any) => `${item.records_fetched} fetched, ${item.records_stored} stored`,
                             }),
                             createTableColumn({
                                 columnId: 'status',
                                 renderHeaderCell: () => 'Status',
-                                renderCell: (item) => (
-                                    <Badge appearance="filled" color={item.status === 'completed' ? 'success' : item.status === 'failed' ? 'error' : 'info'}>
+                                renderCell: (item: any) => (
+                                    <Badge appearance="filled" color={item.status === 'completed' ? 'success' : item.status === 'failed' ? 'danger' : 'informative'}>
                                         {item.status}
                                     </Badge>
                                 ),
@@ -524,7 +528,7 @@ const IntegrationPage: React.FC = () => {
                             createTableColumn({
                                 columnId: 'error_detail',
                                 renderHeaderCell: () => 'Error',
-                                renderCell: (item) => item.error_detail || '-',
+                                renderCell: (item: any) => item.error_detail || '-',
                             }),
                         ]}
                         style={{ minWidth: '100%' }}
@@ -536,10 +540,10 @@ const IntegrationPage: React.FC = () => {
                                 )}
                             </DataGridRow>
                         </DataGridHeader>
-                        <DataGridBody<SyncJobHistory>>
-                            {({ item, rowId }: { item: SyncJobHistory; rowId: string }) => (
-                                <DataGridRow<SyncJobHistory> key={rowId}>
-                                    {({ renderCell }: { renderCell: (item: SyncJobHistory) => React.ReactNode }) => (
+                        <DataGridBody<any>>
+                            {({ item, rowId }) => (
+                                <DataGridRow key={rowId}>
+                                    {({ renderCell }) => (
                                         <DataGridCell>{renderCell(item)}</DataGridCell>
                                     )}
                                 </DataGridRow>
@@ -549,37 +553,37 @@ const IntegrationPage: React.FC = () => {
                 </div>
             )}
 
-        {/* Schedule Configuration Dialog */}
-        <Dialog open={isScheduleDialogOpen} onOpenChange={(_: unknown, data: any) => setIsScheduleDialogOpen(data.open)}>
-            <DialogSurface>
-                <DialogBody>
-                    <DialogTitle>{editingSchedule ? 'Edit Sync Schedule' : 'New Sync Schedule'}</DialogTitle>
-                    <DialogContent>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-                            <Label required>Cron Expression</Label>
-                            <Input
-                                value={scheduleFormData.cron_expression}
-                                onChange={(_, data) => setScheduleFormData({ ...scheduleFormData, cron_expression: data.value })}
-                                placeholder="0 0 * * *"
-                            />
-                            <Body1 size={200} italic>Format: minute hour day-of-month month day-of-week</Body1>
-                            
-                            <Toggle
-                                label="Enabled"
-                                checked={scheduleFormData.enabled}
-                                onChange={(_, data) => setScheduleFormData({ ...scheduleFormData, enabled: data.checked })}
-                            />
-                        </div>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button appearance="secondary" onClick={() => setIsScheduleDialogOpen(false)}>Cancel</Button>
-                        <Button appearance="primary" onClick={handleSaveSchedule}>Save</Button>
-                    </DialogActions>
-                </DialogBody>
-            </DialogSurface>
-        </Dialog>
-    </div>
-);
+            {/* Schedule Configuration Dialog */}
+            <Dialog open={isScheduleDialogOpen} onOpenChange={(_: DialogOpenChangeEvent, data: DialogOpenChangeData) => setIsScheduleDialogOpen(data.open)}>
+                <DialogSurface>
+                    <DialogBody>
+                        <DialogTitle>{editingSchedule ? 'Edit Sync Schedule' : 'New Sync Schedule'}</DialogTitle>
+                        <DialogContent>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                                <Label required>Cron Expression</Label>
+                                <Input
+                                    value={scheduleFormData.cron_expression}
+                                    onChange={(_, data) => setScheduleFormData({ ...scheduleFormData, cron_expression: data.value })}
+                                    placeholder="0 0 * * *"
+                                />
+                                <Body1 italic>Format: minute hour day-of-month month day-of-week</Body1>
+                                
+                                <Switch
+                                    label="Enabled"
+                                    checked={scheduleFormData.enabled}
+                                    onChange={(_, data) => setScheduleFormData({ ...scheduleFormData, enabled: data.checked })}
+                                />
+                            </div>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button appearance="secondary" onClick={() => setIsScheduleDialogOpen(false)}>Cancel</Button>
+                            <Button appearance="primary" onClick={handleSaveSchedule}>Save</Button>
+                        </DialogActions>
+                    </DialogBody>
+                </DialogSurface>
+            </Dialog>
+        </div>
+    );
 };
 
 export default IntegrationPage;

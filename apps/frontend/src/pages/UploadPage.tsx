@@ -6,7 +6,6 @@ import {
     Body1,
     ProgressBar,
     makeStyles,
-    Button,
     tokens,
     RadioGroup,
     Radio,
@@ -15,12 +14,6 @@ import {
 import { ArrowUpload24Regular } from '@fluentui/react-icons';
 import { useUpload } from '../hooks/useFiles';
 
-/**
- * UploadPage styles per docs/UX-UI/02-design-system.md
- * - Using Fluent tokens throughout
- * - No hardcoded colors
- * - Border radius: radiusMedium (8px)
- */
 const useStyles = makeStyles({
     container: {
         padding: tokens.spacingHorizontalL,
@@ -32,10 +25,6 @@ const useStyles = makeStyles({
     description: {
         marginBottom: tokens.spacingHorizontalM,
     },
-    /**
-     * Dropzone - dashed border per standard UI patterns
-     * Using tokens for colors
-     */
     dropzone: {
         border: `2px dashed ${tokens.colorNeutralStroke1}`,
         borderRadius: tokens.borderRadiusMedium,
@@ -44,12 +33,12 @@ const useStyles = makeStyles({
         cursor: 'pointer',
         transition: 'border-color 0.2s ease-in-out',
         backgroundColor: tokens.colorNeutralBackground1,
-        ':hover': {
-            borderColor: tokens.colorBrandForeground1,
+        '&:hover': {
+            border: `2px dashed ${tokens.colorBrandForeground1}`,
         },
     },
     dropzoneActive: {
-        borderColor: tokens.colorBrandForeground1,
+        border: `2px dashed ${tokens.colorBrandForeground1}`,
         backgroundColor: tokens.colorBrandBackground2,
     },
     uploadIcon: {
@@ -139,12 +128,12 @@ export default function UploadPage() {
             >
                 <input {...getInputProps()} />
                 <ArrowUpload24Regular className={styles.uploadIcon} />
-                <Body1>
+                <Body1 block>
                     {isDragActive
                         ? 'Drop the files here...'
                         : 'Drag and drop files here, or click to select files'}
                 </Body1>
-                <Body1 className={styles.supportedText}>
+                <Body1 block className={styles.supportedText}>
                     Supported: .pptx, .xlsx, .pdf, .csv (max 100MB)
                 </Body1>
             </div>

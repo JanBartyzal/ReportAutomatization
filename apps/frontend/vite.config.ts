@@ -7,6 +7,7 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
+            '@reportplatform/types': path.resolve(__dirname, '../../packages/types/src'),
         },
     },
     server: {

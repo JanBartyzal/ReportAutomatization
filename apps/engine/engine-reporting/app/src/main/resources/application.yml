@@ -1,3 +1,7 @@
+server:
+  port: ${HTTP_PORT:8105}
+  forward-headers-strategy: framework
+
 spring:
   application:
     name: engine-reporting
@@ -129,3 +133,13 @@ app:
     lifecycle-service: engine-reporting
   websocket:
     allowed-origins: "*"
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+  show-actuator: false

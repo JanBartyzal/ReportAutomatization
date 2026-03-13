@@ -29,22 +29,21 @@ public class DaprEventPublisher {
     }
 
     @PreDestroy
-    void destroy() {
+    void destroy() throws Exception {
         if (daprClient != null) {
             daprClient.close();
         }
     }
 
     public void publishDeadlineReminder(UUID periodId, String periodName, int daysRemaining,
-                                        List<String> orgIds) {
+            List<String> orgIds) {
         Map<String, Object> event = Map.of(
                 "type", "deadline_reminder",
                 "periodId", periodId.toString(),
                 "periodName", periodName,
                 "daysRemaining", daysRemaining,
                 "orgIds", orgIds,
-                "timestamp", System.currentTimeMillis()
-        );
+                "timestamp", System.currentTimeMillis());
 
         try {
             daprClient.publishEvent(pubsubName, "notify", event).block();
@@ -57,14 +56,13 @@ public class DaprEventPublisher {
     }
 
     public void publishDeadlineEscalation(UUID periodId, String periodName,
-                                          List<String> nonCompliantOrgIds) {
+            List<String> nonCompliantOrgIds) {
         Map<String, Object> event = Map.of(
                 "type", "deadline_escalation",
                 "periodId", periodId.toString(),
                 "periodName", periodName,
                 "nonCompliantOrgIds", nonCompliantOrgIds,
-                "timestamp", System.currentTimeMillis()
-        );
+                "timestamp", System.currentTimeMillis());
 
         try {
             daprClient.publishEvent(pubsubName, "notify", event).block();
@@ -72,6 +70,25 @@ public class DaprEventPublisher {
                     periodId, nonCompliantOrgIds.size());
         } catch (Exception e) {
             log.error("Failed to publish deadline escalation for period={}: {}",
+                    periodId, e.getMessage(), e);
+        }
+    }
+
+    public void publishPeriodAutoClosed(UUID periodId, String periodName,
+            List<String> orgIds) {
+        Map<String, Object> event = Map.of(
+                "type", "period_auto_closed",
+                "periodId", periodId.toString(),
+                "periodName", periodName,
+                "orgIds", orgIds,
+                "timestamp", System.currentTimeMillis());
+
+        try {
+            daprClient.publishEvent(pubsubName, "notify", event).block();
+            log.info("Published period auto-closed: period={}, orgs={}",
+                    periodId, orgIds.size());
+        } catch (Exception e) {
+            log.error("Failed to publish period auto-closed for period={}: {}",
                     periodId, e.getMessage(), e);
         }
     }

@@ -3,7 +3,6 @@ import {
     makeStyles,
     tokens,
     Title3,
-    Body1,
     Body2,
     Card,
     ProgressBar,

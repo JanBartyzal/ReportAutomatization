@@ -8,10 +8,10 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    DialogLoadingState,
-    Spinner,
     ProgressBar,
     Badge,
+    makeStyles,
+    tokens,
 } from '@fluentui/react-components';
 import {
     DocumentPdf24Regular,
@@ -20,19 +20,41 @@ import {
 } from '@fluentui/react-icons';
 import { useGenerateReport, useGenerationPolling } from '../../hooks/useGeneration';
 import { reportBrand } from '../../theme/brandTokens';
-import { GenerationStatus } from '../../api/generation';
 
-// Status badge colors per design system
-const getStatusBadge = (status: GenerationStatus) => {
-    const statusConfig = {
-        PENDING: { appearance: 'filled' as const, color: 'warning' as const, label: 'Pending' },
-        PROCESSING: { appearance: 'filled' as const, color: 'info' as const, label: 'Processing' },
-        COMPLETED: { appearance: 'filled' as const, color: 'success' as const, label: 'Completed' },
-        FAILED: { appearance: 'filled' as const, color: 'danger' as const, label: 'Failed' },
-    };
-    const config = statusConfig[status];
-    return <Badge appearance={config.appearance} color={config.color}>{config.label}</Badge>;
-};
+
+const useStyles = makeStyles({
+    wrapper: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+    },
+    processingContent: {
+        paddingTop: '20px',
+        paddingBottom: '20px',
+    },
+    processingText: {
+        marginTop: '12px',
+        color: tokens.colorNeutralForeground3,
+    },
+    completedContent: {
+        paddingTop: '20px',
+        paddingBottom: '20px',
+        textAlign: 'center',
+    },
+    successText: {
+        marginTop: '12px',
+        fontWeight: '700',
+        color: tokens.colorStatusSuccessForeground1,
+    },
+    failedContent: {
+        paddingTop: '20px',
+        paddingBottom: '20px',
+        textAlign: 'center',
+    },
+    failedText: {
+        color: tokens.colorStatusDangerForeground1,
+    },
+});
 
 interface GenerateButtonProps {
     reportId: string;
@@ -49,6 +71,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
     existingJobId,
     existingDownloadUrl,
 }) => {
+    const styles = useStyles();
     const [jobId, setJobId] = useState<string | undefined>(existingJobId);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -66,10 +89,9 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
         }
     };
 
-    const { status, downloadUrl, isPolling } = useGenerationPolling(
+    const { status, downloadUrl } = useGenerationPolling(
         reportId,
-        jobId || undefined,
-        !!jobId,
+        jobId || null,
         () => setIsDialogOpen(false),
         () => setIsDialogOpen(false)
     );
@@ -86,7 +108,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
     }
 
     return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={styles.wrapper}>
             {/* Status Badge (if generation exists) */}
             {existingDownloadUrl && !jobId && (
                 <Badge appearance="filled" color="success">Generated</Badge>
@@ -98,7 +120,6 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
                     appearance="primary"
                     icon={<ArrowDownload24Regular />}
                     onClick={handleDownload}
-                    style={{ backgroundColor: reportBrand[90] }}
                 >
                     Download PPTX
                 </Button>
@@ -111,7 +132,6 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
                         appearance="primary"
                         icon={existingDownloadUrl ? <ArrowSync24Regular /> : <DocumentPdf24Regular />}
                         onClick={() => setIsDialogOpen(true)}
-                        style={{ backgroundColor: reportBrand[90] }}
                     >
                         {existingDownloadUrl ? 'Regenerate' : 'Generate PPTX'}
                     </Button>
@@ -123,32 +143,32 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
                         </DialogTitle>
                         <DialogContent>
                             {status === 'PROCESSING' && (
-                                <div style={{ padding: '20px 0' }}>
+                                <div className={styles.processingContent}>
                                     <ProgressBar
-                                        progress={{ value: -1, label: 'Generating...' }}
+                                        value={undefined}
                                         thickness="medium"
                                         style={{
-                                            '--progress-bar-color': reportBrand[90]
+                                            backgroundColor: tokens.colorNeutralBackground3,
                                         } as React.CSSProperties}
                                     />
-                                    <p style={{ marginTop: '12px', color: '#666' }}>
+                                    <p className={styles.processingText}>
                                         Please wait while your report is being generated...
                                     </p>
                                 </div>
                             )}
 
                             {status === 'COMPLETED' && (
-                                <div style={{ padding: '20px 0', textAlign: 'center' }}>
+                                <div className={styles.completedContent}>
                                     <DocumentPdf24Regular style={{ fontSize: '48px', color: reportBrand[90] }} />
-                                    <p style={{ marginTop: '12px', fontWeight: 'bold', color: '#2d8a2d' }}>
+                                    <p className={styles.successText}>
                                         Report generated successfully!
                                     </p>
                                 </div>
                             )}
 
                             {status === 'FAILED' && (
-                                <div style={{ padding: '20px 0', textAlign: 'center' }}>
-                                    <p style={{ color: '#C4314B' }}>
+                                <div className={styles.failedContent}>
+                                    <p className={styles.failedText}>
                                         Failed to generate report. Please try again.
                                     </p>
                                 </div>
@@ -171,7 +191,6 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
                                         appearance="primary"
                                         onClick={handleDownload}
                                         icon={<ArrowDownload24Regular />}
-                                        style={{ backgroundColor: reportBrand[90] }}
                                     >
                                         Download
                                     </Button>
@@ -189,7 +208,6 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
                                         appearance="primary"
                                         onClick={handleGenerate}
                                         disabled={generateMutation.isPending}
-                                        style={{ backgroundColor: reportBrand[90] }}
                                     >
                                         {generateMutation.isPending ? 'Starting...' : 'Generate'}
                                     </Button>

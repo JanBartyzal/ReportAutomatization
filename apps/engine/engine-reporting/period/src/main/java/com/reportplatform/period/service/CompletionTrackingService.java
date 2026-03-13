@@ -27,7 +27,7 @@ public class CompletionTrackingService {
     private DaprClient daprClient;
 
     public CompletionTrackingService(PeriodRepository periodRepository,
-                                     PeriodOrgAssignmentRepository assignmentRepository) {
+            PeriodOrgAssignmentRepository assignmentRepository) {
         this.periodRepository = periodRepository;
         this.assignmentRepository = assignmentRepository;
     }
@@ -38,7 +38,7 @@ public class CompletionTrackingService {
     }
 
     @PreDestroy
-    void destroy() {
+    void destroy() throws Exception {
         if (daprClient != null) {
             daprClient.close();
         }
@@ -82,8 +82,7 @@ public class CompletionTrackingService {
 
         return new PeriodStatusResponse(
                 periodId, period.getName(), totalOrgs,
-                totalReports, approvedReports, completionPct, orgStatuses
-        );
+                totalReports, approvedReports, completionPct, orgStatuses);
     }
 
     @SuppressWarnings("unchecked")
@@ -94,8 +93,7 @@ public class CompletionTrackingService {
                     "api/reports/matrix?periodId=" + periodId,
                     null,
                     HttpExtension.GET,
-                    List.class
-            ).block();
+                    List.class).block();
             return result != null ? (List<Map<String, Object>>) result : List.of();
         } catch (Exception e) {
             log.warn("Failed to fetch matrix from ms-lifecycle for period {}: {}",

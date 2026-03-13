@@ -12,11 +12,15 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * InternalEventBridge replaces Dapr PubSub network calls with in-process Spring ApplicationEvent
- * for intra-service communication within the consolidated engine-reporting service.
+ * InternalEventBridge replaces Dapr PubSub network calls with in-process Spring
+ * ApplicationEvent
+ * for intra-service communication within the consolidated engine-reporting
+ * service.
  *
- * Modules publish events via this bridge instead of Dapr when the target module is co-located.
- * External services (outside engine-reporting) still receive events via Dapr PubSub.
+ * Modules publish events via this bridge instead of Dapr when the target module
+ * is co-located.
+ * External services (outside engine-reporting) still receive events via Dapr
+ * PubSub.
  */
 @Component
 public class InternalEventBridge {
@@ -30,10 +34,11 @@ public class InternalEventBridge {
     }
 
     /**
-     * Publish a report status changed event (lifecycle -> notification, period, form).
+     * Publish a report status changed event (lifecycle -> notification, period,
+     * form).
      */
     public void publishReportStatusChanged(UUID reportId, String orgId,
-                                           String fromStatus, String toStatus, String userId) {
+            String fromStatus, String toStatus, String userId) {
         var event = new ReportStatusChangedInternalEvent(this, reportId, orgId, fromStatus, toStatus, userId);
         eventPublisher.publishEvent(event);
         log.info("Internal event: report.status_changed reportId={}, {} -> {}", reportId, fromStatus, toStatus);
@@ -43,7 +48,7 @@ public class InternalEventBridge {
      * Publish a deadline event (period -> notification).
      */
     public void publishDeadlineReminder(UUID periodId, String periodName,
-                                        int daysRemaining, List<String> orgIds) {
+            int daysRemaining, List<String> orgIds) {
         var event = new DeadlineInternalEvent(this, periodId, periodName,
                 DeadlineInternalEvent.DeadlineType.REMINDER, daysRemaining, orgIds);
         eventPublisher.publishEvent(event);
@@ -94,7 +99,7 @@ public class InternalEventBridge {
         private final long timestamp;
 
         public ReportStatusChangedInternalEvent(Object source, UUID reportId, String orgId,
-                                                String fromStatus, String toStatus, String userId) {
+                String fromStatus, String toStatus, String userId) {
             super(source);
             this.reportId = reportId;
             this.orgId = orgId;
@@ -104,19 +109,38 @@ public class InternalEventBridge {
             this.timestamp = System.currentTimeMillis();
         }
 
-        public UUID getReportId() { return reportId; }
-        public String getOrgId() { return orgId; }
-        public String getFromStatus() { return fromStatus; }
-        public String getToStatus() { return toStatus; }
-        public String getUserId() { return userId; }
-        public long getTimestamp() { return timestamp; }
+        public UUID getReportId() {
+            return reportId;
+        }
+
+        public String getOrgId() {
+            return orgId;
+        }
+
+        public String getFromStatus() {
+            return fromStatus;
+        }
+
+        public String getToStatus() {
+            return toStatus;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+
+        public long getEventTimestamp() {
+            return timestamp;
+        }
     }
 
     /**
      * Event fired for deadline reminders and escalations.
      */
     public static class DeadlineInternalEvent extends org.springframework.context.ApplicationEvent {
-        public enum DeadlineType { REMINDER, ESCALATION }
+        public enum DeadlineType {
+            REMINDER, ESCALATION
+        }
 
         private final UUID periodId;
         private final String periodName;
@@ -126,7 +150,7 @@ public class InternalEventBridge {
         private final long timestamp;
 
         public DeadlineInternalEvent(Object source, UUID periodId, String periodName,
-                                     DeadlineType deadlineType, int daysRemaining, List<String> orgIds) {
+                DeadlineType deadlineType, int daysRemaining, List<String> orgIds) {
             super(source);
             this.periodId = periodId;
             this.periodName = periodName;
@@ -136,12 +160,29 @@ public class InternalEventBridge {
             this.timestamp = System.currentTimeMillis();
         }
 
-        public UUID getPeriodId() { return periodId; }
-        public String getPeriodName() { return periodName; }
-        public DeadlineType getDeadlineType() { return deadlineType; }
-        public int getDaysRemaining() { return daysRemaining; }
-        public List<String> getOrgIds() { return orgIds; }
-        public long getTimestamp() { return timestamp; }
+        public UUID getPeriodId() {
+            return periodId;
+        }
+
+        public String getPeriodName() {
+            return periodName;
+        }
+
+        public DeadlineType getDeadlineType() {
+            return deadlineType;
+        }
+
+        public int getDaysRemaining() {
+            return daysRemaining;
+        }
+
+        public List<String> getOrgIds() {
+            return orgIds;
+        }
+
+        public long getEventTimestamp() {
+            return timestamp;
+        }
     }
 
     /**
@@ -161,10 +202,21 @@ public class InternalEventBridge {
             this.timestamp = System.currentTimeMillis();
         }
 
-        public UUID getReportId() { return reportId; }
-        public String getOrgId() { return orgId; }
-        public String getUserId() { return userId; }
-        public long getTimestamp() { return timestamp; }
+        public UUID getReportId() {
+            return reportId;
+        }
+
+        public String getOrgId() {
+            return orgId;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+
+        public long getEventTimestamp() {
+            return timestamp;
+        }
     }
 
     /**
@@ -184,9 +236,20 @@ public class InternalEventBridge {
             this.timestamp = System.currentTimeMillis();
         }
 
-        public UUID getReportId() { return reportId; }
-        public String getOrgId() { return orgId; }
-        public String getUserId() { return userId; }
-        public long getTimestamp() { return timestamp; }
+        public UUID getReportId() {
+            return reportId;
+        }
+
+        public String getOrgId() {
+            return orgId;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+
+        public long getEventTimestamp() {
+            return timestamp;
+        }
     }
 }

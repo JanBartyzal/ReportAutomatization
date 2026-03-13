@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Title1, Body1, Button, makeStyles } from '@fluentui/react-components';
+import { Title1, Body1, Button, makeStyles, tokens } from '@fluentui/react-components';
 
 const useStyles = makeStyles({
     container: {
@@ -8,14 +8,14 @@ const useStyles = makeStyles({
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '100vh',
-        padding: '24px',
+        padding: tokens.spacingHorizontalL,
     },
     title: {
-        marginBottom: '8px',
+        marginBottom: tokens.spacingVerticalS,
     },
     subtitle: {
-        marginBottom: '24px',
-        color: '#666',
+        marginBottom: tokens.spacingVerticalL,
+        color: tokens.colorNeutralForeground2,
     },
 });
 

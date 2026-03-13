@@ -3,19 +3,10 @@
  * Per docs/UX-UI/02-design-system.md - Anti-patterns section:
  * - No Tailwind utility classes
  * - Use Fluent tokens via makeStyles
+ *
+ * Chart palette & brand CSS custom properties are injected at runtime
+ * by ThemeProvider via cssInjection.ts — no hardcoded values here.
  */
-
-/* Chart Palette CSS Custom Properties per 00-project-color-overrides.md */
-:root {
-    --chart-1: #C4314B;
-    --chart-2: #107C10;
-    --chart-3: #0078D4;
-    --chart-4: #D83B01;
-    --chart-5: #6D28D9;
-    --chart-6: #008272;
-    --chart-7: #E3008C;
-    --chart-8: #986F0B;
-}
 
 /* Base styles */
 html {
@@ -39,10 +30,18 @@ body {
     flex-direction: column;
 }
 
-/* Dark mode support - respects system preference */
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: #1B1A19;
-        color: #FFFFFF;
+/* Tabular figures for financial numbers */
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+}
+
+/* Accessibility: respect OS preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
 }

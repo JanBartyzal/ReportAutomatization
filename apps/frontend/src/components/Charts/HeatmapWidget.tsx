@@ -1,8 +1,7 @@
 import React from 'react';
 import { ResponsiveHeatMap } from '@nivo/heatmap';
-import { chartPalette } from '../../theme/brandTokens';
 import { AggregatedData } from '@reportplatform/types';
-import { tokens } from '@fluentui/react-components';
+import { nivoLightTheme } from './nivoTheme';
 
 interface HeatmapWidgetProps {
     data: AggregatedData;
@@ -74,17 +73,7 @@ export const HeatmapWidget: React.FC<HeatmapWidgetProps> = ({ data }) => {
                     from: 'color',
                     modifiers: [['darker', 1.8]]
                 }}
-                theme={{
-                    fontSize: 12,
-                    textColor: tokens.colorNeutralForeground3,
-                    axis: {
-                        ticks: {
-                            text: {
-                                fill: tokens.colorNeutralForeground4
-                            }
-                        }
-                    }
-                }}
+                theme={nivoLightTheme}
             />
         </div>
     );

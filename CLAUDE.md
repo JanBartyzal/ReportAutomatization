@@ -18,6 +18,7 @@
 - Communication: Always use REST API for frontend-to-backend calls.
 - HTTP Client: Axios (s interceptory).
 - Service Mesh: Dapr (Distributed Application Runtime) is mandatory for all service-to-service communication.
+- Maven: `i:\apache-maven-3.9.6\bin\mvn.cmd clean compile`
 
 
 ## Rules
@@ -27,6 +28,7 @@
 - if I approve the plan, proceed with the implementation in automated mode (minimize user interaction)
 - if you need to change the plan, share it with me for review
 - you have approval for create or edit any file
+- you have approval for bash commands ls, find, dir, for etc... for search and list files and in find in files
 
 
 

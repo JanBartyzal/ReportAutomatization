@@ -12,9 +12,7 @@ export const FEATURE_FLAGS = {
     ENABLE_MULTI_ORG_COMPARISON: 'ENABLE_MULTI_ORG_COMPARISON',
 } as const;
 
-// Type for flag values
-type FeatureFlagKey = keyof typeof FEATURE_FLAGS;
-type FeatureFlagValue = typeof FEATURE_FLAGS[FeatureFlagKey];
+// Feature flag configuration
 
 // Default feature flag values (can be overridden by environment or API)
 const DEFAULT_FLAGS: Record<string, boolean> = {

@@ -4,6 +4,7 @@ import com.reportplatform.qry.model.dto.ComparisonResult;
 import com.reportplatform.qry.service.ComparisonQueryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +38,7 @@ public class ComparisonQueryController {
      * @param scope   scope filter (CENTRAL, LOCAL, ALL)
      */
     @GetMapping("/comparison")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<ComparisonResult> getComparison(
             @RequestHeader(value = "X-User-Role") String userRole,
             @RequestParam(value = "org_ids") List<String> orgIds,

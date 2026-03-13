@@ -3,13 +3,11 @@ import {
     tokens,
     Button,
     Dropdown,
-    DropdownTrigger,
     Option,
-    Input,
     Body1,
 } from '@fluentui/react-components';
 import { Dismiss24Regular } from '@fluentui/react-icons';
-import type { FileStatus } from '@reportplatform/types';
+import { FileStatus, FileListParams } from '@reportplatform/types';
 
 /**
  * FileFilters styles per docs/UX-UI/02-design-system.md
@@ -34,7 +32,7 @@ const useStyles = makeStyles({
     },
     fieldLabel: {
         color: tokens.colorNeutralForeground2,
-        fontSize: tokens.fontSizeBody2,
+        fontSize: tokens.fontSizeBase200,
     },
     activeFilters: {
         display: 'flex',
@@ -49,7 +47,7 @@ const useStyles = makeStyles({
         borderRadius: tokens.borderRadiusSmall,
         backgroundColor: tokens.colorBrandBackground,
         color: tokens.colorBrandForeground1,
-        fontSize: tokens.fontSizeBody2,
+        fontSize: tokens.fontSizeBase200,
     },
     clearButton: {
         padding: tokens.spacingVerticalXXS,
@@ -69,11 +67,11 @@ const FILE_TYPES = [
 
 const FILE_STATUSES: { value: FileStatus | ''; label: string }[] = [
     { value: '', label: 'All Statuses' },
-    { value: 'UPLOADED', label: 'Uploaded' },
-    { value: 'PROCESSING', label: 'Processing' },
-    { value: 'COMPLETED', label: 'Completed' },
-    { value: 'FAILED', label: 'Failed' },
-    { value: 'PARTIAL', label: 'Partial' },
+    { value: FileStatus.UPLOADED, label: 'Uploaded' },
+    { value: FileStatus.PROCESSING, label: 'Processing' },
+    { value: FileStatus.COMPLETED, label: 'Completed' },
+    { value: FileStatus.FAILED, label: 'Failed' },
+    { value: FileStatus.PARTIAL, label: 'Partial' },
 ];
 
 const SORT_OPTIONS = [
@@ -83,23 +81,18 @@ const SORT_OPTIONS = [
 ];
 
 interface FileFiltersProps {
-    filters: {
-        status?: FileStatus | '';
-        mime_type?: string;
-        sort_by?: string;
-        sort_order?: 'asc' | 'desc';
-    };
-    onChange: (filters: FileFiltersProps['filters']) => void;
+    filters: FileListParams;
+    onChange: (filters: FileListParams) => void;
 }
 
 export function FileFilters({ filters, onChange }: FileFiltersProps) {
     const styles = useStyles();
 
-    const hasActiveFilters = filters.status || filters.mime_type;
+    const hasActiveFilters = !!(filters.status || filters.mime_type);
 
     const clearFilters = () => {
         onChange({
-            status: '',
+            status: undefined,
             mime_type: filters.mime_type,
             sort_by: filters.sort_by,
             sort_order: filters.sort_order,
@@ -141,7 +134,7 @@ export function FileFilters({ filters, onChange }: FileFiltersProps) {
                     <Body1 className={styles.fieldLabel}>Sort By</Body1>
                     <Dropdown
                         value={SORT_OPTIONS.find((s: any) => s.value === filters.sort_by)?.label || 'Upload Date'}
-                        onOptionSelect={(_ev: any, d: any) => onChange({ ...filters, sort_by: d.optionValue as string })}
+                        onOptionSelect={(_ev: any, d: any) => onChange({ ...filters, sort_by: d.optionValue as FileListParams['sort_by'] })}
                     >
                         {SORT_OPTIONS.map((option: any) => (
                             <Option key={option.value} value={option.value}>

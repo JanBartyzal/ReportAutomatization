@@ -13,6 +13,7 @@ import com.reportplatform.period.service.ExportService;
 import com.reportplatform.period.service.PeriodCloneService;
 import com.reportplatform.period.service.PeriodService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
@@ -55,6 +56,7 @@ public class PeriodController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public Page<PeriodResponse> listPeriods(
             @RequestParam(required = false) String holdingId,
             Pageable pageable) {
@@ -63,6 +65,7 @@ public class PeriodController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<PeriodResponse> createPeriod(
             @Valid @RequestBody PeriodCreateRequest request,
             @RequestHeader("X-User-Id") String userId) {
@@ -71,11 +74,13 @@ public class PeriodController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public PeriodResponse getPeriod(@PathVariable UUID id) {
         return PeriodResponse.from(periodService.getPeriod(id));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public PeriodResponse updatePeriod(
             @PathVariable UUID id,
             @RequestBody PeriodUpdateRequest request) {
@@ -83,6 +88,7 @@ public class PeriodController {
     }
 
     @PostMapping("/{id}/clone")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<PeriodResponse> clonePeriod(
             @PathVariable UUID id,
             @Valid @RequestBody CloneRequest request,
@@ -92,11 +98,13 @@ public class PeriodController {
     }
 
     @GetMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public PeriodStatusResponse getStatus(@PathVariable UUID id) {
         return completionTrackingService.getCompletionStatus(id);
     }
 
     @PostMapping("/compare")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<CrossTypeComparisonResponse> comparePeriods(
             @Valid @RequestBody CrossTypeComparisonRequest request) {
         var response = crossTypeComparisonService.buildComparisonContext(request.periodIds());
@@ -104,6 +112,7 @@ public class PeriodController {
     }
 
     @GetMapping("/{id}/export")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<byte[]> exportPeriod(
             @PathVariable UUID id,
             @RequestParam(defaultValue = "excel") String format) throws IOException {

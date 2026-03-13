@@ -52,10 +52,15 @@ CHART_DPI: int = _int_env("CHART_DPI", 150)
 CHART_WIDTH_INCHES: float = float(os.environ.get("CHART_WIDTH_INCHES", "8.0"))
 CHART_HEIGHT_INCHES: float = float(os.environ.get("CHART_HEIGHT_INCHES", "5.0"))
 
-# ---------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Batch limits
 # ---------------------------------------------------------------------------
 MAX_BATCH_SIZE: int = _int_env("MAX_BATCH_SIZE", 50)
+
+# ---------------------------------------------------------------------------
+# PPTX Generation timeout
+# ---------------------------------------------------------------------------
+GENERATION_TIMEOUT: int = _int_env("GENERATION_TIMEOUT", 60)
 
 # ---------------------------------------------------------------------------
 # Database (MCP – read-only via ms_qry role)

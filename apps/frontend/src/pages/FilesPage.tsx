@@ -1,87 +1,39 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Title2,
-    Table,
-    TableHeader,
-    TableRow,
-    TableHeaderCell,
-    TableBody,
-    TableCell,
-    TableSelectionCell,
-    TableCellLayout,
     Button,
     makeStyles,
     tokens,
-    Badge,
     Checkbox,
+    type TableColumnDefinition,
+    createTableColumn,
+    TableCellLayout,
+    Badge
 } from '@fluentui/react-components';
 import { ArrowUpload24Regular } from '@fluentui/react-icons';
 import { useFiles } from '../hooks/useFiles';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { getStatusColors } from '../theme/statusColors';
+import { StatusBadge } from '../components/shared/StatusBadge';
+import { DataTable } from '../components/shared/DataTable';
+import { PageHeader } from '../components/shared/PageHeader';
 import { FileTypeIcon, getFileExtension } from '../components/FileTypeIcon/FileTypeIcon';
 import { FileFilters } from '../components/FileFilters/FileFilters';
-import type { FileStatus, FileListParams } from '@reportplatform/types';
+import type { FileListParams } from '@reportplatform/types';
 
 /**
- * FilesPage styles per docs/UX-UI/02-design-system.md section 10.1 (DataGrid)
- * - Alternating rows (Background1 / Background2)
- * - Header: Background2, Title 3 weight 600
- * - Row height: 40px minimum
- * - Cell padding: spacingS horizontal, spacingXS vertical
+ * FilesPage — migrated to shared DataTable + StatusBadge per P9-W2-001
  */
 const useStyles = makeStyles({
     container: {
         padding: tokens.spacingHorizontalL,
     },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: tokens.spacingHorizontalL,
-    },
     filtersSection: {
         marginBottom: tokens.spacingHorizontalL,
-    },
-    table: {
-        marginTop: tokens.spacingHorizontalM,
-    },
-    tableHeader: {
-        backgroundColor: tokens.colorNeutralBackground2,
-    },
-    headerCell: {
-        fontWeight: '600',
-        textTransform: 'none',
-    },
-    row: {
-        minHeight: '40px',
-        cursor: 'pointer',
-    },
-    rowEven: {
-        backgroundColor: tokens.colorNeutralBackground1,
-    },
-    rowOdd: {
-        backgroundColor: tokens.colorNeutralBackground2,
-    },
-    cell: {
-        padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
-    },
-    badge: {
-        display: 'inline-flex',
-        alignItems: 'center',
-        padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalS}`,
-        borderRadius: tokens.borderRadiusSmall,
-        fontSize: tokens.fontSizeBody2,
-        fontWeight: '500',
     },
     filenameCell: {
         display: 'flex',
         alignItems: 'center',
         gap: tokens.spacingHorizontalS,
-    },
-    selectionCell: {
-        width: '40px',
     },
     batchActions: {
         display: 'flex',
@@ -92,6 +44,15 @@ const useStyles = makeStyles({
         borderRadius: tokens.borderRadiusMedium,
     },
 });
+
+interface FileRow {
+    file_id: string;
+    filename: string;
+    mime_type: string;
+    size_bytes: number;
+    status: string;
+    uploaded_at: string;
+}
 
 export default function FilesPage() {
     const styles = useStyles();
@@ -109,11 +70,7 @@ export default function FilesPage() {
         return <LoadingSpinner label="Loading files..." />;
     }
 
-    const files = filesResponse?.items || [];
-
-    const handleFilterChange = (newFilters: FileListParams) => {
-        setFilters(newFilters);
-    };
+    const files: FileRow[] = filesResponse?.data || [];
 
     const toggleFileSelection = (fileId: string) => {
         const newSelection = new Set(selectedFiles);
@@ -135,28 +92,88 @@ export default function FilesPage() {
 
     const handleBatchAction = (action: string) => {
         console.log(`Batch action: ${action}`, Array.from(selectedFiles));
-        // TODO: Implement batch actions (delete, reprocess, etc.)
     };
 
-    const handleRowClick = (fileId: string) => {
-        navigate(`/files/${fileId}`);
-    };
+    const columns: TableColumnDefinition<FileRow>[] = [
+        createTableColumn<FileRow>({
+            columnId: 'select',
+            renderHeaderCell: () => (
+                <Checkbox
+                    checked={selectedFiles.size === files.length && files.length > 0
+                        ? true
+                        : selectedFiles.size > 0 ? 'mixed' : false}
+                    onChange={toggleAllSelection}
+                />
+            ),
+            renderCell: (file) => (
+                <Checkbox
+                    checked={selectedFiles.has(file.file_id)}
+                    onChange={(e) => { e.stopPropagation(); toggleFileSelection(file.file_id); }}
+                />
+            ),
+        }),
+        createTableColumn<FileRow>({
+            columnId: 'filename',
+            compare: (a, b) => a.filename.localeCompare(b.filename),
+            renderHeaderCell: () => 'File',
+            renderCell: (file) => (
+                <TableCellLayout>
+                    <div className={styles.filenameCell}>
+                        <FileTypeIcon mimeType={file.mime_type} />
+                        <span
+                            style={{ cursor: 'pointer', color: tokens.colorBrandForeground1 }}
+                            onClick={() => navigate(`/files/${file.file_id}`)}
+                        >
+                            {file.filename}
+                        </span>
+                        <Badge appearance="outline" size="small">
+                            {getFileExtension(file.mime_type)}
+                        </Badge>
+                    </div>
+                </TableCellLayout>
+            ),
+        }),
+        createTableColumn<FileRow>({
+            columnId: 'size',
+            renderHeaderCell: () => 'Size',
+            renderCell: (file) => <TableCellLayout>{formatFileSize(file.size_bytes)}</TableCellLayout>,
+        }),
+        createTableColumn<FileRow>({
+            columnId: 'status',
+            renderHeaderCell: () => 'Status',
+            renderCell: (file) => (
+                <TableCellLayout>
+                    <StatusBadge status={file.status} />
+                </TableCellLayout>
+            ),
+        }),
+        createTableColumn<FileRow>({
+            columnId: 'uploaded_at',
+            compare: (a, b) => a.uploaded_at.localeCompare(b.uploaded_at),
+            renderHeaderCell: () => 'Uploaded',
+            renderCell: (file) => (
+                <TableCellLayout>{new Date(file.uploaded_at).toLocaleDateString()}</TableCellLayout>
+            ),
+        }),
+    ];
 
     return (
         <div className={styles.container}>
-            <div className={styles.header}>
-                <Title2>Files</Title2>
-                <Button
-                    appearance="primary"
-                    icon={<ArrowUpload24Regular />}
-                    onClick={() => navigate('/upload')}
-                >
-                    Upload
-                </Button>
-            </div>
+            <PageHeader
+                title="Files"
+                actions={
+                    <Button
+                        appearance="primary"
+                        icon={<ArrowUpload24Regular />}
+                        onClick={() => navigate('/upload')}
+                    >
+                        Upload
+                    </Button>
+                }
+            />
 
             <div className={styles.filtersSection}>
-                <FileFilters filters={filters} onChange={handleFilterChange} />
+                <FileFilters filters={filters} onChange={setFilters} />
             </div>
 
             {selectedFiles.size > 0 && (
@@ -174,72 +191,13 @@ export default function FilesPage() {
                 </div>
             )}
 
-            <Table className={styles.table}>
-                <TableHeader className={styles.tableHeader}>
-                    <TableRow>
-                        <TableSelectionCell
-                            checkboxIndicator={{ onClick: toggleAllSelection }}
-                            checked={selectedFiles.size === files.length && files.length > 0}
-                            intermediate={selectedFiles.size > 0 && selectedFiles.size < files.length}
-                        />
-                        <TableHeaderCell className={styles.headerCell}>File</TableHeaderCell>
-                        <TableHeaderCell className={styles.headerCell}>Size</TableHeaderCell>
-                        <TableHeaderCell className={styles.headerCell}>Status</TableHeaderCell>
-                        <TableHeaderCell className={styles.headerCell}>Uploaded</TableHeaderCell>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {files.length === 0 ? (
-                        <TableRow>
-                            <TableCell colSpan={5}>No files found. Upload a file to get started.</TableCell>
-                        </TableRow>
-                    ) : (
-                        files.map((file, index) => {
-                            const statusColors = getStatusColors(file.status);
-                            return (
-                                <TableRow
-                                    key={file.file_id}
-                                    className={`${styles.row} ${index % 2 === 0 ? styles.rowEven : styles.rowOdd}`}
-                                >
-                                    <TableSelectionCell
-                                        checkboxIndicator={{
-                                            onClick: (e) => {
-                                                e.stopPropagation();
-                                                toggleFileSelection(file.file_id);
-                                            },
-                                        }}
-                                        checked={selectedFiles.has(file.file_id)}
-                                    />
-                                    <TableCell
-                                        className={styles.cell}
-                                        onClick={() => handleRowClick(file.file_id)}
-                                    >
-                                        <div className={styles.filenameCell}>
-                                            <FileTypeIcon mimeType={file.mime_type} />
-                                            <span>{file.filename}</span>
-                                            <Badge appearance="outline" size="small">
-                                                {getFileExtension(file.mime_type)}
-                                            </Badge>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className={styles.cell}>{formatFileSize(file.size_bytes)}</TableCell>
-                                    <TableCell className={styles.cell}>
-                                        <Badge
-                                            appearance="filled"
-                                            color={statusColors.color as any}
-                                        >
-                                            {file.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className={styles.cell}>
-                                        {new Date(file.uploaded_at).toLocaleDateString()}
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })
-                    )}
-                </TableBody>
-            </Table>
+            <DataTable
+                items={files}
+                columns={columns}
+                sortable
+                getRowId={(file) => file.file_id}
+                emptyMessage="No files found. Upload a file to get started."
+            />
         </div>
     );
 }

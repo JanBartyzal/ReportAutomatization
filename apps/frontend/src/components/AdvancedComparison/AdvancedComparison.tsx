@@ -6,9 +6,9 @@
 
 import { useState } from 'react';
 import {
+    Title1,
+    Title2,
     Title3,
-    Title4,
-    Title5,
     Body1,
     Body2,
     Caption1,
@@ -34,7 +34,6 @@ import {
     ArrowRight24Regular,
     ChartMultiple24Regular,
     Organization24Regular,
-    Calendar24Regular,
 } from '@fluentui/react-icons';
 import {
     BarChart,
@@ -45,12 +44,22 @@ import {
     Tooltip,
     ResponsiveContainer,
     Cell,
-    Legend,
 } from 'recharts';
 import { ResponsiveHeatMap } from '@nivo/heatmap';
-import { chartPalette, reportBrand } from '../../theme/brandTokens';
+import { reportBrand } from '../../theme/brandTokens';
 import { useAdvancedComparison, useMultiOrgComparison } from '../../hooks/useFeatureFlags';
-import LoadingSpinner from '../LoadingSpinner';
+ 
+// Mapped from design system or local fallback
+const chartPalette = {
+    chart1: '#0078d4',
+    chart2: '#107c10',
+    chart3: '#d83b01',
+    chart4: '#002050',
+    chart5: '#5c2d91',
+    chart6: '#008272',
+    chart7: '#00188f',
+    chart8: '#004b50',
+};
 
 // Styles per design system
 const useStyles = makeStyles({
@@ -109,7 +118,7 @@ const useStyles = makeStyles({
         textAlign: 'center',
     },
     metricValue: {
-        fontSize: tokens.fontSizeHeroLarge,
+        fontSize: tokens.fontSizeHero900,
         fontWeight: tokens.fontWeightBold,
     },
     metricLabel: {
@@ -163,7 +172,6 @@ interface ComparisonResult {
 
 // Mock data generator for demonstration (will be replaced with API calls)
 const generateMockData = (metric: string, orgs: string[]): ComparisonResult => {
-    const colors = Object.values(chartPalette);
     const organizations: OrganizationData[] = orgs.map((org, index) => {
         const value = Math.random() * 100000 + 50000;
         const previousValue = value * (0.8 + Math.random() * 0.4);
@@ -247,9 +255,9 @@ export function AdvancedComparison({ onClose, embedded = false }: AdvancedCompar
         return (
             <div className={styles.emptyState}>
                 <ChartMultiple24Regular style={{ fontSize: '48px', color: '#ccc' }} />
-                <Title4 style={{ marginTop: tokens.spacingHorizontalM }}>
+                <Title1 style={{ marginTop: tokens.spacingHorizontalM }}>
                     Advanced Comparison
-                </Title4>
+                </Title1>
                 <Body1 style={{ color: tokens.colorNeutralForeground2, marginTop: tokens.spacingVerticalS }}>
                     This feature is not enabled. Contact your administrator to enable it.
                 </Body1>
@@ -383,7 +391,7 @@ export function AdvancedComparison({ onClose, embedded = false }: AdvancedCompar
                     {/* Horizontal Bar Chart */}
                     <Card className={styles.chartCard}>
                         <CardHeader
-                            header={<Title4>Organization Comparison</Title4>}
+                            header={<Title2>Organization Comparison</Title2>}
                             description={<Caption1>Horizontal bar chart with chart palette colors</Caption1>}
                         />
                         <div className={styles.chartContainer}>
@@ -415,7 +423,7 @@ export function AdvancedComparison({ onClose, embedded = false }: AdvancedCompar
                                         onClick={(data) => handleOrgClick(data.org_name)}
                                         style={{ cursor: 'pointer' }}
                                     >
-                                        {result.organizations.map((entry, index) => (
+                                        {result.organizations.map((_, index) => (
                                             <Cell
                                                 key={`cell-${index}`}
                                                 fill={chartPalette[`chart${(index % 8) + 1}` as keyof typeof chartPalette]}
@@ -430,7 +438,7 @@ export function AdvancedComparison({ onClose, embedded = false }: AdvancedCompar
                     {/* Heatmap Chart */}
                     <Card className={styles.chartCard} style={{ marginTop: tokens.spacingHorizontalL }}>
                         <CardHeader
-                            header={<Title4>Heatmap: Organizations vs Periods</Title4>}
+                            header={<Title2>Heatmap: Organizations vs Periods</Title2>}
                             description={<Caption1>Color density represents metric value</Caption1>}
                         />
                         <div className={styles.chartContainer} style={{ height: '450px' }}>
@@ -469,7 +477,7 @@ export function AdvancedComparison({ onClose, embedded = false }: AdvancedCompar
                                     from: 'color',
                                     modifiers: [['darker', 2]]
                                 }}
-                                mesh={true}
+                                // mesh={true} // Commented out as it might not be supported in this version
                                 activeOpacity={1}
                                 inactiveOpacity={0.4}
                                 theme={{
@@ -499,7 +507,7 @@ export function AdvancedComparison({ onClose, embedded = false }: AdvancedCompar
                     {/* Period Trend Chart */}
                     <Card className={styles.chartCard} style={{ marginTop: tokens.spacingHorizontalL }}>
                         <CardHeader
-                            header={<Title4>Period Trend</Title4>}
+                            header={<Title2>Period Trend</Title2>}
                             description={<Caption1>Quarterly comparison across all organizations</Caption1>}
                         />
                         <div className={styles.chartContainer}>
@@ -528,7 +536,7 @@ export function AdvancedComparison({ onClose, embedded = false }: AdvancedCompar
                     {/* Detailed Table */}
                     <Card className={styles.tableCard} style={{ marginTop: tokens.spacingHorizontalL }}>
                         <CardHeader
-                            header={<Title4>Detailed Comparison</Title4>}
+                            header={<Title2>Detailed Comparison</Title2>}
                             description={<Caption1>Click on any organization to see detailed breakdown</Caption1>}
                         />
                         <Table>

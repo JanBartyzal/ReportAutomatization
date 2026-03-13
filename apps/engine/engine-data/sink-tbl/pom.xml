@@ -76,7 +76,7 @@
                                 <outputTarget>
                                     <type>grpc-java</type>
                                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
-                                    <pluginArtifact>io.grpc:grpc-stub:${grpc.version}</pluginArtifact>
+                                    <pluginArtifact>io.grpc:grpc-java:${grpc.version}</pluginArtifact>
                                 </outputTarget>
                             </outputTargets>
                         </configuration>

@@ -7,6 +7,7 @@ import com.reportplatform.qry.model.dto.SlideDataResponse;
 import com.reportplatform.qry.model.dto.TableQueryResponse;
 import com.reportplatform.qry.service.QueryService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -31,6 +32,7 @@ public class FileQueryController {
      * Returns all parsed data (tables + documents) for a file.
      */
     @GetMapping("/files/{file_id}/data")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<FileDataResponse> getFileData(
             @PathVariable("file_id") UUID fileId,
             @RequestHeader(value = "X-Org-Id") String orgId,
@@ -44,6 +46,7 @@ public class FileQueryController {
      * Returns slide content with image URLs for a file.
      */
     @GetMapping("/files/{file_id}/slides")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<SlideDataResponse> getSlideData(
             @PathVariable("file_id") UUID fileId,
             @RequestHeader(value = "X-Org-Id") String orgId,
@@ -58,6 +61,7 @@ public class FileQueryController {
      * org_id is taken from the header for RLS enforcement.
      */
     @GetMapping("/tables")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<TableQueryResponse> queryTables(
             @RequestHeader(value = "X-Org-Id") String orgId,
             @RequestHeader(value = "X-User-Id") String userId,
@@ -75,6 +79,7 @@ public class FileQueryController {
      * Returns a single document by ID.
      */
     @GetMapping("/documents/{document_id}")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<DocumentDto> getDocument(
             @PathVariable("document_id") UUID documentId,
             @RequestHeader(value = "X-Org-Id") String orgId,
@@ -89,6 +94,7 @@ public class FileQueryController {
      * Returns processing step timeline for a file.
      */
     @GetMapping("/processing-logs/{file_id}")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<List<ProcessingLogDto>> getProcessingLogs(
             @PathVariable("file_id") String fileId,
             @RequestHeader(value = "X-Org-Id") String orgId,

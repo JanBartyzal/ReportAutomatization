@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
@@ -144,6 +145,7 @@ public class AuthController {
      * GET /api/auth/me - Returns current user context: organizations, roles, active org.
      */
     @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
     @Transactional(readOnly = true)
     public ResponseEntity<UserContextResponse> getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -198,6 +200,7 @@ public class AuthController {
      * POST /api/auth/switch-org - Validates user membership and updates active organization.
      */
     @PostMapping("/switch-org")
+    @PreAuthorize("isAuthenticated()")
     @Transactional
     public ResponseEntity<UserContextResponse> switchOrganization(
             @Valid @RequestBody SwitchOrgRequest request) {

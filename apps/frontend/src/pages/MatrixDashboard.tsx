@@ -17,7 +17,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useReportMatrix } from '../hooks/useReports';
 import { usePeriods } from '../hooks/usePeriods';
-import { ReportStatus } from '@reportplatform/types';
+import { ReportStatus, MatrixRow, Period } from '@reportplatform/types';
 import { getStatusColors, getStatusLabel } from '../theme/statusColors';
 
 const useStyles = makeStyles({
@@ -121,14 +121,14 @@ export const MatrixDashboard: React.FC = () => {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {rows.map(row => (
+                    {rows.map((row: MatrixRow) => (
                         <TableRow key={row.org_id}>
                             <TableCell className={styles.stickyHeader}>
                                 <TableCellLayout>
-                                    <Body1 strong>{row.org_name}</Body1>
+                                    <Body1><strong>{row.org_name}</strong></Body1>
                                 </TableCellLayout>
                             </TableCell>
-                            {periods.map(period => {
+                            {periods.map((period: Period) => {
                                 const status = row.periods[period.id];
                                 const style = getStatusStyle(status);
                                 

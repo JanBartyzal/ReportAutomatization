@@ -31,4 +31,11 @@ public interface PromotionCandidateRepository extends JpaRepository<PromotionCan
      * in any of the given statuses (to avoid duplicate proposals).
      */
     boolean existsByMappingTemplateIdAndStatusIn(UUID mappingTemplateId, Collection<PromotionStatus> statuses);
+
+    /**
+     * Find all promotion candidates for a specific mapping template with any of the
+     * given statuses.
+     */
+    List<PromotionCandidateEntity> findByMappingTemplateIdAndStatusIn(UUID mappingTemplateId,
+            Collection<PromotionStatus> statuses);
 }

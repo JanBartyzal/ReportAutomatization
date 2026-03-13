@@ -34,22 +34,21 @@ public class DaprEventPublisher {
     }
 
     @PreDestroy
-    void destroy() {
+    void destroy() throws Exception {
         if (daprClient != null) {
             daprClient.close();
         }
     }
 
     public void publishStatusChanged(UUID reportId, String orgId, String fromStatus,
-                                     String toStatus, String userId) {
+            String toStatus, String userId) {
         Map<String, Object> event = Map.of(
                 "reportId", reportId.toString(),
                 "orgId", orgId,
                 "fromStatus", fromStatus != null ? fromStatus : "",
                 "toStatus", toStatus,
                 "userId", userId,
-                "timestamp", System.currentTimeMillis()
-        );
+                "timestamp", System.currentTimeMillis());
 
         try {
             daprClient.publishEvent(pubsubName, "report.status_changed", event).block();
@@ -64,8 +63,7 @@ public class DaprEventPublisher {
                 "reportId", reportId.toString(),
                 "orgId", orgId,
                 "userId", userId,
-                "timestamp", System.currentTimeMillis()
-        );
+                "timestamp", System.currentTimeMillis());
 
         try {
             daprClient.publishEvent(pubsubName, "report.local_released", event).block();
@@ -80,8 +78,7 @@ public class DaprEventPublisher {
                 "reportId", reportId.toString(),
                 "orgId", orgId,
                 "userId", userId,
-                "timestamp", System.currentTimeMillis()
-        );
+                "timestamp", System.currentTimeMillis());
 
         try {
             daprClient.publishEvent(pubsubName, "report.data_locked", event).block();

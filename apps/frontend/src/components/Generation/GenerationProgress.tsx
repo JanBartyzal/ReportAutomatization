@@ -1,7 +1,26 @@
 import React from 'react';
-import { ProgressBar, Text, Badge } from '@fluentui/react-components';
-import { reportBrand } from '../../theme/brandTokens';
+import { ProgressBar, Text, Badge, makeStyles, tokens, Caption1 } from '@fluentui/react-components';
+
 import { GenerationStatus } from '../../api/generation';
+
+const useStyles = makeStyles({
+  root: {
+    width: '100%',
+    paddingTop: '16px',
+    paddingBottom: '16px',
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '8px',
+  },
+  counter: {
+    display: 'block',
+    marginTop: '8px',
+    color: tokens.colorNeutralForeground3,
+  },
+});
 
 interface GenerationProgressProps {
     status: GenerationStatus;
@@ -16,7 +35,8 @@ export const GenerationProgress: React.FC<GenerationProgressProps> = ({
     current,
     total,
 }) => {
-    const isIndeterminate = status === 'PROCESSING' && progress === undefined;
+    const styles = useStyles();
+    // const isIndeterminate = status === 'PROCESSING' && progress === undefined;
     const progressValue = progress ?? (current !== undefined && total !== undefined
         ? (current / total) * 100
         : -1);
@@ -39,36 +59,18 @@ export const GenerationProgress: React.FC<GenerationProgressProps> = ({
         }
     };
 
-    const getStatusColor = () => {
-        switch (status) {
-            case 'PENDING':
-                return '#F7B500'; // Warning
-            case 'PROCESSING':
-                return reportBrand[90]; // Brand
-            case 'COMPLETED':
-                return '#107C10'; // Success
-            case 'FAILED':
-                return '#C4314B'; // Danger (brand color)
-            default:
-                return '#666';
-        }
-    };
+
 
     return (
-        <div style={{ width: '100%', padding: '16px 0' }}>
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '8px'
-            }}>
+        <div className={styles.root}>
+            <div className={styles.header}>
                 <Text weight="semibold">{getStatusLabel()}</Text>
                 <Badge
                     appearance="filled"
                     color={
                         status === 'COMPLETED' ? 'success' :
                             status === 'FAILED' ? 'danger' :
-                                status === 'PROCESSING' ? 'info' :
+                                status === 'PROCESSING' ? 'informative' :
                                     'warning'
                     }
                 >
@@ -79,15 +81,12 @@ export const GenerationProgress: React.FC<GenerationProgressProps> = ({
             <ProgressBar
                 thickness="medium"
                 value={progressValue}
-                style={{
-                    '--progress-bar-color': getStatusColor(),
-                } as React.CSSProperties}
             />
 
             {current !== undefined && total !== undefined && (
-                <Text size={100} style={{ display: 'block', marginTop: '8px', color: '#666' }}>
+                <Caption1 className={styles.counter}>
                     {current} / {total} reports
-                </Text>
+                </Caption1>
             )}
         </div>
     );

@@ -8,7 +8,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Page,
     Title3,
     Subtitle1,
     Body1,
@@ -19,7 +18,6 @@ import {
     CardPreview,
     makeStyles,
     tokens,
-    Spinner,
     Tab,
     TabList,
     Badge,
@@ -36,8 +34,7 @@ import { useForms } from '../hooks/useForms';
 import { useTemplates } from '../hooks/useTemplates';
 import { useLocalScope } from '../hooks/useFeatureFlags';
 import { ScopeBadge } from '../components/ScopeBadge';
-import LoadingSpinner from '../LoadingSpinner';
-import { reportBrand } from '../theme/brandTokens';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 // Styles per design system
 const useStyles = makeStyles({
@@ -73,7 +70,7 @@ const useStyles = makeStyles({
         cursor: 'pointer',
         transition: 'box-shadow 0.2s ease',
         ':hover': {
-            boxShadow: tokens.shadowLevel4,
+            boxShadow: tokens.shadow4,
         },
     },
     cardHeader: {
@@ -105,26 +102,33 @@ const useStyles = makeStyles({
         gap: tokens.spacingHorizontalXS,
         alignItems: 'center',
     },
+    brandTitle: {
+        color: tokens.colorBrandForeground1,
+    },
+    cardIcon: {
+        fontSize: '32px',
+        color: tokens.colorBrandForeground2,
+    },
+    emptyIcon: {
+        fontSize: '48px',
+        color: tokens.colorNeutralForeground4,
+    },
+    emptyBody: {
+        color: tokens.colorNeutralForeground2,
+        marginTop: tokens.spacingVerticalS,
+    },
+    marginTop: {
+        marginTop: tokens.spacingHorizontalM,
+    },
+    cardActions: {
+        padding: tokens.spacingVerticalS,
+        display: 'flex',
+        justifyContent: 'flex-end',
+        gap: tokens.spacingHorizontalS,
+    },
 });
 
-interface LocalForm {
-    id: string;
-    title: string;
-    description?: string;
-    status: string;
-    version: number;
-    scope: 'CENTRAL' | 'LOCAL' | 'SHARED';
-    created_at: string;
-}
-
-interface LocalTemplate {
-    id: string;
-    name: string;
-    version: number;
-    scope: 'CENTRAL' | 'LOCAL';
-    placeholderCount: number;
-    updatedAt: string;
-}
+/* Unused local interfaces removed to favor shared types */
 
 export const LocalDashboardPage: React.FC = () => {
     const navigate = useNavigate();
@@ -152,32 +156,30 @@ export const LocalDashboardPage: React.FC = () => {
     // Redirect if local scope is not enabled
     if (!enableLocalScope) {
         return (
-            <Page>
-                <div className={styles.page}>
-                    <div className={styles.emptyState}>
-                        <Body1>Local scope feature is not enabled.</Body1>
-                        <Button
-                            appearance="primary"
-                            style={{ marginTop: tokens.spacingHorizontalM }}
-                            onClick={() => navigate('/forms')}
-                        >
-                            Go to Forms
-                        </Button>
-                    </div>
+            <div className={styles.page}>
+                <div className={styles.emptyState}>
+                    <Body1>Local scope feature is not enabled.</Body1>
+                    <Button
+                        appearance="primary"
+                        className={styles.marginTop}
+                        onClick={() => navigate('/forms')}
+                    >
+                        Go to Forms
+                    </Button>
                 </div>
-            </Page>
+            </div>
         );
     }
 
-    const forms = formsData?.content || [];
+    const forms = formsData?.data || [];
 
     return (
-        <Page>
+        <div>
             <div className={styles.page}>
                 {/* Header */}
                 <div className={styles.header}>
                     <div className={styles.titleSection}>
-                        <Title3 style={{ color: reportBrand[90] }}>
+                        <Title3 className={styles.brandTitle}>
                             My Local Workspace
                         </Title3>
                         <Subtitle1>
@@ -188,7 +190,6 @@ export const LocalDashboardPage: React.FC = () => {
                         <Button
                             appearance="primary"
                             icon={<Form24Regular />}
-                            style={{ backgroundColor: reportBrand[90] }}
                             onClick={() => navigate('/forms/new?scope=LOCAL')}
                         >
                             Create Local Form
@@ -237,7 +238,7 @@ export const LocalDashboardPage: React.FC = () => {
                                         <CardHeader
                                             header={
                                                 <div className={styles.cardHeader}>
-                                                    <Subtitle1>{form.title}</Subtitle1>
+                                                    <Subtitle1>{form.name}</Subtitle1>
                                                     <div className={styles.badgeGroup}>
                                                         <Badge
                                                             appearance="filled"
@@ -245,31 +246,29 @@ export const LocalDashboardPage: React.FC = () => {
                                                         >
                                                             {form.status}
                                                         </Badge>
-                                                        <ScopeBadge scope={form.scope} />
+                                                        <ScopeBadge scope={form.scope === 'SHARED_WITHIN_HOLDING' ? 'SHARED' : form.scope as any} />
                                                     </div>
                                                 </div>
                                             }
                                             description={
                                                 <div className={styles.cardDescription}>
                                                     <Caption1>{form.description || 'No description'}</Caption1>
-                                                    <Caption1 style={{ marginTop: tokens.spacingVerticalXS }}>
-                                                        Version {form.version || 1} • Created {new Date(form.created_at).toLocaleDateString()}
-                                                    </Caption1>
+                                                        Created {form.created_at ? new Date(form.created_at).toLocaleDateString() : 'N/A'}
                                                 </div>
                                             }
                                         />
                                         <CardPreview className={styles.cardPreview}>
-                                            <Form24Regular style={{ fontSize: '32px', color: reportBrand[80] }} />
+                                            <Form24Regular className={styles.cardIcon} />
                                         </CardPreview>
-                                        <div style={{ padding: '8px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                        <div className={styles.cardActions}>
                                             <ShareDialog 
-                                                itemId={form.id} 
-                                                itemName={form.title} 
+                                                itemId={form.id || ''} 
+                                                itemName={form.name} 
                                                 itemType="FORM" 
                                             />
                                             <ReleaseDialog 
-                                                dataId={form.id} 
-                                                dataName={form.title} 
+                                                dataId={form.id || ''} 
+                                                dataName={form.name} 
                                                 period="2024-Q1" 
                                             />
                                         </div>
@@ -278,17 +277,17 @@ export const LocalDashboardPage: React.FC = () => {
                             </div>
                         ) : (
                             <div className={styles.emptyState}>
-                                <Form24Regular style={{ fontSize: '48px', color: '#ccc' }} />
-                                <Title3 style={{ marginTop: tokens.spacingHorizontalM }}>
+                                <Form24Regular className={styles.emptyIcon} />
+                                <Title3 className={styles.marginTop}>
                                     No local forms yet
                                 </Title3>
-                                <Body1 style={{ color: tokens.colorNeutralForeground2, marginTop: tokens.spacingVerticalS }}>
+                                <Body1 className={styles.emptyBody}>
                                     Create your first local form to start collecting data
                                 </Body1>
                                 <Button
                                     appearance="primary"
                                     icon={<Add24Regular />}
-                                    style={{ marginTop: tokens.spacingHorizontalM, backgroundColor: reportBrand[90] }}
+                                    className={styles.marginTop}
                                     onClick={() => navigate('/forms/new?scope=LOCAL')}
                                 >
                                     Create Local Form
@@ -321,16 +320,16 @@ export const LocalDashboardPage: React.FC = () => {
                                             description={
                                                 <div className={styles.cardDescription}>
                                                     <Caption1>{template.placeholderCount} placeholders</Caption1>
-                                                    <Caption1 style={{ marginTop: tokens.spacingVerticalXS }}>
+                                                    <Caption1>
                                                         Updated {new Date(template.updatedAt).toLocaleDateString()}
                                                     </Caption1>
                                                 </div>
                                             }
                                         />
                                         <CardPreview className={styles.cardPreview}>
-                                            <DocumentPdf24Regular style={{ fontSize: '32px', color: reportBrand[80] }} />
+                                            <DocumentPdf24Regular className={styles.cardIcon} />
                                         </CardPreview>
-                                        <div style={{ padding: '8px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                        <div className={styles.cardActions}>
                                             <ShareDialog 
                                                 itemId={template.id} 
                                                 itemName={template.name} 
@@ -342,17 +341,17 @@ export const LocalDashboardPage: React.FC = () => {
                             </div>
                         ) : (
                             <div className={styles.emptyState}>
-                                <DocumentPdf24Regular style={{ fontSize: '48px', color: '#ccc' }} />
-                                <Title3 style={{ marginTop: tokens.spacingHorizontalM }}>
+                                <DocumentPdf24Regular className={styles.emptyIcon} />
+                                <Title3 className={styles.marginTop}>
                                     No local templates yet
                                 </Title3>
-                                <Body1 style={{ color: tokens.colorNeutralForeground2, marginTop: tokens.spacingVerticalS }}>
+                                <Body1 className={styles.emptyBody}>
                                     Upload your first local template to start generating reports
                                 </Body1>
                                 <Button
                                     appearance="primary"
                                     icon={<ArrowUpload24Regular />}
-                                    style={{ marginTop: tokens.spacingHorizontalM, backgroundColor: reportBrand[90] }}
+                                    className={styles.marginTop}
                                     onClick={() => navigate('/templates/new?scope=LOCAL')}
                                 >
                                     Upload Local Template
@@ -362,7 +361,7 @@ export const LocalDashboardPage: React.FC = () => {
                     </div>
                 )}
             </div>
-        </Page>
+        </div>
     );
 };
 

@@ -1,6 +1,7 @@
 export { default as NotificationCenter } from './NotificationCenter';
+import ToastContainer from './ToastContainer';
+export { ToastContainer };
 export {
-    ToastContainer,
     useToast,
     useToastStore,
     useNotificationToast,

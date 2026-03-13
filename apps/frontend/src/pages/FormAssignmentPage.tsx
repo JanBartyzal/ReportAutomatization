@@ -5,12 +5,10 @@ import {
     Subtitle2,
     Body1,
     Button,
-    Spinner,
     Tree,
     TreeItem,
     TreeItemLayout,
     Checkbox,
-    Divider,
     Card,
     makeStyles,
     shorthands,
@@ -20,10 +18,10 @@ import {
     ArrowLeftRegular,
     SaveRegular,
 } from '@fluentui/react-icons';
-import { useForm, useFormAssignments, useAssignOrganizations } from '../../hooks/useForms';
-import { useOrganizations } from '../../hooks/useAdmin';
+import { useForm, useFormAssignments, useAssignOrganizations } from '../hooks/useForms';
+import { useOrganizations } from '../hooks/useAdmin';
 import type { OrganizationAdmin } from '@reportplatform/types';
-import LoadingSpinner from '../LoadingSpinner';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const useStyles = makeStyles({
     container: {

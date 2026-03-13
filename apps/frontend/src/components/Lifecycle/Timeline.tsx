@@ -7,9 +7,9 @@ import {
     Body2,
 } from '@fluentui/react-components';
 import { 
-    CircleRegular,
     CheckmarkCircleRegular,
     ArrowCircleRightRegular,
+    Dismiss24Regular,
 } from '@fluentui/react-icons';
 import { StatusTransition, ReportStatus } from '@reportplatform/types';
 import { getStatusColors, getStatusLabel } from '../../theme/statusColors';
@@ -108,7 +108,7 @@ export const Timeline: React.FC<TimelineProps> = ({ transitions }) => {
                             {isApproved ? (
                                 <CheckmarkCircleRegular style={{ color: tokens.colorPaletteGreenForeground1 }} />
                             ) : isRejected ? (
-                                <DismissRegular style={{ color: tokens.colorPaletteRedForeground1 }} />
+                                <Dismiss24Regular style={{ color: tokens.colorPaletteRedForeground1 }} />
                             ) : (
                                 <ArrowCircleRightRegular style={{ color: tokens.colorNeutralForeground2 }} />
                             )}
@@ -117,7 +117,7 @@ export const Timeline: React.FC<TimelineProps> = ({ transitions }) => {
                         <div className={styles.content}>
                             <div className={styles.header}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS }}>
-                                    <Body1 strong>{t.changed_by}</Body1>
+                                    <Body1><strong>{t.changed_by}</strong></Body1>
                                     <span 
                                         className={styles.statusBadge}
                                         style={{ backgroundColor: colors.bg, color: colors.text }}
@@ -144,12 +144,5 @@ export const Timeline: React.FC<TimelineProps> = ({ transitions }) => {
         </div>
     );
 };
-
-// Supporting icon missing from previous import
-const DismissRegular = (props: any) => (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" {...props}>
-        <path d="M10 2a8 8 0 110 16 8 8 0 010-16zm3.7 5.3a1 1 0 00-1.4 0L10 9.6 7.7 7.3a1 1 0 00-1.4 1.4l2.3 2.3-2.3 2.3a1 1 0 101.4 1.4l2.3-2.3 2.3 2.3a1 1 0 001.4-1.4L11.4 11l2.3-2.3a1 1 0 000-1.4z" />
-    </svg>
-);
 
 export default Timeline;

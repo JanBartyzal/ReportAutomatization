@@ -6,7 +6,8 @@ import {
     Tooltip,
     Legend,
 } from 'recharts';
-import { chartPalette } from '../../theme/brandTokens';
+import { getChartPalette } from '../../theme/chartColors';
+import { rechartsTooltipStyle } from './rechartsTheme';
 import { ChartWrapper } from './ChartWrapper';
 import { AggregatedData } from '@reportplatform/types';
 
@@ -16,10 +17,9 @@ interface PieChartWidgetProps {
 }
 
 export const PieChartWidget: React.FC<PieChartWidgetProps> = ({ data }) => {
-    // Pie charts usually take two columns: name and value
     const nameKey = data.columns[0];
     const valueKey = data.columns[1] || data.columns[0];
-    const colors = Object.values(chartPalette);
+    const colors = [...getChartPalette()];
 
     return (
         <ChartWrapper height={350} showLegend={true} legendContent={<Legend />}>
@@ -39,13 +39,7 @@ export const PieChartWidget: React.FC<PieChartWidgetProps> = ({ data }) => {
                         <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                     ))}
                 </Pie>
-                <Tooltip 
-                    contentStyle={{ 
-                        borderRadius: '8px', 
-                        border: 'none', 
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)' 
-                    }}
-                />
+                <Tooltip contentStyle={rechartsTooltipStyle} />
             </PieChart>
         </ChartWrapper>
     );

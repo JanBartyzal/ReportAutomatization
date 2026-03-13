@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
     makeStyles,
@@ -7,20 +6,19 @@ import {
     Body1,
     Button,
     Dropdown,
-    DropdownTrigger,
     Option,
     Badge,
-    Spinner,
+    DropdownProps,
 } from '@fluentui/react-components';
 import {
     Search24Regular,
     Document24Regular,
     Folder24Regular,
-    Report24Regular,
+    Sport24Regular,
     Form24Regular,
 } from '@fluentui/react-icons';
-import { useSearch } from '../../hooks/useSearch';
-import type { SearchMode, EntityType } from '../../api/search';
+import { useSearch } from '../hooks/useSearch';
+import type { SearchMode, EntityType } from '../api/search';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const useStyles = makeStyles({
@@ -81,19 +79,19 @@ const useStyles = makeStyles({
     },
     resultTitle: {
         fontWeight: tokens.fontWeightSemibold,
-        fontSize: tokens.fontSizeBase16,
+        fontSize: tokens.fontSizeBase400,
         color: tokens.colorBrandForeground1,
-        marginBottom: '4px',
+        marginBottom: tokens.spacingVerticalXS,
     },
     resultSnippet: {
-        fontSize: tokens.fontSizeBase14,
+        fontSize: tokens.fontSizeBase300,
         color: tokens.colorNeutralForeground2,
-        marginBottom: '4px',
+        marginBottom: tokens.spacingVerticalXS,
     },
     resultMeta: {
         display: 'flex',
         gap: tokens.spacingHorizontalS,
-        fontSize: tokens.fontSizeBase12,
+        fontSize: tokens.fontSizeBase200,
         color: tokens.colorNeutralForeground3,
     },
     resultScore: {
@@ -132,7 +130,7 @@ const getTypeIcon = (type: string) => {
         case 'FOLDER':
             return <Folder24Regular />;
         case 'REPORT':
-            return <Report24Regular />;
+            return <Sport24Regular />;
         case 'FORM':
             return <Form24Regular />;
         default:
@@ -158,7 +156,7 @@ export default function SearchResultsPage() {
         page_size: 20,
     });
 
-    const handleTypeChange = (_ev: any, data: { optionValue: EntityType | '' }) => {
+    const handleTypeChange: DropdownProps['onOptionSelect'] = (_ev, data) => {
         const newParams = new URLSearchParams(searchParams);
         if (data.optionValue) {
             newParams.set('type', data.optionValue);
@@ -169,10 +167,12 @@ export default function SearchResultsPage() {
         setSearchParams(newParams);
     };
 
-    const handleModeChange = (_ev: any, data: { optionValue: SearchMode }) => {
+    const handleModeChange: DropdownProps['onOptionSelect'] = (_ev, data) => {
         const newParams = new URLSearchParams(searchParams);
-        newParams.set('mode', data.optionValue);
-        setSearchParams(newParams);
+        if (data.optionValue) {
+            newParams.set('mode', data.optionValue);
+            setSearchParams(newParams);
+        }
     };
 
     const handlePageChange = (newPage: number) => {
@@ -201,7 +201,7 @@ export default function SearchResultsPage() {
         }
         acc[result.type].push(result);
         return acc;
-    }, {} as Record<string, typeof data.data>) || {};
+    }, {} as Record<string, any[]>) || {};
 
     return (
         <div className={styles.container}>
@@ -275,13 +275,13 @@ export default function SearchResultsPage() {
                                 }}>
                                     {getTypeIcon(type)}
                                     <strong>{type}s</strong>
-                                    <Badge appearance="filled">{results.length}</Badge>
+                                    <Badge appearance="filled">{(results as any[]).length}</Badge>
                                 </div>
-                                {results.map((result) => (
+                                {(results as any[]).map((result) => (
                                     <div
                                         key={result.id}
                                         className={styles.resultItem}
-                                        onClick={() => handleResultClick(result)}
+                                        onClick={() => handleResultClick(result as any)}
                                     >
                                         <div className={styles.resultIcon}>
                                             {getTypeIcon(result.type)}

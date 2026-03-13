@@ -10,11 +10,8 @@ import {
 } from '../api/dashboards';
 import type {
     DashboardConfig,
-    DashboardSummary,
     DashboardQueryParams,
-    AggregatedData,
     PeriodComparisonRequest,
-    ComparisonData,
 } from '@reportplatform/types';
 
 /**

@@ -1,12 +1,10 @@
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Body1, Button, Spinner } from '@fluentui/react-components';
-import { useAuth } from '../../hooks/useAuth';
+import { Body1, Spinner } from '@fluentui/react-components';
 
 const BatchesPanel: React.FC = () => {
-    const { getAccessToken } = useAuth();
-
     // Placeholder for batch API - would use proper API client
-    const { data, isLoading, error } = useQuery({
+    const { isLoading, error } = useQuery({
         queryKey: ['batches'],
         queryFn: async () => {
             // API call would go here

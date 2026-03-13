@@ -23,8 +23,12 @@
         "paths": {
             "@/*": [
                 "./src/*"
+            ],
+            "@reportplatform/types": [
+                "../../packages/types/src/index.ts"
             ]
-        }
+        },
+        "types": ["vitest/globals"]
     },
     "include": [
         "src"

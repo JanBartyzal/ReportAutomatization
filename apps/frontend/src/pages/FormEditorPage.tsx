@@ -11,7 +11,6 @@ import {
     Dropdown,
     Option,
     Checkbox,
-    Spinner,
     Divider,
     Card,
     makeStyles,
@@ -31,9 +30,9 @@ import {
     EyeRegular,
     EditRegular,
 } from '@fluentui/react-icons';
-import { useForm, useCreateForm, useUpdateForm, usePublishForm } from '../../hooks/useForms';
+import { useForm, useCreateForm, useUpdateForm, usePublishForm } from '../hooks/useForms';
 import { FormField, FormFieldType, FormStatus } from '@reportplatform/types';
-import LoadingSpinner from '../LoadingSpinner';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const useStyles = makeStyles({
     container: {
@@ -76,7 +75,8 @@ const useStyles = makeStyles({
         ...shorthands.borderRadius(tokens.borderRadiusMedium),
         marginBottom: '16px',
         marginTop: '24px',
-    }
+    },
+    mainPanel: {}
 });
 
 export const FormEditorPage: React.FC = () => {

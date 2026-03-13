@@ -62,7 +62,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=engine_core_db
       - DB_USERNAME=engine_core_user
-      - DB_PASSWORD=engine_core_pass
+      - DB_PASSWORD=${DB_PASSWORD:-engine_core_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -101,7 +101,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=ms_ing
       - DB_USERNAME=ms_ing
-      - DB_PASSWORD=ms_ing_pass
+      - DB_PASSWORD=${DB_PASSWORD:-ms_ing_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -140,7 +140,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=orch_db
       - DB_USERNAME=orch_user
-      - DB_PASSWORD=orch_pass
+      - DB_PASSWORD=${DB_PASSWORD:-orch_pass}
       - GRPC_PORT=50051
       - HTTP_PORT=8080
       - DAPR_HOST=dapr
@@ -212,7 +212,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=engine_data_db
       - DB_USERNAME=engine_data_user
-      - DB_PASSWORD=engine_data_pass
+      - DB_PASSWORD=${DB_PASSWORD:-engine_data_pass}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_pass}
@@ -253,7 +253,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=engine_reporting_db
       - DB_USERNAME=engine_reporting_user
-      - DB_PASSWORD=engine_reporting_pass
+      - DB_PASSWORD=${DB_PASSWORD:-engine_reporting_pass}
       - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
       - AZURE_STORAGE_CONTAINER=templates
       - DAPR_HOST=dapr
@@ -292,7 +292,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=reportplatform
       - DB_USERNAME=snow_user
-      - DB_PASSWORD=snow_pass
+      - DB_PASSWORD=${DB_PASSWORD:-snow_pass}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_pass}
@@ -316,7 +316,7 @@ services:
     networks:
       - report-net
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/actuator/health"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8080/actuator/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -388,7 +388,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=reportplatform
       - DB_USER=ms_qry
-      - DB_PASSWORD=ms_qry_pass
+      - DB_PASSWORD=${DB_PASSWORD:-ms_qry_pass}
       - AZURE_TENANT_ID=${AZURE_TENANT_ID:-common}
       - AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-}
       - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET:-}
@@ -451,7 +451,7 @@ services:
     container_name: postgres
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=reportplatform
     volumes:
       - postgres_data:/var/lib/postgresql/data

@@ -9,7 +9,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from pptx.util import Pt
 
 if TYPE_CHECKING:
     from pptx.slide import Slide
@@ -65,13 +64,14 @@ def _fill_table(table: Table, headers: list[str], rows: list[list[str]]) -> None
     num_cols = len(table.columns)
 
     # Capture reference style from the first row's first cell
-    ref_font_size = Pt(10)
+    # (reserved for future use with font sizing)
+    # ref_font_size = Pt(10)
     if len(table.rows) > 0 and len(table.rows[0].cells) > 0:
         ref_cell = table.rows[0].cells[0]
         if ref_cell.text_frame.paragraphs:
             ref_runs = ref_cell.text_frame.paragraphs[0].runs
             if ref_runs and ref_runs[0].font.size is not None:
-                ref_font_size = ref_runs[0].font.size
+                _ref_font_size = ref_runs[0].font.size  # noqa: F841 (reserved for future use)
 
     # Fill header row (row 0)
     if len(table.rows) > 0:
@@ -120,7 +120,6 @@ def _set_cell_text(cell, text: str) -> None:
 def _add_table_row(table: Table, num_cols: int) -> None:
     """Add a new row to the table by cloning the XML of the last row."""
     from copy import deepcopy
-    from lxml import etree
 
     tbl = table._tbl
     # Clone the last row

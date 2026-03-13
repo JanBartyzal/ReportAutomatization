@@ -1,18 +1,14 @@
 /**
- * HoldingAdminOverviewPage
- * Overview of all local/shared items across the entire holding
+ * HoldingAdminOverviewPage — migrated per P9-W2-002
+ * Replaced reportBrand hardcoded token with Fluent tokens.colorBrandBackground
+ * Replaced <Page> wrapper with plain div; removed inline style= props.
  */
 
 import React, { useState } from 'react';
 import {
-    Page,
-    Title3,
-    Subtitle1,
     Body1,
     Caption1,
     Button,
-    Card,
-    CardHeader,
     makeStyles,
     tokens,
     Tab,
@@ -24,27 +20,19 @@ import {
     TableHeaderCell,
     TableBody,
     TableCell,
-    Spinner,
 } from '@fluentui/react-components';
 import {
     ArrowDownload24Regular,
     Organization24Regular,
-    Filter24Regular,
 } from '@fluentui/react-icons';
 import { ScopeBadge } from '../components/ScopeBadge';
-import { reportBrand } from '../theme/brandTokens';
+import { PageHeader } from '../components/shared/PageHeader';
 
 const useStyles = makeStyles({
     container: {
         padding: tokens.spacingHorizontalL,
         maxWidth: '1200px',
         margin: '0 auto',
-    },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: tokens.spacingHorizontalL,
     },
     filterSection: {
         display: 'flex',
@@ -55,9 +43,27 @@ const useStyles = makeStyles({
     tableWrapper: {
         backgroundColor: tokens.colorNeutralBackground1,
         borderRadius: tokens.borderRadiusMedium,
-        boxShadow: tokens.shadowLevel1,
+        boxShadow: tokens.shadow4,
         overflow: 'hidden',
-    }
+    },
+    nameCell: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: tokens.spacingHorizontalS,
+    },
+    orgCell: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: tokens.spacingHorizontalXS,
+    },
+    emptyState: {
+        textAlign: 'center',
+        padding: '48px',
+        color: tokens.colorNeutralForeground3,
+    },
+    actionButton: {
+        marginLeft: tokens.spacingHorizontalXS,
+    },
 });
 
 interface HoldingItem {
@@ -75,7 +81,6 @@ export const HoldingAdminOverviewPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'all' | 'forms' | 'templates'>('all');
     const [isLoading, setIsLoading] = useState(false);
 
-    // Mock data for holding items
     const items: HoldingItem[] = [
         { id: '1', name: 'Annual Sales Report', type: 'FORM', organization: 'Acme Corp', scope: 'SHARED', status: 'RELEASED', releasedAt: '2024-03-10' },
         { id: '2', name: 'Inventory Template v2', type: 'TEMPLATE', organization: 'Beta Inc', scope: 'LOCAL', status: 'DRAFT', releasedAt: '2024-03-11' },
@@ -99,87 +104,84 @@ export const HoldingAdminOverviewPage: React.FC = () => {
     };
 
     return (
-        <Page>
-            <div className={styles.container}>
-                <div className={styles.header}>
-                    <div>
-                        <Title3 style={{ color: reportBrand[90] }}>Holding Administration</Title3>
-                        <Subtitle1>Overview of all local and shared items across holding</Subtitle1>
-                    </div>
-                    <Button 
-                        appearance="primary" 
+        <div className={styles.container}>
+            <PageHeader
+                title="Holding Administration"
+                subtitle="Overview of all local and shared items across holding"
+                actions={
+                    <Button
+                        appearance="primary"
                         icon={<ArrowDownload24Regular />}
-                        style={{ backgroundColor: reportBrand[90] }}
                         onClick={handlePullData}
                         disabled={isLoading}
                     >
                         {isLoading ? 'Pulling...' : 'Pull Released Data'}
                     </Button>
-                </div>
+                }
+            />
 
-                <div className={styles.filterSection}>
-                    <TabList 
-                        selectedValue={activeTab} 
-                        onTabSelect={(_, data) => setActiveTab(data.value as any)}
-                    >
-                        <Tab value="all">All Items</Tab>
-                        <Tab value="forms">Forms</Tab>
-                        <Tab value="templates">Templates</Tab>
-                    </TabList>
-                </div>
-
-                <div className={styles.tableWrapper}>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHeaderCell>Name</TableHeaderCell>
-                                <TableHeaderCell>Organization</TableHeaderCell>
-                                <TableHeaderCell>Type</TableHeaderCell>
-                                <TableHeaderCell>Scope</TableHeaderCell>
-                                <TableHeaderCell>Released At</TableHeaderCell>
-                                <TableHeaderCell>Actions</TableHeaderCell>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredItems.map(item => (
-                                <TableRow key={item.id}>
-                                    <TableCell>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <strong>{item.name}</strong>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <Organization24Regular style={{ fontSize: '16px' }} />
-                                            {item.organization}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge appearance="outline" color="informative">{item.type}</Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <ScopeBadge scope={item.scope as any} />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Caption1>{new Date(item.releasedAt).toLocaleDateString()}</Caption1>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Button appearance="subtle" size="small">View</Button>
-                                        <Button appearance="subtle" size="small">Import</Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-                
-                {filteredItems.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '48px' }}>
-                        <Body1>No items found for this filter.</Body1>
-                    </div>
-                )}
+            <div className={styles.filterSection}>
+                <TabList
+                    selectedValue={activeTab}
+                    onTabSelect={(_, data) => setActiveTab(data.value as 'all' | 'forms' | 'templates')}
+                >
+                    <Tab value="all">All Items</Tab>
+                    <Tab value="forms">Forms</Tab>
+                    <Tab value="templates">Templates</Tab>
+                </TabList>
             </div>
-        </Page>
+
+            <div className={styles.tableWrapper}>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHeaderCell>Name</TableHeaderCell>
+                            <TableHeaderCell>Organization</TableHeaderCell>
+                            <TableHeaderCell>Type</TableHeaderCell>
+                            <TableHeaderCell>Scope</TableHeaderCell>
+                            <TableHeaderCell>Released At</TableHeaderCell>
+                            <TableHeaderCell>Actions</TableHeaderCell>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredItems.map(item => (
+                            <TableRow key={item.id}>
+                                <TableCell>
+                                    <div className={styles.nameCell}>
+                                        <strong>{item.name}</strong>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className={styles.orgCell}>
+                                        <Organization24Regular style={{ fontSize: '16px' }} />
+                                        {item.organization}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge appearance="outline" color="informative">{item.type}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <ScopeBadge scope={item.scope as any} />
+                                </TableCell>
+                                <TableCell>
+                                    <Caption1>{new Date(item.releasedAt).toLocaleDateString()}</Caption1>
+                                </TableCell>
+                                <TableCell>
+                                    <Button appearance="subtle" size="small">View</Button>
+                                    <Button appearance="subtle" size="small" className={styles.actionButton}>Import</Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+
+            {filteredItems.length === 0 && (
+                <div className={styles.emptyState}>
+                    <Body1>No items found for this filter.</Body1>
+                </div>
+            )}
+        </div>
     );
 };
 

@@ -5,8 +5,9 @@
 
 import React, { useState } from 'react';
 import {
+    Title2,
+    Title3,
     Body1,
-    Subtitle1,
     Divider,
     Tab,
     TabList,
@@ -38,17 +39,17 @@ import {
     usePromotedTables,
     useMigrationProgress,
 } from '../hooks/usePromotions';
-import type { PromotionCandidate, PromotionCandidateStatus } from '@reportplatform/types';
+import type { PromotionCandidate } from '@reportplatform/types';
 
 type PromotionTab = 'candidates' | 'promoted';
 
-const statusColors: Record<PromotionCandidateStatus, string> = {
-    candidate: 'info',
+const statusColors: Record<string, 'success' | 'warning' | 'danger' | 'informative'> = {
+    candidate: 'informative',
     approved: 'success',
     promoted: 'success',
     dismissed: 'warning',
-    migration_in_progress: 'info',
-    migration_failed: 'error',
+    migration_in_progress: 'informative',
+    migration_failed: 'danger',
 };
 
 const PromotionPage: React.FC = () => {
@@ -89,7 +90,7 @@ const PromotionPage: React.FC = () => {
         }),
         createTableColumn<PromotionCandidate>({
             columnId: 'usage_count',
-            compare: (a, b) => a.usage_count - b.usage_count,
+            compare: (a, b) => (a.usage_count || 0) - (b.usage_count || 0),
             renderHeaderCell: () => 'Usage Count',
             renderCell: (item) => item.usage_count,
         }),
@@ -102,7 +103,7 @@ const PromotionPage: React.FC = () => {
             columnId: 'status',
             renderHeaderCell: () => 'Status',
             renderCell: (item) => (
-                <Badge appearance="filled" color={statusColors[item.status] as any}>
+                <Badge appearance="filled" color={statusColors[item.status] || 'informative'}>
                     {item.status.replace(/_/g, ' ')}
                 </Badge>
             ),
@@ -175,29 +176,29 @@ const PromotionPage: React.FC = () => {
     };
 
     return (
-        <div className="promotion-page">
+        <div className="promotion-page" style={{ padding: '24px' }}>
             <div className="page-header">
-                <Subtitle1>Smart Persistence Promotion</Subtitle1>
+                <Title2>Smart Persistence Promotion</Title2>
                 <Body1>Manage schema mapping promotions and dedicated table creation</Body1>
             </div>
 
-            <Divider className="divider" />
+            <Divider className="divider" style={{ margin: '16px 0' }} />
 
             <TabList
                 selectedValue={selectedTab}
-                onTabSelect={(_: unknown, data: any) => setSelectedTab(data.value as PromotionTab)}
+                onTabSelect={(_, data) => setSelectedTab(data.value as PromotionTab)}
             >
                 <Tab value="candidates">Candidates</Tab>
                 <Tab value="promoted">Promoted Tables</Tab>
             </TabList>
 
             {selectedTab === 'candidates' && (
-                <div className="tab-content">
+                <div className="tab-content" style={{ marginTop: '16px' }}>
                     {loadingCandidates ? (
                         <Spinner label="Loading candidates..." />
                     ) : (
                         <DataGrid
-                            items={candidates?.items || []}
+                            items={candidates?.data || []}
                             columns={candidateColumns}
                             sortable
                             style={{ minWidth: '100%' }}
@@ -209,25 +210,24 @@ const PromotionPage: React.FC = () => {
                                     )}
                                 </DataGridRow>
                             </DataGridHeader>
-                        <DataGridBody<PromotionCandidate>>
-                            {({ item, rowId }: { item: PromotionCandidate; rowId: string }) => (
-                                <DataGridRow<PromotionCandidate> key={rowId}>
-                                    {({ renderCell }: { renderCell: (item: PromotionCandidate) => React.ReactNode }) => (
-                                        <DataGridCell>{renderCell(item)}</DataGridCell>
-                                    )}
-                                </DataGridRow>
-                            )}
-                        </DataGridBody>
-                    </DataGrid>
+                            <DataGridBody<PromotionCandidate>>
+                                {({ item, rowId }) => (
+                                    <DataGridRow<PromotionCandidate> key={rowId}>
+                                        {({ renderCell }) => (
+                                            <DataGridCell>{renderCell(item)}</DataGridCell>
+                                        )}
+                                    </DataGridRow>
+                                )}
+                            </DataGridBody>
+                        </DataGrid>
                     )}
 
                     {selectedCandidate && (
-                        <div className="candidate-detail-panel">
-                            <Divider />
-                            <Subtitle1>Proposal Details: {selectedCandidate.mapping_name}</Subtitle1>
+                        <div className="candidate-detail-panel" style={{ marginTop: '32px', border: '1px solid #edebe9', padding: '16px', borderRadius: '4px' }}>
+                            <Title3>Proposal Details: {selectedCandidate.mapping_name}</Title3>
 
                             {selectedCandidate.status === 'migration_in_progress' && migrationProgress && (
-                                <div className="migration-progress">
+                                <div className="migration-progress" style={{ margin: '16px 0' }}>
                                     <Body1>Migration Progress</Body1>
                                     <ProgressBar
                                         value={migrationProgress.migrated_records}
@@ -237,16 +237,16 @@ const PromotionPage: React.FC = () => {
                                         {migrationProgress.migrated_records} / {migrationProgress.total_records} records
                                     </Body1>
                                     {migrationProgress.status === 'failed' && (
-                                        <MessageBar intent="error">
+                                        <MessageBar intent="warning">
                                             {migrationProgress.error_detail || 'Migration failed'}
                                         </MessageBar>
                                     )}
                                 </div>
                             )}
 
-                            <div className="proposed-schema">
+                            <div className="proposed-schema" style={{ margin: '16px 0' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                    <Body1>Proposed DDL</Body1>
+                                    <Body1 block style={{ fontWeight: 'bold' }}>Proposed DDL</Body1>
                                     {!isEditingDDL ? (
                                         <Button size="small" appearance="subtle" onClick={() => setIsEditingDDL(true)}>Edit DDL</Button>
                                     ) : (
@@ -270,7 +270,7 @@ const PromotionPage: React.FC = () => {
                                  {isEditingDDL ? (
                                     <Textarea
                                         value={editedDDL}
-                                        onChange={(_: unknown, data: any) => setEditedDDL(data.value)}
+                                        onChange={(_, data) => setEditedDDL(data.value)}
                                         style={{ width: '100%', minHeight: '200px', fontFamily: 'monospace' }}
                                     />
                                 ) : (
@@ -291,95 +291,107 @@ const PromotionPage: React.FC = () => {
                                 )}
                             </div>
 
-                            <div className="proposed-columns">
-                                <Body1>Proposed Columns</Body1>
+                            <div className="proposed-columns" style={{ margin: '16px 0' }}>
+                                <Body1 block style={{ fontWeight: 'bold', marginBottom: '8px' }}>Proposed Columns</Body1>
                                 <DataGrid
                                     items={selectedCandidate.proposed_columns}
                                     columns={[
                                         createTableColumn({
                                             columnId: 'name',
                                             renderHeaderCell: () => 'Name',
-                                            renderCell: (item) => item.name,
+                                            renderCell: (item: any) => item.name,
                                         }),
                                         createTableColumn({
                                             columnId: 'data_type',
                                             renderHeaderCell: () => 'Data Type',
-                                            renderCell: (item) => item.data_type,
+                                            renderCell: (item: any) => item.data_type,
                                         }),
                                         createTableColumn({
                                             columnId: 'nullable',
                                             renderHeaderCell: () => 'Nullable',
-                                            renderCell: (item) => item.nullable ? 'Yes' : 'No',
+                                            renderCell: (item: any) => item.nullable ? 'Yes' : 'No',
                                         }),
                                         createTableColumn({
                                             columnId: 'confidence',
                                             renderHeaderCell: () => 'Confidence',
-                                            renderCell: (item) => `${(item.confidence * 100).toFixed(0)}%`,
+                                            renderCell: (item: any) => `${((item.confidence || 0) * 100).toFixed(0)}%`,
                                         }),
                                     ]}
                                 >
                                     <DataGridHeader>
-                                        <DataGridRow />
+                                        <DataGridRow>
+                                            {({ renderHeaderCell }) => (
+                                                <DataGridCell>{renderHeaderCell()}</DataGridCell>
+                                            )}
+                                        </DataGridRow>
                                     </DataGridHeader>
-                                    <DataGridRow />
+                                    <DataGridBody<any>>
+                                        {({ item, rowId }) => (
+                                            <DataGridRow key={rowId}>
+                                                {({ renderCell }) => (
+                                                    <DataGridCell>{renderCell(item)}</DataGridCell>
+                                                )}
+                                            </DataGridRow>
+                                        )}
+                                    </DataGridBody>
                                 </DataGrid>
                             </div>
 
                             {selectedCandidate.proposed_indexes.length > 0 && (
-                                <div className="proposed-indexes">
-                                    <Body1>Proposed Indexes</Body1>
-                                    <ul>
-                                        {selectedCandidate.proposed_indexes.map(idx => (
+                                <div className="proposed-indexes" style={{ margin: '16px 0' }}>
+                                    <Body1 block style={{ fontWeight: 'bold' }}>Proposed Indexes</Body1>
+                                    <ul style={{ paddingLeft: '20px' }}>
+                                        {selectedCandidate.proposed_indexes.map((idx: any) => (
                                             <li key={idx.name}>
-                                                {idx.name} ({idx.columns.join(', ')}) {idx.unique ? '(UNIQUE)' : ''}
+                                                <Body1>{idx.name} ({idx.columns.join(', ')}) {idx.unique ? '(UNIQUE)' : ''}</Body1>
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
                             )}
 
-                            <Button onClick={() => setSelectedCandidate(null)}>Close</Button>
+                            <Button onClick={() => setSelectedCandidate(null)}>Close Details</Button>
                         </div>
                     )}
                 </div>
             )}
 
             {selectedTab === 'promoted' && (
-                <div className="tab-content">
+                <div className="tab-content" style={{ marginTop: '16px' }}>
                     <DataGrid
                         items={promotedTables || []}
                         columns={[
                             createTableColumn({
                                 columnId: 'table_name',
                                 renderHeaderCell: () => 'Table Name',
-                                renderCell: (item) => item.table_name,
+                                renderCell: (item: any) => item.table_name,
                             }),
                             createTableColumn({
                                 columnId: 'column_count',
                                 renderHeaderCell: () => 'Columns',
-                                renderCell: (item) => item.column_count,
+                                renderCell: (item: any) => item.column_count,
                             }),
                             createTableColumn({
                                 columnId: 'row_count',
                                 renderHeaderCell: () => 'Rows',
-                                renderCell: (item) => item.row_count?.toLocaleString() || 'N/A',
+                                renderCell: (item: any) => item.row_count?.toLocaleString() || 'N/A',
                             }),
                             createTableColumn({
                                 columnId: 'size_bytes',
                                 renderHeaderCell: () => 'Size',
-                                renderCell: (item) => item.size_bytes ? `${(item.size_bytes / 1024 / 1024).toFixed(2)} MB` : 'N/A',
+                                renderCell: (item: any) => item.size_bytes ? `${(item.size_bytes / 1024 / 1024).toFixed(2)} MB` : 'N/A',
                             }),
                             createTableColumn({
                                 columnId: 'dual_write_until',
                                 renderHeaderCell: () => 'Dual Write Until',
-                                renderCell: (item) => item.dual_write_until
+                                renderCell: (item: any) => item.dual_write_until
                                     ? new Date(item.dual_write_until).toLocaleString()
                                     : 'Completed',
                             }),
                             createTableColumn({
                                 columnId: 'created_at',
                                 renderHeaderCell: () => 'Created',
-                                renderCell: (item) => new Date(item.created_at).toLocaleString(),
+                                renderCell: (item: any) => new Date(item.created_at).toLocaleString(),
                             }),
                         ]}
                         style={{ minWidth: '100%' }}
@@ -391,7 +403,15 @@ const PromotionPage: React.FC = () => {
                                 )}
                             </DataGridRow>
                         </DataGridHeader>
-                        <DataGridRow />
+                        <DataGridBody<any>>
+                            {({ item, rowId }) => (
+                                <DataGridRow key={rowId}>
+                                    {({ renderCell }) => (
+                                        <DataGridCell>{renderCell(item)}</DataGridCell>
+                                    )}
+                                </DataGridRow>
+                            )}
+                        </DataGridBody>
                     </DataGrid>
                 </div>
             )}

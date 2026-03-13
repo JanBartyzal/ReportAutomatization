@@ -4,12 +4,9 @@ from __future__ import annotations
 
 import io
 
-import pytest
 from openpyxl import Workbook, load_workbook
 
 from src.generators.xls.service.excel_renderer import (
-    ChartInput,
-    ChartSeriesInput,
     ExcelRenderer,
     RenderResult,
     SheetConfig,

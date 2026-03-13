@@ -1,5 +1,7 @@
 package com.reportplatform.admin.service;
 
+import com.reportplatform.admin.model.dto.PaginatedResponse;
+import com.reportplatform.admin.model.dto.PromotionCandidateDTO;
 import com.reportplatform.admin.model.entity.PromotionCandidateEntity;
 import com.reportplatform.admin.model.entity.PromotionCandidateEntity.PromotionStatus;
 import com.reportplatform.admin.repository.PromotionCandidateRepository;
@@ -31,20 +33,22 @@ public class PromotionDetectionService {
             PromotionStatus.APPROVED,
             PromotionStatus.CREATED,
             PromotionStatus.MIGRATING,
-            PromotionStatus.ACTIVE
-    );
+            PromotionStatus.ACTIVE);
 
     private final PromotionCandidateRepository candidateRepository;
     private final SchemaProposalGenerator schemaProposalGenerator;
+    private final PromotionApprovalService promotionApprovalService;
 
     @Value("${smart-persistence.promotion-threshold:5}")
     private long promotionThreshold;
 
     public PromotionDetectionService(
             PromotionCandidateRepository candidateRepository,
-            SchemaProposalGenerator schemaProposalGenerator) {
+            SchemaProposalGenerator schemaProposalGenerator,
+            PromotionApprovalService promotionApprovalService) {
         this.candidateRepository = candidateRepository;
         this.schemaProposalGenerator = schemaProposalGenerator;
+        this.promotionApprovalService = promotionApprovalService;
     }
 
     /**
@@ -99,9 +103,9 @@ public class PromotionDetectionService {
 
             // TODO: Publish promotion.candidate.detected event via Dapr Pub/Sub
             // daprClient.publishEvent("pubsub", "promotion.candidate.detected",
-            //     Map.of("candidateId", candidate.getId(),
-            //            "mappingTemplateId", mapping.mappingTemplateId(),
-            //            "usageCount", mapping.usageCount()));
+            // Map.of("candidateId", candidate.getId(),
+            // "mappingTemplateId", mapping.mappingTemplateId(),
+            // "usageCount", mapping.usageCount()));
 
             logger.info("Created promotion candidate for template={} table={} usage={}",
                     mapping.mappingTemplateId(), candidate.getProposedTableName(), mapping.usageCount());
@@ -118,7 +122,8 @@ public class PromotionDetectionService {
     private List<HighUsageMapping> fetchHighUsageMappingsFromTmpl() {
         // TODO: Implement Dapr service invocation to ms-tmpl
         // Example:
-        // String url = "http://ms-tmpl/api/v1/usage/high-usage?threshold=" + promotionThreshold;
+        // String url = "http://ms-tmpl/api/v1/usage/high-usage?threshold=" +
+        // promotionThreshold;
         // Response from Dapr sidecar would contain list of high-usage mapping records
         logger.debug("TODO: Fetch high-usage mappings from ms-tmpl via Dapr (threshold={})", promotionThreshold);
         return Collections.emptyList();
@@ -132,7 +137,21 @@ public class PromotionDetectionService {
     }
 
     /**
+     * Get promotion candidates with optional status filter and pagination.
+     * Delegates to PromotionApprovalService for listing.
+     *
+     * @param statusFilter optional status to filter by
+     * @param page         page number (1-based)
+     * @param pageSize     number of items per page
+     * @return paginated response with candidates
+     */
+    public PaginatedResponse<PromotionCandidateDTO> getCandidates(String statusFilter, int page, int pageSize) {
+        return promotionApprovalService.listCandidates(statusFilter, page, pageSize);
+    }
+
+    /**
      * Represents a high-usage mapping template returned from ms-tmpl.
      */
-    public record HighUsageMapping(UUID mappingTemplateId, String mappingName, long usageCount) {}
+    public record HighUsageMapping(UUID mappingTemplateId, String mappingName, long usageCount) {
+    }
 }

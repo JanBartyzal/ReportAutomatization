@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Title3,
@@ -10,9 +10,8 @@ import {
     Textarea,
     Dropdown,
     Option,
-    Checkbox,
+    ProgressBar,
     Spinner,
-    Progress,
     Divider,
     Badge,
 } from '@fluentui/react-components';
@@ -22,18 +21,11 @@ import {
     ArrowLeftRegular,
     CommentRegular,
 } from '@fluentui/react-icons';
-import { useForm, useFormResponse, useCreateFormResponse, useUpdateFormResponse, useAutoSave } from '../../hooks/useForms';
-import LoadingSpinner from '../LoadingSpinner';
+import { useForm, useFormResponse, useCreateFormResponse, useUpdateFormResponse, useAutoSave } from '../hooks/useForms';
+import LoadingSpinner from '../components/LoadingSpinner';
 
-interface FormField {
-    field_key: string;
-    field_type: string;
-    label: string;
-    section?: string;
-    section_description?: string;
-    required: boolean;
-    properties: Record<string, unknown>;
-}
+/* Using shared FormField type from @reportplatform/types */
+import type { FormField } from '@reportplatform/types';
 
 export const FormFillerPage: React.FC = () => {
     const { formId, responseId } = useParams<{ formId: string; responseId?: string }>();
@@ -51,34 +43,51 @@ export const FormFillerPage: React.FC = () => {
     const [completionPercent, setCompletionPercent] = useState(0);
 
     // Auto-save hook
-    const { debouncedSave, saveNow, isPending: isSaving } = useAutoSave(formId!, responseId!);
+    const { debouncedSave, isPending: isSaving } = useAutoSave(formId!, responseId!);
 
     // Calculate completion percentage
     useEffect(() => {
         if (!form?.fields) return;
         const requiredFields = form.fields.filter((f: FormField) => f.required);
-        const filledFields = requiredFields.filter((f: FormField) => fields[f.field_key]?.trim());
+        const filledFields = requiredFields.filter((f: FormField) => fields[f.field_id]?.trim());
         setCompletionPercent(Math.round((filledFields.length / requiredFields.length) * 100));
     }, [fields, form]);
 
     // Initialize fields from existing response
     useEffect(() => {
         if (existingResponse?.fields) {
-            setFields(existingResponse.fields);
+            const fieldsMap: Record<string, string> = {};
+            existingResponse.fields.forEach(f => {
+                fieldsMap[f.field_id] = f.value;
+            });
+            setFields(fieldsMap);
         }
     }, [existingResponse]);
 
     const handleFieldChange = useCallback((fieldKey: string, value: string) => {
-        setFields(prev => ({ ...prev, [fieldKey]: value }));
-        debouncedSave({ ...fields, [fieldKey]: value });
-    }, [debouncedSave, fields]);
+        setFields(prev => {
+            const newFields = { ...prev, [fieldKey]: value };
+            // Convert to FormFieldValue[] for auto-save if needed
+            const fieldValues = Object.entries(newFields).map(([id, val]) => ({
+                field_id: id,
+                value: val
+            }));
+            debouncedSave(fieldValues);
+            return newFields;
+        });
+    }, [debouncedSave]);
 
     const handleSubmit = async () => {
         const responseData = {
+            form_id: formId!,
+            form_version_id: (form as any).version_id || 'v1',
             org_id: '', // Will be set from auth context
-            user_id: '', // Will be set from auth context
-            status: 'SUBMITTED',
-            fields,
+            status: 'SUBMITTED' as const,
+            fields: Object.entries(fields).map(([id, val]) => ({
+                field_id: id,
+                value: val,
+                comment: comments[id]
+            })),
         };
 
         if (responseId) {
@@ -91,10 +100,15 @@ export const FormFillerPage: React.FC = () => {
 
     const handleSaveDraft = async () => {
         const responseData = {
+            form_id: formId!,
+            form_version_id: (form as any).version_id || 'v1',
             org_id: '',
-            user_id: '',
-            status: 'DRAFT',
-            fields,
+            status: 'DRAFT' as const,
+            fields: Object.entries(fields).map(([id, val]) => ({
+                field_id: id,
+                value: val,
+                comment: comments[id]
+            })),
         };
 
         if (responseId) {
@@ -137,7 +151,7 @@ export const FormFillerPage: React.FC = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
                 <div>
-                    <Title3>{form.title}</Title3>
+                    <Title3>{form.name}</Title3>
                     <Subtitle2 style={{ color: 'var(--colorNeutralForeground2)' }}>
                         {form.description}
                     </Subtitle2>
@@ -163,8 +177,8 @@ export const FormFillerPage: React.FC = () => {
                     <Body1>Completion</Body1>
                     <Body1><strong>{completionPercent}%</strong></Body1>
                 </div>
-                <Progress 
-                    value={completionPercent} 
+                <ProgressBar 
+                    value={completionPercent / 100} 
                     color={completionPercent === 100 ? 'success' : 'brand'}
                 />
             </div>
@@ -175,70 +189,59 @@ export const FormFillerPage: React.FC = () => {
             {sections && Object.entries(sections).map(([sectionName, sectionFields]) => (
                 <div key={sectionName} style={{ marginBottom: '32px' }}>
                     <Title3 style={{ marginBottom: '8px' }}>{sectionName}</Title3>
-                    {sectionFields[0]?.section_description && (
+                    {(sectionFields as FormField[])[0] && ((sectionFields as FormField[])[0] as any).section_description && (
                         <Body1 style={{ color: 'var(--colorNeutralForeground2)', marginBottom: '16px' }}>
-                            {sectionFields[0].section_description}
+                            {((sectionFields as FormField[])[0] as any).section_description}
                         </Body1>
                     )}
 
-                    {sectionFields.map((field: FormField) => {
-                        const value = fields[field.field_key] || '';
+                    {(sectionFields as FormField[]).map((field: FormField) => {
+                        const value = fields[field.field_id] || '';
                         const isInvalid = field.required && !value.trim();
                         
                         return (
                             <Field
-                                key={field.field_key}
-                                label={field.label}
+                                key={field.field_id}
+                                label={field.name}
                                 required={field.required}
                                 validationState={isInvalid ? 'error' : 'none'}
                                 validationMessage={isInvalid ? 'This field is required' : undefined}
                                 style={{ marginBottom: '16px' }}
                             >
-                                {field.field_type === 'text' && (
-                                    field.properties?.max_length ? (
-                                        <Textarea
-                                            value={value}
-                                            onChange={(_, data) => handleFieldChange(field.field_key, data.value)}
-                                            placeholder={`Enter ${field.label.toLowerCase()}`}
-                                            maxLength={field.properties.max_length as number}
-                                        />
-                                    ) : (
-                                        <Input
-                                            value={value}
-                                            onChange={(_, data) => handleFieldChange(field.field_key, data.value)}
-                                            placeholder={`Enter ${field.label.toLowerCase()}`}
-                                        />
-                                    )
-                                )}
-
-                                {field.field_type === 'number' && (
+                                {field.type === 'TEXT' && (
                                     <Input
-                                        type="number"
                                         value={value}
-                                        onChange={(_, data) => handleFieldChange(field.field_key, data.value)}
-                                        placeholder={`Enter ${field.label.toLowerCase()}`}
-                                        contentAfter={field.properties?.currency === 'CZK' ? 'CZK' :
-                                            field.properties?.unit ? String(field.properties.unit) : null}
+                                        onChange={(_, data) => handleFieldChange(field.field_id, data.value)}
+                                        placeholder={`Enter ${field.name.toLowerCase()}`}
                                     />
                                 )}
 
-                                {field.field_type === 'dropdown' && (
+                                {field.type === 'NUMBER' && (
+                                    <Input
+                                        type="number"
+                                        value={value}
+                                        onChange={(_, data) => handleFieldChange(field.field_id, data.value)}
+                                        placeholder={`Enter ${field.name.toLowerCase()}`}
+                                    />
+                                )}
+
+                                {field.type === 'DROPDOWN' && (
                                     <Dropdown
                                         placeholder="Select an option"
                                         value={value}
-                                        onOptionSelect={(_, data) => handleFieldChange(field.field_key, String(data.optionValue))}
+                                        onOptionSelect={(_, data) => handleFieldChange(field.field_id, String(data.optionValue))}
                                     >
-                                        {(field.properties?.options as string[])?.map((option) => (
+                                        {(field.options as string[])?.map((option) => (
                                             <Option key={option} value={option}>{option}</Option>
                                         ))}
                                     </Dropdown>
                                 )}
 
-                                {field.field_type === 'date' && (
+                                {field.type === 'DATE' && (
                                     <Input
                                         type="date"
                                         value={value}
-                                        onChange={(_, data) => handleFieldChange(field.field_key, data.value)}
+                                        onChange={(_, data) => handleFieldChange(field.field_id, data.value)}
                                     />
                                 )}
 
@@ -247,17 +250,17 @@ export const FormFillerPage: React.FC = () => {
                                     appearance="transparent"
                                     size="small"
                                     icon={<CommentRegular />}
-                                    onClick={() => setShowComments(prev => ({ ...prev, [field.field_key]: !prev[field.field_key] }))}
+                                    onClick={() => setShowComments(prev => ({ ...prev, [field.field_id]: !prev[field.field_id] }))}
                                     style={{ marginTop: '4px' }}
                                 >
-                                    {comments[field.field_key] ? 'Edit comment' : 'Add comment'}
+                                    {comments[field.field_id] ? 'Edit comment' : 'Add comment'}
                                 </Button>
 
                                 {/* Comment input */}
-                                {showComments[field.field_key] && (
+                                {showComments[field.field_id] && (
                                     <Textarea
-                                        value={comments[field.field_key] || ''}
-                                        onChange={(_, data) => setComments(prev => ({ ...prev, [field.field_key]: data.value }))}
+                                        value={comments[field.field_id] || ''}
+                                        onChange={(_, data) => setComments(prev => ({ ...prev, [field.field_id]: data.value }))}
                                         placeholder="Add a comment for reviewers..."
                                         style={{ marginTop: '8px' }}
                                     />

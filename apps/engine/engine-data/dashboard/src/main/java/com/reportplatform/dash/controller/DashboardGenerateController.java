@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -28,6 +29,7 @@ public class DashboardGenerateController {
      * POST /api/dashboards/generate-pptx
      */
     @PostMapping("/generate-pptx")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<DashboardGeneratePptxResponse> generatePptx(
             @RequestHeader("X-Org-Id") String orgId,
             @Valid @RequestBody DashboardGeneratePptxRequest request) {
@@ -41,6 +43,7 @@ public class DashboardGenerateController {
      * GET /api/dashboards/generate-pptx/{jobId}
      */
     @GetMapping("/generate-pptx/{jobId}")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<DashboardGeneratePptxResponse> getGenerationStatus(
             @PathVariable String jobId) {
 
@@ -53,6 +56,7 @@ public class DashboardGenerateController {
      * GET /api/dashboards/generate-pptx/{jobId}/download
      */
     @GetMapping("/generate-pptx/{jobId}/download")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<byte[]> downloadPptx(@PathVariable String jobId) {
         // First get the download URL from the service
         String downloadUrl = dashboardPptxService.getDownloadUrl(jobId);

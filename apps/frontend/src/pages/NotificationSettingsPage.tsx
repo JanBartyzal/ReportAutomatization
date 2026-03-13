@@ -9,7 +9,7 @@ import {
 } from '@fluentui/react-components';
 import { useNotificationSettings, useUpdateNotificationSettings } from '../hooks/useNotifications';
 import LoadingSpinner from '../components/LoadingSpinner';
-import type { NotificationType, NotificationSettings, TypePreference } from '@reportplatform/types';
+import type { TypePreference } from '@reportplatform/types';
 
 const useStyles = makeStyles({
     container: {
@@ -50,7 +50,7 @@ const useStyles = makeStyles({
         fontWeight: tokens.fontWeightSemibold,
     },
     toggleDescription: {
-        fontSize: tokens.fontSizeBase13,
+        fontSize: tokens.fontSizeBase200,
         color: tokens.colorNeutralForeground2,
     },
     globalSettings: {
@@ -60,7 +60,7 @@ const useStyles = makeStyles({
     },
 });
 
-const NOTIFICATION_TYPE_INFO: { type: NotificationType; title: string; description: string }[] = [
+const NOTIFICATION_TYPE_INFO: { type: any; title: string; description: string }[] = [
     { type: 'FILE_PROCESSED', title: 'File Processed', description: 'When a file has been successfully processed' },
     { type: 'FILE_FAILED', title: 'File Failed', description: 'When a file processing has failed' },
     { type: 'REPORT_SUBMITTED', title: 'Report Submitted', description: 'When a new report is submitted for review' },
@@ -93,9 +93,9 @@ export default function NotificationSettingsPage() {
         });
     };
 
-    const handleTypeToggle = (type: NotificationType, channel: 'email' | 'in_app', checked: boolean) => {
-        const currentPrefs = currentSettings.preferences || {};
-        const typePref = currentPrefs[type] || { email: true, in_app: true };
+    const handleTypeToggle = (type: any, channel: 'email' | 'in_app', checked: boolean) => {
+        const currentPrefs = currentSettings.preferences || {} as any;
+        const typePref = (currentPrefs as any)[type] || { email: true, in_app: true };
 
         updateSettings.mutate({
             ...currentSettings,
@@ -109,8 +109,8 @@ export default function NotificationSettingsPage() {
         });
     };
 
-    const getTypePreference = (type: NotificationType): TypePreference => {
-        return currentSettings.preferences?.[type] || { email: true, in_app: true };
+    const getTypePreference = (type: any): TypePreference => {
+        return (currentSettings.preferences as any)?.[type] || { email: true, in_app: true };
     };
 
     return (

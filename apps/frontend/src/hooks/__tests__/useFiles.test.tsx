@@ -1,0 +1,86 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useFiles, useUpload } from '../useFiles';
+import React from 'react';
+
+// Create a test wrapper with providers
+const createTestWrapper = () => {
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: {
+                retry: false,
+                gcTime: 0,
+            },
+        },
+    });
+
+    return ({ children }: { children?: React.ReactNode }) => {
+        return (
+            <QueryClientProvider client={queryClient}>
+                {children}
+            </QueryClientProvider>
+        );
+    };
+};
+
+describe('useFiles', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('returns files data', async () => {
+        const wrapper = createTestWrapper();
+
+        const { result } = renderHook(() => useFiles({}), { wrapper });
+
+        // Initially loading
+        expect(result.current.isLoading).toBe(true);
+
+        // Wait for data
+        await waitFor(() => {
+            expect(result.current.isSuccess).toBe(true);
+        });
+
+        // Should have data
+        expect(result.current.data).toBeDefined();
+    });
+
+    it('has correct query key', async () => {
+        const wrapper = createTestWrapper();
+
+        const { result } = renderHook(() => useFiles({ sort_by: 'filename' }), { wrapper });
+
+        await waitFor(() => {
+            expect(result.current.isSuccess).toBe(true);
+        });
+
+        expect(result.current.data).toBeDefined();
+    });
+});
+
+describe('useUpload', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('returns mutation functions', () => {
+        const wrapper = createTestWrapper();
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        // Should have mutate function
+        expect(result.current.mutate).toBeDefined();
+        expect(result.current.mutateAsync).toBeDefined();
+    });
+
+    it('has correct initial state', () => {
+        const wrapper = createTestWrapper();
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        expect(result.current.isPending).toBe(false);
+        expect(result.current.isError).toBe(false);
+        expect(result.current.isSuccess).toBe(false);
+    });
+});

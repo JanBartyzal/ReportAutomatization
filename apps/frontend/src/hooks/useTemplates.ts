@@ -1,11 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import templatesApi, {
-    Template,
-    TemplateDetail,
-    Placeholder,
-    PlaceholderMapping,
     PlaceholderMappingItem,
-    TemplateUploadResponse
 } from '../api/templates';
 
 // Query keys

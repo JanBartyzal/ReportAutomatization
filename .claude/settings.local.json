@@ -19,7 +19,23 @@
       "Bash(do)",
       "Bash(echo \"===FILE: $f===\")",
       "Read(//i/Codes/GCP/ReportAutomatization/**)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(find i:CodesGCPReportAutomatization -path *protos* -name *scan* -type f)",
+      "Bash(xargs file:*)",
+      "Bash(find i:CodesGCPReportAutomatizationappsengine -path *dapr* -o -path *deploy*)",
+      "Bash(find i:CodesGCPReportAutomatizationappsengine -maxdepth 3 -name *.yaml -o -name *.yml)",
+      "Bash(grep -iE \"\\\\.\\(yml|yaml|json\\)$\")",
+      "Bash(find i:/Codes/GCP/ReportAutomatization -name *.proto -type f)",
+      "Bash(find i:/Codes/GCP/ReportAutomatization -path */db/migration/*.sql -type f)",
+      "Bash(find i:/Codes/GCP/ReportAutomatization/apps/engine -name *.java -path */health/* -type f)",
+      "Bash(find i:/Codes/GCP/ReportAutomatization/apps/engine -name *.java -path *actuator* -type f)",
+      "Bash(find i:/Codes/GCP/ReportAutomatization/apps/engine -name *Test*.java -type f)",
+      "Bash(find i:/Codes/GCP/ReportAutomatization/apps/processor -name test_*.py -type f)",
+      "Bash(find i:/Codes/GCP/ReportAutomatization/apps/frontend -name *.test.* -type f)",
+      "Bash(find i:/Codes/GCP/ReportAutomatization/apps/processor -name *.py -path */routers/* -type f)",
+      "Bash(find i:/Codes/GCP/ReportAutomatization/apps/processor -name *.py -path */grpc* -type f)",
+      "Bash(find i:/Codes/GCP/ReportAutomatization/apps/frontend/src -name axios* -o -name api* -type f)",
+      "Bash(find i:/Codes/GCP/ReportAutomatization -name *.java -path */config/* -type f)"
     ]
   }
 }

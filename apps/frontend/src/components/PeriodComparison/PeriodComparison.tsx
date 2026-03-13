@@ -1,24 +1,13 @@
 import { useState } from 'react';
 import {
     Title3,
-    Title4,
     Body1,
-    Card,
-    CardHeader,
     makeStyles,
     tokens,
     Button,
     Dropdown,
-    DropdownTrigger,
     Option,
     Input,
-    Dialog,
-    DialogTrigger,
-    DialogSurface,
-    DialogTitle,
-    DialogBody,
-    DialogActions,
-    DialogContent,
     Table,
     TableHeader,
     TableRow,
@@ -37,11 +26,11 @@ import {
     ResponsiveContainer,
     Cell,
 } from 'recharts';
-import { chartPalette } from '../../theme/brandTokens';
+import { reportBrand } from '../../theme/brandTokens';
 import { usePeriodComparison } from '../../hooks/useDashboards';
 import { usePeriods } from '../../hooks/usePeriods';
 import LoadingSpinner from '../LoadingSpinner';
-import type { PeriodComparisonRequest, FileListParams } from '@reportplatform/types';
+import type { PeriodComparisonRequest, ComparisonData } from '@reportplatform/types';
 
 /**
  * PeriodComparison styles per docs/UX-UI/02-design-system.md
@@ -127,7 +116,7 @@ export function PeriodComparison({ onClose }: PeriodComparisonProps) {
     const [period2, setPeriod2] = useState<string>('');
     const [result, setResult] = useState<ComparisonData | null>(null);
 
-    const periods = periodsData?.items || [];
+    const periods = periodsData?.data || [];
 
     const handleCompare = async () => {
         if (!period1 || !period2) return;
@@ -218,7 +207,7 @@ export function PeriodComparison({ onClose }: PeriodComparisonProps) {
 
                 {result && (
                     <div className={styles.results}>
-                        <Title4>Results</Title4>
+                        <Title3>Results</Title3>
 
                         <div className={styles.chartPlaceholder} style={{ backgroundColor: 'transparent' }}>
                             <ResponsiveContainer width="100%" height="100%">
@@ -241,7 +230,7 @@ export function PeriodComparison({ onClose }: PeriodComparisonProps) {
                                         {result.periods.map((_entry: any, index: number) => (
                                             <Cell 
                                                 key={`cell-${index}`} 
-                                                fill={index === 0 ? chartPalette.chart1 : chartPalette.chart3} 
+                                                fill={index === 0 ? reportBrand[90] : reportBrand[60]} 
                                             />
                                         ))}
                                     </Bar>
@@ -260,8 +249,8 @@ export function PeriodComparison({ onClose }: PeriodComparisonProps) {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {result.deltas.map((delta, idx) => (
-                                        <TableRow key={idx}>
+                                    {result.deltas.map((delta: any, idxValue: number) => (
+                                        <TableRow key={idxValue}>
                                             <TableCell>{delta.from_period}</TableCell>
                                             <TableCell>{delta.to_period}</TableCell>
                                             <TableCell className={delta.absolute_change >= 0 ? styles.positive : styles.negative}>

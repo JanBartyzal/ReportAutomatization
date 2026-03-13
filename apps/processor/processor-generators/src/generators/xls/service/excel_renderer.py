@@ -159,6 +159,11 @@ class ExcelRenderer:
         missing: list[str],
     ) -> None:
         """Iterate cells and replace ``{{var_name}}`` placeholders with values."""
+        # Determine if placeholders dict was explicitly provided (non-empty)
+        # If empty, we report ALL placeholders as missing
+        # If non-empty, we only report missing for keys that were explicitly provided but have no value
+        placeholders_provided = bool(placeholders)
+        
         for row in ws.iter_rows():
             for cell in row:
                 if cell.value is None or not isinstance(cell.value, str):
@@ -177,10 +182,19 @@ class ExcelRenderer:
                         continue  # Skip TABLE:/CHART: prefixed placeholders
                     key = match.group(2).strip()
                     tag = match.group(0)
+                    
                     if key in placeholders:
-                        new_value = new_value.replace(tag, placeholders[key])
-                    else:
+                        # Key explicitly provided - substitute if value is not None/empty
+                        if placeholders[key] is not None and placeholders[key] != "":
+                            new_value = new_value.replace(tag, placeholders[key])
+                        else:
+                            # Key provided but value is empty - report as missing
+                            missing.append(tag)
+                    elif not placeholders_provided:
+                        # No placeholders provided at all - report all as missing
                         missing.append(tag)
+                    # If key not in placeholders and placeholders dict is non-empty, 
+                    # don't report as missing (user may not know about this placeholder)
 
                 if new_value != original:
                     cell.value = new_value
@@ -221,8 +235,6 @@ class ExcelRenderer:
         Inserts headers at the placeholder row, then data rows below it.
         Rows are inserted to avoid overwriting existing content.
         """
-        total_rows = 1 + len(table_data.rows)  # header + data rows
-
         # Insert blank rows below the placeholder to make room (excluding the placeholder row itself)
         if len(table_data.rows) > 0:
             ws.insert_rows(start_row + 1, amount=len(table_data.rows))

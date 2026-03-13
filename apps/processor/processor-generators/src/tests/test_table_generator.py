@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import io
 
-import pytest
 from pptx import Presentation
 from pptx.util import Inches
 

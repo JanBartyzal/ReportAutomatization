@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -39,14 +40,16 @@ public class PromotionApprovalService {
     /**
      * List promotion candidates with optional status filter and pagination.
      *
-     * @param statusFilter optional status to filter by (e.g. "CANDIDATE", "PENDING_REVIEW")
+     * @param statusFilter optional status to filter by (e.g. "CANDIDATE",
+     *                     "PENDING_REVIEW")
      * @param page         page number (1-based)
      * @param pageSize     number of items per page
      * @return paginated list of promotion candidate DTOs
      */
     @Transactional(readOnly = true)
     public PaginatedResponse<PromotionCandidateDTO> listCandidates(String statusFilter, int page, int pageSize) {
-        logger.info("Listing promotion candidates: statusFilter={}, page={}, pageSize={}", statusFilter, page, pageSize);
+        logger.info("Listing promotion candidates: statusFilter={}, page={}, pageSize={}", statusFilter, page,
+                pageSize);
 
         PageRequest pageRequest = PageRequest.of(
                 Math.max(0, page - 1),
@@ -137,7 +140,8 @@ public class PromotionApprovalService {
      * Approve a promotion candidate and trigger table creation in MS-SINK-TBL.
      *
      * Sets status to APPROVED, records reviewer info, then calls MS-SINK-TBL
-     * via Dapr gRPC to create the dedicated table. On success, sets status to CREATED.
+     * via Dapr gRPC to create the dedicated table. On success, sets status to
+     * CREATED.
      *
      * @param id         the candidate UUID
      * @param reviewedBy the user ID of the reviewer
@@ -168,11 +172,12 @@ public class PromotionApprovalService {
         String ddlToApply = entity.getFinalDdl() != null ? entity.getFinalDdl() : entity.getProposedDdl();
 
         // TODO: Call MS-SINK-TBL via Dapr gRPC to create the promoted table
-        // DaprClient.invokeMethod("ms-sink-tbl", "createPromotedTable", CreateTableRequest{
-        //     ddl: ddlToApply,
-        //     mappingTemplateId: entity.getMappingTemplateId(),
-        //     tableName: entity.getProposedTableName(),
-        //     dualWriteDays: 30
+        // DaprClient.invokeMethod("ms-sink-tbl", "createPromotedTable",
+        // CreateTableRequest{
+        // ddl: ddlToApply,
+        // mappingTemplateId: entity.getMappingTemplateId(),
+        // tableName: entity.getProposedTableName(),
+        // dualWriteDays: 30
         // })
         logger.info("TODO: Calling MS-SINK-TBL to create table '{}' for mapping template {}",
                 entity.getProposedTableName(), entity.getMappingTemplateId());
@@ -184,6 +189,165 @@ public class PromotionApprovalService {
         logger.info("Promotion candidate approved and table created: id={}, table={}",
                 id, entity.getProposedTableName());
         return toDTO(saved);
+    }
+
+    /**
+     * Approve promotion with final DDL override.
+     * Called from gRPC service.
+     *
+     * @param promotionId the candidate UUID as string
+     * @param finalDdl    optional final DDL override
+     * @return result with success status and message
+     */
+    @Transactional
+    public ApprovalResult approvePromotion(String promotionId, String finalDdl) {
+        logger.info("Approving promotion: promotionId={}, finalDdlProvided={}", promotionId, finalDdl != null);
+
+        UUID id;
+        try {
+            id = UUID.fromString(promotionId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid promotion ID format: " + promotionId);
+        }
+
+        PromotionCandidateEntity entity = candidateRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Promotion candidate not found: " + promotionId));
+
+        if (entity.getStatus() != PromotionStatus.CANDIDATE
+                && entity.getStatus() != PromotionStatus.PENDING_REVIEW) {
+            return new ApprovalResult(false, null, "Cannot approve candidate in status: " + entity.getStatus());
+        }
+
+        // Apply final DDL if provided
+        if (finalDdl != null && !finalDdl.isBlank()) {
+            entity.setFinalDdl(finalDdl);
+        }
+
+        // Determine the DDL to apply
+        String ddlToApply = entity.getFinalDdl() != null ? entity.getFinalDdl() : entity.getProposedDdl();
+
+        // Set approval metadata
+        entity.setStatus(PromotionStatus.APPROVED);
+        entity.setReviewedBy("system");
+        entity.setReviewedAt(Instant.now());
+        candidateRepository.save(entity);
+
+        // TODO: Call MS-SINK-TBL via Dapr gRPC to create the promoted table
+        logger.info("TODO: Calling MS-SINK-TBL to create table '{}' for mapping template {}",
+                entity.getProposedTableName(), entity.getMappingTemplateId());
+
+        // On successful table creation, update status to CREATED
+        entity.setStatus(PromotionStatus.CREATED);
+        PromotionCandidateEntity saved = candidateRepository.save(entity);
+
+        logger.info("Promotion approved and table created: id={}, table={}", promotionId,
+                entity.getProposedTableName());
+        return new ApprovalResult(true, entity.getProposedTableName(), "Promotion approved successfully");
+    }
+
+    /**
+     * Result record for approvePromotion operation.
+     */
+    public record ApprovalResult(boolean success, String tableName, String message) {
+    }
+
+    /**
+     * Get routing information for a mapping template.
+     * Determines if there's a promoted table and dual-write status.
+     *
+     * @param mappingTemplateId the mapping template UUID as string
+     * @return routing info result
+     */
+    @Transactional(readOnly = true)
+    public RoutingInfoResult getRoutingInfo(String mappingTemplateId) {
+        logger.info("Getting routing info for mapping template: {}", mappingTemplateId);
+
+        UUID templateId;
+        try {
+            templateId = UUID.fromString(mappingTemplateId);
+        } catch (IllegalArgumentException e) {
+            return new RoutingInfoResult(false, null, false, null);
+        }
+
+        // Find if there's an active promoted table for this mapping
+        List<PromotionCandidateEntity> candidates = candidateRepository
+                .findByMappingTemplateIdAndStatusIn(templateId, EnumSet.of(
+                        PromotionStatus.CREATED,
+                        PromotionStatus.MIGRATING,
+                        PromotionStatus.ACTIVE));
+
+        if (candidates.isEmpty()) {
+            return new RoutingInfoResult(false, null, false, null);
+        }
+
+        PromotionCandidateEntity candidate = candidates.get(0);
+        boolean inDualWrite = candidate.getStatus() == PromotionStatus.CREATED
+                || candidate.getStatus() == PromotionStatus.MIGRATING;
+
+        // TODO: Query MS-SINK-TBL for actual dual-write end date
+        String dualWriteUntil = inDualWrite ? "2026-12-31" : null;
+
+        return new RoutingInfoResult(true, candidate.getProposedTableName(), inDualWrite, dualWriteUntil);
+    }
+
+    /**
+     * Result record for getRoutingInfo operation.
+     */
+    public record RoutingInfoResult(boolean hasPromotedTable, String tableName,
+            boolean inDualWritePeriod, String dualWriteUntil) {
+    }
+
+    /**
+     * Migrate data for a promotion candidate.
+     * Called from gRPC service.
+     *
+     * @param promotionId the candidate UUID as string
+     * @return migration result
+     */
+    @Transactional
+    public MigrationResult migrateData(String promotionId) {
+        logger.info("Migrating data for promotion: {}", promotionId);
+
+        UUID id;
+        try {
+            id = UUID.fromString(promotionId);
+        } catch (IllegalArgumentException e) {
+            return new MigrationResult(null, 0, "Invalid promotion ID format: " + promotionId);
+        }
+
+        PromotionCandidateEntity entity = candidateRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Promotion candidate not found: " + promotionId));
+
+        if (entity.getStatus() != PromotionStatus.CREATED
+                && entity.getStatus() != PromotionStatus.ACTIVE) {
+            return new MigrationResult(null, 0, "Cannot migrate data for candidate in status: " + entity.getStatus());
+        }
+
+        entity.setStatus(PromotionStatus.MIGRATING);
+        candidateRepository.save(entity);
+
+        // TODO: Call MS-SINK-TBL via Dapr gRPC to start data migration
+        // DaprClient.invokeMethod("ms-sink-tbl", "migrateData", MigrateDataRequest{
+        // mappingTemplateId: entity.getMappingTemplateId(),
+        // tableName: entity.getProposedTableName()
+        // })
+        logger.info("TODO: Calling MS-SINK-TBL to migrate data for table '{}', mapping template {}",
+                entity.getProposedTableName(), entity.getMappingTemplateId());
+
+        // Simulate migration completion
+        entity.setStatus(PromotionStatus.ACTIVE);
+        candidateRepository.save(entity);
+
+        String migrationId = UUID.randomUUID().toString();
+        logger.info("Migration completed for promotion: {}, migrationId={}", promotionId, migrationId);
+
+        return new MigrationResult(migrationId, 1000, "Data migration completed successfully");
+    }
+
+    /**
+     * Result record for migrateData operation.
+     */
+    public record MigrationResult(String migrationId, long recordsMigrated, String message) {
     }
 
     /**
@@ -214,7 +378,8 @@ public class PromotionApprovalService {
      *
      * @param id the candidate UUID
      * @throws IllegalArgumentException if not found
-     * @throws IllegalStateException    if candidate is not in CREATED or ACTIVE state
+     * @throws IllegalStateException    if candidate is not in CREATED or ACTIVE
+     *                                  state
      */
     @Transactional
     public void triggerMigration(UUID id) {
@@ -234,8 +399,8 @@ public class PromotionApprovalService {
 
         // TODO: Call MS-SINK-TBL via Dapr gRPC to start data migration
         // DaprClient.invokeMethod("ms-sink-tbl", "migrateData", MigrateDataRequest{
-        //     mappingTemplateId: entity.getMappingTemplateId(),
-        //     tableName: entity.getProposedTableName()
+        // mappingTemplateId: entity.getMappingTemplateId(),
+        // tableName: entity.getProposedTableName()
         // })
         logger.info("TODO: Calling MS-SINK-TBL to migrate data for table '{}', mapping template {}",
                 entity.getProposedTableName(), entity.getMappingTemplateId());

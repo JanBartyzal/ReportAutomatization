@@ -4,6 +4,7 @@ import com.reportplatform.qry.service.FormQueryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -41,6 +42,7 @@ public class FormQueryController {
      * @return aggregated form data including submission counts, status breakdown
      */
     @GetMapping("/{form_id}/data")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, Object>> getFormData(
             @PathVariable("form_id") UUID formId,
             @RequestHeader(value = "X-Org-Id") String orgId,
@@ -66,6 +68,7 @@ public class FormQueryController {
      * @return list of form responses
      */
     @GetMapping("/{form_id}/responses")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, Object>> getFormResponses(
             @PathVariable("form_id") UUID formId,
             @RequestHeader(value = "X-Org-Id") String orgId,
@@ -93,6 +96,7 @@ public class FormQueryController {
      * @return form response data for the specific organization
      */
     @GetMapping("/{form_id}/responses/{resp_org_id}")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, Object>> getOrgFormResponse(
             @PathVariable("form_id") UUID formId,
             @PathVariable("resp_org_id") String orgId,
@@ -115,6 +119,7 @@ public class FormQueryController {
      * @return list of form completion status
      */
     @GetMapping("/period/{period_id}/completions")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<List<Map<String, Object>>> getFormCompletions(
             @PathVariable("period_id") String periodId,
             @RequestHeader(value = "X-Org-Id") String orgId,

@@ -1,9 +1,9 @@
-import React, { ReactElement } from 'react';
+import { ReactElement } from 'react';
 import {
     DocumentPdf24Regular,
     DocumentTable24Regular,
     DocumentText24Regular,
-    Slide24Regular,
+    SlideMultiple24Regular,
 } from '@fluentui/react-icons';
 
 export type FileType = 'pdf' | 'xlsx' | 'csv' | 'pptx' | 'unknown';
@@ -60,7 +60,7 @@ export function FileTypeIcon({ mimeType, size = 24 }: FileTypeIconProps): ReactE
         case 'csv':
             return <DocumentText24Regular {...iconProps} style={{ color: 'var(--chart-3)' }} />;
         case 'pptx':
-            return <Slide24Regular {...iconProps} style={{ color: 'var(--chart-4)' }} />;
+            return <SlideMultiple24Regular {...iconProps} style={{ color: 'var(--chart-4)' }} />;
         default:
             return <DocumentText24Regular {...iconProps} style={{ color: 'var(--colorNeutralForeground3)' }} />;
     }

@@ -1,4 +1,4 @@
-import type { ProcessingStatus, PaginationParams } from './common';
+import type { PaginationParams } from './common';
 
 /** Purpose of file upload */
 export enum UploadPurpose {
@@ -143,3 +143,5 @@ export interface FileContent {
     ocr_languages?: string[];
   };
 }
+
+export {};

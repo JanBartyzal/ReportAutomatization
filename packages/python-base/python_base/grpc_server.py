@@ -9,7 +9,7 @@ from typing import Any
 
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
-from opentelemetry.instrumentation.grpc import GrpcAioServerInterceptor
+from opentelemetry.instrumentation.grpc import aio_server_interceptor
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ class GrpcServer:
         setup_tracing(service_name=service_name)
 
         # Create the OpenTelemetry interceptor for distributed tracing
-        otel_interceptor = GrpcAioServerInterceptor()
+        otel_interceptor = aio_server_interceptor()
 
         self.server: grpc.aio.Server = grpc.aio.server(
             interceptors=[otel_interceptor],

@@ -6,7 +6,6 @@
 import apiClient from './axios';
 import type {
     PromotionCandidate,
-    CreatePromotionCandidateRequest,
     UpdatePromotionCandidateRequest,
     ApprovePromotionRequest,
     DismissPromotionRequest,

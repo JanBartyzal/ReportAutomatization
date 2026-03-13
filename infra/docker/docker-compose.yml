@@ -70,7 +70,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=auth_db
       - DB_USERNAME=auth_user
-      - DB_PASSWORD=auth_pass
+      - DB_PASSWORD=${DB_PASSWORD:-auth_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -102,7 +102,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=ms_ing
       - DB_USERNAME=ms_ing
-      - DB_PASSWORD=ms_ing_pass
+      - DB_PASSWORD=${DB_PASSWORD:-ms_ing_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -141,7 +141,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=orch_db
       - DB_USERNAME=orch_user
-      - DB_PASSWORD=orch_pass
+      - DB_PASSWORD=${DB_PASSWORD:-orch_pass}
       - GRPC_PORT=50051
       - HTTP_PORT=8080
       - DAPR_HOST=dapr
@@ -214,7 +214,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=ms_sink_tbl
       - DB_USERNAME=ms_sink_tbl
-      - DB_PASSWORD=ms_sink_tbl_pass
+      - DB_PASSWORD=${DB_PASSWORD:-ms_sink_tbl_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -246,7 +246,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=ms_sink_doc
       - DB_USERNAME=ms_sink_doc
-      - DB_PASSWORD=ms_sink_doc_pass
+      - DB_PASSWORD=${DB_PASSWORD:-ms_sink_doc_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -278,7 +278,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=ms_sink_log
       - DB_USERNAME=ms_sink_log
-      - DB_PASSWORD=ms_sink_log_pass
+      - DB_PASSWORD=${DB_PASSWORD:-ms_sink_log_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -345,7 +345,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=reportplatform
       - DB_USERNAME=ms_tmpl
-      - DB_PASSWORD=ms_tmpl_pass
+      - DB_PASSWORD=${DB_PASSWORD:-ms_tmpl_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -409,7 +409,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=admin_db
       - DB_USERNAME=admin_user
-      - DB_PASSWORD=admin_pass
+      - DB_PASSWORD=${DB_PASSWORD:-admin_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -439,7 +439,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=batch_db
       - DB_USERNAME=batch_user
-      - DB_PASSWORD=batch_pass
+      - DB_PASSWORD=${DB_PASSWORD:-batch_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -469,7 +469,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=reportplatform
       - DB_USERNAME=lifecycle_user
-      - DB_PASSWORD=lifecycle_pass
+      - DB_PASSWORD=${DB_PASSWORD:-lifecycle_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -501,7 +501,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=reportplatform
       - DB_USERNAME=period_user
-      - DB_PASSWORD=period_pass
+      - DB_PASSWORD=${DB_PASSWORD:-period_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -533,7 +533,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=reportplatform
       - DB_USERNAME=notif_user
-      - DB_PASSWORD=notif_pass
+      - DB_PASSWORD=${DB_PASSWORD:-notif_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -565,7 +565,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=reportplatform
       - DB_USERNAME=form_user
-      - DB_PASSWORD=form_pass
+      - DB_PASSWORD=${DB_PASSWORD:-form_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -597,7 +597,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=reportplatform
       - DB_USERNAME=ver_user
-      - DB_PASSWORD=ver_pass
+      - DB_PASSWORD=${DB_PASSWORD:-ver_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -629,7 +629,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=reportplatform
       - DB_USERNAME=audit_user
-      - DB_PASSWORD=audit_pass
+      - DB_PASSWORD=${DB_PASSWORD:-audit_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -661,7 +661,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=reportplatform
       - DB_USERNAME=srch_user
-      - DB_PASSWORD=srch_pass
+      - DB_PASSWORD=${DB_PASSWORD:-srch_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -693,7 +693,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=reportplatform
       - DB_USERNAME=tmpl_pptx_user
-      - DB_PASSWORD=tmpl_pptx_pass
+      - DB_PASSWORD=${DB_PASSWORD:-tmpl_pptx_pass}
       - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
       - AZURE_STORAGE_CONTAINER=templates
       - DAPR_HOST=dapr
@@ -961,7 +961,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=reportplatform
       - DB_USERNAME=snow_user
-      - DB_PASSWORD=snow_pass
+      - DB_PASSWORD=${DB_PASSWORD:-snow_pass}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_pass}
@@ -985,7 +985,7 @@ services:
     networks:
       - report-net
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/actuator/health"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8080/actuator/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -1021,7 +1021,7 @@ services:
     networks:
       - report-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -1062,7 +1062,7 @@ services:
     container_name: postgres
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=reportplatform
     volumes:
       - postgres_data:/var/lib/postgresql/data

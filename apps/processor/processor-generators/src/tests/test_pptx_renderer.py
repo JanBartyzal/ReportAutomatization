@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import io
 
-import pytest
 from pptx import Presentation
 from pptx.util import Inches
 
-from src.generators.pptx.service.pptx_renderer import RenderResult, render, TableInput, ChartInput
+from src.generators.pptx.service.pptx_renderer import RenderResult, render, ChartInput
 from src.generators.pptx.service.chart_generator import ChartSeriesData
 
 

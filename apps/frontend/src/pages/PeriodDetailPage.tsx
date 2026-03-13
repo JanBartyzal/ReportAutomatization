@@ -17,10 +17,11 @@ import {
     TableBody,
     TableCell,
     TableCellLayout,
+    Divider,
 } from '@fluentui/react-components';
 import {
     ArrowLeftRegular,
-    CalendarLtrRegular,
+    CalendarMonthRegular,
     DocumentPdfRegular,
     TableRegular,
 } from '@fluentui/react-icons';
@@ -62,6 +63,9 @@ const useStyles = makeStyles({
     label: {
         color: tokens.colorNeutralForeground4,
         marginBottom: tokens.spacingHorizontalXXS,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
     },
     progressSection: {
         marginTop: tokens.spacingHorizontalXL,
@@ -92,7 +96,7 @@ export const PeriodDetailPage: React.FC = () => {
     const { data: periodsData, isLoading: isPeriodLoading } = usePeriods();
     const { data: matrix, isLoading: isMatrixLoading } = useReportMatrix();
 
-    const period = periodsData?.data?.find(p => p.id === periodId);
+    const period = periodsData?.data?.find((p: any) => p.id === periodId);
 
     if (isPeriodLoading || isMatrixLoading) {
         return (
@@ -111,7 +115,6 @@ export const PeriodDetailPage: React.FC = () => {
         );
     }
 
-    // Filter matrix rows to only show status for THIS period
     const rows = matrix?.rows || [];
 
     return (
@@ -134,34 +137,43 @@ export const PeriodDetailPage: React.FC = () => {
             <Card className={styles.card}>
                 <div className={styles.infoGrid}>
                     <div>
-                        <div className={styles.label}>Duration</div>
-                        <Body1 strong>
-                            {new Date(period.start_date).toLocaleDateString()} - {new Date(period.end_date).toLocaleDateString()}
+                        <div className={styles.label}>
+                            <CalendarMonthRegular style={{ fontSize: 16 }} />
+                            Duration
+                        </div>
+                        <Body1 block>
+                            <strong>
+                                {new Date((period as any).start_date).toLocaleDateString()} - {new Date((period as any).submission_deadline).toLocaleDateString()}
+                            </strong>
                         </Body1>
                     </div>
                     <div>
                         <div className={styles.label}>Submission Deadline</div>
-                        <Body1 strong style={{ color: tokens.colorPaletteOrangeForeground1 }}>
-                            {new Date(period.submission_deadline).toLocaleDateString()}
+                        <Body1 block style={{ color: tokens.colorPaletteRedForeground1 }}>
+                            <strong>
+                                {new Date((period as any).submission_deadline).toLocaleDateString()}
+                            </strong>
                         </Body1>
                     </div>
                     <div>
                         <div className={styles.label}>Review Deadline</div>
-                        <Body1 strong>
-                            {new Date(period.review_deadline).toLocaleDateString()}
+                        <Body1 block>
+                            <strong>
+                                {new Date((period as any).review_deadline).toLocaleDateString()}
+                            </strong>
                         </Body1>
                     </div>
                     <div>
                         <div className={styles.label}>Overall Status</div>
-                        <Body1 strong>{period.status}</Body1>
+                        <Body1 block><strong>{(period as any).status}</strong></Body1>
                     </div>
                 </div>
 
-                <Divider />
+                <Divider style={{ margin: `${tokens.spacingHorizontalM} 0` }} />
 
                 <div className={styles.progressSection}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: tokens.spacingHorizontalXS }}>
-                        <Body1 strong>Submission Progress</Body1>
+                        <Body1 block><strong>Submission Progress</strong></Body1>
                         <Body1>65%</Body1>
                     </div>
                     <ProgressBar value={0.65} color="brand" />
@@ -185,7 +197,7 @@ export const PeriodDetailPage: React.FC = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {rows.map(row => {
+                        {rows.map((row: any) => {
                             const status = row.periods[period.id];
                             const style = status ? getStatusColors(status) : { bg: tokens.colorNeutralBackground3, text: tokens.colorNeutralForegroundDisabled };
                             
@@ -193,7 +205,7 @@ export const PeriodDetailPage: React.FC = () => {
                                 <TableRow key={row.org_id}>
                                     <TableCell>
                                         <TableCellLayout>
-                                            <Body1 strong>{row.org_name}</Body1>
+                                            <Body1 block><strong>{row.org_name}</strong></Body1>
                                             <Caption1 block>{row.org_id}</Caption1>
                                         </TableCellLayout>
                                     </TableCell>
@@ -228,7 +240,5 @@ export const PeriodDetailPage: React.FC = () => {
         </div>
     );
 };
-
-const Divider = () => <div style={{ height: '1px', backgroundColor: tokens.colorNeutralStroke2, margin: `${tokens.spacingHorizontalM} 0` }} />;
 
 export default PeriodDetailPage;

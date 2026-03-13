@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Title3,
@@ -6,7 +6,6 @@ import {
     Body1,
     Button,
     Field,
-    Input,
     Dropdown,
     Option,
     Spinner,
@@ -18,24 +17,18 @@ import {
     TableBody,
     TableCell,
     Divider,
+    MessageBar,
 } from '@fluentui/react-components';
 import {
-    UploadRegular,
+    ArrowUpload24Regular,
     ArrowLeftRegular,
     CheckmarkCircleRegular,
     WarningRegular,
     ErrorCircleRegular,
 } from '@fluentui/react-icons';
-import { useImportExcel, useForm } from '../../hooks/useForms';
-import { exportExcelTemplate } from '../../api/forms';
-import LoadingSpinner from '../LoadingSpinner';
-
-interface MappingSuggestion {
-    excelColumn: string;
-    formField: string | null;
-    confidence: number;
-    suggestions: string[];
-}
+import { useImportExcel, useForm } from '../hooks/useForms';
+import { exportExcelTemplate } from '../api/forms';
+import templatesApi, { MappingSuggestion } from '../api/templates';
 
 export const ExcelImportPage: React.FC = () => {
     const { formId } = useParams<{ formId: string }>();
@@ -45,9 +38,37 @@ export const ExcelImportPage: React.FC = () => {
     const importExcel = useImportExcel(formId!);
     const { data: form } = useForm(formId!);
 
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    // Use the schema mapping hook
+    const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
     const [mappings, setMappings] = useState<MappingSuggestion[]>([]);
     const [step, setStep] = useState<'upload' | 'mapping' | 'preview'>('upload');
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Fetch mapping suggestions from API when file is selected
+    const fetchSuggestions = useCallback(async (fileId: string, fId: string) => {
+        setIsLoadingSuggestions(true);
+        setError(null);
+        try {
+            const suggestions = await templatesApi.getMappingSuggestions(fileId, fId);
+            setMappings(suggestions);
+            setStep('mapping');
+        } catch (err) {
+            console.error('Failed to fetch mapping suggestions:', err);
+            setError('Failed to get mapping suggestions. Please try again.');
+            // Fall back to mock data if API fails
+            const mockMappings: MappingSuggestion[] = [
+                { excelColumn: 'headcount', formField: 'headcount', confidence: 0.95, suggestions: ['headcount', 'total_headcount'] },
+                { excelColumn: 'salaries_total', formField: 'salaries_total', confidence: 0.92, suggestions: ['salaries_total', 'total_salaries'] },
+                { excelColumn: 'budget_category', formField: 'budget_category', confidence: 0.88, suggestions: ['budget_category', 'category'] },
+                { excelColumn: 'unknown_column', formField: null, confidence: 0, suggestions: [] },
+            ];
+            setMappings(mockMappings);
+            setStep('mapping');
+        } finally {
+            setIsLoadingSuggestions(false);
+        }
+    }, []);
 
     const handleDownloadTemplate = async () => {
         try {
@@ -65,18 +86,11 @@ export const ExcelImportPage: React.FC = () => {
     };
 
     const handleFileSelect = async () => {
-        if (!selectedFile) return;
-
-        // This would call the API to get mapping suggestions
-        // For now, we'll simulate with mock data
-        const mockMappings: MappingSuggestion[] = [
-            { excelColumn: 'headcount', formField: 'headcount', confidence: 0.95, suggestions: ['headcount', 'total_headcount'] },
-            { excelColumn: 'salaries_total', formField: 'salaries_total', confidence: 0.92, suggestions: ['salaries_total', 'total_salaries'] },
-            { excelColumn: 'budget_category', formField: 'budget_category', confidence: 0.88, suggestions: ['budget_category', 'category'] },
-            { excelColumn: 'unknown_column', formField: null, confidence: 0, suggestions: [] },
-        ];
-        setMappings(mockMappings);
-        setStep('mapping');
+        // In a real implementation, this would upload the file first
+        // For now, we'll simulate with a mock file ID
+        const mockFileId = `file_${Date.now()}`;
+        setSelectedFileId(mockFileId);
+        await fetchSuggestions(mockFileId, formId!);
     };
 
     const handleMappingChange = (excelColumn: string, formField: string | null) => {
@@ -89,6 +103,22 @@ export const ExcelImportPage: React.FC = () => {
         setStep('preview');
     };
 
+    const handleApplyMapping = async () => {
+        if (!selectedFileId || !formId) return;
+
+        try {
+            await templatesApi.applyMapping({
+                fileId: selectedFileId,
+                formId: formId,
+                mappings: mappings,
+            });
+            navigate(`/forms/${formId}`);
+        } catch (err) {
+            console.error('Failed to apply mapping:', err);
+            setError('Failed to apply mapping. Please try again.');
+        }
+    };
+
     const getConfidenceBadge = (confidence: number) => {
         if (confidence >= 0.8) {
             return <Badge appearance="filled" color="success"><CheckmarkCircleRegular /> High</Badge>;
@@ -97,6 +127,14 @@ export const ExcelImportPage: React.FC = () => {
         }
         return <Badge appearance="filled" color="danger"><ErrorCircleRegular /> Low</Badge>;
     };
+
+    // Get unique form field options
+    const formFieldOptions = [
+        'headcount', 'salaries_total', 'personnel_other', 'it_hardware', 'it_software',
+        'it_cloud', 'it_support', 'office_rent', 'office_utilities', 'office_supplies',
+        'office_insurance', 'travel_domestic', 'travel_international', 'travel_entertainment',
+        'budget_total', 'budget_category', 'budget_notes'
+    ];
 
     return (
         <div style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto' }}>
@@ -116,6 +154,13 @@ export const ExcelImportPage: React.FC = () => {
                 Upload an Excel file and map columns to form fields
             </Subtitle2>
 
+            {/* Error message */}
+            {error && (
+                <MessageBar intent="error" style={{ marginBottom: '16px' }}>
+                    {error}
+                </MessageBar>
+            )}
+
             {/* Step 1: Upload */}
             {step === 'upload' && (
                 <div>
@@ -130,20 +175,22 @@ export const ExcelImportPage: React.FC = () => {
                             style={{ display: 'none' }}
                             onChange={(e) => {
                                 const file = (e.target as HTMLInputElement).files?.[0];
-                                if (file) setSelectedFile(file);
+                                if (file) {
+                                    // Trigger file selection
+                                    handleFileSelect();
+                                }
                             }}
                         />
                         <Button
                             appearance="secondary"
-                            icon={<UploadRegular />}
+                            icon={<ArrowUpload24Regular />}
                             onClick={() => fileInputRef.current?.click()}
+                            disabled={isLoadingSuggestions}
                         >
-                            {selectedFile ? selectedFile.name : 'Choose File'}
+                            {isLoadingSuggestions ? 'Loading...' : 'Choose File'}
                         </Button>
-                        {selectedFile && (
-                            <Body1 style={{ marginTop: '8px' }}>
-                                Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-                            </Body1>
+                        {isLoadingSuggestions && (
+                            <Spinner size="tiny" style={{ marginLeft: '8px' }} />
                         )}
                     </Field>
 
@@ -152,7 +199,7 @@ export const ExcelImportPage: React.FC = () => {
                     <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
                         <Button
                             appearance="primary"
-                            disabled={!selectedFile || importExcel.isPending}
+                            disabled={importExcel.isPending}
                             onClick={handleFileSelect}
                         >
                             {importExcel.isPending ? <Spinner size="tiny" /> : 'Continue'}
@@ -174,60 +221,56 @@ export const ExcelImportPage: React.FC = () => {
                         Review the column mappings below. Fields with low confidence may need manual adjustment.
                     </Body1>
 
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHeaderCell>Excel Column</TableHeaderCell>
-                                <TableHeaderCell>Confidence</TableHeaderCell>
-                                <TableHeaderCell>Map to Form Field</TableHeaderCell>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {mappings.map((mapping) => (
-                                <TableRow key={mapping.excelColumn}>
-                                    <TableCell>{mapping.excelColumn}</TableCell>
-                                    <TableCell>{getConfidenceBadge(mapping.confidence)}</TableCell>
-                                    <TableCell>
-                                        <Dropdown
-                                            placeholder="Select form field..."
-                                            value={mapping.formField || ''}
-                                            onOptionSelect={(_, data) => handleMappingChange(mapping.excelColumn, data.optionValue as string)}
-                                        >
-                                            <Option value="">-- Unmapped --</Option>
-                                            <Option value="headcount">headcount - Total Headcount</Option>
-                                            <Option value="salaries_total">salaries_total - Total Salaries</Option>
-                                            <Option value="personnel_other">personnel_other - Other Personnel Costs</Option>
-                                            <Option value="it_hardware">it_hardware - Hardware</Option>
-                                            <Option value="it_software">it_software - Software</Option>
-                                            <Option value="it_cloud">it_cloud - Cloud Services</Option>
-                                            <Option value="it_support">it_support - IT Support</Option>
-                                            <Option value="office_rent">office_rent - Rent</Option>
-                                            <Option value="office_utilities">office_utilities - Utilities</Option>
-                                            <Option value="office_supplies">office_supplies - Supplies</Option>
-                                            <Option value="office_insurance">office_insurance - Insurance</Option>
-                                            <Option value="travel_domestic">travel_domestic - Domestic Travel</Option>
-                                            <Option value="travel_international">travel_international - International Travel</Option>
-                                            <Option value="travel_entertainment">travel_entertainment - Entertainment</Option>
-                                            <Option value="budget_total">budget_total - Total Budget</Option>
-                                            <Option value="budget_category">budget_category - Category</Option>
-                                            <Option value="budget_notes">budget_notes - Notes</Option>
-                                        </Dropdown>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                    {isLoadingSuggestions ? (
+                        <div style={{ textAlign: 'center', padding: '48px' }}>
+                            <Spinner label="Loading mapping suggestions..." />
+                        </div>
+                    ) : (
+                        <>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHeaderCell>Excel Column</TableHeaderCell>
+                                        <TableHeaderCell>Confidence</TableHeaderCell>
+                                        <TableHeaderCell>Map to Form Field</TableHeaderCell>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {mappings.map((mapping) => (
+                                        <TableRow key={mapping.excelColumn}>
+                                            <TableCell>{mapping.excelColumn}</TableCell>
+                                            <TableCell>{getConfidenceBadge(mapping.confidence)}</TableCell>
+                                            <TableCell>
+                                                <Dropdown
+                                                    placeholder="Select form field..."
+                                                    value={mapping.formField || ''}
+                                                    onOptionSelect={(_, data) => handleMappingChange(mapping.excelColumn, data.optionValue as string)}
+                                                >
+                                                    <Option value="">-- Unmapped --</Option>
+                                                    {formFieldOptions.map(field => (
+                                                        <Option key={field} value={field}>
+                                                            {field}
+                                                        </Option>
+                                                    ))}
+                                                </Dropdown>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
 
-                    <Divider style={{ margin: '24px 0' }} />
+                            <Divider style={{ margin: '24px 0' }} />
 
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                        <Button appearance="secondary" onClick={() => setStep('upload')}>
-                            Back
-                        </Button>
-                        <Button appearance="primary" onClick={handleConfirmMapping}>
-                            Confirm Mapping & Preview
-                        </Button>
-                    </div>
+                            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                                <Button appearance="secondary" onClick={() => setStep('upload')}>
+                                    Back
+                                </Button>
+                                <Button appearance="primary" onClick={handleConfirmMapping}>
+                                    Confirm Mapping & Preview
+                                </Button>
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
 
@@ -245,7 +288,20 @@ export const ExcelImportPage: React.FC = () => {
                         marginBottom: '24px'
                     }}>
                         <Title3>Imported Data Preview</Title3>
-                        <Body1>5 rows imported from {selectedFile?.name}</Body1>
+                        <Body1>
+                            {mappings.filter(m => m.formField).length} columns will be mapped to form fields
+                        </Body1>
+                    </div>
+
+                    <div style={{ marginBottom: '16px' }}>
+                        <Subtitle2>Mapping Summary</Subtitle2>
+                        <ul>
+                            {mappings.filter(m => m.formField).map(m => (
+                                <li key={m.excelColumn}>
+                                    {m.excelColumn} → {m.formField}
+                                </li>
+                            ))}
+                        </ul>
                     </div>
 
                     <Divider style={{ margin: '24px 0' }} />
@@ -256,9 +312,10 @@ export const ExcelImportPage: React.FC = () => {
                         </Button>
                         <Button
                             appearance="primary"
-                            onClick={() => navigate(`/forms/${formId}`)}
+                            onClick={handleApplyMapping}
+                            disabled={importExcel.isPending}
                         >
-                            Import & View Form
+                            {importExcel.isPending ? 'Importing...' : 'Import & View Form'}
                         </Button>
                     </div>
                 </div>

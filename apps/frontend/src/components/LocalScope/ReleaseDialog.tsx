@@ -13,11 +13,11 @@ import {
     DialogActions,
     DialogContent,
     Button,
+    Spinner,
     makeStyles,
     tokens,
     Subtitle1,
     Body1,
-    InfoLabel,
 } from '@fluentui/react-components';
 import { ArrowUpload24Regular } from '@fluentui/react-icons';
 import { reportBrand } from '../../theme/brandTokens';
@@ -38,7 +38,7 @@ interface ReleaseDialogProps {
     trigger?: React.ReactElement;
 }
 
-export const ReleaseDialog: React.FC<ReleaseDialogProps> = ({ dataId, dataName, period, trigger }) => {
+export const ReleaseDialog: React.FC<ReleaseDialogProps> = ({ dataName, period, trigger }) => {
     const styles = useStyles();
     const [isOpen, setIsOpen] = useState(false);
     const [isReleasing, setIsReleasing] = useState(false);
@@ -88,7 +88,7 @@ export const ReleaseDialog: React.FC<ReleaseDialogProps> = ({ dataId, dataName, 
                             appearance="primary" 
                             style={{ backgroundColor: reportBrand[90] }}
                             onClick={handleRelease}
-                            loading={isReleasing}
+                            icon={isReleasing ? <Spinner size="tiny" /> : undefined}
                             disabled={isReleasing}
                         >
                             {isReleasing ? 'Releasing...' : 'Release to Holding'}

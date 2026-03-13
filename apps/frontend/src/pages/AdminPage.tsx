@@ -1,37 +1,55 @@
-import { useState } from 'react';
+/**
+ * AdminPage — migrated per P9-W2-004
+ * Removed AdminPanel.css dependency; replaced CSS class names with makeStyles.
+ * Tab content wrapped in ContentCard.
+ */
+import React, { useState } from 'react';
 import {
-    Card,
     Tab,
     TabList,
-    Body1,
-    Subtitle1,
-    Divider
+    Divider,
+    makeStyles,
+    tokens,
 } from '@fluentui/react-components';
+import { ContentCard } from '../components/Layout/ContentCard';
+import { PageHeader } from '../components/shared/PageHeader';
 import OrganizationsPanel from '../components/Admin/OrganizationsPanel';
 import UsersPanel from '../components/Admin/UsersPanel';
 import ApiKeysPanel from '../components/Admin/ApiKeysPanel';
 import FailedJobsPanel from '../components/Admin/FailedJobsPanel';
 import BatchesPanel from '../components/Admin/BatchesPanel';
-import '../components/Admin/AdminPanel.css';
 
 type AdminTab = 'organizations' | 'users' | 'apikeys' | 'failedjobs' | 'batches';
 
+const useStyles = makeStyles({
+    container: {
+        padding: tokens.spacingHorizontalL,
+    },
+    tabs: {
+        marginBottom: tokens.spacingHorizontalL,
+    },
+    divider: {
+        marginBottom: tokens.spacingHorizontalL,
+    },
+});
+
 const AdminPage: React.FC = () => {
+    const styles = useStyles();
     const [selectedTab, setSelectedTab] = useState<AdminTab>('organizations');
 
     return (
-        <div className="admin-page">
-            <div className="admin-header">
-                <Subtitle1>Administration</Subtitle1>
-                <Body1>Manage organizations, users, roles, and system configuration</Body1>
-            </div>
+        <div className={styles.container}>
+            <PageHeader
+                title="Administration"
+                subtitle="Manage organizations, users, roles, and system configuration"
+            />
 
-            <Divider className="admin-divider" />
+            <Divider className={styles.divider} />
 
             <TabList
                 selectedValue={selectedTab}
                 onTabSelect={(_, data) => setSelectedTab(data.value as AdminTab)}
-                className="admin-tabs"
+                className={styles.tabs}
             >
                 <Tab value="organizations">Organizations</Tab>
                 <Tab value="users">Users</Tab>
@@ -40,13 +58,13 @@ const AdminPage: React.FC = () => {
                 <Tab value="batches">Batches</Tab>
             </TabList>
 
-            <Card className="admin-content">
+            <ContentCard>
                 {selectedTab === 'organizations' && <OrganizationsPanel />}
                 {selectedTab === 'users' && <UsersPanel />}
                 {selectedTab === 'apikeys' && <ApiKeysPanel />}
                 {selectedTab === 'failedjobs' && <FailedJobsPanel />}
                 {selectedTab === 'batches' && <BatchesPanel />}
-            </Card>
+            </ContentCard>
         </div>
     );
 };

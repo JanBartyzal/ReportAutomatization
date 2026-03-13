@@ -1,20 +1,29 @@
-# Dapr Pub/Sub Topic Registry
+# Dapr PubSub Topics
 
-## Platform Topics
-
-| Topic | Publisher | Subscriber(s) | Event Proto | Description |
-|-------|-----------|---------------|-------------|-------------|
-| `file-uploaded` | ms-ing | ms-orch | `orchestrator.v1.FileUploadedEvent` | Triggered after file is uploaded and scanned |
-| `processing-completed` | ms-orch | ms-notif | `orchestrator.v1.ProcessingCompletedEvent` | Triggered when file processing workflow completes |
-| `report.status_changed` | ms-lifecycle | ms-orch, ms-notif | `lifecycle.v1.ReportStatusChangedEvent` | Triggered on every report status transition |
-| `report.data_locked` | ms-lifecycle | ms-sink-tbl | `lifecycle.v1.ReportDataLockedEvent` | Triggered when report is approved (data becomes read-only) |
-| `notify` | ms-orch | ms-notif | `notification.v1.NotificationEvent` | Generic notification dispatch |
-
-## Dead Letter Topics
-
-Failed messages are automatically sent to `{topic}-deadletter` by the Dapr runtime.
+| Topic | Publisher | Subscriber(s) | Purpose |
+|-------|-----------|---------------|---------|
+| file-uploaded | engine-ingestor | ms-orch | Trigger file processing workflow |
+| processing-completed | ms-orch | engine-reporting/notif | Notify on workflow completion |
+| report.status_changed | engine-reporting/lifecycle | ms-orch, engine-reporting/notif | Report state transition |
+| report.data_locked | engine-reporting/lifecycle | engine-data/sink-tbl | Lock data after approval |
+| report.local_released | engine-reporting/lifecycle | engine-reporting/notif | Local scope data released |
+| notify | ms-orch, engine-reporting/period | engine-reporting/notif | Generic notification trigger |
+| version.created | engine-core/versioning | engine-reporting/notif | New version created |
+| version.edit_on_locked | engine-core/versioning | engine-reporting/lifecycle | Edit attempt on locked entity |
+| data-stored | engine-data/sink-tbl | engine-data/query | Cache invalidation on new data |
+| form.response.submitted | engine-reporting/form | engine-reporting/notif | Form response submitted |
+| pptx.generation_requested | ms-orch | ms-orch | Trigger PPTX generation workflow |
+| pptx.generation_completed | ms-orch | engine-reporting/notif | PPTX generation done |
+| snow.sync.completed | engine-integrations | engine-reporting/notif | ServiceNow sync done |
+| snow.sync.failed | engine-integrations | engine-reporting/notif | ServiceNow sync failed |
+| promotion.candidate.detected | engine-core/admin | engine-reporting/notif | Smart persistence candidate |
+| document-embedding | engine-data/sink-doc | (async processor) | Trigger embedding generation |
 
 ## Naming Conventions
 
 - Use kebab-case for simple topics: `file-uploaded`
 - Use dot-notation for domain-scoped topics: `report.status_changed`
+
+## Dead Letter Topics
+
+Failed messages are automatically sent to `{topic}-deadletter` by the Dapr runtime.

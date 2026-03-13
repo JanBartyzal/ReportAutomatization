@@ -6,7 +6,6 @@ Used by the search_documents tool for semantic search via pgVector.
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 import httpx
 

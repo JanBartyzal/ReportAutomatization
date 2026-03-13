@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,22 +43,26 @@ public class AdminController {
     // ==================== Organizations ====================
 
     @GetMapping("/organizations")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<List<OrganizationDTO>> listOrganizations() {
         return ResponseEntity.ok(organizationService.getAllOrganizations());
     }
 
     @GetMapping("/organizations/{orgId}")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<OrganizationDTO> getOrganization(@PathVariable UUID orgId) {
         return ResponseEntity.ok(organizationService.getOrganization(orgId));
     }
 
     @PostMapping("/organizations")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<OrganizationDTO> createOrganization(@RequestBody CreateOrganizationRequest request) {
         OrganizationDTO created = organizationService.createOrganization(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/organizations/{orgId}")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<OrganizationDTO> updateOrganization(
             @PathVariable UUID orgId,
             @RequestBody CreateOrganizationRequest request) {
@@ -65,6 +70,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/organizations/{orgId}")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Void> deleteOrganization(@PathVariable UUID orgId) {
         organizationService.deleteOrganization(orgId);
         return ResponseEntity.noContent().build();
@@ -73,11 +79,13 @@ public class AdminController {
     // ==================== API Keys ====================
 
     @GetMapping("/api-keys")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<List<ApiKeyDTO>> listApiKeys() {
         return ResponseEntity.ok(apiKeyService.getAllApiKeys());
     }
 
     @PostMapping("/api-keys")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<ApiKeyCreatedResponse> createApiKey(@RequestBody CreateApiKeyRequest request) {
         // Get user from security context (would come from JWT)
         String createdBy = "system";
@@ -86,6 +94,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/api-keys/{keyId}")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Void> revokeApiKey(@PathVariable UUID keyId) {
         apiKeyService.revokeApiKey(keyId);
         return ResponseEntity.noContent().build();
@@ -94,6 +103,7 @@ public class AdminController {
     // ==================== Failed Jobs ====================
 
     @GetMapping("/failed-jobs")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<PaginatedResponse<FailedJobDTO>> listFailedJobs(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize,
@@ -102,6 +112,7 @@ public class AdminController {
     }
 
     @PostMapping("/failed-jobs/{jobId}/reprocess")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, String>> reprocessFailedJob(@PathVariable UUID jobId) {
         failedJobService.reprocessFailedJob(jobId);
         return ResponseEntity.accepted().body(Map.of(
@@ -112,6 +123,7 @@ public class AdminController {
     // ==================== Role Management ====================
 
     @PostMapping("/roles/assign")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<RoleAssignmentResponse> assignRole(
             @Valid @RequestBody RoleAssignmentRequest request,
             @RequestHeader("X-User-Id") String userId,
@@ -124,6 +136,7 @@ public class AdminController {
     }
 
     @PostMapping("/roles/revoke")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Void> revokeRole(
             @Valid @RequestBody RoleAssignmentRequest request,
             @RequestHeader("X-User-Id") String userId,
@@ -136,6 +149,7 @@ public class AdminController {
     }
 
     @GetMapping("/roles/org/{orgId}")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<List<Map<String, Object>>> listRolesForOrg(@PathVariable UUID orgId) {
         return ResponseEntity.ok(roleManagementService.listRolesForOrg(orgId));
     }
@@ -155,6 +169,7 @@ public class AdminController {
     // ==================== Health ====================
 
     @GetMapping("/health")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of("status", "UP"));
     }

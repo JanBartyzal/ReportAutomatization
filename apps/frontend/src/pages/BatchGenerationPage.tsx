@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Page,
+    Title2,
     Title3,
-    Title4,
-    Subtitle2,
     Body1,
     Body2,
     Caption1,
     Spinner,
-} from '@fluentui/react-components';
-import {
+    makeStyles,
+    tokens,
     DataGrid,
     DataGridHeader,
     DataGridRow,
@@ -19,27 +17,23 @@ import {
     TableCellLayout,
     TableColumnDefinition,
     createTableColumn,
-} from '@fluentui/react-components/unstable';
+} from '@fluentui/react-components';
 import {
     Button,
     Card,
     CardHeader,
-    CardPreview,
     Divider,
     Dropdown,
-    DropdownProps,
     Option,
     Tooltip,
 } from '@fluentui/react-components';
 import {
     DocumentPdf24Regular,
     ArrowDownload24Regular,
-    ArrowSync24Regular,
     CheckmarkCircle24Regular,
-    DismissCircle24Regular,
     Calendar24Regular,
 } from '@fluentui/react-icons';
-import { useNavigate } from 'react-router-dom';
+// ...
 import { useTemplates } from '../hooks/useTemplates';
 import {
     useGenerateBatch,
@@ -47,8 +41,67 @@ import {
     useApprovedReports
 } from '../hooks/useGeneration';
 import { GenerationProgress } from '../components/Generation/GenerationProgress';
-import { StatusBadge, ReportStatusBadge } from '../components/Generation/StatusBadge';
+import { ReportStatusBadge } from '../components/Generation/StatusBadge';
 import { reportBrand } from '../theme/brandTokens';
+
+const useStyles = makeStyles({
+    header: {
+        marginBottom: '24px',
+    },
+    headerSubtitle: {
+        color: tokens.colorNeutralForeground3,
+        marginTop: '4px',
+    },
+    periodCard: {
+        marginBottom: '24px',
+    },
+    periodBody: {
+        padding: '16px',
+    },
+    progressCard: {
+        marginBottom: '24px',
+        borderLeft: `4px solid ${reportBrand[90]}`,
+    },
+    progressBody: {
+        padding: '16px',
+    },
+    completedCard: {
+        marginBottom: '24px',
+        borderLeft: `4px solid ${tokens.colorStatusSuccessBorderActive}`,
+    },
+    completedHeader: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+    },
+    completedIcon: {
+        color: tokens.colorStatusSuccessForeground1,
+    },
+    completedActions: {
+        marginTop: '16px',
+        display: 'flex',
+        gap: '8px',
+    },
+    tableHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    spinnerContainer: {
+        padding: '40px',
+        textAlign: 'center',
+    },
+    emptyContainer: {
+        padding: '40px',
+        textAlign: 'center',
+    },
+    emptyText: {
+        color: tokens.colorNeutralForeground3,
+    },
+    mutedCaption: {
+        color: tokens.colorNeutralForeground3,
+    },
+});
 
 interface Report {
     id: string;
@@ -68,26 +121,21 @@ interface BatchJob {
 }
 
 export const BatchGenerationPage: React.FC = () => {
-    const navigate = useNavigate();
+    const styles = useStyles();
     const [selectedPeriod, setSelectedPeriod] = useState<string>('');
     const [batchJob, setBatchJob] = useState<BatchJob | null>(null);
     const [selectedReports, setSelectedReports] = useState<string[]>([]);
-    const [downloadAllUrl, setDownloadAllUrl] = useState<string | null>(null);
 
-    const { data: templates, isLoading: templatesLoading } = useTemplates();
+    const { data: templates } = useTemplates();
     const { data: approvedReports, isLoading: reportsLoading } = useApprovedReports(selectedPeriod);
     const generateBatchMutation = useGenerateBatch();
 
     // Poll for batch job status
-    const {
-        current,
-        total,
-        status,
-        downloadUrls
-    } = useBatchGenerationPolling(
+    const pollingResult = useBatchGenerationPolling(
         batchJob?.jobId || '',
         !!batchJob
-    );
+    ) as any;
+    const { current, total, status, downloadUrls } = pollingResult;
 
     // Update batch job status from polling
     useEffect(() => {
@@ -115,7 +163,6 @@ export const BatchGenerationPage: React.FC = () => {
     const columns: TableColumnDefinition<Report>[] = [
         createTableColumn<Report>({
             columnId: 'select',
-            width: 40,
             renderCell: (item) => (
                 <input
                     type="checkbox"
@@ -155,7 +202,6 @@ export const BatchGenerationPage: React.FC = () => {
         }),
         createTableColumn<Report>({
             columnId: 'period',
-            width: 120,
             renderHeaderCell: () => 'Period',
             renderCell: (item) => (
                 <TableCellLayout>
@@ -165,7 +211,6 @@ export const BatchGenerationPage: React.FC = () => {
         }),
         createTableColumn<Report>({
             columnId: 'status',
-            width: 100,
             renderHeaderCell: () => 'Status',
             renderCell: (item) => (
                 <TableCellLayout>
@@ -175,21 +220,19 @@ export const BatchGenerationPage: React.FC = () => {
         }),
         createTableColumn<Report>({
             columnId: 'generated',
-            width: 140,
             renderHeaderCell: () => 'Generated',
             renderCell: (item) => (
                 <TableCellLayout>
                     {item.generatedAt ? (
                         <Caption1>{new Date(item.generatedAt).toLocaleDateString()}</Caption1>
                     ) : (
-                        <Caption1 style={{ color: '#666' }}>Not generated</Caption1>
+                        <Caption1 className={styles.mutedCaption}>Not generated</Caption1>
                     )}
                 </TableCellLayout>
             ),
         }),
         createTableColumn<Report>({
             columnId: 'actions',
-            width: 120,
             renderHeaderCell: () => 'Actions',
             renderCell: (item) => (
                 <TableCellLayout>
@@ -224,16 +267,22 @@ export const BatchGenerationPage: React.FC = () => {
         try {
             const response = await generateBatchMutation.mutateAsync({
                 reportIds: selectedReports,
-                templateId: templates?.[0]?.id, // Use first template or let backend decide
+                templateId: templates?.[0]?.id, 
             });
 
-            setBatchJob({
-                jobId: response.jobId,
-                total: selectedReports.length,
-                completed: 0,
-                failed: 0,
-                status: 'PROCESSING',
-            });
+            // The API returns results with individual jobIds. 
+            // For batch polling, we use the first one or a combined ID if available.
+            const jobId = (response as any).jobId || (response.results?.[0]?.jobId);
+            
+            if (jobId) {
+                setBatchJob({
+                    jobId: jobId,
+                    total: selectedReports.length,
+                    completed: 0,
+                    failed: 0,
+                    status: 'PROCESSING',
+                });
+            }
         } catch (error) {
             console.error('Failed to start batch generation:', error);
         }
@@ -244,26 +293,26 @@ export const BatchGenerationPage: React.FC = () => {
         // In a real implementation, this would trigger a ZIP download
         if (downloadUrls) {
             Object.entries(downloadUrls).forEach(([, url]) => {
-                if (url) window.open(url, '_blank');
+                if (url) window.open(url as string, '_blank');
             });
         }
     };
 
     return (
-        <Page style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '24px' }}>
+        <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+            <div className={styles.header}>
                 <Title3>Batch Report Generation</Title3>
-                <Body2 style={{ color: '#666', marginTop: '4px' }}>
+                <Body2 className={styles.headerSubtitle}>
                     Generate PowerPoint reports for multiple approved reports at once.
                 </Body2>
             </div>
 
             {/* Period Selection */}
-            <Card style={{ marginBottom: '24px' }}>
+            <Card className={styles.periodCard}>
                 <CardHeader
-                    header={<Title4>Select Period</Title4>}
+                    header={<Title2>Select Period</Title2>}
                 />
-                <div style={{ padding: '16px' }}>
+                <div className={styles.periodBody}>
                     <Dropdown
                         placeholder="Select a period"
                         style={{ minWidth: '300px' }}
@@ -287,11 +336,11 @@ export const BatchGenerationPage: React.FC = () => {
 
             {/* Progress Card (when generating) */}
             {batchJob && batchJob.status !== 'COMPLETED' && batchJob.status !== 'FAILED' && (
-                <Card style={{ marginBottom: '24px', borderLeft: `4px solid ${reportBrand[90]}` }}>
+                <Card className={styles.progressCard}>
                     <CardHeader
-                        header={<Title4>Generating Reports</Title4>}
+                        header={<Title2>Generating Reports</Title2>}
                     />
-                    <div style={{ padding: '16px' }}>
+                    <div className={styles.progressBody}>
                         <GenerationProgress
                             status={batchJob.status}
                             current={current}
@@ -303,23 +352,22 @@ export const BatchGenerationPage: React.FC = () => {
 
             {/* Completed Card */}
             {batchJob && batchJob.status === 'COMPLETED' && (
-                <Card style={{ marginBottom: '24px', borderLeft: '4px solid #107C10' }}>
+                <Card className={styles.completedCard}>
                     <CardHeader
                         header={
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <CheckmarkCircle24Regular style={{ color: '#107C10' }} />
-                                <Title4>Generation Complete</Title4>
+                            <div className={styles.completedHeader}>
+                                <CheckmarkCircle24Regular className={styles.completedIcon} />
+                                <Title2>Generation Complete</Title2>
                             </div>
                         }
                     />
-                    <div style={{ padding: '16px' }}>
+                    <div className={styles.periodBody}>
                         <Body1>Successfully generated {total} reports.</Body1>
-                        <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                        <div className={styles.completedActions}>
                             <Button
                                 appearance="primary"
                                 icon={<ArrowDownload24Regular />}
                                 onClick={handleDownloadAll}
-                                style={{ backgroundColor: reportBrand[90] }}
                             >
                                 Download All
                             </Button>
@@ -339,14 +387,13 @@ export const BatchGenerationPage: React.FC = () => {
                 <Card>
                     <CardHeader
                         header={
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Title4>Approved Reports ({approvedReports?.length || 0})</Title4>
+                            <div className={styles.tableHeader}>
+                                <Title2>Approved Reports ({approvedReports?.length || 0})</Title2>
                                 <Button
                                     appearance="primary"
                                     icon={<DocumentPdf24Regular />}
                                     disabled={selectedReports.length === 0 || !!batchJob}
                                     onClick={handleGenerateBatch}
-                                    style={{ backgroundColor: reportBrand[90] }}
                                 >
                                     Generate Selected ({selectedReports.length})
                                 </Button>
@@ -355,7 +402,7 @@ export const BatchGenerationPage: React.FC = () => {
                     />
                     <Divider />
                     {reportsLoading ? (
-                        <div style={{ padding: '40px', textAlign: 'center' }}>
+                        <div className={styles.spinnerContainer}>
                             <Spinner label="Loading reports..." />
                         </div>
                     ) : approvedReports && approvedReports.length > 0 ? (
@@ -384,15 +431,15 @@ export const BatchGenerationPage: React.FC = () => {
                             </DataGridBody>
                         </DataGrid>
                     ) : (
-                        <div style={{ padding: '40px', textAlign: 'center' }}>
-                            <Body1 style={{ color: '#666' }}>
+                        <div className={styles.emptyContainer}>
+                            <Body1 className={styles.emptyText}>
                                 No approved reports found for the selected period.
                             </Body1>
                         </div>
                     )}
                 </Card>
             )}
-        </Page>
+        </div>
     );
 };
 

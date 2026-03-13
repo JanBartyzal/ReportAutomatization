@@ -6,7 +6,7 @@
  *
  * Part of P5-W4-001: Frontend Error Tracking & Analytics
  */
-import { Component, ReactNode, ErrorInfo } from 'react';
+import React, { Component, ReactNode, ErrorInfo } from 'react';
 import {
     Card,
     Title3,
@@ -17,7 +17,7 @@ import {
 } from '@fluentui/react-components';
 import { Warning24Regular, ArrowReset24Regular, Home24Regular } from '@fluentui/react-icons';
 import { reportError, getTraceId } from '../../telemetry/otel';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 
 const useStyles = makeStyles({
     container: {
@@ -52,14 +52,14 @@ const useStyles = makeStyles({
         borderRadius: tokens.borderRadiusMedium,
         marginBottom: tokens.spacingVerticalL,
         fontFamily: 'monospace',
-        fontSize: tokens.fontSizeSmall,
+        fontSize: tokens.fontSizeBase100,
         overflow: 'auto',
         maxHeight: '200px',
     },
     traceId: {
         marginTop: tokens.spacingVerticalS,
         color: tokens.colorNeutralForeground3,
-        fontSize: tokens.fontSizeSmall,
+        fontSize: tokens.fontSizeBase100,
     },
     actions: {
         display: 'flex',
@@ -152,7 +152,7 @@ function ErrorFallback({
     traceId: string;
     onReset: () => void;
     onGoHome: () => void;
-}): JSX.Element {
+}): React.ReactNode {
     const styles = useStyles();
 
     return (

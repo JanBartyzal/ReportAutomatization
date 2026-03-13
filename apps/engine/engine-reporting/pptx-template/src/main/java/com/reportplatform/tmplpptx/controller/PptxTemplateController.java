@@ -4,6 +4,7 @@ import com.reportplatform.tmplpptx.dto.*;
 import com.reportplatform.tmplpptx.service.PlaceholderMappingService;
 import com.reportplatform.tmplpptx.service.PptxTemplateService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;

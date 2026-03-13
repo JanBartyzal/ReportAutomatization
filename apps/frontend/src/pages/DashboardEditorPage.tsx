@@ -20,7 +20,8 @@ import { ArrowLeft24Regular, Save24Regular, Add24Regular, Delete24Regular, Share
 import { useDashboard, useCreateDashboard, useUpdateDashboard } from '../hooks/useDashboards';
 import LoadingSpinner from '../components/LoadingSpinner';
 import DashboardSqlEditor from '../components/Dashboard/DashboardSqlEditor';
-import type { DashboardConfig, WidgetConfig, WidgetType } from '@reportplatform/types';
+import type { DashboardConfig, WidgetConfig } from '@reportplatform/types';
+import { WidgetType } from '@reportplatform/types';
 
 /**
  * DashboardEditorPage styles per docs/UX-UI/02-design-system.md
@@ -81,11 +82,11 @@ const useStyles = makeStyles({
 });
 
 const WIDGET_TYPES: { value: WidgetType; label: string }[] = [
-    { value: 'TABLE', label: 'Table' },
-    { value: 'BAR_CHART', label: 'Bar Chart' },
-    { value: 'LINE_CHART', label: 'Line Chart' },
-    { value: 'PIE_CHART', label: 'Pie Chart' },
-    { value: 'HEATMAP', label: 'Heatmap' },
+    { value: WidgetType.TABLE, label: 'Table' },
+    { value: WidgetType.BAR_CHART, label: 'Bar Chart' },
+    { value: WidgetType.LINE_CHART, label: 'Line Chart' },
+    { value: WidgetType.PIE_CHART, label: 'Pie Chart' },
+    { value: WidgetType.HEATMAP, label: 'Heatmap' },
 ];
 
 const DATA_SOURCES = [
@@ -340,7 +341,7 @@ export default function DashboardEditorPage() {
                                         <div className={styles.field}>
                                             <Body1>Widget Type</Body1>
                                             <Dropdown
-                                                value={WIDGET_TYPES.find((t: any) => t.value === widget.type)?.label}
+                                                value={WIDGET_TYPES.find((t: any) => t.value === widget.type)?.label || 'Select Type'}
                                                 onOptionSelect={(_ev: any, d: any) =>
                                                     updateWidget(index, { type: d.optionValue as WidgetType })
                                                 }
@@ -356,7 +357,7 @@ export default function DashboardEditorPage() {
                                         <div className={styles.field}>
                                             <Body1>Data Source</Body1>
                                             <Dropdown
-                                                value={DATA_SOURCES.find((s: any) => s.value === widget.data_source)?.label}
+                                                value={DATA_SOURCES.find((s: any) => s.value === widget.data_source)?.label || 'Select Data Source'}
                                                 onOptionSelect={(_ev: any, d: any) =>
                                                     updateWidget(index, { data_source: d.optionValue as string })
                                                 }
@@ -372,10 +373,10 @@ export default function DashboardEditorPage() {
                                         <div className={styles.field}>
                                             <Body1>Group By</Body1>
                                             <Dropdown
-                                                value={GROUP_BY_OPTIONS.find((g: any) => g.value === widget.config?.group_by?.[0])?.label}
+                                                value={GROUP_BY_OPTIONS.find((g: any) => g.value === (widget.config as any)?.group_by?.[0])?.label || 'Select Grouping'}
                                                 onOptionSelect={(_ev: any, d: any) =>
                                                     updateWidget(index, {
-                                                        config: { ...widget.config, group_by: [d.optionValue as string] },
+                                                        config: { ...(widget.config as any), group_by: [d.optionValue as string] },
                                                     })
                                                 }
                                             >
@@ -390,12 +391,12 @@ export default function DashboardEditorPage() {
                                         <div className={styles.field}>
                                             <Body1>Width (1-12)</Body1>
                                             <SpinButton
-                                                value={widget.config?.width || 6}
+                                                value={(widget.config as any)?.width || 6}
                                                 min={1}
                                                 max={12}
                                                 onChange={(_ev: any, data: any) =>
                                                     updateWidget(index, {
-                                                        config: { ...widget.config, width: data.value },
+                                                        config: { ...(widget.config as any), width: data.value },
                                                     })
                                                 }
                                             />
@@ -404,13 +405,13 @@ export default function DashboardEditorPage() {
                                         <div className={styles.field}>
                                             <Body1>Height (px)</Body1>
                                             <SpinButton
-                                                value={widget.config?.height || 300}
+                                                value={(widget.config as any)?.height || 300}
                                                 min={100}
                                                 max={800}
                                                 step={50}
                                                 onChange={(_ev: any, data: any) =>
                                                     updateWidget(index, {
-                                                        config: { ...widget.config, height: data.value },
+                                                        config: { ...(widget.config as any), height: data.value },
                                                     })
                                                 }
                                             />

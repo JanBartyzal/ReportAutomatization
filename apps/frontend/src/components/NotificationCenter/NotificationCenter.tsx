@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import {
     Button,
     makeStyles,
@@ -7,12 +7,11 @@ import {
     PopoverTrigger,
     PopoverSurface,
     Badge,
-    Avatar,
     Spinner,
 } from '@fluentui/react-components';
 import { useNavigate } from 'react-router-dom';
 import {
-    Bell24Regular,
+    Alert24Regular,
     Checkmark24Regular,
     Info24Regular,
     Warning24Regular,
@@ -55,7 +54,7 @@ const useStyles = makeStyles({
     },
     headerTitle: {
         fontWeight: tokens.fontWeightSemibold,
-        fontSize: tokens.fontSizeBase16,
+        fontSize: tokens.fontSizeBase400,
     },
     list: {
         maxHeight: '380px',
@@ -90,18 +89,18 @@ const useStyles = makeStyles({
     },
     notificationTitle: {
         fontWeight: tokens.fontWeightSemibold,
-        fontSize: tokens.fontSizeBase14,
+        fontSize: tokens.fontSizeBase300,
         marginBottom: '2px',
     },
     notificationBody: {
-        fontSize: tokens.fontSizeBase13,
+        fontSize: tokens.fontSizeBase200,
         color: tokens.colorNeutralForeground2,
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
     },
     notificationTime: {
-        fontSize: tokens.fontSizeBase12,
+        fontSize: tokens.fontSizeBase100,
         color: tokens.colorNeutralForeground3,
         marginTop: '4px',
     },
@@ -120,22 +119,22 @@ const useStyles = makeStyles({
 const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
         case 'FILE_PROCESSED':
-            return <Checkmark24Regular style={{ color: tokens.colorGreenForeground1 }} />;
+            return <Checkmark24Regular style={{ color: tokens.colorPaletteGreenForeground1 }} />;
         case 'FILE_FAILED':
-            return <ErrorCircle24Regular style={{ color: tokens.colorRedForeground1 }} />;
+            return <ErrorCircle24Regular style={{ color: tokens.colorPaletteRedForeground1 }} />;
         case 'REPORT_SUBMITTED':
-            return <Info24Regular style={{ color: tokens.colorBlueForeground1 }} />;
+            return <Info24Regular style={{ color: tokens.colorPaletteBlueForeground2 }} />;
         case 'REPORT_APPROVED':
-            return <Checkmark24Regular style={{ color: tokens.colorGreenForeground1 }} />;
+            return <Checkmark24Regular style={{ color: tokens.colorPaletteGreenForeground1 }} />;
         case 'REPORT_REJECTED':
-            return <Warning24Regular style={{ color: tokens.colorOrangeForeground1 }} />;
+            return <Warning24Regular style={{ color: tokens.colorPaletteDarkOrangeForeground1 }} />;
         case 'DEADLINE_APPROACHING':
         case 'DEADLINE_MISSED':
-            return <Warning24Regular style={{ color: tokens.colorOrangeForeground1 }} />;
+            return <Warning24Regular style={{ color: tokens.colorPaletteDarkOrangeForeground1 }} />;
         case 'BATCH_COMPLETED':
-            return <Checkmark24Regular style={{ color: tokens.colorGreenForeground1 }} />;
+            return <Checkmark24Regular style={{ color: tokens.colorPaletteGreenForeground1 }} />;
         default:
-            return <Bell24Regular style={{ color: tokens.colorNeutralForeground2 }} />;
+            return <Alert24Regular style={{ color: tokens.colorNeutralForeground2 }} />;
     }
 };
 
@@ -183,16 +182,16 @@ export default function NotificationCenter({ onNotificationClick }: Notification
         
         setOpen(false);
 
-        // Navigation logic based on notification metadata
-        const metadata = notification.metadata || {};
-        if (metadata.file_id) {
-            navigate(`/files/${metadata.file_id}`);
-        } else if (metadata.report_id) {
-            navigate(`/reports/${metadata.report_id}`);
-        } else if (metadata.form_id) {
-            navigate(`/forms/${metadata.form_id}/fill`);
-        } else if (metadata.period_id) {
-            navigate(`/periods/${metadata.period_id}`);
+        // Navigation logic based on notification data
+        const data = notification.data || {};
+        if (data.file_id) {
+            navigate(`/files/${data.file_id}`);
+        } else if (data.report_id) {
+            navigate(`/reports/${data.report_id}`);
+        } else if (data.form_id) {
+            navigate(`/forms/${data.form_id}/fill`);
+        } else if (data.period_id) {
+            navigate(`/periods/${data.period_id}`);
         } else {
             onNotificationClick?.(notification);
         }
@@ -206,7 +205,7 @@ export default function NotificationCenter({ onNotificationClick }: Notification
                     className={styles.trigger}
                     icon={
                         <div style={{ position: 'relative' }}>
-                            <Bell24Regular />
+                            <Alert24Regular />
                             {unreadCount > 0 && (
                                 <Badge
                                     className={styles.badge}
@@ -245,7 +244,7 @@ export default function NotificationCenter({ onNotificationClick }: Notification
                         </div>
                     ) : notifications.length === 0 ? (
                         <div className={styles.emptyState}>
-                            <Bell24Regular style={{ marginBottom: '8px', opacity: 0.5 }} />
+                            <Alert24Regular style={{ marginBottom: '8px', opacity: 0.5 }} />
                             <p>No notifications yet</p>
                         </div>
                     ) : (
@@ -271,7 +270,7 @@ export default function NotificationCenter({ onNotificationClick }: Notification
                                             width: '8px',
                                             height: '8px',
                                             borderRadius: '50%',
-                                            backgroundColor: tokens.colorBrandBackground1,
+                                            backgroundColor: tokens.colorBrandBackground,
                                             flexShrink: 0,
                                             alignSelf: 'center',
                                         }}

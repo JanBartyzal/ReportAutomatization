@@ -27,10 +27,10 @@ const useStyles = makeStyles({
     },
     title: {
         fontWeight: tokens.fontWeightSemibold,
-        fontSize: tokens.fontSizeBase16,
+        fontSize: tokens.fontSizeBase400,
     },
     diffInfo: {
-        fontSize: tokens.fontSizeBase14,
+        fontSize: tokens.fontSizeBase300,
         color: tokens.colorNeutralForeground2,
     },
     content: {
@@ -55,7 +55,7 @@ const useStyles = makeStyles({
         alignItems: 'center',
         gap: tokens.spacingHorizontalS,
         fontWeight: tokens.fontWeightSemibold,
-        fontSize: tokens.fontSizeBase14,
+        fontSize: tokens.fontSizeBase300,
     },
     changeHeaderAdded: {
         backgroundColor: tokens.colorPaletteGreenBackground1, // Success light bg
@@ -64,7 +64,7 @@ const useStyles = makeStyles({
         backgroundColor: tokens.colorPaletteRedBackground1, // Danger light bg
     },
     changeHeaderModified: {
-        backgroundColor: tokens.colorPaletteOrangeBackground1, // Warning light bg
+        backgroundColor: tokens.colorPaletteDarkOrangeBackground1, // Warning light bg
     },
     changeIcon: {
         width: '20px',
@@ -72,7 +72,7 @@ const useStyles = makeStyles({
     },
     fieldPath: {
         fontFamily: 'monospace',
-        fontSize: tokens.fontSizeBase13,
+        fontSize: tokens.fontSizeBase200,
     },
     diffContent: {
         display: 'grid',
@@ -81,7 +81,7 @@ const useStyles = makeStyles({
     diffCell: {
         padding: tokens.spacingHorizontalM,
         fontFamily: 'monospace',
-        fontSize: tokens.fontSizeBase13,
+        fontSize: tokens.fontSizeBase200,
         overflow: 'auto',
         wordBreak: 'break-word',
     },
@@ -93,7 +93,7 @@ const useStyles = makeStyles({
         backgroundColor: tokens.colorPaletteGreenBackground2, // Success light bg (more subtle)
     },
     diffLabel: {
-        fontSize: tokens.fontSizeBase12,
+        fontSize: tokens.fontSizeBase100,
         fontWeight: tokens.fontWeightSemibold,
         padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalM}`,
         backgroundColor: tokens.colorNeutralBackground2,
@@ -106,27 +106,7 @@ const useStyles = makeStyles({
     },
 });
 
-const getChangeIcon = (changeType: FieldChange['change_type']) => {
-    switch (changeType) {
-        case 'ADDED':
-            return <Add24Regular className={styles.changeIcon} style={{ color: tokens.colorGreenForeground1 }} />;
-        case 'REMOVED':
-            return <Delete24Regular className={styles.changeIcon} style={{ color: tokens.colorRedForeground1 }} />;
-        case 'MODIFIED':
-            return <Edit24Regular className={styles.changeIcon} style={{ color: tokens.colorOrangeForeground1 }} />;
-    }
-};
-
-const getChangeHeaderClass = (changeType: FieldChange['change_type']) => {
-    switch (changeType) {
-        case 'ADDED':
-            return styles.changeHeaderAdded;
-        case 'REMOVED':
-            return styles.changeHeaderRemoved;
-        case 'MODIFIED':
-            return styles.changeHeaderModified;
-    }
-};
+// Helpers moved inside component
 
 const formatValue = (value: unknown): string => {
     if (value === null || value === undefined) return '<empty>';
@@ -150,6 +130,28 @@ export default function DiffViewer({
     onClose,
 }: DiffViewerProps) {
     const styles = useStyles();
+
+    const getChangeIcon = (changeType: FieldChange['change_type']) => {
+        switch (changeType) {
+            case 'ADDED':
+                return <Add24Regular className={styles.changeIcon} style={{ color: tokens.colorPaletteGreenForeground1 }} />;
+            case 'REMOVED':
+                return <Delete24Regular className={styles.changeIcon} style={{ color: tokens.colorPaletteRedForeground1 }} />;
+            case 'MODIFIED':
+                return <Edit24Regular className={styles.changeIcon} style={{ color: tokens.colorPaletteDarkOrangeForeground1 }} />;
+        }
+    };
+
+    const getChangeHeaderClass = (changeType: FieldChange['change_type']) => {
+        switch (changeType) {
+            case 'ADDED':
+                return styles.changeHeaderAdded;
+            case 'REMOVED':
+                return styles.changeHeaderRemoved;
+            case 'MODIFIED':
+                return styles.changeHeaderModified;
+        }
+    };
     const { data: diff, isLoading } = useVersionDiff(entityType, entityId, fromVersion, toVersion);
 
     if (isLoading) {

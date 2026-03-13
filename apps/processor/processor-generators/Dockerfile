@@ -7,13 +7,13 @@ FROM python:3.12-slim AS base
 # System dependencies: LibreOffice for PPTX validation, fonts for matplotlib
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        libreoffice-impress \
-        libreoffice-common \
-        fonts-liberation \
-        fonts-dejavu-core \
-        libfontconfig1 \
-        libpq-dev \
-        && \
+    libreoffice-impress \
+    libreoffice-common \
+    fonts-liberation \
+    fonts-dejavu-core \
+    libfontconfig1 \
+    libpq-dev \
+    && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -25,8 +25,7 @@ WORKDIR /app
 
 # Install Python dependencies
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir . && \
-    pip install --no-cache-dir python-base
+RUN pip install --no-cache-dir .
 
 # Copy application source
 COPY src/ ./src/

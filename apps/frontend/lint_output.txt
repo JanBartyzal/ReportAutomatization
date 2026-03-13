@@ -1,0 +1,1046 @@
+
+> @reportplatform/frontend@0.1.0 lint
+> eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0
+
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\App.tsx
+   2:1  warning  `@azure/msal-react` import should occur before import of `react-router-dom`                                import/order
+   6:1  warning  `./pages/DashboardPage` import should occur before import of `./pages/LoginPage`                           import/order
+   7:1  warning  `./pages/DashboardListPage` import should occur before import of `./pages/LoginPage`                       import/order
+   8:1  warning  `./pages/DashboardEditorPage` import should occur before import of `./pages/LoginPage`                     import/order
+   9:1  warning  `./pages/DashboardViewerPage` import should occur before import of `./pages/LoginPage`                     import/order
+  10:1  warning  `./pages/FilesPage` import should occur before import of `./pages/LoginPage`                               import/order
+  11:1  warning  `./pages/FileDetailPage` import should occur before import of `./pages/LoginPage`                          import/order
+  13:1  warning  `./pages/SettingsPage` import should occur before import of `./pages/UploadPage`                           import/order
+  14:1  warning  `./pages/NotFoundPage` import should occur before import of `./pages/UploadPage`                           import/order
+  15:1  warning  `./pages/ReportsPage` import should occur before import of `./pages/UploadPage`                            import/order
+  16:1  warning  `./pages/ReportDetailPage` import should occur before import of `./pages/UploadPage`                       import/order
+  17:1  warning  `./pages/PeriodsPage` import should occur before import of `./pages/UploadPage`                            import/order
+  18:1  warning  `./pages/PeriodDetailPage` import should occur before import of `./pages/UploadPage`                       import/order
+  19:1  warning  `./pages/MatrixDashboard` import should occur before import of `./pages/UploadPage`                        import/order
+  20:1  warning  `./pages/FormsListPage` import should occur before import of `./pages/LoginPage`                           import/order
+  21:1  warning  `./pages/FormFillerPage` import should occur before import of `./pages/LoginPage`                          import/order
+  22:1  warning  `./pages/ExcelImportPage` import should occur before import of `./pages/LoginPage`                         import/order
+  23:1  warning  `./pages/FormEditorPage` import should occur before import of `./pages/LoginPage`                          import/order
+  24:1  warning  `./pages/FormAssignmentPage` import should occur before import of `./pages/LoginPage`                      import/order
+  25:1  warning  `./pages/NotificationSettingsPage` import should occur before import of `./pages/UploadPage`               import/order
+  26:1  warning  `./pages/SearchResultsPage` import should occur before import of `./pages/UploadPage`                      import/order
+  27:1  warning  `./pages/TemplateListPage` import should occur before import of `./pages/UploadPage`                       import/order
+  28:1  warning  `./pages/TemplateDetailPage` import should occur before import of `./pages/UploadPage`                     import/order
+  29:1  warning  `./pages/BatchGenerationPage` import should occur before import of `./pages/LoginPage`                     import/order
+  30:1  warning  `./pages/GeneratedReportsListPage` import should occur before import of `./pages/LoginPage`                import/order
+  31:1  warning  `./components/NotificationCenter/ToastContainer` import should occur before import of `./pages/LoginPage`  import/order
+  32:1  warning  `./pages/LocalDashboardPage` import should occur before import of `./pages/LoginPage`                      import/order
+  33:1  warning  `./pages/ComparisonPage` import should occur before import of `./pages/LoginPage`                          import/order
+  34:1  warning  `./pages/HoldingAdminOverviewPage` import should occur before import of `./pages/LoginPage`                import/order
+  35:1  warning  `./pages/HealthDashboardPage` import should occur before import of `./pages/LoginPage`                     import/order
+  36:1  warning  `./pages/IntegrationPage` import should occur before import of `./pages/LoginPage`                         import/order
+  37:1  warning  `./pages/DistributionRulesPage` import should occur before import of `./pages/LoginPage`                   import/order
+  38:1  warning  `./pages/PromotionPage` import should occur before import of `./pages/UploadPage`                          import/order
+  39:1  warning  `./components/auth/AdminGuard` import should occur before import of `./components/Layout/AppLayout`        import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\admin.ts
+  1:1  warning  There should be at least one empty line between import groups                import/order
+  2:1  warning  `@reportplatform/types` type import should occur before import of `./axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\audit.ts
+  1:1  warning  There should be at least one empty line between import groups                import/order
+  2:1  warning  `@reportplatform/types` type import should occur before import of `./axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\auth.ts
+  1:1  warning  There should be at least one empty line between import groups                import/order
+  2:1  warning  `@reportplatform/types` type import should occur before import of `./axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\axios.ts
+  2:1  warning  `@azure/msal-browser` type import should occur before import of `axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\dashboards.ts
+  1:1  warning  There should be at least one empty line between import groups                import/order
+  2:1  warning  `@reportplatform/types` type import should occur before import of `./axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\files.ts
+  1:1  warning  There should be at least one empty line between import groups                import/order
+  2:1  warning  `@reportplatform/types` type import should occur before import of `./axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\forms.ts
+  1:1  warning  There should be at least one empty line between import groups                import/order
+  2:1  warning  `@reportplatform/types` type import should occur before import of `./axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\generation.ts
+  1:1  warning  There should be at least one empty line between import groups  import/order
+  2:1  warning  `axios` import should occur before import of `./axios`         import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\integrations.ts
+  6:1  warning  There should be at least one empty line between import groups                import/order
+  7:1  warning  `@reportplatform/types` type import should occur before import of `./axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\notifications.ts
+  1:1  warning  There should be at least one empty line between import groups                import/order
+  2:1  warning  `@reportplatform/types` type import should occur before import of `./axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\periods.ts
+  1:1  warning  There should be at least one empty line between import groups                import/order
+  2:1  warning  `@reportplatform/types` type import should occur before import of `./axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\promotions.ts
+  6:1  warning  There should be at least one empty line between import groups                import/order
+  7:1  warning  `@reportplatform/types` type import should occur before import of `./axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\query.ts
+  1:1  warning  There should be at least one empty line between import groups                import/order
+  2:1  warning  `@reportplatform/types` type import should occur before import of `./axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\reports.ts
+  1:1  warning  There should be at least one empty line between import groups                import/order
+  2:1  warning  `@reportplatform/types` type import should occur before import of `./axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\search.ts
+  1:1  warning  There should be at least one empty line between import groups                import/order
+  2:1  warning  `@reportplatform/types` type import should occur before import of `./axios`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\api\templates.ts
+  1:1  warning  There should be at least one empty line between import groups  import/order
+  2:1  warning  `axios` import should occur before import of `./axios`         import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Admin\ApiKeysPanel.tsx
+  1:1  warning  There should be at least one empty line between import groups              import/order
+  2:1  warning  There should be at least one empty line between import groups              import/order
+  3:1  warning  `@fluentui/react-components` import should occur before import of `react`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Admin\BatchesPanel.tsx
+  2:1   warning  There should be at least one empty line between import groups                              import/order
+  2:1   warning  `@fluentui/react-components` import should occur before import of `@tanstack/react-query`  import/order
+  2:17  warning  'Button' is defined but never used. Allowed unused vars must match /^_/u                   @typescript-eslint/no-unused-vars
+  3:10  warning  'useAuth' is defined but never used. Allowed unused vars must match /^_/u                  @typescript-eslint/no-unused-vars
+  5:21  error    'React' is not defined                                                                     no-undef
+  9:13  warning  'data' is assigned a value but never used. Allowed unused vars must match /^_/u            @typescript-eslint/no-unused-vars
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Admin\FailedJobsPanel.tsx
+  1:1   warning  There should be at least one empty line between import groups                             import/order
+  2:1   warning  `@fluentui/react-components` import should occur before import of `../../hooks/useAdmin`  import/order
+  4:24  error    'React' is not defined                                                                    no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Admin\OrganizationsPanel.tsx
+    2:1   warning  There should be at least one empty line between import groups              import/order
+    2:1   warning  `@fluentui/react-components` import should occur before import of `react`  import/order
+   21:1   warning  There should be at least one empty line between import groups              import/order
+   22:1   warning  There should be at least one empty line between import groups              import/order
+   22:1   warning  `@reportplatform/types` type import should occur before import of `react`  import/order
+   56:13  warning  Unexpected confirm                                                         no-alert
+   97:63  warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+   97:71  warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+  109:56  warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+  109:67  warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+  115:56  warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+  115:67  warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Admin\UsersPanel.tsx
+  1:1   warning  There should be at least one empty line between import groups                             import/order
+  2:1   warning  `@fluentui/react-components` import should occur before import of `../../hooks/useAdmin`  import/order
+  4:19  error    'React' is not defined                                                                    no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\AdvancedComparison\AdvancedComparison.tsx
+    7:1   warning  `react` import should occur after import of `@nivo/heatmap`                                  import/order
+   38:1   warning  `recharts` import should occur after import of `@nivo/heatmap`                               import/order
+   48:1   warning  There should be at least one empty line between import groups                                import/order
+   49:1   warning  `../../theme/brandTokens` import should occur after import of `../../hooks/useFeatureFlags`  import/order
+  306:41  warning  Unexpected any. Specify a different type                                                     @typescript-eslint/no-explicit-any
+  306:49  warning  Unexpected any. Specify a different type                                                     @typescript-eslint/no-explicit-any
+  352:40  warning  Unexpected alert                                                                             no-alert
+  446:70  warning  Unexpected any. Specify a different type                                                     @typescript-eslint/no-explicit-any
+  448:66  warning  Unexpected any. Specify a different type                                                     @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\AuditLog\AuditLogViewer.tsx
+    1:1    warning  `react` import should occur after import of `@fluentui/react-icons`               import/order
+   17:1    warning  There should be at least one empty line between import groups                     import/order
+   21:1    warning  `../../hooks/useAuditLogs` import should occur after import of `../../api/audit`  import/order
+  298:108  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Charts\BarChartWidget.tsx
+   2:1  warning  There should be at least one empty line between import groups            import/order
+  11:1  warning  There should be at least one empty line between import groups            import/order
+  13:1  warning  There should be at least one empty line between import groups            import/order
+  13:1  warning  `./ChartWrapper` import should occur before import of `./rechartsTheme`  import/order
+  14:1  warning  `@reportplatform/types` import should occur before import of `react`     import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Charts\ChartWrapper.tsx
+   7:1   warning  There should be at least one empty line between import groups                 import/order
+   7:1   warning  `@fluentui/react-components` import should occur before import of `recharts`  import/order
+  44:15  error    'React' is not defined                                                        no-undef
+  47:21  error    'React' is not defined                                                        no-undef
+  50:28  error    'React' is not defined                                                        no-undef
+  66:34  error    'React' is not defined                                                        no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Charts\HeatmapWidget.tsx
+   1:1   warning  `react` import should occur after import of `@reportplatform/types`  import/order
+   3:1   warning  There should be at least one empty line between import groups        import/order
+  21:39  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Charts\LineChartWidget.tsx
+   2:1  warning  There should be at least one empty line between import groups            import/order
+  10:1  warning  There should be at least one empty line between import groups            import/order
+  12:1  warning  There should be at least one empty line between import groups            import/order
+  12:1  warning  `./ChartWrapper` import should occur before import of `./rechartsTheme`  import/order
+  13:1  warning  `@reportplatform/types` import should occur before import of `react`     import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Charts\PieChartWidget.tsx
+   2:1  warning  There should be at least one empty line between import groups            import/order
+   9:1  warning  There should be at least one empty line between import groups            import/order
+  11:1  warning  There should be at least one empty line between import groups            import/order
+  11:1  warning  `./ChartWrapper` import should occur before import of `./rechartsTheme`  import/order
+  12:1  warning  `@reportplatform/types` import should occur before import of `react`     import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Charts\nivoTheme.ts
+  5:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Dashboard\DashboardSqlEditor.tsx
+    1:1   warning  `react` import should occur after import of `@fluentui/react-icons`  import/order
+    9:1   warning  There should be at least one empty line between import groups        import/order
+   38:14  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  102:23  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Error\ErrorBoundary.tsx
+    9:1  warning  `react` import should occur after import of `@fluentui/react-icons`  import/order
+   18:1  warning  There should be at least one empty line between import groups        import/order
+  155:5  error    'JSX' is not defined                                                 no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\FileFilters\FileFilters.tsx
+  113:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  114:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  114:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  116:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  127:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  130:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  141:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  142:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  142:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  144:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  156:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  156:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  179:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  184:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\FileTypeIcon\FileTypeIcon.tsx
+   2:1   warning  `@fluentui/react-icons` import should occur before import of `react`                                                            import/order
+  19:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  72:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\FileViewer\FileViewer.tsx
+    1:1   warning  `react` import should occur after type import of `@reportplatform/types`  import/order
+   11:1   warning  There should be at least one empty line between import groups             import/order
+  122:43  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  122:54  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  278:43  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  414:35  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  414:43  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Generation\GenerateButton.tsx
+   1:1  warning  `react` import should occur after import of `@fluentui/react-icons`  import/order
+  16:1  warning  There should be at least one empty line between import groups        import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Generation\GenerationProgress.tsx
+  2:1  warning  There should be at least one empty line between import groups                          import/order
+  2:1  warning  `@fluentui/react-components` import should occur before import of `react`              import/order
+  4:1  warning  `../../api/generation` import should occur before import of `../../theme/brandTokens`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Generation\StatusBadge.tsx
+  2:1  warning  There should be at least one empty line between import groups              import/order
+  2:1  warning  `@fluentui/react-components` import should occur before import of `react`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Layout\AppLayout.tsx
+   6:1  warning  `@fluentui/react-components` import should occur before import of `react`                        import/order
+   7:1  warning  There should be at least one empty line between import groups                                    import/order
+   7:1  warning  `@fluentui/react-icons` import should occur before import of `react`                             import/order
+  27:1  warning  There should be at least one empty line between import groups                                    import/order
+  27:1  warning  `../../hooks/useBreakpoint` import should occur before import of `../../hooks/useNotifications`  import/order
+  29:1  warning  `./Sidebar` import should occur before import of `./TopNav`                                      import/order
+  30:1  warning  `./AppShell` import should occur before import of `./TopNav`                                     import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Layout\ContentCard.tsx
+   7:1   warning  There should be at least one empty line between import groups  import/order
+  32:11  error    'React' is not defined                                         no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Layout\Sidebar.tsx
+  14:1  warning  `react` type import should occur before import of `react-router-dom`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Layout\TopNav.tsx
+  7:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Lifecycle\CountdownWidget.tsx
+   1:1   warning  `react` import should occur after import of `@fluentui/react-icons`  import/order
+  82:49  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  93:25  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Lifecycle\RejectionDialog.tsx
+  2:1  warning  `@fluentui/react-components` import should occur before import of `react`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Lifecycle\StatusBadge.tsx
+  2:1  warning  There should be at least one empty line between import groups              import/order
+  2:1  warning  `@fluentui/react-components` import should occur before import of `react`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Lifecycle\Timeline.tsx
+   1:1  warning  `react` import should occur after import of `@reportplatform/types`  import/order
+  14:1  warning  There should be at least one empty line between import groups        import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\LocalScope\ReleaseDialog.tsx
+   6:1  warning  `react` import should occur after import of `@fluentui/react-icons`  import/order
+  22:1  warning  There should be at least one empty line between import groups        import/order
+  52:9  warning  Unexpected alert                                                     no-alert
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\LocalScope\ShareDialog.tsx
+   6:1  warning  `react` import should occur after import of `@fluentui/react-icons`  import/order
+  22:1  warning  There should be at least one empty line between import groups        import/order
+  64:9  warning  Unexpected alert                                                     no-alert
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\NotificationCenter\NotificationCenter.tsx
+   2:1  warning  `@fluentui/react-components` import should occur before import of `react`  import/order
+  13:1  warning  There should be at least one empty line between import groups              import/order
+  13:1  warning  `@fluentui/react-icons` import should occur before import of `react`       import/order
+  20:1  warning  There should be at least one empty line between import groups              import/order
+  21:1  warning  `@reportplatform/types` type import should occur before import of `react`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\NotificationCenter\ToastContainer.tsx
+    1:1   warning  `zustand` import should occur after import of `@fluentui/react-icons`                                                           import/order
+    2:1   warning  `react` import should occur after import of `@fluentui/react-icons`                                                             import/order
+  100:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  125:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  198:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\PeriodComparison\PeriodComparison.tsx
+    2:1   warning  `@fluentui/react-components` import should occur before import of `react`                   import/order
+   18:1   warning  `@fluentui/react-icons` import should occur before import of `react`                        import/order
+   19:1   warning  There should be at least one empty line between import groups                               import/order
+   30:1   warning  `../../hooks/useDashboards` import should occur before import of `../../theme/brandTokens`  import/order
+   31:1   warning  `../../hooks/usePeriods` import should occur before import of `../../theme/brandTokens`     import/order
+   32:1   warning  There should be at least one empty line between import groups                               import/order
+   33:1   warning  `@reportplatform/types` type import should occur before import of `react`                   import/order
+  163:49  warning  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  163:57  warning  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  173:57  warning  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  174:55  warning  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  174:63  warning  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  187:57  warning  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  188:55  warning  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  188:63  warning  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  230:70  warning  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  252:64  warning  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\SchemaMapping\ColumnCard.tsx
+  1:1  warning  `react` import should occur after import of `@fluentui/react-icons`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\SchemaMapping\MappingEditor.tsx
+   2:1  warning  `@fluentui/react-components` import should occur before import of `react`  import/order
+  13:1  warning  There should be at least one empty line between import groups              import/order
+  13:1  warning  `@fluentui/react-icons` import should occur before import of `react`       import/order
+  15:1  warning  There should be at least one empty line between import groups              import/order
+  16:1  warning  `../../api/templates` import should occur before import of `./ColumnCard`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\SchemaMapping\SuggestionBadge.tsx
+  1:1  warning  `react` import should occur after import of `@fluentui/react-icons`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\ScopeBadge\ScopeBadge.tsx
+    7:1   warning  `react` import should occur after import of `@fluentui/react-components`                                                        import/order
+   88:40  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  126:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  138:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Search\GlobalSearchBar.tsx
+    3:1   warning  `@fluentui/react-components` import should occur before import of `react`  import/order
+   10:1   warning  There should be at least one empty line between import groups              import/order
+   10:1   warning  `@fluentui/react-icons` import should occur before import of `react`       import/order
+  123:31  error    'React' is not defined                                                     no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Templates\PlaceholderMapper.tsx
+    1:1   warning  `react` import should occur after import of `@fluentui/react-icons`  import/order
+   26:1   warning  There should be at least one empty line between import groups        import/order
+   57:49  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  156:49  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  162:40  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+  164:47  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Versioning\DiffViewer.tsx
+   6:1  warning  There should be at least one empty line between import groups                             import/order
+  12:1  warning  `../../api/versions` type import should occur before import of `../../hooks/useVersions`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\Versioning\VersionHistorySidebar.tsx
+   1:1  warning  `react` import should occur after import of `@fluentui/react-icons`                      import/order
+   9:1  warning  There should be at least one empty line between import groups                            import/order
+  14:1  warning  `../../hooks/useVersions` import should occur after type import of `../../api/versions`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\__tests__\ChartWrapper.test.tsx
+  1:1  warning  `vitest` import should occur after import of `recharts`                  import/order
+  3:1  warning  There should be at least one empty line between import groups            import/order
+  4:1  warning  There should be at least one empty line between import groups            import/order
+  4:1  warning  `../Charts/ChartWrapper` import should occur after import of `recharts`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\__tests__\ErrorBoundary.test.tsx
+  2:1  warning  There should be at least one empty line between import groups           import/order
+  2:1  warning  `@testing-library/react` import should occur before import of `vitest`  import/order
+  3:1  warning  There should be at least one empty line between import groups           import/order
+  4:1  warning  `react` import should occur before import of `vitest`                   import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\__tests__\GenerateButton.test.tsx
+  2:1   warning  There should be at least one empty line between import groups             import/order
+  2:1   warning  `@testing-library/react` import should occur before import of `vitest`    import/order
+  2:18  warning  'screen' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  3:1   warning  There should be at least one empty line between import groups             import/order
+  4:1   warning  `react` import should occur before import of `vitest`                     import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\__tests__\GenerationProgress.test.tsx
+  2:1  warning  There should be at least one empty line between import groups           import/order
+  2:1  warning  `@testing-library/react` import should occur before import of `vitest`  import/order
+  3:1  warning  There should be at least one empty line between import groups           import/order
+  4:1  warning  `react` import should occur before import of `vitest`                   import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\auth\AdminGuard.tsx
+  2:1  warning  There should be at least one empty line between import groups         import/order
+  3:1  warning  There should be at least one empty line between import groups         import/order
+  4:1  warning  There should be at least one empty line between import groups         import/order
+  4:1  warning  `@reportplatform/types` import should occur before import of `react`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\forms\FormDatePicker.tsx
+  4:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\forms\FormInput.tsx
+  6:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\forms\FormSelect.tsx
+  4:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\forms\FormTextarea.tsx
+  4:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\shared\DataTable.tsx
+  21:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\shared\KpiCard.tsx
+   6:1   warning  There should be at least one empty line between import groups  import/order
+  80:19  error    'React' is not defined                                         no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\components\shared\StatusBadge.tsx
+  6:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\__tests__\useAuth.test.tsx
+  2:1  warning  `@testing-library/react` import should occur before import of `vitest`  import/order
+  3:1  warning  There should be at least one empty line between import groups           import/order
+  3:1  warning  `@tanstack/react-query` import should occur before import of `vitest`   import/order
+  4:1  warning  There should be at least one empty line between import groups           import/order
+  5:1  warning  `react` import should occur before import of `vitest`                   import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\__tests__\useFiles.test.tsx
+  1:1  error    Do not use "@ts-nocheck" because it alters compilation errors           @typescript-eslint/ban-ts-comment
+  3:1  warning  `@testing-library/react` import should occur before import of `vitest`  import/order
+  4:1  warning  There should be at least one empty line between import groups           import/order
+  4:1  warning  `@tanstack/react-query` import should occur before import of `vitest`   import/order
+  5:1  warning  There should be at least one empty line between import groups           import/order
+  6:1  warning  `react` import should occur before import of `vitest`                   import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\__tests__\useGeneration.test.tsx
+  2:1  warning  `@testing-library/react` import should occur before import of `vitest`  import/order
+  3:1  warning  There should be at least one empty line between import groups           import/order
+  3:1  warning  `@tanstack/react-query` import should occur before import of `vitest`   import/order
+  4:1  warning  There should be at least one empty line between import groups           import/order
+  5:1  warning  `react` import should occur before import of `vitest`                   import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useAdmin.ts
+  1:1  warning  There should be at least one empty line between import groups                              import/order
+  2:1  warning  There should be at least one empty line between import groups                              import/order
+  9:1  warning  `@reportplatform/types` type import should occur before import of `@tanstack/react-query`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useAuditLogs.ts
+  1:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useAuth.ts
+  2:1  warning  There should be at least one empty line between import groups                              import/order
+  2:1  warning  `@azure/msal-react` import should occur before import of `@tanstack/react-query`           import/order
+  3:1  warning  There should be at least one empty line between import groups                              import/order
+  4:1  warning  `@reportplatform/types` type import should occur before import of `@tanstack/react-query`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useBreakpoint.ts
+  6:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useDashboards.ts
+   1:1  warning  There should be at least one empty line between import groups                              import/order
+   2:1  warning  There should be at least one empty line between import groups                              import/order
+  11:1  warning  `@reportplatform/types` type import should occur before import of `@tanstack/react-query`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useFiles.ts
+  1:1  warning  There should be at least one empty line between import groups                              import/order
+  2:1  warning  There should be at least one empty line between import groups                              import/order
+  3:1  warning  `@reportplatform/types` type import should occur before import of `@tanstack/react-query`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useForms.ts
+    2:1  warning  There should be at least one empty line between import groups                                                  import/order
+    3:1  warning  There should be at least one empty line between import groups                                                  import/order
+    9:1  warning  `@reportplatform/types` type import should occur before import of `@tanstack/react-query`                      import/order
+  136:5  warning  React Hook useCallback has a missing dependency: 'mutation'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useGeneration.ts
+  2:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useIntegrations.ts
+   6:1  warning  There should be at least one empty line between import groups                              import/order
+   7:1  warning  There should be at least one empty line between import groups                              import/order
+  34:1  warning  `@reportplatform/types` type import should occur before import of `@tanstack/react-query`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useNotifications.ts
+  2:1  warning  There should be at least one empty line between import groups                              import/order
+  3:1  warning  There should be at least one empty line between import groups                              import/order
+  8:1  warning  `@reportplatform/types` type import should occur before import of `@tanstack/react-query`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\usePeriods.ts
+  1:1  warning  There should be at least one empty line between import groups                              import/order
+  2:1  warning  There should be at least one empty line between import groups                              import/order
+  6:1  warning  `@reportplatform/types` type import should occur before import of `@tanstack/react-query`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\usePromotions.ts
+   6:1  warning  There should be at least one empty line between import groups                              import/order
+   7:1  warning  There should be at least one empty line between import groups                              import/order
+  24:1  warning  `@reportplatform/types` type import should occur before import of `@tanstack/react-query`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useQuery.ts
+  1:1  warning  There should be at least one empty line between import groups                              import/order
+  2:1  warning  There should be at least one empty line between import groups                              import/order
+  3:1  warning  `@reportplatform/types` type import should occur before import of `@tanstack/react-query`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useReports.ts
+  1:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useSchemaMapping.ts
+  2:1  warning  There should be at least one empty line between import groups         import/order
+  2:1  warning  `@tanstack/react-query` import should occur before import of `react`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useSearch.ts
+  1:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useTemplates.ts
+  1:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\hooks\useVersions.ts
+  1:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\main.tsx
+   4:1  warning  `@tanstack/react-query` import should occur before import of `react`  import/order
+   5:1  warning  `@azure/msal-react` import should occur before import of `react`      import/order
+   6:1  warning  There should be at least one empty line between import groups         import/order
+   6:1  warning  `@azure/msal-browser` import should occur before import of `react`    import/order
+   7:1  warning  There should be no empty line within import group                     import/order
+   9:1  warning  `./App` import should occur before import of `./theme`                import/order
+  10:1  warning  `./auth/msalConfig` import should occur before import of `./theme`    import/order
+  11:1  warning  `./telemetry/otel` import should occur before import of `./theme`     import/order
+  12:1  warning  `./components/Error` import should occur before import of `./theme`   import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\AdminPage.tsx
+   7:1   warning  There should be at least one empty line between import groups                                                     import/order
+   7:1   warning  `@fluentui/react-components` import should occur before import of `react`                                         import/order
+  16:1   warning  `../components/Admin/OrganizationsPanel` import should occur before import of `../components/Layout/ContentCard`  import/order
+  17:1   warning  `../components/Admin/UsersPanel` import should occur before import of `../components/Layout/ContentCard`          import/order
+  18:1   warning  `../components/Admin/ApiKeysPanel` import should occur before import of `../components/Layout/ContentCard`        import/order
+  19:1   warning  `../components/Admin/FailedJobsPanel` import should occur before import of `../components/Layout/ContentCard`     import/order
+  20:1   warning  `../components/Admin/BatchesPanel` import should occur before import of `../components/Layout/ContentCard`        import/order
+  36:18  error    'React' is not defined                                                                                            no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\BatchGenerationPage.tsx
+    1:1   warning  `react` import should occur after import of `@fluentui/react-icons`                                          import/order
+   30:1   warning  There should be at least one empty line between import groups                                                import/order
+   37:1   warning  `../hooks/useTemplates` import should occur after import of `../components/Generation/StatusBadge`           import/order
+   38:1   warning  `../hooks/useGeneration` import should occur after import of `../components/Generation/StatusBadge`          import/order
+  137:10  warning  Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+  150:8   warning  React Hook useEffect has a missing dependency: 'batchJob'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  275:40  warning  Unexpected any. Specify a different type                                                                     @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\ComparisonPage.tsx
+  5:1  warning  There should be at least one empty line between import groups                                                                 import/order
+  7:1  warning  `../components/AdvancedComparison/AdvancedComparison` import should occur before import of `../components/shared/PageHeader`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\DashboardEditorPage.tsx
+    1:1    warning  `react` import should occur after import of `@reportplatform/types`                                       import/order
+    2:1    warning  `react-router-dom` import should occur after import of `@reportplatform/types`                            import/order
+   19:1    warning  There should be at least one empty line between import groups                                             import/order
+   20:1    warning  `../hooks/useDashboards` import should occur after import of `@reportplatform/types`                      import/order
+   21:1    warning  `../components/LoadingSpinner` import should occur after import of `@reportplatform/types`                import/order
+   22:1    warning  There should be at least one empty line between import groups                                             import/order
+   22:1    warning  `../components/Dashboard/DashboardSqlEditor` import should occur after import of `@reportplatform/types`  import/order
+  178:9    warning  Unexpected alert                                                                                          no-alert
+  245:36   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  245:47   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  262:49   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  262:57   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  271:49   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  271:57   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  279:49   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  279:57   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  337:65   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  337:73   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  344:78   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  345:71   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  345:79   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  360:78   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  361:71   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  361:79   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  376:82   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  376:120  warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  377:71   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  377:79   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  379:88   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  394:74   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  397:65   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  397:76   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  399:88   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  408:74   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  412:65   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  412:76   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  414:88   warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\DashboardListPage.tsx
+   1:1  warning  `react-router-dom` import should occur after import of `@fluentui/react-icons`                  import/order
+  12:1  warning  There should be at least one empty line between import groups                                   import/order
+  13:1  warning  `../hooks/useDashboards` import should occur after import of `../components/shared/PageHeader`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\DashboardPage.tsx
+  1:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\DashboardViewerPage.tsx
+   1:1  warning  `react-router-dom` import should occur after import of `@reportplatform/types`                                 import/order
+   2:1  warning  `react` import should occur after import of `@reportplatform/types`                                            import/order
+  13:1  warning  There should be at least one empty line between import groups                                                  import/order
+  14:1  warning  `../hooks/useDashboards` import should occur after import of `@reportplatform/types`                           import/order
+  15:1  warning  `../components/LoadingSpinner` import should occur after import of `@reportplatform/types`                     import/order
+  16:1  warning  `../components/UnifiedTableView/UnifiedTableView` import should occur after import of `@reportplatform/types`  import/order
+  17:1  warning  `../components/PeriodComparison/PeriodComparison` import should occur after import of `@reportplatform/types`  import/order
+  18:1  warning  There should be at least one empty line between import groups                                                  import/order
+  18:1  warning  `../components/Charts` import should occur after import of `@reportplatform/types`                             import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\DistributionRulesPage.tsx
+    6:1   warning  `react` import should occur after type import of `@reportplatform/types`                                             import/order
+   40:1   warning  There should be at least one empty line between import groups                                                        import/order
+   41:1   warning  `../hooks/useIntegrations` import should occur after type import of `@reportplatform/types`                          import/order
+   49:1   warning  `../hooks/useTemplates` import should occur after type import of `@reportplatform/types`                             import/order
+   50:1   warning  There should be at least one empty line between import groups                                                        import/order
+   50:1   warning  `../api/templates` import should occur after type import of `@reportplatform/types`                                  import/order
+   51:1   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  137:13  warning  Unexpected confirm                                                                                                   no-alert
+  146:55  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  344:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  344:76  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  349:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  354:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  359:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  368:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  389:39  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\ExcelImportPage.tsx
+   1:1   warning  `react` import should occur after import of `@fluentui/react-icons`                             import/order
+   1:41  warning  'useEffect' is defined but never used. Allowed unused vars must match /^_/u                     @typescript-eslint/no-unused-vars
+   2:1   warning  `react-router-dom` import should occur after import of `@fluentui/react-icons`                  import/order
+   9:5   warning  'Input' is defined but never used. Allowed unused vars must match /^_/u                         @typescript-eslint/no-unused-vars
+  23:1   warning  There should be at least one empty line between import groups                                   import/order
+  30:1   warning  `../hooks/useForms` import should occur after import of `../components/LoadingSpinner`          import/order
+  32:1   warning  `../hooks/useSchemaMapping` import should occur after import of `../components/LoadingSpinner`  import/order
+  32:10  warning  'useSchemaMapping' is defined but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+  34:8   warning  'LoadingSpinner' is defined but never used. Allowed unused vars must match /^_/u                @typescript-eslint/no-unused-vars
+  36:31  error    'React' is not defined                                                                          no-undef
+  42:36  warning  'isLoadingForm' is assigned a value but never used. Allowed unused vars must match /^_/u        @typescript-eslint/no-unused-vars
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\FileDetailPage.tsx
+   1:1  warning  `react-router-dom` import should occur after import of `@fluentui/react-icons`             import/order
+   2:1  warning  `react` import should occur after import of `@fluentui/react-icons`                        import/order
+  18:1  warning  There should be at least one empty line between import groups                              import/order
+  19:1  warning  `../hooks/useFiles` import should occur after import of `react-router-dom`                 import/order
+  20:1  warning  `../components/LoadingSpinner` import should occur after import of `react-router-dom`      import/order
+  21:1  warning  There should be at least one empty line between import groups                              import/order
+  21:1  warning  `../components/shared/StatusBadge` import should occur after import of `react-router-dom`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\FilesPage.tsx
+   3:1  warning  `@fluentui/react-components` import should occur before import of `react`                           import/order
+  13:1  warning  There should be at least one empty line between import groups                                       import/order
+  13:1  warning  `@fluentui/react-icons` import should occur before import of `react`                                import/order
+  15:1  warning  `../components/LoadingSpinner` import should occur before import of `../hooks/useFiles`             import/order
+  16:1  warning  `../components/shared/StatusBadge` import should occur before import of `../hooks/useFiles`         import/order
+  17:1  warning  `../components/shared/DataTable` import should occur before import of `../hooks/useFiles`           import/order
+  18:1  warning  `../components/shared/PageHeader` import should occur before import of `../hooks/useFiles`          import/order
+  19:1  warning  `../components/FileTypeIcon/FileTypeIcon` import should occur before import of `../hooks/useFiles`  import/order
+  20:1  warning  There should be at least one empty line between import groups                                       import/order
+  20:1  warning  `../components/FileFilters/FileFilters` import should occur before import of `../hooks/useFiles`    import/order
+  21:1  warning  `@reportplatform/types` type import should occur before import of `react`                           import/order
+  94:9  warning  Unexpected console statement. Only these console methods are allowed: warn, error                   no-console
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\FormAssignmentPage.tsx
+   1:1  warning  `react` import should occur after type import of `@reportplatform/types`                import/order
+   2:1  warning  `react-router-dom` import should occur after type import of `@reportplatform/types`     import/order
+  17:1  warning  There should be at least one empty line between import groups                           import/order
+  21:1  warning  `../hooks/useForms` import should occur after import of `../components/LoadingSpinner`  import/order
+  22:1  warning  There should be at least one empty line between import groups                           import/order
+  22:1  warning  `../hooks/useAdmin` import should occur after import of `../components/LoadingSpinner`  import/order
+  23:1  warning  There should be at least one empty line between import groups                           import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\FormEditorPage.tsx
+    1:1   warning  `react` import should occur after import of `@reportplatform/types`                     import/order
+    2:1   warning  `react-router-dom` import should occur after import of `@reportplatform/types`          import/order
+   22:1   warning  There should be at least one empty line between import groups                           import/order
+   33:1   warning  There should be at least one empty line between import groups                           import/order
+   33:1   warning  `../hooks/useForms` import should occur after import of `../components/LoadingSpinner`  import/order
+   34:1   warning  There should be at least one empty line between import groups                           import/order
+  163:14  warning  Unexpected any. Specify a different type                                                @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\FormFillerPage.tsx
+    3:1   warning  `@fluentui/react-components` import should occur before import of `react`                import/order
+   18:1   warning  There should be at least one empty line between import groups                            import/order
+   18:1   warning  `@fluentui/react-icons` import should occur before import of `react`                     import/order
+   25:1   warning  `../components/LoadingSpinner` import should occur before import of `../hooks/useForms`  import/order
+   28:1   warning  `@reportplatform/types` type import should occur before import of `react`                import/order
+   30:30  error    'React' is not defined                                                                   no-undef
+   83:39  warning  Unexpected any. Specify a different type                                                 @typescript-eslint/no-explicit-any
+  104:39  warning  Unexpected any. Specify a different type                                                 @typescript-eslint/no-explicit-any
+  192:97  warning  Unexpected any. Specify a different type                                                 @typescript-eslint/no-explicit-any
+  194:68  warning  Unexpected any. Specify a different type                                                 @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\FormsListPage.tsx
+   1:1   warning  `react` import should occur after import of `@reportplatform/types`                            import/order
+   2:1   warning  `react-router-dom` import should occur after import of `@reportplatform/types`                 import/order
+  24:1   warning  There should be at least one empty line between import groups                                  import/order
+  29:1   warning  `../hooks/useForms` import should occur after import of `../components/LoadingSpinner`         import/order
+  30:1   warning  `../hooks/useFeatureFlags` import should occur after import of `../components/LoadingSpinner`  import/order
+  31:1   warning  There should be at least one empty line between import groups                                  import/order
+  31:1   warning  `../components/ScopeBadge` import should occur after import of `../components/LoadingSpinner`  import/order
+  32:1   warning  There should be at least one empty line between import groups                                  import/order
+  53:29  error    'React' is not defined                                                                         no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\GeneratedReportsListPage.tsx
+   1:1  warning  `react` import should occur after import of `@fluentui/react-icons`                                  import/order
+  19:5  warning  'CardHeader' is defined but never used. Allowed unused vars must match /^_/u                         @typescript-eslint/no-unused-vars
+  22:1  warning  There should be at least one empty line between import groups                                        import/order
+  28:1  warning  `../hooks/useGeneration` import should occur after import of `../components/Generation/StatusBadge`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\HealthDashboardPage.tsx
+   13:1   warning  `@tanstack/react-query` import should occur after import of `@fluentui/react-icons`  import/order
+   34:1   warning  There should be at least one empty line between import groups                        import/order
+  142:41  error    'JSX' is not defined                                                                 no-undef
+  174:28  error    'React' is not defined                                                               no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\HoldingAdminOverviewPage.tsx
+    7:1   warning  `react` import should occur after import of `@fluentui/react-icons`  import/order
+   24:1   warning  There should be at least one empty line between import groups        import/order
+  102:13  warning  Unexpected alert                                                     no-alert
+  164:70  warning  Unexpected any. Specify a different type                             @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\IntegrationPage.tsx
+    6:1   warning  `react` import should occur after type import of `@reportplatform/types`                                             import/order
+    9:5   warning  'Title3' is defined but never used. Allowed unused vars must match /^_/u                                             @typescript-eslint/no-unused-vars
+   19:5   warning  'TableCellLayout' is defined but never used. Allowed unused vars must match /^_/u                                    @typescript-eslint/no-unused-vars
+   43:1   warning  There should be at least one empty line between import groups                                                        import/order
+   49:1   warning  There should be at least one empty line between import groups                                                        import/order
+   49:1   warning  `../hooks/useIntegrations` import should occur after type import of `@reportplatform/types`                          import/order
+   61:1   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   86:60  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  160:13  warning  Unexpected confirm                                                                                                   no-alert
+  440:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  440:82  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  445:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  450:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  455:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  460:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  489:39  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  510:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  510:80  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  515:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  520:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  525:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  534:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  546:39  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\LocalDashboardPage.tsx
+   10:1    warning  `@fluentui/react-components` import should occur before import of `react`                                             import/order
+   25:1    warning  There should be at least one empty line between import groups                                                         import/order
+   25:1    warning  `@fluentui/react-icons` import should occur before import of `react`                                                  import/order
+   32:1    warning  `../components/LocalScope/ReleaseDialog` import should occur before import of `../components/LocalScope/ShareDialog`  import/order
+   35:1    warning  `../hooks/useFeatureFlags` import should occur before import of `../hooks/useForms`                                   import/order
+   36:1    warning  `../components/ScopeBadge` import should occur before import of `../hooks/useForms`                                   import/order
+   37:1    warning  `../components/LoadingSpinner` import should occur before import of `../components/LocalScope/ShareDialog`            import/order
+  249:142  warning  Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\LoginPage.tsx
+  2:1  warning  There should be at least one empty line between import groups              import/order
+  2:1  warning  `@azure/msal-react` import should occur before import of `react`           import/order
+  3:1  warning  There should be at least one empty line between import groups              import/order
+  4:1  warning  There should be at least one empty line between import groups              import/order
+  4:1  warning  `@fluentui/react-components` import should occur before import of `react`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\MatrixDashboard.tsx
+   2:1  warning  `@fluentui/react-components` import should occur before import of `react`         import/order
+  17:1  warning  There should be at least one empty line between import groups                     import/order
+  19:1  warning  There should be at least one empty line between import groups                     import/order
+  19:1  warning  `../hooks/usePeriods` import should occur before import of `../hooks/useReports`  import/order
+  20:1  warning  There should be at least one empty line between import groups                     import/order
+  20:1  warning  `@reportplatform/types` import should occur before import of `react`              import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\NotFoundPage.tsx
+  2:1  warning  `@fluentui/react-components` import should occur before import of `react-router-dom`  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\NotificationSettingsPage.tsx
+    1:1   warning  There should be at least one empty line between import groups                                    import/order
+   11:1   warning  There should be at least one empty line between import groups                                    import/order
+   11:1   warning  `../components/LoadingSpinner` import should occur before import of `../hooks/useNotifications`  import/order
+   12:1   warning  `@reportplatform/types` type import should occur before import of `../hooks/useNotifications`    import/order
+   63:39  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+   96:37  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+   97:67  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+   98:43  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+  112:38  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+  113:48  warning  Unexpected any. Specify a different type                                                         @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\PeriodDetailPage.tsx
+    1:1    warning  `react` import should occur after import of `@fluentui/react-icons`                                                  import/order
+   28:1    warning  There should be at least one empty line between import groups                                                        import/order
+   99:5    error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  100:48   warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  147:54   warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  147:116  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  155:54   warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  163:54   warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  169:58   warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  201:41   warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\PeriodsPage.tsx
+    1:1   warning  `react` import should occur after import of `@reportplatform/types`                                                  import/order
+   30:1   warning  There should be at least one empty line between import groups                                                        import/order
+   30:1   warning  `react-router-dom` import should occur after import of `@reportplatform/types`                                       import/order
+   31:1   warning  There should be at least one empty line between import groups                                                        import/order
+   31:1   warning  `../hooks/usePeriods` import should occur after import of `../components/Lifecycle/StatusBadge`                      import/order
+   32:1   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   33:1   warning  There should be at least one empty line between import groups                                                        import/order
+   33:10  warning  'PeriodType' is defined but never used. Allowed unused vars must match /^_/u                                         @typescript-eslint/no-unused-vars
+   33:22  warning  'PeriodStatus' is defined but never used. Allowed unused vars must match /^_/u                                       @typescript-eslint/no-unused-vars
+  132:48  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  200:55  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\PromotionPage.tsx
+    6:1   warning  `react` import should occur after type import of `@reportplatform/types`                                             import/order
+   28:1   warning  There should be at least one empty line between import groups                                                        import/order
+   34:1   warning  There should be at least one empty line between import groups                                                        import/order
+   34:1   warning  `../hooks/usePromotions` import should occur after type import of `@reportplatform/types`                            import/order
+   42:1   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   43:35  warning  'PromotionCandidateStatus' is defined but never used. Allowed unused vars must match /^_/u                           @typescript-eslint/no-unused-vars
+   73:13  warning  Unexpected confirm                                                                                                   no-alert
+   79:24  warning  Unexpected prompt                                                                                                    no-alert
+  303:64  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  308:64  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  313:64  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  318:64  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  329:51  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  345:87  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  368:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  373:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  378:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  383:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  388:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  395:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  407:39  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\ReportDetailPage.tsx
+    2:1   warning  `@fluentui/react-components` import should occur before import of `react`                                            import/order
+   13:5   warning  'Badge' is defined but never used. Allowed unused vars must match /^_/u                                              @typescript-eslint/no-unused-vars
+   15:1   warning  `@fluentui/react-icons` import should occur before import of `react`                                                 import/order
+   25:1   warning  There should be at least one empty line between import groups                                                        import/order
+   27:1   warning  `../components/Lifecycle/StatusBadge` import should occur before import of `../hooks/useReports`                     import/order
+   28:1   warning  `../components/Lifecycle/Timeline` import should occur before import of `../hooks/useReports`                        import/order
+   29:1   warning  There should be at least one empty line between import groups                                                        import/order
+   29:1   warning  `../components/Lifecycle/RejectionDialog` import should occur before import of `../hooks/useReports`                 import/order
+   30:1   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   31:1   warning  `@reportplatform/types` import should occur before import of `react`                                                 import/order
+   31:10  warning  'ReportStatus' is defined but never used. Allowed unused vars must match /^_/u                                       @typescript-eslint/no-unused-vars
+  148:5   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  150:5   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  223:89  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  224:55  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  231:89  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  232:55  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  241:52  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  245:54  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\ReportsPage.tsx
+    1:1   warning  `react` import should occur after import of `@reportplatform/types`                                                  import/order
+   29:1   warning  There should be at least one empty line between import groups                                                        import/order
+   29:1   warning  `react-router-dom` import should occur after import of `@reportplatform/types`                                       import/order
+   30:1   warning  `../hooks/useReports` import should occur after import of `../components/Lifecycle/RejectionDialog`                  import/order
+   37:1   warning  `../hooks/usePeriods` import should occur after import of `../components/Lifecycle/RejectionDialog`                  import/order
+   38:1   warning  `../hooks/useAdmin` import should occur after import of `../components/Lifecycle/RejectionDialog`                    import/order
+   39:1   warning  `../components/shared/StatusBadge` import should occur after import of `../components/Lifecycle/RejectionDialog`     import/order
+   40:1   warning  There should be at least one empty line between import groups                                                        import/order
+   40:1   warning  `../components/shared/PageHeader` import should occur after import of `../components/Lifecycle/RejectionDialog`      import/order
+   41:1   warning  There should be at least one empty line between import groups                                                        import/order
+   88:27  error    'React' is not defined                                                                                               no-undef
+  262:33  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  263:47  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  263:58  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  278:37  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  279:51  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  279:62  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\SchemaMappingPage.tsx
+    7:1   warning  `@fluentui/react-components` import should occur before import of `react`                                                import/order
+    8:5   warning  'Title3' is defined but never used. Allowed unused vars must match /^_/u                                                 @typescript-eslint/no-unused-vars
+   24:1   warning  `@fluentui/react-icons` import should occur before import of `react`                                                     import/order
+   29:1   warning  There should be at least one empty line between import groups                                                            import/order
+   29:1   warning  `@tanstack/react-query` import should occur before import of `react`                                                     import/order
+   32:1   warning  `../components/SchemaMapping` import should occur before import of `../components/shared/PageHeader`                     import/order
+   34:1   warning  There should be at least one empty line between import groups                                                            import/order
+   34:1   warning  `../api/templates` import should occur before import of `../components/Layout/ContentCard`                               import/order
+   35:1   warning  `react-dropzone` import should occur before import of `react-router-dom`                                                 import/order
+   37:26  error    'React' is not defined                                                                                                   no-undef
+   42:28  warning  'setSelectedFileId' is assigned a value but never used. Allowed unused vars must match /^_/u                             @typescript-eslint/no-unused-vars
+   90:8   warning  React Hook useCallback has a missing dependency: 'initializeMappings'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   96:9   warning  Unexpected console statement. Only these console methods are allowed: warn, error                                        no-console
+  143:9   warning  Unexpected console statement. Only these console methods are allowed: warn, error                                        no-console
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\SearchResultsPage.tsx
+    1:1   warning  `react-router-dom` import should occur after import of `@fluentui/react-icons`       import/order
+   12:1   warning  There should be at least one empty line between import groups                        import/order
+   19:1   warning  `../../hooks/useSearch` import should occur after type import of `../../api/search`  import/order
+  158:36  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  169:36  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  201:29  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  275:77  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  277:46  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  281:84  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\TemplateDetailPage.tsx
+    1:1   warning  `react` import should occur after import of `@fluentui/react-icons`                                      import/order
+    2:1   warning  `react-router-dom` import should occur after import of `@fluentui/react-icons`                           import/order
+   21:1   warning  There should be at least one empty line between import groups                                            import/order
+   27:1   warning  `../hooks/useTemplates` import should occur after import of `../components/Templates/PlaceholderMapper`  import/order
+  198:70  warning  Unexpected any. Specify a different type                                                                 @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\TemplateListPage.tsx
+    3:1    warning  `@fluentui/react-components` import should occur before import of `react`                import/order
+   12:1    warning  `@fluentui/react-components` import should occur before import of `react`                import/order
+   38:1    warning  There should be at least one empty line between import groups                            import/order
+   38:1    warning  `@fluentui/react-icons` import should occur before import of `react`                     import/order
+   44:1    warning  `../components/ScopeBadge` import should occur before import of `../hooks/useTemplates`  import/order
+  268:114  warning  Unexpected any. Specify a different type                                                 @typescript-eslint/no-explicit-any
+  286:93   warning  Unexpected any. Specify a different type                                                 @typescript-eslint/no-explicit-any
+  293:117  warning  Unexpected any. Specify a different type                                                 @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\UploadPage.tsx
+   3:1   warning  `react-dropzone` import should occur before import of `react-router-dom`   import/order
+   4:1   warning  `@fluentui/react-components` import should occur before import of `react`  import/order
+  14:1   warning  There should be at least one empty line between import groups              import/order
+  14:1   warning  `@fluentui/react-icons` import should occur before import of `react`       import/order
+  79:49  warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\__tests__\DashboardListPage.test.tsx
+   2:1   warning  `@testing-library/react` import should occur before import of `vitest`  import/order
+   3:1   warning  `react-router-dom` import should occur before import of `vitest`        import/order
+   4:1   warning  There should be at least one empty line between import groups           import/order
+   4:1   warning  `@tanstack/react-query` import should occur before import of `vitest`   import/order
+  18:39  error    'React' is not defined                                                  no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\__tests__\FilesPage.test.tsx
+    1:1   warning  `vitest` import should occur after import of `@testing-library/user-event`            import/order
+    2:1   warning  `@testing-library/react` import should occur after import of `@tanstack/react-query`  import/order
+    3:1   warning  `react-router-dom` import should occur after import of `@testing-library/user-event`  import/order
+    5:1   warning  There should be at least one empty line between import groups                         import/order
+   19:39  error    'React' is not defined                                                                no-undef
+  100:15  warning  'user' is assigned a value but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\__tests__\PeriodsPage.test.tsx
+   2:1   warning  `@testing-library/react` import should occur before import of `vitest`  import/order
+   3:1   warning  `react-router-dom` import should occur before import of `vitest`        import/order
+   4:1   warning  There should be at least one empty line between import groups           import/order
+   4:1   warning  `@tanstack/react-query` import should occur before import of `vitest`   import/order
+  18:39  error    'React' is not defined                                                  no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\__tests__\ReportsPage.test.tsx
+   2:1   warning  `@testing-library/react` import should occur before import of `vitest`  import/order
+   3:1   warning  `react-router-dom` import should occur before import of `vitest`        import/order
+   4:1   warning  There should be at least one empty line between import groups           import/order
+   4:1   warning  `@tanstack/react-query` import should occur before import of `vitest`   import/order
+  18:39  error    'React' is not defined                                                  no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\pages\__tests__\TemplateListPage.test.tsx
+   2:1   warning  `@testing-library/react` import should occur before import of `vitest`  import/order
+   3:1   warning  `react-router-dom` import should occur before import of `vitest`        import/order
+   4:1   warning  There should be at least one empty line between import groups           import/order
+   4:1   warning  `@tanstack/react-query` import should occur before import of `vitest`   import/order
+  18:39  error    'React' is not defined                                                  no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\telemetry\otel.ts
+   21:1   warning  `@opentelemetry/sdk-trace-base` import should occur before import of `@opentelemetry/sdk-trace-web`                    import/order
+   22:1   warning  `@opentelemetry/exporter-trace-otlp-http` import should occur before import of `@opentelemetry/sdk-trace-web`          import/order
+   23:1   warning  `@opentelemetry/context-zone` import should occur before import of `@opentelemetry/sdk-trace-web`                      import/order
+   24:1   warning  `@opentelemetry/resources` import should occur before import of `@opentelemetry/sdk-trace-web`                         import/order
+   26:1   warning  `@opentelemetry/instrumentation-fetch` import should occur before import of `@opentelemetry/sdk-trace-web`             import/order
+   27:1   warning  `@opentelemetry/instrumentation-xml-http-request` import should occur before import of `@opentelemetry/sdk-trace-web`  import/order
+   28:1   warning  `@opentelemetry/instrumentation-document-load` import should occur before import of `@opentelemetry/sdk-trace-web`     import/order
+   29:1   warning  `@opentelemetry/instrumentation` import should occur before import of `@opentelemetry/sdk-trace-web`                   import/order
+   30:1   warning  `@opentelemetry/api` import should occur before import of `@opentelemetry/sdk-trace-web`                               import/order
+   31:1   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free    @typescript-eslint/ban-ts-comment
+   32:1   warning  `@opentelemetry/core` import should occur before import of `@opentelemetry/sdk-trace-web`                              import/order
+  161:45  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+  163:66  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+  174:33  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+  175:66  warning  Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+  193:5   warning  Unexpected console statement. Only these console methods are allowed: warn, error                                      no-console
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\test\mocks\server.ts
+  1:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\test\setup.ts
+   4:1   error    'vi' is not defined                       no-undef
+   5:30  error    'vi' is not defined                       no-undef
+   6:21  error    'vi' is not defined                       no-undef
+   7:21  error    'vi' is not defined                       no-undef
+   8:29  error    'vi' is not defined                       no-undef
+   9:25  error    'vi' is not defined                       no-undef
+  10:27  error    'vi' is not defined                       no-undef
+  11:27  error    'vi' is not defined                       no-undef
+  15:1   error    'vi' is not defined                       no-undef
+  18:29  error    'vi' is not defined                       no-undef
+  19:31  error    'vi' is not defined                       no-undef
+  20:33  error    'vi' is not defined                       no-undef
+  24:55  error    'React' is not defined                    no-undef
+  25:57  error    'React' is not defined                    no-undef
+  26:46  error    'React' is not defined                    no-undef
+  30:1   error    'vi' is not defined                       no-undef
+  31:15  error    'vi' is not defined                       no-undef
+  32:18  error    'vi' is not defined                       no-undef
+  33:18  error    'vi' is not defined                       no-undef
+  34:28  error    'vi' is not defined                       no-undef
+  35:16  error    'vi' is not defined                       no-undef
+  37:53  error    'React' is not defined                    no-undef
+  43:12  error    'vi' is not defined                       no-undef
+  47:22  error    'vi' is not defined                       no-undef
+  48:25  error    'vi' is not defined                       no-undef
+  49:27  error    'vi' is not defined                       no-undef
+  50:30  error    'vi' is not defined                       no-undef
+  51:24  error    'vi' is not defined                       no-undef
+  56:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  56:38  error    'vi' is not defined                       no-undef
+  57:14  error    'vi' is not defined                       no-undef
+  58:16  error    'vi' is not defined                       no-undef
+  59:17  error    'vi' is not defined                       no-undef
+  63:36  error    'vi' is not defined                       no-undef
+  66:23  error    'vi' is not defined                       no-undef
+  67:23  error    'vi' is not defined                       no-undef
+  71:1   error    'beforeAll' is not defined                no-undef
+  83:1   error    'afterAll' is not defined                 no-undef
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\theme\ThemeProvider.tsx
+  13:1   warning  There should be at least one empty line between import groups                                                                   import/order
+  13:1   warning  `@fluentui/react-components` import should occur before import of `react`                                                       import/order
+  95:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\src\theme\brandTokens.ts
+  7:1  warning  There should be at least one empty line between import groups  import/order
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\tsconfig.json
+  1:1  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+I:\Codes\GCP\ReportAutomatization\apps\frontend\tsconfig.node.json
+  1:1  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+Ôťľ 760 problems (75 errors, 685 warnings)
+  0 errors and 473 warnings potentially fixable with the `--fix` option.
+

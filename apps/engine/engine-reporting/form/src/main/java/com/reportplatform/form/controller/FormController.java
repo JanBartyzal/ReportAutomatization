@@ -6,6 +6,7 @@ import com.reportplatform.form.dto.FormUpdateRequest;
 import com.reportplatform.form.dto.FormVersionDto;
 import com.reportplatform.form.service.FormService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -35,6 +36,7 @@ public class FormController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public Page<FormDto> listForms(
             @RequestParam(required = false) String orgId,
             @RequestParam(required = false) String scope,
@@ -43,11 +45,13 @@ public class FormController {
     }
 
     @GetMapping("/released")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public Page<FormDto> listReleasedForms(Pageable pageable) {
         return formService.listReleasedForms(pageable);
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<FormDto> createForm(
             @Valid @RequestBody FormCreateRequest request,
             @RequestHeader("X-User-Id") String userId) {
@@ -56,11 +60,13 @@ public class FormController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public FormDto getForm(@PathVariable UUID id) {
         return formService.getForm(id);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public FormDto updateForm(
             @PathVariable UUID id,
             @Valid @RequestBody FormUpdateRequest request,
@@ -69,12 +75,14 @@ public class FormController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Void> deleteForm(@PathVariable UUID id) {
         formService.deleteForm(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/publish")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public FormDto publishForm(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") String userId) {
@@ -82,6 +90,7 @@ public class FormController {
     }
 
     @PostMapping("/{id}/close")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public FormDto closeForm(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") String userId) {
@@ -89,6 +98,7 @@ public class FormController {
     }
 
     @PostMapping("/{id}/release")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public FormDto releaseForm(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") String userId) {
@@ -96,11 +106,13 @@ public class FormController {
     }
 
     @GetMapping("/{id}/versions")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public List<FormVersionDto> getVersions(@PathVariable UUID id) {
         return formService.getVersions(id);
     }
 
     @GetMapping("/{id}/preview")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public FormDto getPreview(@PathVariable UUID id) {
         return formService.getPreview(id);
     }

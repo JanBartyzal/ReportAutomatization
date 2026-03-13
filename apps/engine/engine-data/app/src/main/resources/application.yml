@@ -1,5 +1,6 @@
 server:
   port: 8100
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -110,3 +111,13 @@ logging:
     org.springframework.web: INFO
     org.hibernate: WARN
     org.flywaydb: INFO
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+  show-actuator: false

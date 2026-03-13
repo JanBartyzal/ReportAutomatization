@@ -7,6 +7,7 @@ import com.reportplatform.form.dto.FormResponseDto;
 import com.reportplatform.form.dto.FormResponseUpdateRequest;
 import com.reportplatform.form.service.FormResponseService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -33,6 +34,7 @@ public class FormResponseController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public Page<FormResponseDto> listResponses(
             @PathVariable UUID formId,
             Pageable pageable) {
@@ -40,6 +42,7 @@ public class FormResponseController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<FormResponseDto> createResponse(
             @PathVariable UUID formId,
             @Valid @RequestBody FormResponseCreateRequest request,
@@ -49,6 +52,7 @@ public class FormResponseController {
     }
 
     @GetMapping("/{respId}")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public FormResponseDto getResponse(
             @PathVariable UUID formId,
             @PathVariable UUID respId) {
@@ -56,6 +60,7 @@ public class FormResponseController {
     }
 
     @PutMapping("/{respId}")
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public FormResponseDto updateResponse(
             @PathVariable UUID formId,
             @PathVariable UUID respId,

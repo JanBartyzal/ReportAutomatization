@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import {
     makeStyles,
     tokens,
@@ -31,7 +31,7 @@ const useStyles = makeStyles({
         padding: tokens.spacingHorizontalM,
         borderRadius: tokens.borderRadiusMedium,
         backgroundColor: tokens.colorNeutralBackground1,
-        boxShadow: tokens.shadowShadow64,
+        boxShadow: tokens.shadow64,
         borderLeft: `4px solid ${tokens.colorNeutralStroke1}`,
         animation: 'slideIn 0.3s ease-out',
         '@keyframes slideIn': {
@@ -46,16 +46,16 @@ const useStyles = makeStyles({
         },
     },
     toastSuccess: {
-        borderLeftColor: tokens.colorGreenForeground1,
+        borderLeftColor: tokens.colorPaletteGreenForeground1,
     },
     toastWarning: {
-        borderLeftColor: tokens.colorOrangeForeground1,
+        borderLeftColor: tokens.colorPaletteDarkOrangeForeground1,
     },
     toastError: {
-        borderLeftColor: tokens.colorRedForeground1,
+        borderLeftColor: tokens.colorPaletteRedForeground1,
     },
     toastInfo: {
-        borderLeftColor: tokens.colorBlueForeground1,
+        borderLeftColor: tokens.colorPaletteBlueForeground2,
     },
     icon: {
         flexShrink: 0,
@@ -68,11 +68,11 @@ const useStyles = makeStyles({
     },
     title: {
         fontWeight: tokens.fontWeightSemibold,
-        fontSize: tokens.fontSizeBase14,
+        fontSize: tokens.fontSizeBase300,
         marginBottom: '2px',
     },
     message: {
-        fontSize: tokens.fontSizeBase13,
+        fontSize: tokens.fontSizeBase200,
         color: tokens.colorNeutralForeground2,
     },
     closeButton: {
@@ -136,13 +136,13 @@ export const useToast = () => {
 const getToastIcon = (type: ToastType) => {
     switch (type) {
         case 'success':
-            return <CheckmarkCircle24Regular style={{ color: tokens.colorGreenForeground1 }} />;
+            return <CheckmarkCircle24Regular style={{ color: tokens.colorPaletteGreenForeground1 }} />;
         case 'warning':
-            return <Warning24Regular style={{ color: tokens.colorOrangeForeground1 }} />;
+            return <Warning24Regular style={{ color: tokens.colorPaletteDarkOrangeForeground1 }} />;
         case 'error':
-            return <ErrorCircle24Regular style={{ color: tokens.colorRedForeground1 }} />;
+            return <ErrorCircle24Regular style={{ color: tokens.colorPaletteRedForeground1 }} />;
         case 'info':
-            return <Info24Regular style={{ color: tokens.colorBlueForeground1 }} />;
+            return <Info24Regular style={{ color: tokens.colorPaletteBlueForeground2 }} />;
     }
 };
 

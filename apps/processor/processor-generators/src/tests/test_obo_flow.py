@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from src.mcp.auth.obo_flow import TokenClaims, validate_token
 

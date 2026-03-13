@@ -6,6 +6,7 @@ import com.reportplatform.audit.service.AuditLogService;
 import com.reportplatform.audit.service.ExportService;
 import com.reportplatform.audit.service.ReadAccessLogService;
 import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
@@ -37,6 +38,7 @@ public class AuditController {
     }
 
     @GetMapping("/logs")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Page<AuditLogResponse>> getLogs(
             @RequestHeader("X-Org-Id") UUID orgId,
             @RequestParam(required = false) String userId,
@@ -55,6 +57,7 @@ public class AuditController {
     }
 
     @GetMapping("/export")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<StreamingResponseBody> exportLogs(
             @RequestHeader("X-Org-Id") UUID orgId,
             @RequestParam(required = false) String userId,
@@ -80,6 +83,7 @@ public class AuditController {
     }
 
     @GetMapping("/access-logs/{documentId}")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Page<ReadAccessLogResponse>> getAccessLogs(
             @PathVariable UUID documentId,
             @RequestParam(defaultValue = "0") int page,
@@ -90,6 +94,7 @@ public class AuditController {
     }
 
     @GetMapping("/ai-logs")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Page<AiAuditLogResponse>> getAiLogs(
             @RequestHeader("X-Org-Id") UUID orgId,
             @RequestParam(defaultValue = "0") int page,

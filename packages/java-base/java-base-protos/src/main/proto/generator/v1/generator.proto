@@ -1,0 +1,137 @@
+syntax = "proto3";
+package generator.v1;
+
+option java_package = "com.reportplatform.proto.generator.v1";
+option java_multiple_files = true;
+
+import "common/v1/common.proto";
+
+// =============================================================================
+// Shared message definitions for report generation
+// =============================================================================
+
+// Table data for placeholder substitution
+message TableData {
+  string placeholder_key = 1;
+  repeated string headers = 2;
+  repeated TableRow rows = 3;
+}
+
+// A single row in a table
+message TableRow {
+  repeated string cells = 1;
+}
+
+// Chart data for placeholder substitution
+message ChartData {
+  string placeholder_key = 1;
+  string chart_type = 2;  // BAR, LINE, PIE
+  repeated string labels = 3;
+  repeated ChartSeries series = 4;
+}
+
+// A data series for a chart
+message ChartSeries {
+  string name = 1;
+  repeated double values = 2;
+}
+
+// =============================================================================
+// PPTX Generator Service
+// =============================================================================
+
+// Service for generating PPTX reports
+service PptxGeneratorService {
+  // Generate a single PPTX report
+  rpc GenerateReport(PptxGenerateReportRequest) returns (PptxGenerateReportResponse);
+  
+  // Batch generate multiple PPTX reports
+  rpc BatchGenerate(PptxBatchGenerateRequest) returns (PptxBatchGenerateResponse);
+}
+
+// Request to generate a single PPTX report
+message PptxGenerateReportRequest {
+  common.v1.RequestContext context = 1;
+  string template_id = 2;
+  string report_id = 3;
+  map<string, string> text_placeholders = 4;
+  repeated TableData tables = 5;
+  repeated ChartData charts = 6;
+}
+
+// Response from generating a PPTX report
+message PptxGenerateReportResponse {
+  string report_id = 1;
+  common.v1.BlobReference generated_file = 2;
+  repeated string missing_placeholders = 3;
+  string generated_at = 4;
+  string error = 5;
+  string error_message = 6;
+}
+
+// Request to batch generate multiple PPTX reports
+message PptxBatchGenerateRequest {
+  common.v1.RequestContext context = 1;
+  string template_id = 2;
+  repeated string report_ids = 3;
+  map<string, string> text_placeholders = 4;
+  repeated TableData tables = 5;
+  repeated ChartData charts = 6;
+}
+
+// Response from batch generating PPTX reports
+message PptxBatchGenerateResponse {
+  repeated PptxGenerateReportResponse results = 1;
+  int32 successful = 2;
+  int32 failed = 3;
+}
+
+// =============================================================================
+// Excel Generator Service
+// =============================================================================
+
+// Service for generating Excel reports
+service ExcelGeneratorService {
+  // Generate a single Excel report
+  rpc GenerateReport(ExcelGenerateReportRequest) returns (ExcelGenerateReportResponse);
+  
+  // Batch generate multiple Excel reports
+  rpc BatchGenerate(ExcelBatchGenerateRequest) returns (ExcelBatchGenerateResponse);
+}
+
+// Request to generate a single Excel report
+message ExcelGenerateReportRequest {
+  common.v1.RequestContext context = 1;
+  string template_id = 2;
+  string report_id = 3;
+  map<string, string> text_placeholders = 4;
+  repeated TableData tables = 5;
+  repeated ChartData charts = 6;
+}
+
+// Response from generating an Excel report
+message ExcelGenerateReportResponse {
+  string report_id = 1;
+  common.v1.BlobReference generated_file = 2;
+  repeated string missing_placeholders = 3;
+  string generated_at = 4;
+  string error = 5;
+  string error_message = 6;
+}
+
+// Request to batch generate multiple Excel reports
+message ExcelBatchGenerateRequest {
+  common.v1.RequestContext context = 1;
+  string template_id = 2;
+  repeated string report_ids = 3;
+  map<string, string> text_placeholders = 4;
+  repeated TableData tables = 5;
+  repeated ChartData charts = 6;
+}
+
+// Response from batch generating Excel reports
+message ExcelBatchGenerateResponse {
+  repeated ExcelGenerateReportResponse results = 1;
+  int32 successful = 2;
+  int32 failed = 3;
+}

@@ -1,0 +1,43 @@
+{
+  "brand": {
+    "10": "#0D0206",
+    "20": "#23080F",
+    "30": "#3A0D19",
+    "40": "#521324",
+    "50": "#6B1830",
+    "60": "#841E3C",
+    "70": "#9D2444",
+    "80": "#B32A48",
+    "90": "#C4314B",
+    "100": "#CF4D62",
+    "110": "#D96A79",
+    "120": "#E38790",
+    "130": "#EDA4A9",
+    "140": "#F5BFC2",
+    "150": "#F9D8DA",
+    "160": "#FDF0F1"
+  },
+  "semantic": {
+    "success": { "foreground": "#107C10", "background": "#DFF6DD" },
+    "danger": { "foreground": "#D13438", "background": "#FDE7E9" },
+    "warning": { "foreground": "#D83B01", "background": "#FDEBE2" },
+    "info": { "foreground": "#C4314B", "background": "#FDF0F1" }
+  },
+  "status": {
+    "DRAFT": { "bg": "#F3F2F1", "text": "#616161" },
+    "SUBMITTED": { "bg": "#FEF3C7", "text": "#92400E" },
+    "IN_REVIEW": { "bg": "#E0F2FE", "text": "#0369A1" },
+    "APPROVED": { "bg": "#DFF6DD", "text": "#107C10" },
+    "REJECTED": { "bg": "#FDE7E9", "text": "#D13438" },
+    "OVERDUE": { "bg": "#FDEBE2", "text": "#D83B01" }
+  },
+  "chart": [
+    "#C4314B", "#107C10", "#0078D4", "#D83B01",
+    "#6D28D9", "#008272", "#E3008C", "#986F0B"
+  ],
+  "heroGradient": {
+    "from": "#6B1830",
+    "to": "#23080F",
+    "angle": 135
+  }
+}

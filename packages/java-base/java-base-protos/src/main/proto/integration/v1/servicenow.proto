@@ -1,0 +1,84 @@
+syntax = "proto3";
+package integration.v1;
+
+import "common/v1/common.proto";
+
+option java_package = "com.reportplatform.proto.integration.v1";
+option java_multiple_files = true;
+
+// Service-Now external integration service
+service ServiceNowIntegrationService {
+  // Fetch data from a Service-Now table
+  rpc FetchTableData(FetchTableDataRequest) returns (FetchTableDataResponse);
+
+  // Test connection to a Service-Now instance
+  rpc TestConnection(TestConnectionRequest) returns (TestConnectionResponse);
+
+  // Trigger a manual sync for a given connection
+  rpc TriggerSync(TriggerSyncRequest) returns (TriggerSyncResponse);
+
+  // Get sync job status
+  rpc GetSyncStatus(GetSyncStatusRequest) returns (GetSyncStatusResponse);
+}
+
+message FetchTableDataRequest {
+  common.v1.RequestContext context = 1;
+  string connection_id = 2;
+  string table_name = 3;
+  int32 offset = 4;
+  int32 limit = 5;
+  string sys_updated_on_after = 6;  // ISO 8601, for incremental sync
+}
+
+message FetchTableDataResponse {
+  repeated ServiceNowRecord records = 1;
+  int32 total_count = 2;
+  bool has_more = 3;
+  common.v1.ProcessingStatus status = 4;
+}
+
+message ServiceNowRecord {
+  string sys_id = 1;
+  string sys_updated_on = 2;
+  map<string, string> fields = 3;
+}
+
+message TestConnectionRequest {
+  common.v1.RequestContext context = 1;
+  string instance_url = 2;
+  string auth_type = 3;         // "OAUTH2" or "BASIC"
+  string credentials_ref = 4;   // KeyVault secret name
+}
+
+message TestConnectionResponse {
+  bool success = 1;
+  string message = 2;
+  string instance_version = 3;
+  int32 latency_ms = 4;
+}
+
+message TriggerSyncRequest {
+  common.v1.RequestContext context = 1;
+  string connection_id = 2;
+  bool full_sync = 3;  // true = ignore last_sync_timestamp
+}
+
+message TriggerSyncResponse {
+  string job_id = 1;
+  common.v1.ProcessingStatus status = 2;
+}
+
+message GetSyncStatusRequest {
+  common.v1.RequestContext context = 1;
+  string job_id = 2;
+}
+
+message GetSyncStatusResponse {
+  string job_id = 1;
+  common.v1.ProcessingStatus status = 2;
+  int32 records_fetched = 3;
+  int32 records_stored = 4;
+  string started_at = 5;
+  string completed_at = 6;
+  string error_message = 7;
+}

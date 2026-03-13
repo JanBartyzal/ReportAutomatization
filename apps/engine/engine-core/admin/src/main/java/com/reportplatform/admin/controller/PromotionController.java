@@ -7,6 +7,7 @@ import com.reportplatform.admin.service.PromotionApprovalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +35,7 @@ public class PromotionController {
      * List promotion candidates with optional status filter and pagination.
      */
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<PaginatedResponse<PromotionCandidateDTO>> listCandidates(
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "1") int page,
@@ -46,6 +48,7 @@ public class PromotionController {
      * Get a specific promotion candidate with proposed DDL details.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<PromotionCandidateDTO> getCandidate(@PathVariable UUID id) {
         logger.info("Getting promotion candidate: id={}", id);
         return ResponseEntity.ok(promotionApprovalService.getCandidate(id));
@@ -55,6 +58,7 @@ public class PromotionController {
      * Modify the DDL of a promotion candidate before approval.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<PromotionCandidateDTO> updateCandidate(
             @PathVariable UUID id,
             @RequestBody UpdatePromotionRequest request) {
@@ -66,6 +70,7 @@ public class PromotionController {
      * Approve a promotion candidate and trigger table creation in MS-SINK-TBL.
      */
     @PostMapping("/{id}/approve")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<PromotionCandidateDTO> approveCandidate(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") String userId) {
@@ -78,6 +83,7 @@ public class PromotionController {
      * Dismiss/reject a promotion candidate.
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Void> rejectCandidate(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") String userId) {
@@ -90,6 +96,7 @@ public class PromotionController {
      * Trigger historical data migration from JSONB to the promoted table.
      */
     @PostMapping("/{id}/migrate")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, String>> triggerMigration(@PathVariable UUID id) {
         logger.info("Triggering migration for promotion candidate: id={}", id);
         promotionApprovalService.triggerMigration(id);
@@ -102,6 +109,7 @@ public class PromotionController {
      * Get migration progress for a promotion candidate.
      */
     @GetMapping("/{id}/migrate/status")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, Object>> getMigrationStatus(@PathVariable UUID id) {
         logger.info("Getting migration status for promotion candidate: id={}", id);
         return ResponseEntity.ok(promotionApprovalService.getMigrationStatus(id));

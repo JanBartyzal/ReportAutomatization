@@ -1,5 +1,6 @@
 server:
   port: ${HTTP_PORT:8081}
+  forward-headers-strategy: framework
   tomcat:
     threads:
       max: 200
@@ -48,6 +49,7 @@ spring:
 
 # Dapr configuration
 dapr:
+  app-id: ${DAPR_APP_ID:engine-core}
   sidecar:
     host: ${DAPR_HOST:localhost}
     http-port: ${DAPR_HTTP_PORT:3500}
@@ -104,3 +106,13 @@ logging:
     com.reportplatform.audit: ${LOG_LEVEL_AUDIT:INFO}
     org.springframework.security: WARN
     io.dapr: INFO
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+  show-actuator: false

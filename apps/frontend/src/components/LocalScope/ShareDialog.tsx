@@ -46,7 +46,7 @@ interface ShareDialogProps {
     trigger?: React.ReactElement;
 }
 
-export const ShareDialog: React.FC<ShareDialogProps> = ({ itemId, itemName, itemType, trigger }) => {
+export const ShareDialog: React.FC<ShareDialogProps> = ({ itemName, itemType, trigger }) => {
     const styles = useStyles();
     const [isOpen, setIsOpen] = useState(false);
     const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);

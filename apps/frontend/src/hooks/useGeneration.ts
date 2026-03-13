@@ -1,12 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import generationApi, {
     GenerateReportRequest,
     GenerateReportResponse,
     BatchGenerateRequest,
-    BatchGenerateResponse,
-    GeneratedReport,
-    GenerationStatus,
 } from '../api/generation';
 
 // Query keys

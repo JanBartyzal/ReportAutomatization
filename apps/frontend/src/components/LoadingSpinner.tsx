@@ -1,4 +1,3 @@
-import React from 'react';
 import { Spinner } from '@fluentui/react-components';
 
 interface LoadingSpinnerProps {

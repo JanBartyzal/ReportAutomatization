@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
 
 from src.generators.pptx.service.placeholder_parser import (
-    PlaceholderInfo,
     PlaceholderType,
     extract_placeholders,
     parse_placeholders_from_text,

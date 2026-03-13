@@ -5,7 +5,6 @@ import {
     Button,
     Input,
     Dropdown,
-    DropdownTrigger,
     Option,
     Badge,
     Table,
@@ -14,11 +13,9 @@ import {
     TableHeaderCell,
     TableCell,
     TableBody,
-    Card,
 } from '@fluentui/react-components';
 import {
     ArrowDownload24Regular,
-    Filter24Regular,
     Eye24Regular,
 } from '@fluentui/react-icons';
 import { useAuditLogs } from '../../hooks/useAuditLogs';
@@ -45,7 +42,7 @@ const useStyles = makeStyles({
         gap: tokens.spacingVerticalXS,
     },
     filterLabel: {
-        fontSize: tokens.fontSizeBase12,
+        fontSize: tokens.fontSizeBase200,
         fontWeight: tokens.fontWeightSemibold,
     },
     actions: {
@@ -102,18 +99,18 @@ const useStyles = makeStyles({
     },
     detailLabel: {
         fontWeight: tokens.fontWeightSemibold,
-        fontSize: tokens.fontSizeBase12,
+        fontSize: tokens.fontSizeBase200,
         color: tokens.colorNeutralForeground2,
     },
     detailValue: {
-        fontSize: tokens.fontSizeBase14,
+        fontSize: tokens.fontSizeBase300,
     },
     jsonBlock: {
         backgroundColor: tokens.colorNeutralBackground2,
         padding: tokens.spacingHorizontalM,
         borderRadius: tokens.borderRadiusMedium,
         fontFamily: 'monospace',
-        fontSize: tokens.fontSizeBase13,
+        fontSize: tokens.fontSizeBase200,
         overflow: 'auto',
         maxHeight: '200px',
     },
@@ -179,7 +176,7 @@ export default function AuditLogViewer({ entityId, entityType, onEntityClick }: 
     });
     const [selectedLog, setSelectedLog] = useState<{ id: string; details: Record<string, unknown> } | null>(null);
 
-    const { data, isLoading, refetch } = useAuditLogs(params);
+    const { data, isLoading } = useAuditLogs(params);
 
     const handleFilterChange = (key: keyof AuditLogParams, value: string) => {
         const newParams = { ...params, [key]: value || undefined, page: 1 };

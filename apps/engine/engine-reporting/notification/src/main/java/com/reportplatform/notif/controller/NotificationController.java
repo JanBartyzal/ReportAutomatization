@@ -4,6 +4,7 @@ import com.reportplatform.notif.dto.NotificationResponse;
 import com.reportplatform.notif.service.NotificationService;
 import io.dapr.client.domain.CloudEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

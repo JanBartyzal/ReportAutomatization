@@ -29,8 +29,8 @@ public class DeadlineService {
     private String reminderDays;
 
     public DeadlineService(PeriodRepository periodRepository,
-                           PeriodOrgAssignmentRepository assignmentRepository,
-                           DaprEventPublisher eventPublisher) {
+            PeriodOrgAssignmentRepository assignmentRepository,
+            DaprEventPublisher eventPublisher) {
         this.periodRepository = periodRepository;
         this.assignmentRepository = assignmentRepository;
         this.eventPublisher = eventPublisher;
@@ -89,6 +89,27 @@ public class DeadlineService {
             eventPublisher.publishDeadlineEscalation(period.getId(), period.getName(), orgIds);
 
             log.info("Period {} deadline passed, moved to REVIEWING", period.getId());
+        }
+
+        // Auto-close periods past their review deadline
+        checkPastReviewDeadlines();
+    }
+
+    @Transactional
+    public void checkPastReviewDeadlines() {
+        List<PeriodEntity> pastReviewDeadline = periodRepository.findPastReviewDeadline(Instant.now());
+
+        for (PeriodEntity period : pastReviewDeadline) {
+            period.setStatus(PeriodState.CLOSED);
+            periodRepository.save(period);
+
+            List<String> orgIds = assignmentRepository.findByPeriodId(period.getId()).stream()
+                    .map(a -> a.getOrgId())
+                    .toList();
+
+            eventPublisher.publishPeriodAutoClosed(period.getId(), period.getName(), orgIds);
+
+            log.info("Period {} review deadline passed, auto-closed", period.getId());
         }
     }
 }

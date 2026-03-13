@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { search, suggest, type SearchParams, type SearchSuggestion, type SearchResult } from '../api/search';
+import { search, suggest, type SearchParams, type SearchSuggestion } from '../api/search';
 
 export function useSearch(params: SearchParams) {
     return useQuery({

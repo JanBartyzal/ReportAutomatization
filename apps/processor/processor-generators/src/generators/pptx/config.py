@@ -5,6 +5,7 @@ from src.common.config import (
     CHART_HEIGHT_INCHES,
     CHART_WIDTH_INCHES,
     MAX_BATCH_SIZE,
+    GENERATION_TIMEOUT,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "CHART_HEIGHT_INCHES",
     "CHART_WIDTH_INCHES",
     "MAX_BATCH_SIZE",
+    "GENERATION_TIMEOUT",
 ]

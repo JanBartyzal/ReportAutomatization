@@ -79,6 +79,12 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
+        <!-- OpenAPI / Swagger UI -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+
         <!-- Azure Key Vault -->
         <dependency>
             <groupId>com.azure</groupId>

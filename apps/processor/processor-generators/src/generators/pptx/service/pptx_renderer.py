@@ -12,7 +12,7 @@ import re
 from dataclasses import dataclass, field
 
 from pptx import Presentation
-from pptx.util import Emu, Pt
+from pptx.util import Pt
 from pptx.dml.color import RGBColor
 
 from src.generators.pptx.service.placeholder_parser import PlaceholderType, extract_placeholders
@@ -173,7 +173,6 @@ def _merge_and_replace_runs(paragraph, tag: str, replacement: str) -> None:
     end_run_idx = -1
 
     for i, run in enumerate(runs):
-        run_start = char_pos
         run_end = char_pos + len(run.text)
 
         if start_run_idx == -1 and run_end > tag_start:

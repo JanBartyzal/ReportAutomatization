@@ -1,6 +1,7 @@
 package com.reportplatform.form.controller;
 
 import com.reportplatform.form.service.ExcelImportService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.reportplatform.form.service.ExcelTemplateService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -31,6 +32,7 @@ public class FormExcelController {
     }
 
     @GetMapping("/export/excel-template")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<byte[]> exportExcelTemplate(@PathVariable UUID formId) throws IOException {
         byte[] template = excelTemplateService.generateTemplate(formId);
 
@@ -41,6 +43,7 @@ public class FormExcelController {
     }
 
     @PostMapping("/import/excel")
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, Object>> importExcel(
             @PathVariable UUID formId,
             @RequestParam("file") MultipartFile file) throws IOException {

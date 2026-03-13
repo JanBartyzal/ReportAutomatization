@@ -10,6 +10,7 @@
  *
  * Part of P5-W4-002: Health Dashboard Page (Admin)
  */
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Title3,
@@ -73,14 +74,14 @@ const useStyles = makeStyles({
         alignItems: 'center',
     },
     metricValue: {
-        fontSize: tokens.fontSizeTitle1,
+        fontSize: tokens.fontSizeHero700,
         fontWeight: '600',
         color: tokens.colorBrandForeground1,
         marginBottom: tokens.spacingVerticalXS,
     },
     metricLabel: {
         color: tokens.colorNeutralForeground2,
-        fontSize: tokens.fontSizeSmall,
+        fontSize: tokens.fontSizeBase200,
     },
     section: {
         marginBottom: tokens.spacingVerticalL,
@@ -104,7 +105,7 @@ const useStyles = makeStyles({
         color: tokens.colorPaletteRedForeground1,
     },
     errorError: {
-        color: tokens.colorPaletteOrangeForeground1,
+        color: tokens.colorPaletteDarkOrangeForeground1,
     },
     errorWarning: {
         color: tokens.colorPaletteYellowForeground1,
@@ -131,17 +132,15 @@ function getStatusBadgeProps(status: string): BadgeProps {
             return { appearance: 'filled', color: 'success' };
         case 'degraded':
             return { appearance: 'filled', 'aria-label': 'Degraded', color: 'warning' };
-        case 'down':
-            return { appearance: 'filled', color: 'danger' };
         default:
-            return { appearance: 'filled', color: 'neutral' };
+            return { appearance: 'filled', color: 'informative' };
     }
 }
 
 /**
  * Get status icon based on service status.
  */
-function getStatusIcon(status: string): JSX.Element {
+function getStatusIcon(status: string): React.ReactNode {
     switch (status) {
         case 'healthy':
             return <CheckmarkCircle24Regular style={{ color: tokens.colorPaletteGreenForeground1 }} />;
@@ -212,9 +211,9 @@ const HealthDashboardPage: React.FC = () => {
                 </div>
                 <Button
                     appearance="subtle"
-                    icon={<ArrowExportUp24Regular />}
+                    icon={isRefetching ? <Spinner size="tiny" /> : <ArrowExportUp24Regular />}
                     onClick={() => refetch()}
-                    loading={isRefetching}
+                    disabled={isRefetching}
                 >
                     Refresh
                 </Button>
@@ -319,7 +318,7 @@ const HealthDashboardPage: React.FC = () => {
                                         <TableCellLayout>
                                             {error.message}
                                             {error.details && (
-                                                <Body1 style={{ color: tokens.colorNeutralForeground2, fontSize: tokens.fontSizeSmall }}>
+                                                <Body1 style={{ color: tokens.colorNeutralForeground2, fontSize: tokens.fontSizeBase200 }}>
                                                     {error.details}
                                                 </Body1>
                                             )}

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find i:/Codes/GCP/ReportAutomatization -name prometheus* -o -name otel* -o -name *telemetry*)",
+      "Bash(find I:/Codes/GCP/ReportAutomatization/apps/engine -name *.java -not -path */target/*)",
+      "Bash(find I:/Codes/GCP/ReportAutomatization/apps/engine -name *.sql -not -path */target/*)",
+      "Bash(find I:/Codes/GCP/ReportAutomatization/apps/engine/microservices/units/ms-orch -name *.java -not -path */target/*)",
+      "Bash(find I:/Codes/GCP/ReportAutomatization/apps/engine/engine-core/versioning -name *.java -not -path */target/*)",
+      "Bash(find I:/Codes/GCP/ReportAutomatization/apps/engine/engine-reporting/lifecycle -name *.java -not -path */target/*)",
+      "Bash(find I:/Codes/GCP/ReportAutomatization/apps/engine/engine-reporting/period -name *.java -not -path */target/*)",
+      "Bash(find . -path */ms-gw* -o -path */router* -o -path *gateway*)"
+    ]
+  }
+}

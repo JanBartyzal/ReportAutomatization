@@ -6,6 +6,7 @@ Implements the ``GenerateReport`` and ``BatchGenerate`` RPCs defined in
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
@@ -13,10 +14,20 @@ from typing import TYPE_CHECKING
 import grpc
 
 # Generated proto stubs
+import sys
+import os
+
+# Add project root to path for proto imports
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.abspath(os.path.join(_current_dir, "../../../../.."))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 from common.v1 import common_pb2  # type: ignore[import-untyped]
-from generator.v1 import pptx_generator_pb2, pptx_generator_pb2_grpc  # type: ignore[import-untyped]
+from generator.v1 import generator_pb2 as pptx_generator_pb2, generator_pb2_grpc as pptx_generator_pb2_grpc  # type: ignore[import-untyped]
 
 from src.common.blob_client import GenPptxBlobClient
+from src.generators.pptx.config import GENERATION_TIMEOUT
 from src.generators.pptx.models.context import extract_context_from_grpc
 from src.generators.pptx.service.chart_generator import ChartSeriesData
 from src.generators.pptx.service.pptx_renderer import ChartInput, RenderResult, TableInput, render
@@ -45,8 +56,27 @@ class PptxGeneratorServiceImpl(pptx_generator_pb2_grpc.PptxGeneratorServiceServi
         )
 
         try:
-            result = await self._generate_single(request)
+            result = await asyncio.wait_for(
+                self._generate_single(request),
+                timeout=GENERATION_TIMEOUT
+            )
             return result
+        except asyncio.TimeoutError:
+            logger.error(
+                "[%s] GenerateReport timed out for report_id=%s after %d seconds",
+                req_ctx.correlation_id,
+                request.report_id,
+                GENERATION_TIMEOUT,
+            )
+            context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
+            context.set_details(f"Generation timed out after {GENERATION_TIMEOUT} seconds")
+            return pptx_generator_pb2.GenerateReportResponse(
+                report_id=request.report_id,
+                missing_placeholders=[],
+                generated_at=_now_iso(),
+                error="timeout",
+                error_message=f"Generation timed out after {GENERATION_TIMEOUT} seconds",
+            )
         except Exception as exc:
             logger.error(
                 "[%s] GenerateReport failed for report_id=%s: %s",

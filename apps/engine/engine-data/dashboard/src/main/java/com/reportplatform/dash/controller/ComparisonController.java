@@ -5,6 +5,7 @@ import com.reportplatform.dash.service.ComparisonService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class ComparisonController {
     }
 
     @PostMapping("/kpis")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<ComparisonKpiResponse> createKpi(
             @RequestHeader("X-Org-Id") UUID orgId,
             @RequestHeader("X-User-Id") UUID userId,
@@ -30,18 +32,21 @@ public class ComparisonController {
     }
 
     @GetMapping("/kpis")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<List<ComparisonKpiResponse>> listKpis(
             @RequestHeader("X-Org-Id") UUID orgId) {
         return ResponseEntity.ok(comparisonService.listKpis(orgId));
     }
 
     @DeleteMapping("/kpis/{kpiId}")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Void> deactivateKpi(@PathVariable UUID kpiId) {
         comparisonService.deactivateKpi(kpiId);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/multi-org")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<MultiOrgComparisonResponse> compareAcrossOrgs(
             @Valid @RequestBody MultiOrgComparisonRequest request) {
         return ResponseEntity.ok(comparisonService.compareAcrossOrgs(request));

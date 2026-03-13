@@ -5,7 +5,6 @@ import {
     Button,
     Text,
     Spinner,
-    Card,
 } from '@fluentui/react-components';
 import {
     Play24Regular,
@@ -28,15 +27,15 @@ const useStyles = makeStyles({
         minHeight: '200px',
         padding: tokens.spacingHorizontalM,
         fontFamily: 'monospace',
-        fontSize: tokens.fontSizeBase14,
+        fontSize: tokens.fontSizeBase300,
         border: `1px solid ${tokens.colorNeutralStroke1}`,
         borderRadius: tokens.borderRadiusMedium,
         backgroundColor: tokens.colorNeutralBackground2,
         resize: 'vertical',
         outline: 'none',
         '&:focus': {
-            borderColor: tokens.colorBrandForeground1,
-        },
+            borderColor: tokens.colorBrandStroke1,
+        } as any,
     },
     actions: {
         display: 'flex',
@@ -48,7 +47,7 @@ const useStyles = makeStyles({
     resultsTable: {
         width: '100%',
         borderCollapse: 'collapse',
-        fontSize: tokens.fontSizeBase13,
+        fontSize: tokens.fontSizeBase200,
     },
     resultsTableTh: {
         textAlign: 'left',
@@ -59,14 +58,14 @@ const useStyles = makeStyles({
     },
     resultsTableTd: {
         padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
-        border: `1px solid ${tokens.colorStroke1}`,
+        border: `1px solid ${tokens.colorNeutralStroke1}`,
     },
     error: {
         padding: tokens.spacingHorizontalM,
-        backgroundColor: tokens.colorPaletteRedBackground2,
-        border: `1px solid ${tokens.colorRedForeground1}`,
+        backgroundColor: tokens.colorStatusDangerBackground1,
+        border: `1px solid ${tokens.colorStatusDangerBorder1}`,
         borderRadius: tokens.borderRadiusMedium,
-        color: tokens.colorRedForeground1,
+        color: tokens.colorStatusDangerForeground1,
     },
     info: {
         display: 'flex',
@@ -75,7 +74,7 @@ const useStyles = makeStyles({
         padding: tokens.spacingHorizontalM,
         backgroundColor: tokens.colorNeutralBackground2,
         borderRadius: tokens.borderRadiusMedium,
-        fontSize: tokens.fontSizeBase13,
+        fontSize: tokens.fontSizeBase200,
         color: tokens.colorNeutralForeground2,
     },
 });

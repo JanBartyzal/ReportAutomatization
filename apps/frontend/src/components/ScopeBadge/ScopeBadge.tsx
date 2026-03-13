@@ -85,7 +85,7 @@ export const ScopeBadge: React.FC<ScopeBadgeProps> = ({
             <Badge
                 appearance={appearance}
                 color={color}
-                size={sizeMap[size]}
+                size={sizeMap[size] as any}
                 className={styles.badge}
             >
                 {scope}

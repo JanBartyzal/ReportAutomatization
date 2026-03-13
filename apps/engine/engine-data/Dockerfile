@@ -54,11 +54,21 @@ RUN cd apps/engine/engine-data && mvn package -DskipTests -q
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
+# Download OpenTelemetry Java agent
+RUN apk add --no-cache wget curl && \
+    mkdir -p /app/agent && \
+    wget -q -O /app/agent/opentelemetry-javaagent.jar \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.9.0/opentelemetry-javaagent.jar && \
+    chmod 644 /app/agent/opentelemetry-javaagent.jar
+
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
 COPY --from=build /workspace/apps/engine/engine-data/app/target/*.jar app.jar
+
+# Copy OTEL agent
+COPY --from=runtime /app/agent/opentelemetry-javaagent.jar /app/agent/
 
 RUN chown -R appuser:appgroup /app
 
@@ -74,4 +84,8 @@ ENTRYPOINT ["java", \
     "-XX:MaxRAMPercentage=75.0", \
     "-Djava.security.egd=file:/dev/./urandom", \
     "--enable-preview", \
+    "-javaagent:/app/agent/opentelemetry-javaagent.jar", \
+    "-Dotel.service.name=engine-data", \
+    "-Dotel.exporter.otlp.endpoint=http://otel-collector:4317", \
+    "-Dotel.resource.attributes=service.namespace=reportplatform,deployment.environment=local", \
     "-jar", "app.jar"]

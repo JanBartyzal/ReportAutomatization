@@ -6,6 +6,7 @@ import com.reportplatform.ver.model.dto.VersionResponse;
 import com.reportplatform.ver.service.VersionDiffService;
 import com.reportplatform.ver.service.VersionService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,7 @@ public class VersionController {
     }
 
     @GetMapping("/{entityType}/{entityId}")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<List<VersionResponse>> listVersions(
             @PathVariable String entityType,
             @PathVariable UUID entityId) {
@@ -34,6 +36,7 @@ public class VersionController {
     }
 
     @GetMapping("/{entityType}/{entityId}/diff")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<VersionDiffResponse> getDiff(
             @PathVariable String entityType,
             @PathVariable UUID entityId,
@@ -43,6 +46,7 @@ public class VersionController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<VersionResponse> createVersion(
             @RequestBody @Valid CreateVersionRequest request,
             @RequestHeader("X-Org-Id") UUID orgId) {

@@ -1,0 +1,48 @@
+src/components/__tests__/ChartWrapper.test.tsx(1,32): error TS6133: 'vi' is declared but its value is never read.
+src/components/__tests__/GenerateButton.test.tsx(2,18): error TS6133: 'screen' is declared but its value is never read.
+src/components/__tests__/GenerateButton.test.tsx(4,1): error TS6133: 'React' is declared but its value is never read.
+src/components/__tests__/GenerationProgress.test.tsx(4,1): error TS6133: 'React' is declared but its value is never read.
+src/components/Admin/BatchesPanel.tsx(2,17): error TS6133: 'Button' is declared but its value is never read.
+src/components/Admin/BatchesPanel.tsx(3,1): error TS6133: 'useAuth' is declared but its value is never read.
+src/components/Admin/BatchesPanel.tsx(9,13): error TS6133: 'data' is declared but its value is never read.
+src/components/Admin/FailedJobsPanel.tsx(1,25): error TS6133: 'useReprocessFailedJob' is declared but its value is never read.
+src/pages/__tests__/FilesPage.test.tsx(100,15): error TS6133: 'user' is declared but its value is never read.
+src/pages/ExcelImportPage.tsx(1,41): error TS6133: 'useEffect' is declared but its value is never read.
+src/pages/ExcelImportPage.tsx(9,5): error TS6133: 'Input' is declared but its value is never read.
+src/pages/ExcelImportPage.tsx(32,1): error TS6133: 'useSchemaMapping' is declared but its value is never read.
+src/pages/ExcelImportPage.tsx(34,1): error TS6133: 'LoadingSpinner' is declared but its value is never read.
+src/pages/ExcelImportPage.tsx(42,36): error TS6133: 'isLoadingForm' is declared but its value is never read.
+src/pages/FilesPage.tsx(176,48): error TS2322: Type 'Dispatch<SetStateAction<FileListParams>>' is not assignable to type '(filters: { status?: "" | FileStatus | undefined; mime_type?: string | undefined; sort_by?: string | undefined; sort_order?: "asc" | "desc" | undefined; }) => void'.
+  Types of parameters 'value' and 'filters' are incompatible.
+    Type '{ status?: "" | FileStatus | undefined; mime_type?: string | undefined; sort_by?: string | undefined; sort_order?: "asc" | "desc" | undefined; }' is not assignable to type 'SetStateAction<FileListParams>'.
+      Type '{ status?: "" | FileStatus | undefined; mime_type?: string | undefined; sort_by?: string | undefined; sort_order?: "asc" | "desc" | undefined; }' is not assignable to type 'FileListParams'.
+        Types of property 'status' are incompatible.
+          Type '"" | FileStatus | undefined' is not assignable to type 'FileStatus | undefined'.
+            Type '""' is not assignable to type 'FileStatus | undefined'.
+src/pages/GeneratedReportsListPage.tsx(19,5): error TS6133: 'CardHeader' is declared but its value is never read.
+src/pages/IntegrationPage.tsx(9,5): error TS6133: 'Title3' is declared but its value is never read.
+src/pages/IntegrationPage.tsx(19,5): error TS6133: 'TableCellLayout' is declared but its value is never read.
+src/pages/MatrixDashboard.tsx(128,44): error TS2322: Type '{ children: string; strong: true; }' is not assignable to type 'IntrinsicAttributes & TextPresetProps'.
+  Property 'strong' does not exist on type 'IntrinsicAttributes & TextPresetProps'.
+src/pages/ReportDetailPage.tsx(13,5): error TS6133: 'Badge' is declared but its value is never read.
+src/pages/SchemaMappingPage.tsx(8,5): error TS6133: 'Title3' is declared but its value is never read.
+src/pages/SchemaMappingPage.tsx(42,28): error TS6133: 'setSelectedFileId' is declared but its value is never read.
+src/pages/SchemaMappingPage.tsx(223,40): error TS6133: 'e' is declared but its value is never read.
+src/pages/SchemaMappingPage.tsx(264,48): error TS6133: 'e' is declared but its value is never read.
+src/pages/SchemaMappingPage.tsx(278,64): error TS6133: 'e' is declared but its value is never read.
+src/pages/SearchResultsPage.tsx(19,27): error TS2307: Cannot find module '../../hooks/useSearch' or its corresponding type declarations.
+src/pages/SearchResultsPage.tsx(20,45): error TS2307: Cannot find module '../../api/search' or its corresponding type declarations.
+src/pages/SearchResultsPage.tsx(195,47): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/pages/SearchResultsPage.tsx(195,52): error TS7006: Parameter 'result' implicitly has an 'any' type.
+src/pages/TemplateListPage.tsx(268,71): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/pages/TemplateListPage.tsx(268,74): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/pages/TemplateListPage.tsx(286,57): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/pages/TemplateListPage.tsx(286,60): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/pages/TemplateListPage.tsx(293,57): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/pages/TemplateListPage.tsx(293,60): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/pages/UploadPage.tsx(29,9): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/pages/UploadPage.tsx(30,9): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/pages/UploadPage.tsx(31,9): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/pages/UploadPage.tsx(39,13): error TS2322: Type 'string' is not assignable to type 'undefined'.
+src/pages/UploadPage.tsx(43,9): error TS2322: Type 'string' is not assignable to type 'undefined'.
+../../packages/types/src/files.ts(1,15): error TS6196: 'ProcessingStatus' is declared but never used.
