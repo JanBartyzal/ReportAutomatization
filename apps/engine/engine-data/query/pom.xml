@@ -45,6 +45,12 @@
             <artifactId>grpc-spring-boot-starter</artifactId>
             <version>${grpc-spring-boot.version}</version>
         </dependency>
+
+        <!-- Apache POI for Excel export -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -75,7 +81,7 @@
                                 <outputTarget>
                                     <type>grpc-java</type>
                                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
-                                    <pluginArtifact>io.grpc:grpc-stub:${grpc.version}</pluginArtifact>
+                                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}</pluginArtifact>
                                 </outputTarget>
                             </outputTargets>
                         </configuration>

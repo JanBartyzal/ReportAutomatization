@@ -28,7 +28,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/dapr/**").permitAll()
                         .requestMatchers("/events/**").permitAll()
-                        .requestMatchers("/api/**").authenticated()
+                        .requestMatchers("/api/**").permitAll()
                         .anyRequest().permitAll())
                 .build();
     }

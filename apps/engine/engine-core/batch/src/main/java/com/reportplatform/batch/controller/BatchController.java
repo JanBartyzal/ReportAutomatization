@@ -1,12 +1,15 @@
 package com.reportplatform.batch.controller;
 
 import com.reportplatform.batch.model.entity.BatchEntity;
+import com.reportplatform.batch.model.entity.BatchFileEntity;
 import com.reportplatform.batch.repository.BatchRepository;
+import com.reportplatform.batch.repository.BatchFileRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -21,9 +24,11 @@ public class BatchController {
     private static final Logger logger = LoggerFactory.getLogger(BatchController.class);
 
     private final BatchRepository batchRepository;
+    private final BatchFileRepository batchFileRepository;
 
-    public BatchController(BatchRepository batchRepository) {
+    public BatchController(BatchRepository batchRepository, BatchFileRepository batchFileRepository) {
         this.batchRepository = batchRepository;
+        this.batchFileRepository = batchFileRepository;
     }
 
     @GetMapping
@@ -108,7 +113,7 @@ public class BatchController {
     public ResponseEntity<Map<String, Object>> getBatchStatus(@PathVariable UUID batchId) {
         return batchRepository.findById(batchId)
                 .map(batch -> {
-                    int fileCount = 0; // Would query batch_files table
+                    long fileCount = batchFileRepository.countByBatchId(batchId);
                     Map<String, Object> statusMap = new java.util.HashMap<>();
                     statusMap.put("batch_id", batch.getId());
                     statusMap.put("status", batch.getStatus());
@@ -117,6 +122,63 @@ public class BatchController {
                     return ResponseEntity.ok(statusMap);
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ==================== Batch Files ====================
+
+    @GetMapping("/{batchId}/files")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<List<BatchFileEntity>> listBatchFiles(@PathVariable UUID batchId) {
+        if (!batchRepository.existsById(batchId)) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(batchFileRepository.findByBatchId(batchId));
+    }
+
+    @PostMapping("/{batchId}/files")
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<BatchFileEntity> addFileToBatch(
+            @PathVariable UUID batchId,
+            @RequestBody Map<String, String> request,
+            @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
+
+        if (!batchRepository.existsById(batchId)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        UUID fileId = UUID.fromString(request.get("file_id"));
+
+        // Check if already assigned
+        if (batchFileRepository.findByBatchIdAndFileId(batchId, fileId).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
+        BatchFileEntity batchFile = new BatchFileEntity();
+        batchFile.setBatchId(batchId);
+        batchFile.setFileId(fileId);
+        batchFile.setAddedBy(userId);
+
+        BatchFileEntity saved = batchFileRepository.save(batchFile);
+        logger.info("File {} added to batch {} by {}", fileId, batchId, userId);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    @DeleteMapping("/{batchId}/files/{fileId}")
+    @Transactional
+    @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<Void> removeFileFromBatch(
+            @PathVariable UUID batchId,
+            @PathVariable UUID fileId) {
+
+        if (batchFileRepository.findByBatchIdAndFileId(batchId, fileId).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        batchFileRepository.deleteByBatchIdAndFileId(batchId, fileId);
+        logger.info("File {} removed from batch {}", fileId, batchId);
+
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/health")

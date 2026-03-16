@@ -17,7 +17,7 @@ CREATE INDEX idx_mapping_usage_template ON mapping_usage_tracking(mapping_templa
 CREATE INDEX idx_mapping_usage_count ON mapping_usage_tracking(usage_count);
 
 -- Permissions
-GRANT SELECT, INSERT, UPDATE, DELETE ON mapping_usage_tracking TO ms_tmpl;
+GRANT SELECT, INSERT, UPDATE, DELETE ON mapping_usage_tracking TO engine_data_user;
 
 -- Comments
 COMMENT ON TABLE mapping_usage_tracking IS 'Tracks usage frequency of mapping templates per organization for promotion detection';

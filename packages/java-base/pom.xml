@@ -27,9 +27,9 @@
     </modules>
 
     <properties>
-        <java.version>25</java.version>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- Spring Boot aligned -->
@@ -59,7 +59,7 @@
         <wiremock.version>3.10.0</wiremock.version>
 
         <!-- OpenAPI -->
-        <springdoc.version>2.7.0</springdoc.version>
+        <springdoc.version>2.3.0</springdoc.version>
     </properties>
 
     <dependencyManagement>
@@ -227,10 +227,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <release>25</release>
-                    <compilerArgs>
-                        <arg>--enable-preview</arg>
-                    </compilerArgs>
+                    <release>21</release>
                     <parameters>true</parameters>
                 </configuration>
             </plugin>

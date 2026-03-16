@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dapr.client.DaprClient;
 import io.dapr.client.domain.HttpExtension;
+import io.dapr.utils.TypeRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -160,7 +161,7 @@ public class ReportDataAggregationService {
             List<String> chartLabels = Arrays.asList("Jan", "Feb", "Mar", "Apr", "May", "Jun");
             List<ChartSeries> chartSeriesList = new ArrayList<>();
             chartSeriesList
-                    .add(new ChartSeries("Costs", new double[] { 180000, 195000, 210000, 185000, 200000, 215000 }));
+                    .add(new ChartSeries("Costs", Arrays.asList(180000.0, 195000.0, 210000.0, 185000.0, 200000.0, 215000.0)));
 
             charts.add(new ChartData(
                     "CHART:monthly_trend",
@@ -211,12 +212,13 @@ public class ReportDataAggregationService {
             request.put("orgId", orgId);
             request.put("reportId", reportId);
 
-            List<Map<String, Object>> response = daprClient.invokeMethod(
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> response = (List<Map<String, Object>>) daprClient.invokeMethod(
                     msSinkTblAppId,
                     "/api/tables/report/" + reportId,
                     request,
                     HttpExtension.POST,
-                    new TypeReference<List<Map<String, Object>>>() {
+                    new TypeRef<List<Map<String, Object>>>() {
                     })
                     .block();
 
@@ -258,12 +260,13 @@ public class ReportDataAggregationService {
             Map<String, String> request = new HashMap<>();
             request.put("orgId", orgId);
 
-            Map<String, String> response = daprClient.invokeMethod(
+            @SuppressWarnings("unchecked")
+            Map<String, String> response = (Map<String, String>) daprClient.invokeMethod(
                     msTmplPptxAppId,
                     "/api/templates/" + templateId + "/placeholders",
                     request,
                     HttpExtension.POST,
-                    new TypeReference<Map<String, String>>() {
+                    new TypeRef<Map<String, String>>() {
                     })
                     .block();
 
@@ -316,7 +319,7 @@ public class ReportDataAggregationService {
 
     public record ChartSeries(
             String name,
-            double[] values) {
+            List<Double> values) {
     }
 
     public enum TableAggregationType {

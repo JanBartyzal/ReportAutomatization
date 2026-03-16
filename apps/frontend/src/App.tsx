@@ -37,75 +37,87 @@ import HealthDashboardPage from './pages/HealthDashboardPage';
 import IntegrationPage from './pages/IntegrationPage';
 import DistributionRulesPage from './pages/DistributionRulesPage';
 import PromotionPage from './pages/PromotionPage';
+import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
+
+function AuthenticatedRoutes() {
+    return (
+        <AppLayout>
+            <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/dashboards" element={<DashboardListPage />} />
+                <Route path="/dashboards/new" element={<DashboardEditorPage />} />
+                <Route path="/dashboards/:dashboardId" element={<DashboardViewerPage />} />
+                <Route path="/dashboards/:dashboardId/edit" element={<DashboardEditorPage />} />
+                <Route path="/matrix" element={<MatrixDashboard />} />
+                <Route path="/files" element={<FilesPage />} />
+                <Route path="/files/:fileId" element={<FileDetailPage />} />
+                <Route path="/upload" element={<UploadPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/reports/:reportId" element={<ReportDetailPage />} />
+                <Route path="/periods" element={<PeriodsPage />} />
+                <Route path="/periods/:periodId" element={<PeriodDetailPage />} />
+                <Route path="/periods/new" element={<PeriodsPage />} />
+                <Route path="/forms" element={<FormsListPage />} />
+                <Route path="/forms/new" element={<FormEditorPage />} />
+                <Route path="/forms/:formId" element={<FormEditorPage />} />
+                <Route path="/forms/:formId/edit" element={<FormEditorPage />} />
+                <Route path="/forms/:formId/assignments" element={<FormAssignmentPage />} />
+                <Route path="/forms/:formId/fill" element={<FormFillerPage />} />
+                <Route path="/forms/:formId/fill/:responseId" element={<FormFillerPage />} />
+                <Route path="/forms/:formId/import" element={<ExcelImportPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
+                <Route path="/templates" element={<TemplateListPage />} />
+                <Route path="/templates/:templateId" element={<TemplateDetailPage />} />
+                <Route path="/batch-generation" element={<BatchGenerationPage />} />
+                <Route path="/generated-reports" element={<GeneratedReportsListPage />} />
+                <Route path="/search" element={<SearchResultsPage />} />
+                <Route path="/local" element={<LocalDashboardPage />} />
+                <Route path="/comparison" element={<ComparisonPage />} />
+                <Route path="/admin/holding" element={
+                    <AdminGuard>
+                        <HoldingAdminOverviewPage />
+                    </AdminGuard>
+                } />
+                <Route path="/admin/health" element={
+                    <AdminGuard>
+                        <HealthDashboardPage />
+                    </AdminGuard>
+                } />
+                <Route path="/admin/integrations" element={
+                    <AdminGuard>
+                        <IntegrationPage />
+                    </AdminGuard>
+                } />
+                <Route path="/admin/integrations/distribution" element={
+                    <AdminGuard>
+                        <DistributionRulesPage />
+                    </AdminGuard>
+                } />
+                <Route path="/admin/promotions" element={
+                    <AdminGuard>
+                        <PromotionPage />
+                    </AdminGuard>
+                } />
+                <Route path="/admin/manage" element={
+                    <AdminGuard>
+                        <AdminPage />
+                    </AdminGuard>
+                } />
+                <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+        </AppLayout>
+    );
+}
 
 function App() {
     return (
         <>
             <ToastContainer />
             <AuthenticatedTemplate>
-                <AppLayout>
-                    <Routes>
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                        <Route path="/dashboard" element={<DashboardPage />} />
-                        <Route path="/dashboards" element={<DashboardListPage />} />
-                        <Route path="/dashboards/new" element={<DashboardEditorPage />} />
-                        <Route path="/dashboards/:dashboardId" element={<DashboardViewerPage />} />
-                        <Route path="/dashboards/:dashboardId/edit" element={<DashboardEditorPage />} />
-                        <Route path="/matrix" element={<MatrixDashboard />} />
-                        <Route path="/files" element={<FilesPage />} />
-                        <Route path="/files/:fileId" element={<FileDetailPage />} />
-                        <Route path="/upload" element={<UploadPage />} />
-                        <Route path="/reports" element={<ReportsPage />} />
-                        <Route path="/reports/:reportId" element={<ReportDetailPage />} />
-                        <Route path="/periods" element={<PeriodsPage />} />
-                        <Route path="/periods/:periodId" element={<PeriodDetailPage />} />
-                        <Route path="/periods/new" element={<PeriodsPage />} />
-                        <Route path="/forms" element={<FormsListPage />} />
-                        <Route path="/forms/new" element={<FormEditorPage />} />
-                        <Route path="/forms/:formId" element={<FormEditorPage />} />
-                        <Route path="/forms/:formId/edit" element={<FormEditorPage />} />
-                        <Route path="/forms/:formId/assignments" element={<FormAssignmentPage />} />
-                        <Route path="/forms/:formId/fill" element={<FormFillerPage />} />
-                        <Route path="/forms/:formId/fill/:responseId" element={<FormFillerPage />} />
-                        <Route path="/forms/:formId/import" element={<ExcelImportPage />} />
-                        <Route path="/settings" element={<SettingsPage />} />
-                        <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
-                        <Route path="/templates" element={<TemplateListPage />} />
-                        <Route path="/templates/:templateId" element={<TemplateDetailPage />} />
-                        <Route path="/batch-generation" element={<BatchGenerationPage />} />
-                        <Route path="/generated-reports" element={<GeneratedReportsListPage />} />
-                        <Route path="/search" element={<SearchResultsPage />} />
-                        <Route path="/local" element={<LocalDashboardPage />} />
-                        <Route path="/comparison" element={<ComparisonPage />} />
-                        <Route path="/admin/holding" element={
-                            <AdminGuard>
-                                <HoldingAdminOverviewPage />
-                            </AdminGuard>
-                        } />
-                        <Route path="/admin/health" element={
-                            <AdminGuard>
-                                <HealthDashboardPage />
-                            </AdminGuard>
-                        } />
-                        <Route path="/admin/integrations" element={
-                            <AdminGuard>
-                                <IntegrationPage />
-                            </AdminGuard>
-                        } />
-                        <Route path="/admin/integrations/distribution" element={
-                            <AdminGuard>
-                                <DistributionRulesPage />
-                            </AdminGuard>
-                        } />
-                        <Route path="/admin/promotions" element={
-                            <AdminGuard>
-                                <PromotionPage />
-                            </AdminGuard>
-                        } />
-                        <Route path="*" element={<NotFoundPage />} />
-                    </Routes>
-                </AppLayout>
+                <AuthenticatedRoutes />
             </AuthenticatedTemplate>
 
             <UnauthenticatedTemplate>

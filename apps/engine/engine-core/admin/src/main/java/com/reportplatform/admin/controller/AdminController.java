@@ -120,6 +120,47 @@ public class AdminController {
                 "status", "REQUEUED"));
     }
 
+    // ==================== Users ====================
+
+    @GetMapping("/users")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<PaginatedResponse<Map<String, Object>>> listUsers(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(name = "org_id", required = false) UUID orgId) {
+        return ResponseEntity.ok(roleManagementService.listUsers(page, pageSize, orgId));
+    }
+
+    @PostMapping("/users/{userId}/roles")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<RoleAssignmentResponse> assignUserRole(
+            @PathVariable String userId,
+            @RequestBody Map<String, String> body,
+            @RequestHeader("X-User-Id") String callerId,
+            @RequestHeader(value = "X-Roles", defaultValue = "VIEWER") String roles,
+            HttpServletRequest httpRequest) {
+        var request = new RoleAssignmentRequest(userId, UUID.fromString(body.get("org_id")), body.get("role"));
+        String callerRole = extractHighestRole(roles);
+        var response = roleManagementService.assignRole(
+                request, callerId, callerRole, httpRequest.getRemoteAddr());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @DeleteMapping("/users/{userId}/roles")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<Void> removeUserRole(
+            @PathVariable String userId,
+            @RequestBody Map<String, String> body,
+            @RequestHeader("X-User-Id") String callerId,
+            @RequestHeader(value = "X-Roles", defaultValue = "VIEWER") String roles,
+            HttpServletRequest httpRequest) {
+        var request = new RoleAssignmentRequest(userId, UUID.fromString(body.get("org_id")), body.get("role"));
+        String callerRole = extractHighestRole(roles);
+        roleManagementService.revokeRole(
+                request, callerId, callerRole, httpRequest.getRemoteAddr());
+        return ResponseEntity.noContent().build();
+    }
+
     // ==================== Role Management ====================
 
     @PostMapping("/roles/assign")

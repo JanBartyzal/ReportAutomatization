@@ -7,7 +7,7 @@ import java.util.UUID;
 /**
  * JPA Entity for documents table.
  */
-@Entity
+@Entity(name = "SinkDocumentEntity")
 @Table(name = "documents")
 public class DocumentEntity {
 

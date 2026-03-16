@@ -42,4 +42,4 @@ GRANT USAGE ON SCHEMA rls TO period_user;
 GRANT EXECUTE ON FUNCTION rls.set_org_context(UUID) TO period_user;
 GRANT EXECUTE ON FUNCTION rls.get_current_org_id() TO period_user;
 
-RAISE NOTICE 'P3b service users created successfully';
+DO $$ BEGIN RAISE NOTICE 'P3b service users created successfully'; END $$;

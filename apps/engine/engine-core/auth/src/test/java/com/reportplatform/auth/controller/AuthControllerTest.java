@@ -2,7 +2,7 @@ package com.reportplatform.auth.controller;
 
 import com.reportplatform.auth.model.dto.AuthVerifyResponse;
 import com.reportplatform.auth.model.dto.UserContextResponse;
-import com.reportplatform.auth.repository.OrganizationRepository;
+import com.reportplatform.auth.repository.AuthOrganizationRepository;
 import com.reportplatform.auth.repository.UserRoleRepository;
 import com.reportplatform.auth.service.ApiKeyService;
 import com.reportplatform.auth.service.RbacService;
@@ -48,7 +48,7 @@ class AuthControllerTest {
     private UserRoleRepository userRoleRepository;
 
     @Mock
-    private OrganizationRepository organizationRepository;
+    private AuthOrganizationRepository organizationRepository;
 
     @Mock
     private Authentication authentication;

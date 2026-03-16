@@ -14,7 +14,7 @@ import java.util.UUID;
 /**
  * Read-only entity mapping to the processing_logs table (owned by ms-sink-log).
  */
-@Entity
+@Entity(name = "QryProcessingLogEntity")
 @Immutable
 @Table(name = "processing_logs")
 public class ProcessingLogEntity {

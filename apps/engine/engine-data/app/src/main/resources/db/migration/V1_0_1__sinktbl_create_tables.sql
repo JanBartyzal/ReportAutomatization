@@ -45,8 +45,8 @@ CREATE INDEX idx_parsed_tables_org_id ON parsed_tables(org_id);
 
 -- Grant appropriate permissions
 -- The application will use a specific user with appropriate RLS policies
-GRANT SELECT, INSERT, UPDATE, DELETE ON parsed_tables TO ms_sink_tbl;
-GRANT SELECT, INSERT ON form_responses TO ms_sink_tbl;
+GRANT SELECT, INSERT, UPDATE, DELETE ON parsed_tables TO engine_data_user;
+GRANT SELECT, INSERT ON form_responses TO engine_data_user;
 
 -- Comments for documentation
 COMMENT ON TABLE parsed_tables IS 'Stores structured table data extracted from uploaded files (Excel, PPTX)';

@@ -14,7 +14,7 @@ import java.util.List;
  * Service for deadline-related operations.
  * Communicates with MS-PERIOD and MS-LIFECYCLE via Dapr.
  */
-@Service
+@Service("notificationDeadlineService")
 @Slf4j
 public class DeadlineService {
 

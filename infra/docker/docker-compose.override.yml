@@ -1,87 +1,77 @@
 # Docker Compose Override for Debug Mode
-# This file adds debug ports and development-specific configurations
+# This file is automatically merged by `docker compose up`
 #
-# Usage:
-#   docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
+# It adds debug ports and development-specific configurations
+# for the P8 consolidated architecture.
 #
-# This will:
-#   - Expose debug ports for Java services (port 5005)
-#   - Enable Java remote debugging
-#   - Add development-specific environment variables
+# Debug port allocation:
+#   engine-core:         5005
+#   engine-ingestor:     5006
+#   engine-orchestrator: 5007
+#   engine-data:         5008
+#   engine-reporting:    5009
+#   engine-integrations: 5010
+#   processor-atomizers: 5678 (Python debugpy)
 
 services:
   # =============================================================================
   # DEBUG JAVA SERVICES
   # =============================================================================
 
-  ms-auth:
+  engine-core:
     environment:
       - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
       - SPRING_PROFILES_ACTIVE=docker,debug
     ports:
       - "5005:5005"
 
-  ms-ing:
+  engine-ingestor:
     environment:
       - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
       - SPRING_PROFILES_ACTIVE=docker,debug
     ports:
       - "5006:5005"
 
-  ms-orch:
+  engine-orchestrator:
     environment:
       - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
       - SPRING_PROFILES_ACTIVE=docker,debug
     ports:
       - "5007:5005"
 
-  ms-scan:
+  engine-data:
     environment:
       - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
       - SPRING_PROFILES_ACTIVE=docker,debug
     ports:
       - "5008:5005"
 
-  ms-sink-tbl:
+  engine-reporting:
     environment:
       - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
       - SPRING_PROFILES_ACTIVE=docker,debug
     ports:
       - "5009:5005"
 
-  ms-sink-doc:
+  engine-integrations:
     environment:
       - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
-      - SPRING_PROFILES_ACTIVE=docker,debug
-    ports:
-      - "5010:5005"
-
-  ms-sink-log:
-    environment:
-      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
-      - SPRING_PROFILES_ACTIVE=docker,debug
-    ports:
-      - "5011:5005"
-
-  ms-ext-snow:
-    environment:
-      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5012
       - LOG_LEVEL=DEBUG
     ports:
-      - "5012:5012"
+      - "5010:5005"
 
   # =============================================================================
   # DEBUG PYTHON SERVICES
   # =============================================================================
 
-  ms-atm-pptx:
+  processor-atomizers:
     environment:
       - DEBUG=1
       - PYTHONBREAKPOINT=pdb.set_trace
     ports:
       - "5678:5678" # Remote debugger port
 
-  ms-gen-xls:
+  processor-generators:
     environment:
       - LOG_LEVEL=DEBUG
 
@@ -98,28 +88,18 @@ services:
       - "6380:6379" # Debug port for redis
 
   # =============================================================================
-  # DAPR SIDECAR DEBUG
-  # =============================================================================
-
-  dapr:
-    ports:
-      - "3501:3500" # Additional Dapr HTTP port
-      - "50001:50001" # Additional Dapr gRPC port
-      - "9090:8080" # Dapr metrics
-
-  # =============================================================================
   # NGINX DEBUG
   # =============================================================================
 
-  ms-gw:
+  router:
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../../apps/router/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx-error-logs:/var/log/nginx:rw
 
   # =============================================================================
   # DEVELOPMENT SPECIFIC
   # =============================================================================
 
-  ms-fe:
+  frontend:
     environment:
       - VITE_DEBUG=true

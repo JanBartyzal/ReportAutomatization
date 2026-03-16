@@ -8,7 +8,7 @@ import java.util.UUID;
  * JPA Entity for parsed_tables table.
  * Stores structured table data extracted from uploaded files.
  */
-@Entity
+@Entity(name = "SinkParsedTableEntity")
 @Table(name = "parsed_tables")
 public class ParsedTableEntity {
 

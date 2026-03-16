@@ -33,6 +33,12 @@ const queryClient = new QueryClient({
 async function initializeApp() {
     await msalInstance.initialize();
 
+    // Restore active account from session cache
+    const accounts = msalInstance.getAllAccounts();
+    if (accounts.length > 0) {
+        msalInstance.setActiveAccount(accounts[0]);
+    }
+
     // Link MSAL to Axios
     import('./api/axios').then(({ setMsalInstance }) => {
         setMsalInstance(msalInstance);

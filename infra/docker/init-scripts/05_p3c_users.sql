@@ -22,4 +22,4 @@ GRANT USAGE ON SCHEMA rls TO form_user;
 GRANT EXECUTE ON FUNCTION rls.set_org_context(UUID) TO form_user;
 GRANT EXECUTE ON FUNCTION rls.get_current_org_id() TO form_user;
 
-RAISE NOTICE 'P3c service users created successfully';
+DO $$ BEGIN RAISE NOTICE 'P3c service users created successfully'; END $$;

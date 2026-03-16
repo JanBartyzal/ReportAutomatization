@@ -139,6 +139,22 @@ public class AggregationService {
     }
 
     /**
+     * Get raw dashboard data for a given org and dashboard.
+     * Used by PPTX generation to retrieve all relevant data.
+     */
+    public List<Map<String, Object>> getDashboardData(UUID orgId, UUID dashboardId) {
+        var params = new MapSqlParameterSource();
+        params.addValue("orgId", orgId.toString());
+        params.addValue("dashboardId", dashboardId.toString());
+
+        String sql = "SELECT id, file_id, source_sheet, headers, rows, metadata " +
+                     "FROM parsed_tables WHERE org_id = :orgId " +
+                     "ORDER BY created_at DESC LIMIT 1000";
+
+        return jdbcTemplate.queryForList(sql, params);
+    }
+
+    /**
      * Build the dynamic aggregation SQL.
      *
      * <p>Strategy:

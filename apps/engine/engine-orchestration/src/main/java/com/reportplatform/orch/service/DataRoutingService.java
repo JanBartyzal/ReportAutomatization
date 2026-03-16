@@ -1,10 +1,13 @@
 package com.reportplatform.orch.service;
 
 import com.reportplatform.orch.config.ServiceRoutingConfig;
+import io.dapr.client.DaprClient;
+import io.dapr.client.domain.HttpExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -21,47 +24,61 @@ public class DataRoutingService {
     private static final Logger logger = LoggerFactory.getLogger(DataRoutingService.class);
 
     private final ServiceRoutingConfig routingConfig;
+    private final DaprClient daprClient;
 
-    public DataRoutingService(ServiceRoutingConfig routingConfig) {
+    public DataRoutingService(ServiceRoutingConfig routingConfig, DaprClient daprClient) {
         this.routingConfig = routingConfig;
+        this.daprClient = daprClient;
     }
 
     /**
      * Determine the routing decision for a given mapping template.
      *
-     * Checks whether the mapping template has been promoted to a dedicated table
-     * and whether the dual-write window is still active.
+     * Calls engine-data's GetRoutingInfo method via Dapr to check whether the
+     * mapping template has been promoted to a dedicated table.
      *
      * @param mappingTemplateId the mapping template ID to check
      * @return a RoutingDecision indicating where data should be stored
      */
+    @SuppressWarnings("unchecked")
     public RoutingDecision getRoutingDecision(UUID mappingTemplateId) {
+        if (mappingTemplateId == null) {
+            logger.debug("No mapping template ID provided, using default JSONB store");
+            return new RoutingDecision(false, null, false);
+        }
+
         logger.info("Getting routing decision for mapping template: {}", mappingTemplateId);
 
-        // TODO: Call engine-data (table sink) via Dapr gRPC to check promoted_tables_registry
-        // Example Dapr invocation:
-        // Map<String, String> request = Map.of("mappingTemplateId", mappingTemplateId.toString());
-        // Map<String, Object> response = daprClient.invokeMethod(
-        //     routingConfig.engineData(),
-        //     "checkPromotedTable",
-        //     request,
-        //     HttpExtension.POST,
-        //     Map.class
-        // ).block();
-        //
-        // If response contains a promoted table entry:
-        //   - Check if dual_write_until is in the future -> isDualWrite = true
-        //   - Extract tableName from response
-        //   - Return RoutingDecision(true, tableName, isDualWrite)
-        //
-        // If no promoted table exists:
-        //   - Return RoutingDecision(false, null, false)
+        try {
+            Map<String, String> request = Map.of("mappingTemplateId", mappingTemplateId.toString());
 
-        logger.debug("TODO: Query engine-data for promoted table status of mapping template {}",
-                mappingTemplateId);
+            Map<String, Object> response = daprClient.invokeMethod(
+                    routingConfig.engineData(),
+                    "getRoutingInfo",
+                    request,
+                    HttpExtension.POST,
+                    Map.class
+            ).block();
 
-        // Default: no promoted table, use JSONB store
-        return new RoutingDecision(false, null, false);
+            if (response == null) {
+                logger.warn("Null response from engine-data getRoutingInfo, using default JSONB store");
+                return new RoutingDecision(false, null, false);
+            }
+
+            boolean hasPromotedTable = Boolean.TRUE.equals(response.get("hasPromotedTable"));
+            String tableName = (String) response.get("tableName");
+            boolean inDualWrite = Boolean.TRUE.equals(response.get("inDualWritePeriod"));
+
+            logger.info("Routing decision for template {}: promoted={}, table={}, dualWrite={}",
+                    mappingTemplateId, hasPromotedTable, tableName, inDualWrite);
+
+            return new RoutingDecision(hasPromotedTable, tableName, inDualWrite);
+
+        } catch (Exception e) {
+            logger.warn("Failed to get routing info for template {}, falling back to JSONB: {}",
+                    mappingTemplateId, e.getMessage());
+            return new RoutingDecision(false, null, false);
+        }
     }
 
     /**

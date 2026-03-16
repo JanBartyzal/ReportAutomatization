@@ -48,7 +48,7 @@ public class ComparisonKpiEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected ComparisonKpiEntity() {}
+    public ComparisonKpiEntity() {}
 
     @PrePersist
     void onCreate() {

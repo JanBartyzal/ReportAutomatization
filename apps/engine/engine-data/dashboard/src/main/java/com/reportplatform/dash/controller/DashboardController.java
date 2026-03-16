@@ -8,9 +8,12 @@ import com.reportplatform.dash.model.dto.DashboardResponse;
 import com.reportplatform.dash.model.dto.PeriodComparisonRequest;
 import com.reportplatform.dash.model.dto.PeriodComparisonResponse;
 import com.reportplatform.dash.service.AggregationService;
+import com.reportplatform.dash.service.DashboardExcelExportService;
 import com.reportplatform.dash.service.DashboardService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.UUID;
 
 @RestController
@@ -31,11 +35,14 @@ public class DashboardController {
 
     private final DashboardService dashboardService;
     private final AggregationService aggregationService;
+    private final DashboardExcelExportService excelExportService;
 
     public DashboardController(DashboardService dashboardService,
-                               AggregationService aggregationService) {
+                               AggregationService aggregationService,
+                               DashboardExcelExportService excelExportService) {
         this.dashboardService = dashboardService;
         this.aggregationService = aggregationService;
+        this.excelExportService = excelExportService;
     }
 
     /**
@@ -135,5 +142,30 @@ public class DashboardController {
 
         var response = aggregationService.comparePeriods(orgId, request);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Export dashboard aggregation results as Excel (.xlsx).
+     * Executes the aggregation query and returns the result as a downloadable file.
+     */
+    @PostMapping("/{id}/data/export/excel")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<byte[]> exportDashboardDataAsExcel(
+            @PathVariable UUID id,
+            @RequestHeader("X-Org-Id") UUID orgId,
+            @Valid @RequestBody DashboardDataRequest request) throws IOException {
+
+        dashboardService.getDashboard(id, orgId);
+
+        var response = aggregationService.executeQuery(orgId, request);
+        byte[] excelBytes = excelExportService.exportToExcel(response.data(), response.metadata());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", "dashboard_export.xlsx");
+        headers.setContentLength(excelBytes.length);
+
+        return ResponseEntity.ok().headers(headers).body(excelBytes);
     }
 }

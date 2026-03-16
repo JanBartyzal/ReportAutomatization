@@ -1,5 +1,6 @@
 package com.reportplatform.scan.grpc;
 
+import com.reportplatform.proto.common.v1.BlobReference;
 import com.reportplatform.proto.scanner.v1.*;
 import com.reportplatform.scan.service.SecurityScannerService;
 import io.grpc.stub.StreamObserver;

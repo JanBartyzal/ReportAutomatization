@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     Body1,
     Button,
@@ -7,7 +7,6 @@ import {
     TreeItem,
     TreeItemLayout,
     Dialog,
-    DialogTrigger,
     DialogSurface,
     DialogTitle,
     DialogBody,
@@ -16,11 +15,61 @@ import {
     Input,
     Label,
     Select,
-    Option
+    Option,
+    Badge,
+    makeStyles,
+    tokens,
 } from '@fluentui/react-components';
+import { Add24Regular, Delete24Regular } from '@fluentui/react-icons';
 import { useOrganizations, useCreateOrganization, useDeleteOrganization } from '../../hooks/useAdmin';
 import type { OrganizationAdmin } from '@reportplatform/types';
-import styles from './OrganizationsPanel.module.css';
+
+const useStyles = makeStyles({
+    container: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+    },
+    header: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    tree: {
+        marginTop: '8px',
+    },
+    form: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        marginTop: '8px',
+    },
+    orgItem: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+    },
+    orgName: {
+        fontWeight: tokens.fontWeightSemibold,
+    },
+    error: {
+        color: tokens.colorPaletteRedForeground1,
+    },
+});
+
+function flattenOrgs(orgs: OrganizationAdmin[]): OrganizationAdmin[] {
+    const result: OrganizationAdmin[] = [];
+    const recurse = (list: OrganizationAdmin[]) => {
+        for (const org of list) {
+            result.push(org);
+            if (org.children && org.children.length > 0) {
+                recurse(org.children);
+            }
+        }
+    };
+    recurse(orgs);
+    return result;
+}
 
 const OrganizationsPanel: React.FC = () => {
     const { data: organizations, isLoading, error } = useOrganizations();
@@ -30,6 +79,11 @@ const OrganizationsPanel: React.FC = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [newOrgName, setNewOrgName] = useState('');
     const [newOrgType, setNewOrgType] = useState<string>('COMPANY');
+    const [newOrgParentId, setNewOrgParentId] = useState<string>('');
+
+    const styles = useStyles();
+
+    const flatOrgs = useMemo(() => flattenOrgs(organizations || []), [organizations]);
 
     if (isLoading) {
         return <Spinner label="Loading organizations..." />;
@@ -39,16 +93,25 @@ const OrganizationsPanel: React.FC = () => {
         return <Body1 className={styles.error}>Error loading organizations: {error.message}</Body1>;
     }
 
+    const openCreateDialog = (parentId?: string) => {
+        setNewOrgName('');
+        setNewOrgType(parentId ? 'COMPANY' : 'HOLDING');
+        setNewOrgParentId(parentId || '');
+        setIsDialogOpen(true);
+    };
+
     const handleCreateOrg = async () => {
         if (!newOrgName.trim()) return;
 
         await createOrg.mutateAsync({
             name: newOrgName,
-            type: newOrgType
+            type: newOrgType,
+            ...(newOrgParentId ? { parent_id: newOrgParentId } : {}),
         });
 
         setNewOrgName('');
         setNewOrgType('COMPANY');
+        setNewOrgParentId('');
         setIsDialogOpen(false);
     };
 
@@ -58,80 +121,124 @@ const OrganizationsPanel: React.FC = () => {
         }
     };
 
+    const typeBadgeColor = (type: string) => {
+        switch (type) {
+            case 'HOLDING': return 'brand' as const;
+            case 'COMPANY': return 'success' as const;
+            case 'DIVISION': return 'informative' as const;
+            default: return 'subtle' as const;
+        }
+    };
+
     const renderTreeItems = (orgs: OrganizationAdmin[]): React.ReactNode => {
-        return orgs.map((org) => (
-            <TreeItem
-                key={org.id}
-                value={org.id}
-                itemType={org.type === 'HOLDING' ? 'branch' : 'leaf'}
-            >
-                <TreeItemLayout
-                    aside={
-                        <Button
-                            size="small"
-                            appearance="subtle"
-                            onClick={() => handleDeleteOrg(org.id)}
-                        >
-                            Delete
-                        </Button>
-                    }
+        return orgs.map((org) => {
+            const hasChildren = org.children && org.children.length > 0;
+            const canHaveChildren = org.type === 'HOLDING' || org.type === 'COMPANY';
+
+            return (
+                <TreeItem
+                    key={org.id}
+                    value={org.id}
+                    itemType={hasChildren || canHaveChildren ? 'branch' : 'leaf'}
                 >
-                    <span className={styles.orgItem}>
-                        <span className={styles.orgName}>{org.name}</span>
-                        <span className={styles.orgType}>{org.type}</span>
-                    </span>
-                </TreeItemLayout>
-                {org.children && org.children.length > 0 && (
-                    <Tree>
-                        {renderTreeItems(org.children)}
-                    </Tree>
-                )}
-            </TreeItem>
-        ));
+                    <TreeItemLayout
+                        aside={
+                            <span style={{ display: 'flex', gap: '4px' }}>
+                                {canHaveChildren && (
+                                    <Button
+                                        size="small"
+                                        appearance="subtle"
+                                        icon={<Add24Regular />}
+                                        onClick={() => openCreateDialog(org.id)}
+                                        title="Add sub-organization"
+                                    />
+                                )}
+                                <Button
+                                    size="small"
+                                    appearance="subtle"
+                                    icon={<Delete24Regular />}
+                                    onClick={() => handleDeleteOrg(org.id)}
+                                    title="Delete"
+                                />
+                            </span>
+                        }
+                    >
+                        <span className={styles.orgItem}>
+                            <span className={styles.orgName}>{org.name}</span>
+                            <Badge color={typeBadgeColor(org.type)} appearance="filled" size="small">
+                                {org.type}
+                            </Badge>
+                        </span>
+                    </TreeItemLayout>
+                    {hasChildren && (
+                        <Tree>
+                            {renderTreeItems(org.children!)}
+                        </Tree>
+                    )}
+                </TreeItem>
+            );
+        });
     };
 
     return (
         <div className={styles.container}>
             <div className={styles.header}>
                 <Body1>Organization Hierarchy</Body1>
-                <Dialog open={isDialogOpen} onOpenChange={(_: any, d: any) => setIsDialogOpen(d.open)}>
-                    <DialogTrigger disableButtonEnhancement>
-                        <Button appearance="primary">Add Organization</Button>
-                    </DialogTrigger>
-                    <DialogSurface>
-                        <DialogBody>
-                            <DialogTitle>Create Organization</DialogTitle>
-                            <DialogContent>
-                                <div className={styles.form}>
-                                    <Label required>Organization Name</Label>
-                                    <Input
-                                        value={newOrgName}
-                                        onChange={(_e: any, data: any) => setNewOrgName(data.value)}
-                                        placeholder="Enter organization name"
-                                    />
-                                    <Label required>Type</Label>
-                                    <Select
-                                        value={newOrgType}
-                                        onChange={(_e: any, data: any) => setNewOrgType(data.value)}
-                                    >
-                                        <Option value="HOLDING">Holding</Option>
-                                        <Option value="COMPANY">Company</Option>
-                                        <Option value="DIVISION">Division</Option>
-                                    </Select>
-                                </div>
-                            </DialogContent>
-                            <DialogActions>
-                                <Button appearance="secondary" onClick={() => setIsDialogOpen(false)}>
-                                    Cancel
-                                </Button>
-                                <Button appearance="primary" onClick={handleCreateOrg}>
-                                    Create
-                                </Button>
-                            </DialogActions>
-                        </DialogBody>
-                    </DialogSurface>
-                </Dialog>
+                <Button appearance="primary" icon={<Add24Regular />} onClick={() => openCreateDialog()}>
+                    Add Organization
+                </Button>
             </div>
+
+            <Dialog open={isDialogOpen} onOpenChange={(_: any, d: any) => setIsDialogOpen(d.open)}>
+                <DialogSurface>
+                    <DialogBody>
+                        <DialogTitle>Create Organization</DialogTitle>
+                        <DialogContent>
+                            <div className={styles.form}>
+                                <Label required>Organization Name</Label>
+                                <Input
+                                    value={newOrgName}
+                                    onChange={(_e: any, data: any) => setNewOrgName(data.value)}
+                                    placeholder="Enter organization name"
+                                />
+                                <Label required>Type</Label>
+                                <Select
+                                    value={newOrgType}
+                                    onChange={(_e: any, data: any) => setNewOrgType(data.value)}
+                                >
+                                    <Option value="HOLDING">Holding</Option>
+                                    <Option value="COMPANY">Company</Option>
+                                    <Option value="DIVISION">Division</Option>
+                                </Select>
+                                <Label>Parent Organization</Label>
+                                <Select
+                                    value={newOrgParentId}
+                                    onChange={(_e: any, data: any) => setNewOrgParentId(data.value)}
+                                >
+                                    <Option value="">— No parent (top-level) —</Option>
+                                    {flatOrgs.map((org) => (
+                                        <Option key={org.id} value={org.id} text={`${org.name} (${org.type})`}>
+                                            {org.name} ({org.type})
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </div>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button appearance="secondary" onClick={() => setIsDialogOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                appearance="primary"
+                                onClick={handleCreateOrg}
+                                disabled={createOrg.isPending}
+                            >
+                                {createOrg.isPending ? 'Creating...' : 'Create'}
+                            </Button>
+                        </DialogActions>
+                    </DialogBody>
+                </DialogSurface>
+            </Dialog>
 
             <div className={styles.tree}>
                 {organizations && organizations.length > 0 ? (
@@ -139,7 +246,7 @@ const OrganizationsPanel: React.FC = () => {
                         {renderTreeItems(organizations)}
                     </Tree>
                 ) : (
-                    <Body1>No organizations found</Body1>
+                    <Body1>No organizations found. Create a Holding organization to get started.</Body1>
                 )}
             </div>
         </div>

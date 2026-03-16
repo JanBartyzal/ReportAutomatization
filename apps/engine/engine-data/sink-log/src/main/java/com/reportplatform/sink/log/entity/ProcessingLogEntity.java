@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Entity
+@Entity(name = "SinkProcessingLogEntity")
 @Table(name = "processing_logs")
 public class ProcessingLogEntity {
     @Id

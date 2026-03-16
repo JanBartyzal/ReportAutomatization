@@ -11,10 +11,10 @@ import com.reportplatform.qry.model.dto.SlideDataResponse;
 import com.reportplatform.qry.model.dto.SlideDto;
 import com.reportplatform.qry.model.dto.TableDataDto;
 import com.reportplatform.qry.model.dto.TableQueryResponse;
-import com.reportplatform.qry.repository.DocumentRepository;
+import com.reportplatform.qry.repository.QryDocumentRepository;
 import com.reportplatform.qry.repository.FileSummaryRepository;
-import com.reportplatform.qry.repository.ParsedTableRepository;
-import com.reportplatform.qry.repository.ProcessingLogRepository;
+import com.reportplatform.qry.repository.QryParsedTableRepository;
+import com.reportplatform.qry.repository.QryProcessingLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -44,15 +44,15 @@ public class QueryService {
     private static final String ENTITY_DOCUMENT = "document";
     private static final String ENTITY_LOGS = "logs";
 
-    private final ParsedTableRepository parsedTableRepository;
-    private final DocumentRepository documentRepository;
-    private final ProcessingLogRepository processingLogRepository;
+    private final QryParsedTableRepository parsedTableRepository;
+    private final QryDocumentRepository documentRepository;
+    private final QryProcessingLogRepository processingLogRepository;
     private final FileSummaryRepository fileSummaryRepository;
     private final CacheService cacheService;
 
-    public QueryService(ParsedTableRepository parsedTableRepository,
-                        DocumentRepository documentRepository,
-                        ProcessingLogRepository processingLogRepository,
+    public QueryService(QryParsedTableRepository parsedTableRepository,
+                        QryDocumentRepository documentRepository,
+                        QryProcessingLogRepository processingLogRepository,
                         FileSummaryRepository fileSummaryRepository,
                         CacheService cacheService) {
         this.parsedTableRepository = parsedTableRepository;
@@ -292,13 +292,13 @@ public class QueryService {
         if (content instanceof Map<?, ?> contentMap) {
             int slideIndex = contentMap.containsKey("slideIndex")
                     ? ((Number) contentMap.get("slideIndex")).intValue() : 0;
-            String title = (String) contentMap.getOrDefault("title", "");
+            String title = contentMap.containsKey("title") ? (String) contentMap.get("title") : "";
             List<Object> texts = contentMap.containsKey("texts")
                     ? (List<Object>) contentMap.get("texts") : Collections.emptyList();
             List<Object> tables = contentMap.containsKey("tables")
                     ? (List<Object>) contentMap.get("tables") : Collections.emptyList();
-            String imageUrl = (String) contentMap.getOrDefault("imageUrl", null);
-            String notes = (String) contentMap.getOrDefault("notes", "");
+            String imageUrl = contentMap.containsKey("imageUrl") ? (String) contentMap.get("imageUrl") : null;
+            String notes = contentMap.containsKey("notes") ? (String) contentMap.get("notes") : "";
 
             return new SlideDto(slideIndex, title, texts, tables, imageUrl, notes);
         }

@@ -24,10 +24,10 @@ INSERT INTO feature_flags (flag_key, flag_name, description, is_enabled, created
 ON CONFLICT (flag_key) DO NOTHING;
 
 -- Grant permissions
-GRANT SELECT, INSERT, UPDATE, DELETE ON feature_flags TO ms_lifecycle;
-GRANT SELECT ON feature_flags TO ms_qry;
-GRANT SELECT ON feature_flags TO ms_form;
-GRANT SELECT ON feature_flags TO ms_tmpl_pptx;
+GRANT SELECT, INSERT, UPDATE, DELETE ON feature_flags TO engine_reporting_user;
+GRANT SELECT ON feature_flags TO engine_data_user;
+GRANT SELECT ON feature_flags TO engine_reporting_user;
+GRANT SELECT ON feature_flags TO engine_reporting_user;
 
 -- Comments
 COMMENT ON TABLE feature_flags IS 'Feature flags for controlling experimental and rollout features';

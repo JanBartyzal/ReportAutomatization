@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
+@Entity(name = "AdminApiKeyEntity")
 @Table(name = "api_keys")
 public class ApiKeyEntity {
 
@@ -15,7 +15,7 @@ public class ApiKeyEntity {
     @Column(name = "key_hash", nullable = false, unique = true)
     private String keyHash;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "key_name", nullable = false, length = 100)
     private String name;
 
     @Column(nullable = false, columnDefinition = "TEXT[]")

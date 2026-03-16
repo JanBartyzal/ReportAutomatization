@@ -4,6 +4,7 @@ import com.reportplatform.orch.config.ServiceRoutingConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.FullyQualifiedAnnotationBeanNameGenerator;
 
 /**
  * MS-ORCH: Custom Orchestrator microservice.
@@ -12,7 +13,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
  * Coordinates work across atomizer, template, and sink microservices via Dapr.
  * </p>
  */
-@SpringBootApplication
+@SpringBootApplication(nameGenerator = FullyQualifiedAnnotationBeanNameGenerator.class)
 @EnableConfigurationProperties(ServiceRoutingConfig.class)
 public class MsOrchApplication {
 

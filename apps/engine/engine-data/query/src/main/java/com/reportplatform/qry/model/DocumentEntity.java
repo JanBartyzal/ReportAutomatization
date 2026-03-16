@@ -14,7 +14,7 @@ import java.util.UUID;
 /**
  * Read-only entity mapping to the documents table (owned by ms-sink-doc).
  */
-@Entity
+@Entity(name = "QryDocumentEntity")
 @Immutable
 @Table(name = "documents")
 public class DocumentEntity {

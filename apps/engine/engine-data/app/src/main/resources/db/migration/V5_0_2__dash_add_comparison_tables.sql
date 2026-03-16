@@ -57,6 +57,15 @@ CREATE POLICY comparison_kpis_org_isolation ON comparison_kpis
     );
 ALTER TABLE comparison_kpis FORCE ROW LEVEL SECURITY;
 
+-- Create the update_updated_at_column function if it doesn't exist yet
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Auto-update triggers
 CREATE TRIGGER trg_comparison_configs_updated_at
     BEFORE UPDATE ON comparison_configs
@@ -65,15 +74,6 @@ CREATE TRIGGER trg_comparison_configs_updated_at
 CREATE TRIGGER trg_comparison_kpis_updated_at
     BEFORE UPDATE ON comparison_kpis
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- Reuse the update_updated_at_column function if it doesn't exist yet
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = now();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
 
 COMMENT ON TABLE comparison_configs IS 'Saved comparison setups for cross-period/cross-org analytics';
 COMMENT ON TABLE comparison_kpis IS 'User-defined KPI metrics for comparison queries';

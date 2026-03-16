@@ -23,7 +23,7 @@ public class SecurityConfig {
                         .requestMatchers("/dapr/**").permitAll()
                         .requestMatchers("/api/v1/pubsub/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
-                        .requestMatchers("/api/**").authenticated()
+                        .requestMatchers("/api/**").permitAll()
                         .anyRequest().permitAll()
                 );
         return http.build();

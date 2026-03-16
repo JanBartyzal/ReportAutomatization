@@ -10,11 +10,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
-@RestController
+@RestController("versioningDaprEventSubscriber")
 public class DaprEventSubscriber {
 
     private static final Logger log = LoggerFactory.getLogger(DaprEventSubscriber.class);
@@ -27,33 +25,7 @@ public class DaprEventSubscriber {
         this.objectMapper = objectMapper;
     }
 
-    @PostMapping("/dapr/subscribe")
-    public ResponseEntity<List<Map<String, String>>> subscribe() {
-        return ResponseEntity.ok(List.of(
-                Map.of(
-                        "pubsubname", "reportplatform-pubsub",
-                        "topic", "data.changed",
-                        "route", "/events/data-changed"
-                ),
-                Map.of(
-                        "pubsubname", "reportplatform-pubsub",
-                        "topic", "report.data_locked",
-                        "route", "/events/data-locked"
-                ),
-                Map.of(
-                        "pubsubname", "reportplatform-pubsub",
-                        "topic", "form.response.submitted",
-                        "route", "/events/form-submitted"
-                ),
-                Map.of(
-                        "pubsubname", "reportplatform-pubsub",
-                        "topic", "document.updated",
-                        "route", "/events/document-updated"
-                )
-        ));
-    }
-
-    @PostMapping("/events/data-changed")
+    @PostMapping("/events/versioning/data-changed")
     public ResponseEntity<Void> onDataChanged(@RequestBody JsonNode event) {
         try {
             JsonNode data = event.path("data");

@@ -14,7 +14,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
+@Entity(name = "AuthApiKeyEntity")
 @Table(name = "api_keys")
 public class ApiKeyEntity {
 

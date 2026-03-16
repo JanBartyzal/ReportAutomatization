@@ -5,7 +5,10 @@ import com.reportplatform.qry.model.dto.FileDataResponse;
 import com.reportplatform.qry.model.dto.ProcessingLogDto;
 import com.reportplatform.qry.model.dto.SlideDataResponse;
 import com.reportplatform.qry.model.dto.TableQueryResponse;
+import com.reportplatform.qry.service.ExcelExportService;
 import com.reportplatform.qry.service.QueryService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,9 +27,11 @@ import java.util.UUID;
 public class FileQueryController {
 
     private final QueryService queryService;
+    private final ExcelExportService excelExportService;
 
-    public FileQueryController(QueryService queryService) {
+    public FileQueryController(QueryService queryService, ExcelExportService excelExportService) {
         this.queryService = queryService;
+        this.excelExportService = excelExportService;
     }
 
     /**
@@ -102,5 +108,28 @@ public class FileQueryController {
 
         List<ProcessingLogDto> logs = queryService.getProcessingLogs(orgId, fileId);
         return ResponseEntity.ok(logs);
+    }
+
+    /**
+     * Export parsed table data as an Excel (.xlsx) file.
+     * Each table record becomes a separate sheet in the workbook.
+     */
+    @GetMapping("/tables/export/excel")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<byte[]> exportTablesToExcel(
+            @RequestHeader(value = "X-Org-Id") String orgId,
+            @RequestHeader(value = "X-User-Id") String userId,
+            @RequestParam(value = "file_id", required = false) String fileId,
+            @RequestParam(value = "source_sheet", required = false) String sourceSheet) throws IOException {
+
+        byte[] excelBytes = excelExportService.exportTablesToExcel(orgId, fileId, sourceSheet);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", "table_export.xlsx");
+        headers.setContentLength(excelBytes.length);
+
+        return ResponseEntity.ok().headers(headers).body(excelBytes);
     }
 }

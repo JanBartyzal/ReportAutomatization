@@ -52,13 +52,13 @@ public class FileController {
                 .map(this::toDetailResponse)
                 .toList();
 
-        var response = new FileListResponse(
-                files,
+        var pagination = new FileListResponse.PaginationMeta(
                 filePage.getNumber(),
                 filePage.getSize(),
                 filePage.getTotalElements(),
                 filePage.getTotalPages()
         );
+        var response = new FileListResponse(files, pagination);
 
         return ResponseEntity.ok(response);
     }
@@ -91,7 +91,7 @@ public class FileController {
                 entity.getSizeBytes(),
                 entity.getMimeType(),
                 entity.getBlobUrl(),
-                entity.getScanStatus(),
+                entity.getScanStatus().name(),
                 entity.getUploadPurpose(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()

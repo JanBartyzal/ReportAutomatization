@@ -14,7 +14,7 @@ import java.util.UUID;
 /**
  * Read-only entity mapping to the parsed_tables table (owned by ms-sink-tbl).
  */
-@Entity
+@Entity(name = "QryParsedTableEntity")
 @Immutable
 @Table(name = "parsed_tables")
 public class ParsedTableEntity {

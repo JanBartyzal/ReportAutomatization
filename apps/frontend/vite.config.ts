@@ -7,14 +7,14 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
-            '@reportplatform/types': path.resolve(__dirname, '../../packages/types/src'),
+            '@reportplatform/types': path.resolve(__dirname, '../../packages/types/src/index.ts'),
         },
     },
     server: {
         port: 5173,
         proxy: {
             '/api': {
-                target: 'http://localhost:80',
+                target: process.env.VITE_API_URL || 'http://localhost:80',
                 changeOrigin: true,
                 secure: false,
             },

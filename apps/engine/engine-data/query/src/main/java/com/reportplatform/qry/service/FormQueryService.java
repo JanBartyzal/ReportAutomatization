@@ -3,6 +3,7 @@ package com.reportplatform.qry.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dapr.client.DaprClient;
 import io.dapr.client.domain.HttpExtension;
+import io.dapr.utils.TypeRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -172,12 +173,13 @@ public class FormQueryService {
             request.put("periodId", periodId);
 
             // Call MS-FORM via Dapr service invocation
-            List<Map<String, Object>> response = daprClient.invokeMethod(
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> response = (List<Map<String, Object>>) daprClient.invokeMethod(
                     msFormAppId,
                     "/api/forms/completions?periodId=" + periodId,
                     request,
                     HttpExtension.POST,
-                    new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {
+                    new TypeRef<List<Map<String, Object>>>() {
                     })
                     .block();
 

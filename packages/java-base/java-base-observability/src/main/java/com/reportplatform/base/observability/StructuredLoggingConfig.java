@@ -69,7 +69,7 @@ public class StructuredLoggingConfig {
 
         LogstashEncoder encoder = new LogstashEncoder();
         encoder.setContext(loggerContext);
-        encoder.setIncludeMdcKeyNames(null); // Include all MDC keys
+        // Include all MDC keys (empty list = include all)
 
         // Configure field names for cloud logging compatibility
         LogstashFieldNames fieldNames = new LogstashFieldNames();

@@ -1,5 +1,6 @@
 package com.reportplatform.sink.tbl.grpc;
 
+import com.reportplatform.proto.common.v1.ProcessingStatus;
 import com.reportplatform.proto.sink.v1.*;
 import com.reportplatform.sink.tbl.service.TableSinkService;
 import io.grpc.stub.StreamObserver;
@@ -61,7 +62,7 @@ public class TableSinkGrpcService extends TableSinkServiceGrpc.TableSinkServiceI
 
             BulkInsertResponse response = BulkInsertResponse.newBuilder()
                     .setRecordsInserted(insertedCount)
-                    .setStatus(ProcessingStatus.PROCESSING_STATUS_SUCCESS)
+                    .setStatus(ProcessingStatus.PROCESSING_STATUS_COMPLETED)
                     .build();
 
             responseObserver.onNext(response);
@@ -74,7 +75,7 @@ public class TableSinkGrpcService extends TableSinkServiceGrpc.TableSinkServiceI
 
             BulkInsertResponse response = BulkInsertResponse.newBuilder()
                     .setRecordsInserted(0)
-                    .setStatus(ProcessingStatus.PROCESSING_STATUS_ERROR)
+                    .setStatus(ProcessingStatus.PROCESSING_STATUS_FAILED)
                     .build();
 
             responseObserver.onNext(response);

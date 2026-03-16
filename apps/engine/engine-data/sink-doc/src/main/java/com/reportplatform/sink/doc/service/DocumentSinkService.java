@@ -87,8 +87,7 @@ public class DocumentSinkService {
             daprClient.publishEvent(
                     "pubsub",
                     EMBEDDING_TOPIC,
-                    event,
-                    Map.of(Metadata.TOPIC_METADATA_NAME, EMBEDDING_TOPIC)).block();
+                    event).block();
             logger.info("Published embedding event for documentId={}", documentId);
         } catch (Exception e) {
             logger.error("Failed to publish embedding event: {}", e.getMessage());

@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * gRPC service implementation for ReportDataService.
@@ -42,7 +43,7 @@ public class ReportDataGrpcService extends ReportDataServiceGrpc.ReportDataServi
             // Build proto response
             GetReportDataResponse.Builder responseBuilder = GetReportDataResponse.newBuilder()
                     .setReportId(reportId)
-                    .addAllTextPlaceholders(data.textPlaceholders())
+                    .putAllTextPlaceholders(data.textPlaceholders())
                     .addAllAvailableFields(data.availableFields())
                     .setCachedAt(data.cachedAt());
 
@@ -51,7 +52,7 @@ public class ReportDataGrpcService extends ReportDataServiceGrpc.ReportDataServi
                 GeneratorTableData.Builder tableBuilder = GeneratorTableData.newBuilder()
                         .setPlaceholderKey(table.placeholderKey())
                         .addAllHeaders(table.headers())
-                        .setAggregation(TableAggregationType.valueOf(table.aggregationType().name()));
+                        .setAggregation(mapTableAggregationType(table.aggregationType()));
 
                 for (List<String> row : table.rows()) {
                     tableBuilder.addRows(GeneratorTableRow.newBuilder()
@@ -67,7 +68,7 @@ public class ReportDataGrpcService extends ReportDataServiceGrpc.ReportDataServi
                         .setPlaceholderKey(chart.placeholderKey())
                         .setChartType(chart.chartType())
                         .addAllLabels(chart.labels())
-                        .setAggregation(ChartAggregationType.valueOf(chart.aggregationType().name()));
+                        .setAggregation(mapChartAggregationType(chart.aggregationType()));
 
                 for (ReportDataAggregationService.ChartSeries series : chart.series()) {
                     chartBuilder.addSeries(ChartSeries.newBuilder()
@@ -119,7 +120,7 @@ public class ReportDataGrpcService extends ReportDataServiceGrpc.ReportDataServi
 
                     GetReportDataResponse.Builder responseBuilder = GetReportDataResponse.newBuilder()
                             .setReportId(reportId)
-                            .addAllTextPlaceholders(data.textPlaceholders())
+                            .putAllTextPlaceholders(data.textPlaceholders())
                             .addAllAvailableFields(data.availableFields())
                             .setCachedAt(data.cachedAt());
 
@@ -127,7 +128,7 @@ public class ReportDataGrpcService extends ReportDataServiceGrpc.ReportDataServi
                         GeneratorTableData.Builder tableBuilder = GeneratorTableData.newBuilder()
                                 .setPlaceholderKey(table.placeholderKey())
                                 .addAllHeaders(table.headers())
-                                .setAggregation(TableAggregationType.valueOf(table.aggregationType().name()));
+                                .setAggregation(mapTableAggregationType(table.aggregationType()));
 
                         for (List<String> row : table.rows()) {
                             tableBuilder.addRows(GeneratorTableRow.newBuilder()
@@ -142,7 +143,7 @@ public class ReportDataGrpcService extends ReportDataServiceGrpc.ReportDataServi
                                 .setPlaceholderKey(chart.placeholderKey())
                                 .setChartType(chart.chartType())
                                 .addAllLabels(chart.labels())
-                                .setAggregation(ChartAggregationType.valueOf(chart.aggregationType().name()));
+                                .setAggregation(mapChartAggregationType(chart.aggregationType()));
 
                         for (ReportDataAggregationService.ChartSeries series : chart.series()) {
                             chartBuilder.addSeries(ChartSeries.newBuilder()
@@ -179,5 +180,25 @@ public class ReportDataGrpcService extends ReportDataServiceGrpc.ReportDataServi
                     .withDescription(e.getMessage())
                     .asRuntimeException());
         }
+    }
+
+    private static TableAggregationType mapTableAggregationType(
+            ReportDataAggregationService.TableAggregationType type) {
+        return switch (type) {
+            case NONE -> TableAggregationType.TABLE_AGGREGATION_TYPE_NONE;
+            case SUM -> TableAggregationType.TABLE_AGGREGATION_TYPE_SUM;
+            case AVG -> TableAggregationType.TABLE_AGGREGATION_TYPE_AVG;
+            case DETAIL -> TableAggregationType.TABLE_AGGREGATION_TYPE_DETAIL;
+        };
+    }
+
+    private static ChartAggregationType mapChartAggregationType(
+            ReportDataAggregationService.ChartAggregationType type) {
+        return switch (type) {
+            case NONE -> ChartAggregationType.CHART_AGGREGATION_TYPE_NONE;
+            case SUM -> ChartAggregationType.CHART_AGGREGATION_TYPE_SUM;
+            case AVG -> ChartAggregationType.CHART_AGGREGATION_TYPE_AVG;
+            case CUMULATIVE -> ChartAggregationType.CHART_AGGREGATION_TYPE_CUMULATIVE;
+        };
     }
 }

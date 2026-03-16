@@ -74,44 +74,10 @@ GROUP BY org_id, scope;
 CREATE UNIQUE INDEX idx_mv_scope_summary_pk ON mv_scope_summary(org_id, scope);
 
 -- =============================================================================
--- UPDATE RLS POLICIES: Allow HOLDING_ADMIN cross-org access
+-- NOTE: RLS cannot be applied to materialized views in PostgreSQL.
+-- Access control for materialized views is handled at the application layer
+-- via the app.current_org_id session variable in queries.
 -- =============================================================================
-
--- Drop existing org-only policies
-DROP POLICY IF EXISTS mv_file_summary_org_policy ON mv_file_summary;
-DROP POLICY IF EXISTS mv_org_tables_org_policy ON mv_org_tables;
-
--- Recreate with HOLDING_ADMIN bypass
-CREATE POLICY mv_file_summary_org_policy ON mv_file_summary
-    FOR SELECT
-    USING (
-        org_id = current_setting('app.current_org_id', true)::text
-        OR current_setting('app.current_user_role', true) = 'HOLDING_ADMIN'
-    );
-
-CREATE POLICY mv_org_tables_org_policy ON mv_org_tables
-    FOR SELECT
-    USING (
-        org_id = current_setting('app.current_org_id', true)::text
-        OR current_setting('app.current_user_role', true) = 'HOLDING_ADMIN'
-    );
-
--- RLS for new scoped views
-ALTER TABLE mv_file_summary_scoped ENABLE ROW LEVEL SECURITY;
-CREATE POLICY mv_file_summary_scoped_policy ON mv_file_summary_scoped
-    FOR SELECT
-    USING (
-        org_id = current_setting('app.current_org_id', true)::text
-        OR current_setting('app.current_user_role', true) = 'HOLDING_ADMIN'
-    );
-
-ALTER TABLE mv_scope_summary ENABLE ROW LEVEL SECURITY;
-CREATE POLICY mv_scope_summary_policy ON mv_scope_summary
-    FOR SELECT
-    USING (
-        org_id = current_setting('app.current_org_id', true)::text
-        OR current_setting('app.current_user_role', true) = 'HOLDING_ADMIN'
-    );
 
 -- =============================================================================
 -- UPDATE REFRESH FUNCTION (include new views)
@@ -135,6 +101,6 @@ $$;
 -- PERMISSIONS
 -- =============================================================================
 
-GRANT SELECT ON mv_file_summary_scoped TO ms_qry;
-GRANT SELECT ON mv_scope_summary TO ms_qry;
-GRANT EXECUTE ON FUNCTION refresh_query_views() TO ms_qry;
+GRANT SELECT ON mv_file_summary_scoped TO engine_data_user;
+GRANT SELECT ON mv_scope_summary TO engine_data_user;
+GRANT EXECUTE ON FUNCTION refresh_query_views() TO engine_data_user;

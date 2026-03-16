@@ -47,7 +47,11 @@ export default function LoginPage() {
     const { instance, inProgress } = useMsal();
 
     const handleLogin = () => {
-        instance.loginPopup(loginRequest).catch((error) => {
+        instance.loginPopup(loginRequest).then((response) => {
+            if (response?.account) {
+                instance.setActiveAccount(response.account);
+            }
+        }).catch((error) => {
             console.error('Login failed:', error);
         });
     };

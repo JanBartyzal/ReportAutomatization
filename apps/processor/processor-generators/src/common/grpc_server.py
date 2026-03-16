@@ -6,14 +6,6 @@ Registers PptxGeneratorService and ExcelGeneratorService on a single gRPC server
 from __future__ import annotations
 
 import logging
-import sys
-import os
-
-# Add project root to path for proto imports (go up from common/grpc_server.py)
-_current_dir = os.path.dirname(os.path.abspath(__file__))
-_project_root = os.path.abspath(os.path.join(_current_dir, "../../../../.."))
-if _project_root not in sys.path:
-    sys.path.insert(0, _project_root)
 
 from python_base import GrpcServer
 
@@ -39,14 +31,14 @@ async def create_and_start_grpc_server() -> GrpcServer:
 
     # Register PPTX generator servicer
     pptx_servicer = PptxGeneratorServiceImpl()
-    pptx_generator_pb2_grpc.add_PptxGeneratorServiceServicer_to_server(
+    generator_pb2_grpc.add_PptxGeneratorServiceServicer_to_server(
         pptx_servicer, grpc_server.server,
     )
     logger.info("Registered PptxGeneratorService")
 
     # Register Excel generator servicer
     excel_servicer = ExcelGeneratorServiceImpl()
-    excel_generator_pb2_grpc.add_ExcelGeneratorServiceServicer_to_server(
+    generator_pb2_grpc.add_ExcelGeneratorServiceServicer_to_server(
         excel_servicer, grpc_server.server,
     )
     logger.info("Registered ExcelGeneratorService")

@@ -97,9 +97,6 @@ management:
     tags:
       application: engine-reporting
 
-server:
-  port: ${HTTP_PORT:8105}
-
 # Logging
 logging:
   level:

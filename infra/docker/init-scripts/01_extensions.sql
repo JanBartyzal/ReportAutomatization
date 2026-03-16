@@ -32,8 +32,8 @@ GRANT USAGE ON SCHEMA public TO app_user;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public 
     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_user;
 
-ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-    GRANT USAGE, SELECT ON ALL SEQUENCES TO app_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+    GRANT USAGE, SELECT ON SEQUENCES TO app_user;
 
 -- Create service-specific schemas (optional - services can use public schema)
 -- Uncomment if you want to isolate services into separate schemas:
@@ -99,4 +99,4 @@ GRANT EXECUTE ON FUNCTION rls.get_current_org_id() TO app_user;
 GRANT EXECUTE ON FUNCTION rls.set_audit_context(UUID, UUID) TO app_user;
 
 -- Log successful initialization
-RAISE NOTICE 'PostgreSQL initialization completed successfully';
+DO $$ BEGIN RAISE NOTICE 'PostgreSQL initialization completed successfully'; END $$;

@@ -48,7 +48,7 @@ public class SecurityScannerService {
      * Scan raw file bytes for viruses using ClamAV.
      * Called BEFORE blob upload to prevent infected files from reaching storage.
      */
-    public ScanResult scanStream(byte[] fileContent) {
+    public ScanResult scanStream(byte[] fileContent) throws IOException {
         logger.info("Scanning file stream: size={}B", fileContent.length);
         long startTime = System.currentTimeMillis();
 

@@ -2,12 +2,10 @@ package com.reportplatform.auth.repository;
 
 import com.reportplatform.auth.model.OrganizationEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 import java.util.Optional;
 import java.util.UUID;
 
-@Repository
-public interface OrganizationRepository extends JpaRepository<OrganizationEntity, UUID> {
+public interface AuthOrganizationRepository extends JpaRepository<OrganizationEntity, UUID> {
 
     Optional<OrganizationEntity> findByCode(String code);
 

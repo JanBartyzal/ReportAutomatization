@@ -20,6 +20,10 @@
             <groupId>com.reportplatform</groupId>
             <artifactId>engine-ingestor-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.reportplatform</groupId>
+            <artifactId>engine-ingestor-scanner</artifactId>
+        </dependency>
 
         <!-- Azure Blob Storage -->
         <dependency>

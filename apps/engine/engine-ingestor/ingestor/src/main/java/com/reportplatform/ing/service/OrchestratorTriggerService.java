@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -24,7 +23,7 @@ public class OrchestratorTriggerService {
     @Value("${dapr.pubsub.name}")
     private String pubsubName;
 
-    @Value("${dapr.pubsub.topic}")
+    @Value("${dapr.pubsub.topic.file-uploaded}")
     private String topic;
 
     public OrchestratorTriggerService(DaprClient daprClient) {
@@ -44,11 +43,16 @@ public class OrchestratorTriggerService {
                 fileEntity.getSizeBytes(),
                 fileEntity.getBlobUrl(),
                 fileEntity.getUploadPurpose(),
-                Instant.now()
+                System.currentTimeMillis()
         );
 
-        daprClient.publishEvent(pubsubName, topic, event).block();
-        log.info("Published file-uploaded event for file {} to topic '{}'", fileEntity.getId(), topic);
+        try {
+            daprClient.publishEvent(pubsubName, topic, event).block();
+            log.info("Published file-uploaded event for file {} to topic '{}'", fileEntity.getId(), topic);
+        } catch (Throwable e) {
+            log.warn("Failed to publish file-uploaded event for file {} (Dapr sidecar may not be running): {}",
+                    fileEntity.getId(), e.getMessage());
+        }
     }
 
     public record FileUploadedEvent(
@@ -60,7 +64,7 @@ public class OrchestratorTriggerService {
             long sizeBytes,
             String blobUrl,
             UploadPurpose uploadPurpose,
-            Instant timestamp
+            long timestamp
     ) {
     }
 }

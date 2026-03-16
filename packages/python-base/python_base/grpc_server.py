@@ -75,12 +75,12 @@ class GrpcServer:
         self.server.add_insecure_port(listen_addr)
 
         # Mark service as SERVING in health check
-        await self._health_servicer.set(
+        self._health_servicer.set(
             self.service_name,
             health_pb2.HealthCheckResponse.SERVING,
         )
         # Also set the overall server health
-        await self._health_servicer.set(
+        self._health_servicer.set(
             "",
             health_pb2.HealthCheckResponse.SERVING,
         )
@@ -127,11 +127,11 @@ class GrpcServer:
         )
 
         # Mark as NOT_SERVING before draining
-        await self._health_servicer.set(
+        self._health_servicer.set(
             self.service_name,
             health_pb2.HealthCheckResponse.NOT_SERVING,
         )
-        await self._health_servicer.set(
+        self._health_servicer.set(
             "",
             health_pb2.HealthCheckResponse.NOT_SERVING,
         )

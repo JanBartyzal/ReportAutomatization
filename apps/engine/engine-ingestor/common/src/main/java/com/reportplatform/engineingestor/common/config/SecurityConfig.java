@@ -28,10 +28,8 @@ public class SecurityConfig {
                 // Actuator & infrastructure
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/dapr/**").permitAll()
-                // Upload endpoint is public (behind gateway ForwardAuth)
-                .requestMatchers("/api/upload").permitAll()
-                // All other API endpoints require authentication
-                .requestMatchers("/api/**").authenticated()
+                // All API endpoints are public - auth is handled by nginx gateway auth_request
+                .requestMatchers("/api/**").permitAll()
                 .anyRequest().permitAll()
             );
 

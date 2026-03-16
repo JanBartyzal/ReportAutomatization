@@ -16,7 +16,7 @@ BEGIN
             FOR SELECT
             USING (
                 file_id IN (
-                    SELECT id FROM files WHERE org_id::text = current_setting('app.current_org_id', true)
+                    SELECT id::text FROM files WHERE org_id::text = current_setting('app.current_org_id', true)
                 )
             );
     END IF;
@@ -39,7 +39,7 @@ BEGIN
             FOR SELECT
             USING (
                 file_id IN (
-                    SELECT id FROM files WHERE org_id::text = current_setting('app.current_org_id', true)
+                    SELECT id::text FROM files WHERE org_id::text = current_setting('app.current_org_id', true)
                 )
             );
     END IF;
@@ -63,7 +63,7 @@ BEGIN
             USING (
                 document_id IN (
                     SELECT id FROM documents WHERE file_id IN (
-                        SELECT id FROM files WHERE org_id::text = current_setting('app.current_org_id', true)
+                        SELECT id::text FROM files WHERE org_id::text = current_setting('app.current_org_id', true)
                     )
                 )
             );
@@ -85,7 +85,11 @@ BEGIN
     ) THEN
         CREATE POLICY processing_logs_org_isolation ON processing_logs
             FOR SELECT
-            USING (org_id::text = current_setting('app.current_org_id', true));
+            USING (
+                file_id IN (
+                    SELECT id::text FROM files WHERE org_id::text = current_setting('app.current_org_id', true)
+                )
+            );
     END IF;
 END $$;
 
@@ -203,7 +207,13 @@ BEGIN
     ) THEN
         CREATE POLICY promoted_tables_registry_org_isolation ON promoted_tables_registry
             FOR SELECT
-            USING (org_id::text = current_setting('app.current_org_id', true));
+            USING (
+                mapping_template_id IN (
+                    SELECT id FROM mapping_templates
+                    WHERE org_id IS NULL
+                    OR org_id::text = current_setting('app.current_org_id', true)
+                )
+            );
     END IF;
 END $$;
 

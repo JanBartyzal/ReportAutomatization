@@ -10,11 +10,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
-@RestController
+@RestController("auditDaprEventSubscriber")
 public class DaprEventSubscriber {
 
     private static final Logger log = LoggerFactory.getLogger(DaprEventSubscriber.class);
@@ -25,20 +23,6 @@ public class DaprEventSubscriber {
     public DaprEventSubscriber(AuditLogService auditLogService, ObjectMapper objectMapper) {
         this.auditLogService = auditLogService;
         this.objectMapper = objectMapper;
-    }
-
-    @PostMapping("/dapr/subscribe")
-    public ResponseEntity<List<Map<String, String>>> subscribe() {
-        return ResponseEntity.ok(List.of(
-                subscription("report.status_changed", "/events/status-changed"),
-                subscription("data.changed", "/events/data-changed"),
-                subscription("file.uploaded", "/events/file-uploaded"),
-                subscription("role.changed", "/events/role-changed"),
-                subscription("form.field.changed", "/events/form-field-changed"),
-                subscription("form.comment.added", "/events/form-comment-added"),
-                subscription("form.import.confirmed", "/events/form-import-confirmed"),
-                subscription("version.created", "/events/version-created")
-        ));
     }
 
     @PostMapping("/events/status-changed")
@@ -53,7 +37,7 @@ public class DaprEventSubscriber {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/events/data-changed")
+    @PostMapping("/events/audit/data-changed")
     public ResponseEntity<Void> onDataChanged(@RequestBody JsonNode event) {
         processEvent(event, "DATA_CHANGED", null);
         return ResponseEntity.ok().build();
@@ -127,14 +111,6 @@ public class DaprEventSubscriber {
         } catch (Exception e) {
             log.error("Error processing {} event", action, e);
         }
-    }
-
-    private Map<String, String> subscription(String topic, String route) {
-        return Map.of(
-                "pubsubname", "reportplatform-pubsub",
-                "topic", topic,
-                "route", route
-        );
     }
 
     @FunctionalInterface

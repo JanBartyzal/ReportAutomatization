@@ -19,6 +19,7 @@ import {
   DocumentBulletList24Regular,
   TableSimple24Regular,
   Notebook24Regular,
+  People24Regular,
 } from '@fluentui/react-icons';
 import { useMe, useLogout } from '../../hooks/useAuth';
 import { useSSE } from '../../hooks/useNotifications';
@@ -63,6 +64,7 @@ const navSections: NavSection[] = [
       { to: '/admin/health', icon: <HeartPulse24Regular />, label: 'Health' },
       { to: '/admin/integrations', icon: <PlugConnected24Regular />, label: 'Integrations' },
       { to: '/admin/promotions', icon: <DataArea24Regular />, label: 'Data Promotion' },
+      { to: '/admin/manage', icon: <People24Regular />, label: 'Admin Panel' },
       { to: '/settings', icon: <Settings24Regular />, label: 'Settings' },
     ],
   },

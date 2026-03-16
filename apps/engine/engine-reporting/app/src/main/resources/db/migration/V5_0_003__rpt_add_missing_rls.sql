@@ -133,8 +133,10 @@ BEGIN
         CREATE POLICY form_fields_org_isolation ON form_fields
             FOR SELECT
             USING (
-                form_id IN (
-                    SELECT id FROM forms WHERE org_id::text = current_setting('app.current_org_id', true)
+                form_version_id IN (
+                    SELECT fv.id FROM form_versions fv
+                    JOIN forms f ON fv.form_id = f.id
+                    WHERE f.org_id::text = current_setting('app.current_org_id', true)
                 )
             );
     END IF;
@@ -244,8 +246,10 @@ BEGIN
         CREATE POLICY template_placeholders_org_isolation ON template_placeholders
             FOR SELECT
             USING (
-                template_id IN (
-                    SELECT id FROM pptx_templates WHERE org_id::text = current_setting('app.current_org_id', true)
+                version_id IN (
+                    SELECT tv.id FROM template_versions tv
+                    JOIN pptx_templates pt ON tv.template_id = pt.id
+                    WHERE pt.org_id::text = current_setting('app.current_org_id', true)
                 )
             );
     END IF;
@@ -289,10 +293,7 @@ BEGIN
     ) THEN
         CREATE POLICY notifications_user_access ON notifications
             FOR SELECT
-            USING (
-                user_id::text = current_setting('app.current_user_id', true)
-                OR org_id::text = current_setting('app.current_org_id', true)
-            );
+            USING (user_id::text = current_setting('app.current_user_id', true));
     END IF;
 END $$;
 

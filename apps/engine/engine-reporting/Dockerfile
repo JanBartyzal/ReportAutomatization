@@ -1,47 +1,61 @@
 # Stage 1: Build
-FROM eclipse-temurin:21-jdk AS builder
+FROM eclipse-temurin:25-jdk AS builder
+
+# Install Maven (binary) and protobuf compiler
+ARG MAVEN_VERSION=3.9.6
+RUN apt-get update && apt-get install -y --no-install-recommends curl protobuf-compiler && \
+    rm -rf /var/lib/apt/lists/* && \
+    curl -fsSL https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz | tar xz -C /opt && \
+    ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/bin/mvn
+
 WORKDIR /build
 
-# Copy Maven wrapper and POMs first for dependency caching
-COPY pom.xml .
-COPY common/pom.xml common/
-COPY lifecycle/pom.xml lifecycle/
-COPY period/pom.xml period/
-COPY form/pom.xml form/
-COPY pptx-template/pom.xml pptx-template/
-COPY notification/pom.xml notification/
-COPY app/pom.xml app/
+# Copy and build parent modules (java-base)
+COPY packages/protos packages/protos
+COPY packages/java-base packages/java-base
+RUN cd packages/java-base && mvn install -DskipTests -B \
+    -Dprotoc.executable=/usr/bin/protoc
 
-# Copy parent POM for resolution
-COPY --from=parent ../../../packages/java-base/pom.xml /packages/java-base/pom.xml
+# Copy module POMs first for dependency caching
+COPY apps/engine/engine-reporting/pom.xml apps/engine/engine-reporting/pom.xml
+COPY apps/engine/engine-reporting/common/pom.xml apps/engine/engine-reporting/common/
+COPY apps/engine/engine-reporting/lifecycle/pom.xml apps/engine/engine-reporting/lifecycle/
+COPY apps/engine/engine-reporting/period/pom.xml apps/engine/engine-reporting/period/
+COPY apps/engine/engine-reporting/form/pom.xml apps/engine/engine-reporting/form/
+COPY apps/engine/engine-reporting/pptx-template/pom.xml apps/engine/engine-reporting/pptx-template/
+COPY apps/engine/engine-reporting/notification/pom.xml apps/engine/engine-reporting/notification/
+COPY apps/engine/engine-reporting/app/pom.xml apps/engine/engine-reporting/app/
 
 # Copy source code
-COPY common/src common/src
-COPY lifecycle/src lifecycle/src
-COPY period/src period/src
-COPY form/src form/src
-COPY pptx-template/src pptx-template/src
-COPY notification/src notification/src
-COPY app/src app/src
+COPY apps/engine/engine-reporting/common/src apps/engine/engine-reporting/common/src
+COPY apps/engine/engine-reporting/lifecycle/src apps/engine/engine-reporting/lifecycle/src
+COPY apps/engine/engine-reporting/period/src apps/engine/engine-reporting/period/src
+COPY apps/engine/engine-reporting/form/src apps/engine/engine-reporting/form/src
+COPY apps/engine/engine-reporting/pptx-template/src apps/engine/engine-reporting/pptx-template/src
+COPY apps/engine/engine-reporting/notification/src apps/engine/engine-reporting/notification/src
+COPY apps/engine/engine-reporting/app/src apps/engine/engine-reporting/app/src
 
 # Build (skip tests for Docker image)
-RUN --mount=type=cache,target=/root/.m2 \
-    ./mvnw -B -DskipTests package
+RUN cd apps/engine/engine-reporting && mvn -B -DskipTests package
 
 # Extract layers for optimized caching
-WORKDIR /build/app/target
-RUN java -Djarmode=layertools -jar *.jar extract --destination /extracted
+RUN java -Djarmode=layertools \
+    -jar apps/engine/engine-reporting/app/target/*.jar extract \
+    --destination /extracted
 
 # Stage 2: Runtime
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 
 # Download and install OpenTelemetry Java agent
-RUN apt-get update && apt-get install -y --no-install-recommends wget curl && \
+RUN apt-get update && apt-get install -y --no-install-recommends wget && \
     mkdir -p /app/agent && \
     wget -q -O /app/agent/opentelemetry-javaagent.jar \
     https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.9.0/opentelemetry-javaagent.jar && \
     chmod 644 /app/agent/opentelemetry-javaagent.jar && \
     rm -rf /var/lib/apt/lists/*
+
+RUN groupadd -g 1001 appgroup && \
+    useradd -u 1001 -g appgroup -m appuser
 
 WORKDIR /app
 
@@ -51,8 +65,8 @@ COPY --from=builder /extracted/spring-boot-loader/ ./
 COPY --from=builder /extracted/snapshot-dependencies/ ./
 COPY --from=builder /extracted/application/ ./
 
-# Copy OTEL agent
-COPY --from=runtime /app/agent/opentelemetry-javaagent.jar /app/agent/
+RUN chown -R appuser:appgroup /app
+USER appuser
 
 # JVM flags with OTEL agent
 ENV JAVA_OPTS="--enable-preview -XX:+UseZGC -XX:MaxRAMPercentage=75.0 \
@@ -62,5 +76,8 @@ ENV JAVA_OPTS="--enable-preview -XX:+UseZGC -XX:MaxRAMPercentage=75.0 \
     -Dotel.resource.attributes=service.namespace=reportplatform,deployment.environment=local"
 
 EXPOSE 8105
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8105/actuator/health || exit 1
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]

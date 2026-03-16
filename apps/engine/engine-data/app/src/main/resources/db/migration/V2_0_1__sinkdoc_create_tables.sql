@@ -37,8 +37,8 @@ CREATE INDEX idx_document_embeddings_cosine
     WITH (lists = 100);
 
 -- Grant permissions
-GRANT SELECT, INSERT, UPDATE, DELETE ON documents TO ms_sink_doc;
-GRANT SELECT, INSERT ON document_embeddings TO ms_sink_doc;
+GRANT SELECT, INSERT, UPDATE, DELETE ON documents TO engine_data_user;
+GRANT SELECT, INSERT ON document_embeddings TO engine_data_user;
 
 -- Comments
 COMMENT ON TABLE documents IS 'Stores unstructured document content extracted from files';

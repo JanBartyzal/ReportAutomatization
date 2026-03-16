@@ -1,29 +1,24 @@
 # Stage 1: Build
-FROM eclipse-temurin:21-jdk-alpine AS build
+FROM eclipse-temurin:25-jdk AS build
 
 WORKDIR /workspace
 
-# Install Maven and protobuf
-RUN apk add --no-cache maven protobuf
+# Install Maven (binary) and protobuf compiler
+ARG MAVEN_VERSION=3.9.6
+RUN apt-get update && apt-get install -y --no-install-recommends curl protobuf-compiler && \
+    rm -rf /var/lib/apt/lists/* && \
+    curl -fsSL https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz | tar xz -C /opt && \
+    ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/bin/mvn
 
-# Copy parent pom and base modules for dependency resolution
-COPY packages/java-base/pom.xml packages/java-base/pom.xml
-COPY packages/java-base/java-base-security/pom.xml packages/java-base/java-base-security/pom.xml
-COPY packages/java-base/java-base-grpc/pom.xml packages/java-base/java-base-grpc/pom.xml
-COPY packages/java-base/java-base-dapr/pom.xml packages/java-base/java-base-dapr/pom.xml
-COPY packages/java-base/java-base-observability/pom.xml packages/java-base/java-base-observability/pom.xml
-
-# Copy source for base modules
-COPY packages/java-base/java-base-security/src packages/java-base/java-base-security/src
-COPY packages/java-base/java-base-grpc/src packages/java-base/java-base-grpc/src
-COPY packages/java-base/java-base-dapr/src packages/java-base/java-base-dapr/src
-COPY packages/java-base/java-base-observability/src packages/java-base/java-base-observability/src
-
-# Build parent modules first
-RUN cd packages/java-base && mvn install -pl java-base-security,java-base-grpc,java-base-dapr,java-base-observability -am -DskipTests -q
-
-# Copy protobuf definitions
+# Copy protobuf definitions (needed by java-base-protos)
 COPY packages/protos packages/protos
+
+# Copy all java-base modules (including java-base-protos)
+COPY packages/java-base packages/java-base
+
+# Build and install all parent modules
+RUN cd packages/java-base && mvn install -DskipTests -B \
+    -Dprotoc.executable=/usr/bin/protoc
 
 # Copy engine-data multi-module project
 COPY apps/engine/engine-data/pom.xml apps/engine/engine-data/pom.xml
@@ -49,26 +44,25 @@ COPY apps/engine/engine-data/template/src apps/engine/engine-data/template/src
 COPY apps/engine/engine-data/app/src apps/engine/engine-data/app/src
 
 # Build engine-data
-RUN cd apps/engine/engine-data && mvn package -DskipTests -q
+RUN cd apps/engine/engine-data && mvn package -DskipTests -B
 
 # Stage 2: Runtime
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre
 
 # Download OpenTelemetry Java agent
-RUN apk add --no-cache wget curl && \
+RUN apt-get update && apt-get install -y --no-install-recommends wget && \
     mkdir -p /app/agent && \
     wget -q -O /app/agent/opentelemetry-javaagent.jar \
     https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.9.0/opentelemetry-javaagent.jar && \
-    chmod 644 /app/agent/opentelemetry-javaagent.jar
+    chmod 644 /app/agent/opentelemetry-javaagent.jar && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN groupadd -g 1001 appgroup && \
+    useradd -u 1001 -g appgroup -m appuser
 
 WORKDIR /app
 
 COPY --from=build /workspace/apps/engine/engine-data/app/target/*.jar app.jar
-
-# Copy OTEL agent
-COPY --from=runtime /app/agent/opentelemetry-javaagent.jar /app/agent/
 
 RUN chown -R appuser:appgroup /app
 

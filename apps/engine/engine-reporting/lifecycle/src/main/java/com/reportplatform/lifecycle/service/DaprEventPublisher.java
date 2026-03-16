@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 import java.util.UUID;
 
-@Service
+@Service("lifecycleDaprEventPublisher")
 public class DaprEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(DaprEventPublisher.class);

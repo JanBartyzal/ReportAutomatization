@@ -71,11 +71,15 @@ public class ClamavClientService {
             String result = response.toString().trim();
             logger.info("ClamAV scan result: {}", result);
 
-            if (result.startsWith("OK")) {
+            // ClamAV response format: "stream: OK" or "stream: VirusName FOUND"
+            if (result.endsWith("OK")) {
                 return new ScanResult(true, null);
-            } else if (result.startsWith("FOUND")) {
-                // Extract threat name
-                String threat = result.replace("FOUND", "").trim();
+            } else if (result.endsWith("FOUND")) {
+                // Extract threat name between "stream: " and " FOUND"
+                int colonIdx = result.indexOf(':');
+                String threat = (colonIdx >= 0)
+                        ? result.substring(colonIdx + 1, result.length() - 5).trim()
+                        : result.replace("FOUND", "").trim();
                 return new ScanResult(false, threat);
             } else {
                 return new ScanResult(false, "UNKNOWN: " + result);

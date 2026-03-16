@@ -1,6 +1,10 @@
 -- V2__seed_sample_opex_forms.sql
 -- Sample OPEX forms for testing and demo purposes
 
+-- Temporarily disable RLS so seed data can be inserted by the migration user
+ALTER TABLE IF EXISTS form_responses DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS forms DISABLE ROW LEVEL SECURITY;
+
 -- ============================================================================
 -- SAMPLE OPEX FORM - Budget Collection
 -- ============================================================================
@@ -125,7 +129,7 @@ VALUES (
     'a1b2c3d4-0001-0001-0001-000000000001',
     'b2c3d4e5-0001-0001-0001-000000000001',
     'COMPANY-A',
-    '2026-Q1',
+    'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
     'user@companya.com',
     'SUBMITTED',
     '{
@@ -156,7 +160,7 @@ VALUES (
     'a1b2c3d4-0001-0001-0001-000000000001',
     'b2c3d4e5-0001-0001-0001-000000000001',
     'COMPANY-B',
-    '2026-Q1',
+    'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
     'user@companyb.com',
     'SUBMITTED',
     '{
@@ -187,7 +191,7 @@ VALUES (
     'a1b2c3d4-0001-0001-0001-000000000001',
     'b2c3d4e5-0001-0001-0001-000000000001',
     'COMPANY-C',
-    '2026-Q1',
+    'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
     'user@companyc.com',
     'DRAFT',
     '{
@@ -202,4 +206,10 @@ VALUES (
 -- INDEXES for performance
 -- ============================================================================
 CREATE INDEX IF NOT EXISTS idx_sample_forms_org ON forms (org_id) WHERE org_id = 'HOLDING-001';
-CREATE INDEX IF NOT EXISTS idx_sample_responses_period ON form_responses (period_id) WHERE period_id = '2026-Q1';
+CREATE INDEX IF NOT EXISTS idx_sample_responses_period ON form_responses (period_id) WHERE period_id = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+
+-- Re-enable RLS after seeding
+ALTER TABLE IF EXISTS forms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS forms FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS form_responses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS form_responses FORCE ROW LEVEL SECURITY;

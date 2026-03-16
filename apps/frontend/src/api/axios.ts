@@ -1,8 +1,10 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import type { PublicClientApplication } from '@azure/msal-browser';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
-const API_SCOPE = import.meta.env.VITE_AZURE_API_SCOPE ?? 'api://default/access_as_user';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
+// For token acquisition we request openid + profile; the resulting idToken
+// has aud = our Azure client-id, which engine-core's TokenValidationService expects.
+const TOKEN_SCOPES = ['openid', 'profile'];
 
 let msalInstance: PublicClientApplication | null = null;
 
@@ -26,12 +28,26 @@ apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) =>
 
   try {
     const response = await msalInstance.acquireTokenSilent({
-      scopes: [API_SCOPE],
+      scopes: TOKEN_SCOPES,
       account: activeAccount,
     });
-    config.headers.Authorization = `Bearer ${response.accessToken}`;
+    // Use idToken (aud = client-id) rather than accessToken (aud = Graph API)
+    config.headers.Authorization = `Bearer ${response.idToken}`;
   } catch {
-    // Silent token acquisition failed; request proceeds without token
+    // Silent refresh failed (expired session) – try interactive popup
+    try {
+      const response = await msalInstance.acquireTokenPopup({
+        scopes: TOKEN_SCOPES,
+        account: activeAccount,
+      });
+      config.headers.Authorization = `Bearer ${response.idToken}`;
+    } catch {
+      // Both failed – clear stale session so UnauthenticatedTemplate renders
+      msalInstance.setActiveAccount(null);
+      sessionStorage.clear();
+      window.location.href = '/login';
+      return Promise.reject(new Error('Session expired'));
+    }
   }
 
   return config;
@@ -41,7 +57,9 @@ apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) =>
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && msalInstance) {
+      msalInstance.setActiveAccount(null);
+      sessionStorage.clear();
       window.location.href = '/login';
     }
     if (error.response?.status === 429) {

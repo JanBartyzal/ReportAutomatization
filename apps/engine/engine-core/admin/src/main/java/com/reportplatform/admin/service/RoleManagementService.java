@@ -1,5 +1,6 @@
 package com.reportplatform.admin.service;
 
+import com.reportplatform.admin.model.dto.PaginatedResponse;
 import com.reportplatform.admin.model.dto.RoleAssignmentRequest;
 import com.reportplatform.admin.model.dto.RoleAssignmentResponse;
 import com.reportplatform.admin.model.entity.RoleAuditLogEntity;
@@ -95,6 +96,50 @@ public class RoleManagementService {
             log.info("Role {} revoked from user {} in org {} by {}",
                     request.role(), request.targetUserId(), request.orgId(), performedBy);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public PaginatedResponse<Map<String, Object>> listUsers(int page, int pageSize, UUID orgId) {
+        String countSql = orgId != null
+                ? "SELECT COUNT(DISTINCT ur.user_oid) FROM user_roles ur WHERE ur.organization_id = :orgId"
+                : "SELECT COUNT(DISTINCT ur.user_oid) FROM user_roles ur";
+        var countParams = new MapSqlParameterSource();
+        if (orgId != null) countParams.addValue("orgId", orgId);
+        int totalItems = jdbcTemplate.queryForObject(countSql, countParams, Integer.class);
+
+        String usersSql = orgId != null
+                ? "SELECT DISTINCT ur.user_oid FROM user_roles ur WHERE ur.organization_id = :orgId ORDER BY ur.user_oid LIMIT :limit OFFSET :offset"
+                : "SELECT DISTINCT ur.user_oid FROM user_roles ur ORDER BY ur.user_oid LIMIT :limit OFFSET :offset";
+        var usersParams = new MapSqlParameterSource();
+        if (orgId != null) usersParams.addValue("orgId", orgId);
+        usersParams.addValue("limit", pageSize);
+        usersParams.addValue("offset", (page - 1) * pageSize);
+        List<String> userOids = jdbcTemplate.queryForList(usersSql, usersParams, String.class);
+
+        List<Map<String, Object>> users = new java.util.ArrayList<>();
+        for (String userOid : userOids) {
+            var roleParams = new MapSqlParameterSource("userOid", userOid);
+            List<Map<String, Object>> roles = jdbcTemplate.queryForList(
+                    "SELECT ur.role, ur.organization_id AS org_id, o.name AS org_name " +
+                    "FROM user_roles ur JOIN organizations o ON ur.organization_id = o.id " +
+                    "WHERE ur.user_oid = :userOid ORDER BY o.name",
+                    roleParams
+            );
+            Map<String, Object> userMap = new java.util.LinkedHashMap<>();
+            userMap.put("user_id", userOid);
+            userMap.put("email", userOid);
+            userMap.put("display_name", userOid);
+            userMap.put("roles", roles);
+            users.add(userMap);
+        }
+
+        var response = new PaginatedResponse<Map<String, Object>>();
+        response.setPage(page);
+        response.setPageSize(pageSize);
+        response.setTotalItems(totalItems);
+        response.setTotalPages((int) Math.ceil((double) totalItems / pageSize));
+        response.setData(users);
+        return response;
     }
 
     @Transactional(readOnly = true)

@@ -25,4 +25,4 @@ ALTER TABLE form_responses DROP COLUMN IF EXISTS updated_by;
 ALTER TABLE form_responses DROP COLUMN IF EXISTS updated_at;
 
 -- Revoke permissions
-REVOKE SELECT, INSERT, UPDATE, DELETE ON form_responses FROM ms_sink_tbl;
+REVOKE SELECT, INSERT, UPDATE, DELETE ON form_responses FROM engine_data_user;

@@ -23,8 +23,8 @@ CREATE INDEX IF NOT EXISTS idx_parsed_tables_org_created ON parsed_tables (org_i
 -- Composite index for org-based queries on documents
 CREATE INDEX IF NOT EXISTS idx_documents_org_created ON documents (org_id, created_at DESC);
 
--- Composite index for org-based queries on processing_logs
-CREATE INDEX IF NOT EXISTS idx_processing_logs_org_created ON processing_logs (org_id, created_at DESC);
+-- Index for processing_logs by file and created (no org_id on this table)
+CREATE INDEX IF NOT EXISTS idx_processing_logs_file_created ON processing_logs (file_id, created_at DESC);
 
 -- Index for file lookup by status
 CREATE INDEX IF NOT EXISTS idx_files_scan_status ON files (scan_status);
@@ -33,22 +33,10 @@ CREATE INDEX IF NOT EXISTS idx_files_scan_status ON files (scan_status);
 CREATE INDEX IF NOT EXISTS idx_files_mime_type ON files (mime_type);
 
 -- =============================================================================
--- RLS POLICIES (Row-Level Security)
+-- NOTE: RLS cannot be applied to materialized views in PostgreSQL.
+-- Access control for mv_file_summary and mv_org_tables is handled at the
+-- application layer via the app.current_org_id session variable in queries.
 -- =============================================================================
-
--- Enable RLS on tables (if not already enabled)
-ALTER TABLE IF EXISTS mv_file_summary ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS mv_org_tables ENABLE ROW LEVEL SECURITY;
-
--- RLS policy: Users can only see files from their organization
-CREATE POLICY IF NOT EXISTS mv_file_summary_org_policy ON mv_file_summary
-    FOR SELECT
-    USING (org_id = current_setting('app.current_org_id', true)::text);
-
--- RLS policy: Users can only see tables from their organization
-CREATE POLICY IF NOT EXISTS mv_org_tables_org_policy ON mv_org_tables
-    FOR SELECT
-    USING (org_id = current_setting('app.current_org_id', true)::text);
 
 -- =============================================================================
 -- ADDITIONAL MATERIALIZED VIEW: File type breakdown for dashboards
@@ -77,7 +65,7 @@ SELECT
     DATE_TRUNC('day', pl.created_at) AS processing_date,
     pl.step_name,
     COUNT(*) AS step_count,
-    AVG(EXTRACT(EPOCH FROM (pl.updated_at - pl.created_at))) AS avg_duration_seconds
+    AVG(pl.duration_ms / 1000.0) AS avg_duration_seconds
 FROM processing_logs pl
 JOIN files f ON pl.file_id = f.id::text
 GROUP BY f.org_id, DATE_TRUNC('day', pl.created_at), pl.step_name;
@@ -101,10 +89,10 @@ END;
 $$;
 
 -- Grant additional permissions
-GRANT SELECT ON mv_file_type_stats TO ms_qry;
-GRANT SELECT ON mv_processing_stats TO ms_qry;
-GRANT EXECUTE ON FUNCTION refresh_query_views() TO ms_qry;
+GRANT SELECT ON mv_file_type_stats TO engine_data_user;
+GRANT SELECT ON mv_processing_stats TO engine_data_user;
+GRANT EXECUTE ON FUNCTION refresh_query_views() TO engine_data_user;
 
 -- Grant RLS permissions
-GRANT SELECT ON mv_file_summary TO ms_qry;
-GRANT SELECT ON mv_org_tables TO ms_qry;
+GRANT SELECT ON mv_file_summary TO engine_data_user;
+GRANT SELECT ON mv_org_tables TO engine_data_user;

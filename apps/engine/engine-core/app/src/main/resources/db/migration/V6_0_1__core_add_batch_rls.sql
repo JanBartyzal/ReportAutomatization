@@ -14,7 +14,7 @@ BEGIN
     ) THEN
         CREATE POLICY batches_org_isolation ON batches
             FOR SELECT
-            USING (org_id::text = current_setting('app.current_org_id', true));
+            USING (holding_id::text = current_setting('app.current_org_id', true));
     END IF;
 END $$;
 
@@ -26,7 +26,7 @@ BEGIN
     ) THEN
         CREATE POLICY batches_insert_org ON batches
             FOR INSERT
-            WITH CHECK (org_id::text = current_setting('app.current_org_id', true));
+            WITH CHECK (holding_id::text = current_setting('app.current_org_id', true));
     END IF;
 END $$;
 
@@ -38,7 +38,7 @@ BEGIN
     ) THEN
         CREATE POLICY batches_update_org ON batches
             FOR UPDATE
-            USING (org_id::text = current_setting('app.current_org_id', true));
+            USING (holding_id::text = current_setting('app.current_org_id', true));
     END IF;
 END $$;
 
@@ -50,7 +50,7 @@ BEGIN
     ) THEN
         CREATE POLICY batches_delete_org ON batches
             FOR DELETE
-            USING (org_id::text = current_setting('app.current_org_id', true));
+            USING (holding_id::text = current_setting('app.current_org_id', true));
     END IF;
 END $$;
 
@@ -70,7 +70,7 @@ BEGIN
             FOR SELECT
             USING (
                 batch_id IN (
-                    SELECT id FROM batches WHERE org_id::text = current_setting('app.current_org_id', true)
+                    SELECT id FROM batches WHERE holding_id::text = current_setting('app.current_org_id', true)
                 )
             );
     END IF;
@@ -85,7 +85,7 @@ BEGIN
             FOR INSERT
             WITH CHECK (
                 batch_id IN (
-                    SELECT id FROM batches WHERE org_id::text = current_setting('app.current_org_id', true)
+                    SELECT id FROM batches WHERE holding_id::text = current_setting('app.current_org_id', true)
                 )
             );
     END IF;
@@ -104,7 +104,7 @@ BEGIN
     ) THEN
         CREATE POLICY periods_org_isolation ON periods
             FOR SELECT
-            USING (org_id::text = current_setting('app.current_org_id', true));
+            USING (holding_id::text = current_setting('app.current_org_id', true));
     END IF;
 END $$;
 
@@ -115,7 +115,7 @@ BEGIN
     ) THEN
         CREATE POLICY periods_insert_org ON periods
             FOR INSERT
-            WITH CHECK (org_id::text = current_setting('app.current_org_id', true));
+            WITH CHECK (holding_id::text = current_setting('app.current_org_id', true));
     END IF;
 END $$;
 
@@ -126,7 +126,7 @@ BEGIN
     ) THEN
         CREATE POLICY periods_update_org ON periods
             FOR UPDATE
-            USING (org_id::text = current_setting('app.current_org_id', true));
+            USING (holding_id::text = current_setting('app.current_org_id', true));
     END IF;
 END $$;
 

@@ -42,11 +42,11 @@
             <version>2.15.0.RELEASE</version>
         </dependency>
 
-        <!-- ClamAV client -->
+        <!-- Required for gRPC generated code (@javax.annotation.Generated) -->
         <dependency>
-            <groupId>io.github.clamav</groupId>
-            <artifactId>clamav-client</artifactId>
-            <version>1.0.0</version>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.3.2</version>
         </dependency>
 
         <!-- Apache POI for sanitization -->
@@ -63,4 +63,43 @@
             <version>12.28.1</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.github.os72</groupId>
+                <artifactId>protoc-jar-maven-plugin</artifactId>
+                <version>3.11.4</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <protocExecutable>protoc</protocExecutable>
+                            <inputDirectories>
+                                <inputDirectory>${project.basedir}/../../../../packages/protos/scanner/v1</inputDirectory>
+                                <inputDirectory>${project.basedir}/../../../../packages/protos/common/v1</inputDirectory>
+                            </inputDirectories>
+                            <includeDirectories>
+                                <includeDirectory>${project.basedir}/../../../../packages/protos</includeDirectory>
+                            </includeDirectories>
+                            <outputTargets>
+                                <outputTarget>
+                                    <type>java</type>
+                                    <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
+                                </outputTarget>
+                                <outputTarget>
+                                    <type>grpc-java</type>
+                                    <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
+                                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.65.1</pluginArtifact>
+                                </outputTarget>
+                            </outputTargets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

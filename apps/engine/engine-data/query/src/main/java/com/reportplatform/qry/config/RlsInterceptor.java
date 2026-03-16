@@ -16,7 +16,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
  * and {@code app.query_scope} on the database connection so that RLS policies filter
  * results correctly based on organization, role, and scope.
  */
-@Component
+@Component("queryRlsInterceptor")
 public class RlsInterceptor implements HandlerInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RlsInterceptor.class);

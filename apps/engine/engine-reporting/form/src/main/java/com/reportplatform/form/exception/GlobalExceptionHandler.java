@@ -8,9 +8,12 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import org.springframework.stereotype.Component;
+
 import java.time.Instant;
 import java.util.Map;
 
+@Component("formGlobalExceptionHandler")
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

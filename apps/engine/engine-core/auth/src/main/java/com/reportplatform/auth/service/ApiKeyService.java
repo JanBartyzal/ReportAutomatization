@@ -1,7 +1,7 @@
 package com.reportplatform.auth.service;
 
 import com.reportplatform.auth.model.ApiKeyEntity;
-import com.reportplatform.auth.repository.ApiKeyRepository;
+import com.reportplatform.auth.repository.AuthApiKeyRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -12,16 +12,16 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-@Service
+@Service("authApiKeyService")
 public class ApiKeyService {
 
     private static final Logger log = LoggerFactory.getLogger(ApiKeyService.class);
     private static final int KEY_PREFIX_LENGTH = 8;
 
-    private final ApiKeyRepository apiKeyRepository;
+    private final AuthApiKeyRepository apiKeyRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public ApiKeyService(ApiKeyRepository apiKeyRepository) {
+    public ApiKeyService(AuthApiKeyRepository apiKeyRepository) {
         this.apiKeyRepository = apiKeyRepository;
         this.passwordEncoder = new BCryptPasswordEncoder(12);
     }

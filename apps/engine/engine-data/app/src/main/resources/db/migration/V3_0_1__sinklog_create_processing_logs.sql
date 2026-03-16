@@ -18,6 +18,6 @@ CREATE INDEX idx_processing_logs_workflow_id ON processing_logs(workflow_id);
 CREATE INDEX idx_processing_logs_created_at ON processing_logs(created_at);
 
 -- INSERT-only permissions (application user should only have INSERT privilege)
-GRANT SELECT, INSERT ON processing_logs TO ms_sink_log;
+GRANT SELECT, INSERT ON processing_logs TO engine_data_user;
 
 COMMENT ON TABLE processing_logs IS 'Append-only processing log entries for workflow tracking';

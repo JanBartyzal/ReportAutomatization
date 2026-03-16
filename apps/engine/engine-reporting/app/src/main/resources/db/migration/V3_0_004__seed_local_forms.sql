@@ -2,6 +2,23 @@
 -- P6-W3-001: Seed data for LOCAL scope forms
 -- Sample local forms that subsidiaries can create and manage themselves
 
+-- Temporarily disable RLS so seed data can be inserted by the migration user
+ALTER TABLE IF EXISTS forms DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS form_responses DISABLE ROW LEVEL SECURITY;
+
+-- Widen scope column to accommodate 'SHARED_WITHIN_HOLDING' (21 chars)
+-- Must drop and recreate the RLS policy that references this column
+DROP POLICY IF EXISTS forms_scope_access ON forms;
+ALTER TABLE forms ALTER COLUMN scope TYPE VARCHAR(30);
+CREATE POLICY forms_scope_access ON forms
+    USING (
+        current_setting('app.current_role', TRUE) = 'HOLDING_ADMIN'
+        OR scope = 'CENTRAL'
+        OR (scope = 'LOCAL' AND owner_org_id = current_setting('app.current_org_id', TRUE))
+        OR (scope = 'SHARED_WITHIN_HOLDING'
+            AND current_setting('app.current_role', TRUE) IN ('ADMIN', 'COMPANY_ADMIN'))
+    );
+
 -- ============================================================================
 -- LOCAL SCOPE FORMS - For subsidiary self-service
 -- ============================================================================
@@ -141,3 +158,9 @@ VALUES
 -- ============================================================================
 CREATE INDEX IF NOT EXISTS idx_local_forms_owner_org ON forms (owner_org_id) WHERE scope = 'LOCAL';
 CREATE INDEX IF NOT EXISTS idx_shared_forms_holding ON forms (org_id) WHERE scope = 'SHARED_WITHIN_HOLDING';
+
+-- Re-enable RLS after seeding
+ALTER TABLE IF EXISTS forms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS forms FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS form_responses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS form_responses FORCE ROW LEVEL SECURITY;

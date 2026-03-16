@@ -17,7 +17,7 @@ import java.sql.SQLException;
  * Sets the PostgreSQL session variable {@code app.current_org_id} before each request
  * so that Row-Level Security policies can filter data by organization.
  */
-@Component
+@Component("dashboardRlsInterceptor")
 public class RlsInterceptor implements HandlerInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RlsInterceptor.class);

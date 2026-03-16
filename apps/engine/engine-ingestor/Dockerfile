@@ -1,52 +1,49 @@
 # ============================================================
 # Stage 1: Build all modules
 # ============================================================
-FROM eclipse-temurin:21-jdk-jammy AS builder
+FROM eclipse-temurin:25-jdk AS builder
+
+# Install Maven (binary) and protobuf compiler
+ARG MAVEN_VERSION=3.9.6
+RUN apt-get update && apt-get install -y --no-install-recommends curl protobuf-compiler && \
+    rm -rf /var/lib/apt/lists/* && \
+    curl -fsSL https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz | tar xz -C /opt && \
+    ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/bin/mvn
 
 WORKDIR /build
 
-# Copy parent POM hierarchy (java-base)
-COPY ../../../packages/java-base/pom.xml /build/packages/java-base/pom.xml
-COPY ../../../packages/java-base/java-base-security/pom.xml /build/packages/java-base/java-base-security/pom.xml
-COPY ../../../packages/java-base/java-base-dapr/pom.xml /build/packages/java-base/java-base-dapr/pom.xml
-COPY ../../../packages/java-base/java-base-observability/pom.xml /build/packages/java-base/java-base-observability/pom.xml
-COPY ../../../packages/java-base/java-base-grpc/pom.xml /build/packages/java-base/java-base-grpc/pom.xml
-
-# Copy proto definitions
-COPY ../../../protos /build/protos
+# Copy and build parent modules (java-base)
+COPY packages/protos packages/protos
+COPY packages/java-base packages/java-base
+RUN cd packages/java-base && mvn install -DskipTests -B \
+    -Dprotoc.executable=/usr/bin/protoc
 
 # Copy module POMs first for dependency caching
-COPY pom.xml .
-COPY common/pom.xml common/pom.xml
-COPY ingestor/pom.xml ingestor/pom.xml
-COPY scanner/pom.xml scanner/pom.xml
-COPY app/pom.xml app/pom.xml
-
-# Install parent dependencies
-RUN --mount=type=cache,target=/root/.m2 \
-    cd /build/packages/java-base && mvn install -N -B -q || true
+COPY apps/engine/engine-ingestor/pom.xml apps/engine/engine-ingestor/pom.xml
+COPY apps/engine/engine-ingestor/common/pom.xml apps/engine/engine-ingestor/common/pom.xml
+COPY apps/engine/engine-ingestor/ingestor/pom.xml apps/engine/engine-ingestor/ingestor/pom.xml
+COPY apps/engine/engine-ingestor/scanner/pom.xml apps/engine/engine-ingestor/scanner/pom.xml
+COPY apps/engine/engine-ingestor/app/pom.xml apps/engine/engine-ingestor/app/pom.xml
 
 # Download dependencies (cached layer)
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn dependency:go-offline -B -pl app -am || true
+RUN cd apps/engine/engine-ingestor && mvn dependency:go-offline -B -pl app -am || true
 
 # Copy source code
-COPY common/src common/src
-COPY ingestor/src ingestor/src
-COPY scanner/src scanner/src
-COPY app/src app/src
+COPY apps/engine/engine-ingestor/common/src apps/engine/engine-ingestor/common/src
+COPY apps/engine/engine-ingestor/ingestor/src apps/engine/engine-ingestor/ingestor/src
+COPY apps/engine/engine-ingestor/scanner/src apps/engine/engine-ingestor/scanner/src
+COPY apps/engine/engine-ingestor/app/src apps/engine/engine-ingestor/app/src
 
 # Build the application
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn clean package -DskipTests -B
+RUN cd apps/engine/engine-ingestor && mvn clean package -DskipTests -Dmaven.test.skip=true -U -B
 
 # ============================================================
 # Stage 2: Runtime
 # ============================================================
-FROM eclipse-temurin:21-jre-jammy AS runtime
+FROM eclipse-temurin:25-jre
 
 # Download and install OpenTelemetry Java agent
-RUN apt-get update && apt-get install -y --no-install-recommends wget curl && \
+RUN apt-get update && apt-get install -y --no-install-recommends wget && \
     mkdir -p /app/agent && \
     wget -q -O /app/agent/opentelemetry-javaagent.jar \
     https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.9.0/opentelemetry-javaagent.jar && \
@@ -60,10 +57,7 @@ RUN groupadd -g 1001 appgroup && \
 WORKDIR /app
 
 # Copy the fat JAR from builder
-COPY --from=builder /build/app/target/*.jar app.jar
-
-# Copy OTEL agent
-COPY --from=runtime /app/agent/opentelemetry-javaagent.jar /app/agent/
+COPY --from=builder /build/apps/engine/engine-ingestor/app/target/*.jar app.jar
 
 # Change ownership
 RUN chown -R appuser:appgroup /app

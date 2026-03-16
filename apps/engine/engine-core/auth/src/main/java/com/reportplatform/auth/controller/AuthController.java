@@ -5,7 +5,7 @@ import com.reportplatform.auth.model.UserRoleEntity;
 import com.reportplatform.auth.model.dto.AuthVerifyResponse;
 import com.reportplatform.auth.model.dto.SwitchOrgRequest;
 import com.reportplatform.auth.model.dto.UserContextResponse;
-import com.reportplatform.auth.repository.OrganizationRepository;
+import com.reportplatform.auth.repository.AuthOrganizationRepository;
 import com.reportplatform.auth.repository.UserRoleRepository;
 import com.reportplatform.auth.service.ApiKeyService;
 import com.reportplatform.auth.service.RbacService;
@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collections;
@@ -44,13 +45,13 @@ public class AuthController {
     private final RbacService rbacService;
     private final ApiKeyService apiKeyService;
     private final UserRoleRepository userRoleRepository;
-    private final OrganizationRepository organizationRepository;
+    private final AuthOrganizationRepository organizationRepository;
 
     public AuthController(TokenValidationService tokenValidationService,
                           RbacService rbacService,
                           ApiKeyService apiKeyService,
                           UserRoleRepository userRoleRepository,
-                          OrganizationRepository organizationRepository) {
+                          AuthOrganizationRepository organizationRepository) {
         this.tokenValidationService = tokenValidationService;
         this.rbacService = rbacService;
         this.apiKeyService = apiKeyService;
@@ -63,7 +64,7 @@ public class AuthController {
      * Called by API gateway / sidecar to validate incoming tokens.
      * Returns validated user info in response headers (X-User-Id, X-Org-Id, X-Roles).
      */
-    @PostMapping("/verify")
+    @RequestMapping(value = "/verify", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<AuthVerifyResponse> verifyToken(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader,
             @RequestHeader(value = "X-API-Key", required = false) String apiKey) {

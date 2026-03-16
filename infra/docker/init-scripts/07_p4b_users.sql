@@ -22,4 +22,4 @@ GRANT USAGE ON SCHEMA rls TO tmpl_pptx_user;
 GRANT EXECUTE ON FUNCTION rls.set_org_context(UUID) TO tmpl_pptx_user;
 GRANT EXECUTE ON FUNCTION rls.get_current_org_id() TO tmpl_pptx_user;
 
-RAISE NOTICE 'P4b service users created successfully';
+DO $$ BEGIN RAISE NOTICE 'P4b service users created successfully'; END $$;

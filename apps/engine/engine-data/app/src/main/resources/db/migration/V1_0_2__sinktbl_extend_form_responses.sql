@@ -49,7 +49,7 @@ CREATE POLICY form_field_audit_org_isolation ON form_field_audit
     ));
 
 -- Grant permissions
-GRANT SELECT, INSERT, UPDATE, DELETE ON form_field_audit TO ms_sink_tbl;
+GRANT SELECT, INSERT, UPDATE, DELETE ON form_field_audit TO engine_data_user;
 
 COMMENT ON TABLE form_field_audit IS 'Field-level audit trail for form response changes';
 COMMENT ON COLUMN form_field_audit.old_value IS 'Previous field value before change';

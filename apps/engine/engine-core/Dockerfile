@@ -1,63 +1,69 @@
 # ============================================================
 # Stage 1: Build all modules
 # ============================================================
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM eclipse-temurin:25-jdk AS builder
+
+# Install Maven (binary) and protobuf compiler
+ARG MAVEN_VERSION=3.9.6
+RUN apt-get update && apt-get install -y --no-install-recommends curl protobuf-compiler && \
+    rm -rf /var/lib/apt/lists/* && \
+    curl -fsSL https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz | tar xz -C /opt && \
+    ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/bin/mvn
 
 WORKDIR /build
 
-# Copy parent POM and module POMs first for dependency caching
-COPY pom.xml .
-COPY common/pom.xml common/pom.xml
-COPY auth/pom.xml auth/pom.xml
-COPY admin/pom.xml admin/pom.xml
-COPY batch/pom.xml batch/pom.xml
-COPY versioning/pom.xml versioning/pom.xml
-COPY audit/pom.xml audit/pom.xml
-COPY app/pom.xml app/pom.xml
+# Copy and build parent modules (java-base)
+COPY packages/protos packages/protos
+COPY packages/java-base packages/java-base
+RUN cd packages/java-base && mvn install -DskipTests -B \
+    -Dprotoc.executable=/usr/bin/protoc
 
-# Install Maven (Alpine)
-RUN apk add --no-cache maven
+# Copy module POMs first for dependency caching
+COPY apps/engine/engine-core/pom.xml apps/engine/engine-core/pom.xml
+COPY apps/engine/engine-core/common/pom.xml apps/engine/engine-core/common/pom.xml
+COPY apps/engine/engine-core/auth/pom.xml apps/engine/engine-core/auth/pom.xml
+COPY apps/engine/engine-core/admin/pom.xml apps/engine/engine-core/admin/pom.xml
+COPY apps/engine/engine-core/batch/pom.xml apps/engine/engine-core/batch/pom.xml
+COPY apps/engine/engine-core/versioning/pom.xml apps/engine/engine-core/versioning/pom.xml
+COPY apps/engine/engine-core/audit/pom.xml apps/engine/engine-core/audit/pom.xml
+COPY apps/engine/engine-core/app/pom.xml apps/engine/engine-core/app/pom.xml
 
 # Download dependencies (cached layer)
-RUN mvn dependency:go-offline -B -pl app -am || true
+RUN cd apps/engine/engine-core && mvn dependency:go-offline -B -pl app -am || true
 
 # Copy source code
-COPY common/src common/src
-COPY auth/src auth/src
-COPY admin/src admin/src
-COPY batch/src batch/src
-COPY versioning/src versioning/src
-COPY audit/src audit/src
-COPY app/src app/src
+COPY apps/engine/engine-core/common/src apps/engine/engine-core/common/src
+COPY apps/engine/engine-core/auth/src apps/engine/engine-core/auth/src
+COPY apps/engine/engine-core/admin/src apps/engine/engine-core/admin/src
+COPY apps/engine/engine-core/batch/src apps/engine/engine-core/batch/src
+COPY apps/engine/engine-core/versioning/src apps/engine/engine-core/versioning/src
+COPY apps/engine/engine-core/audit/src apps/engine/engine-core/audit/src
+COPY apps/engine/engine-core/app/src apps/engine/engine-core/app/src
 
 # Build the application
-RUN mvn clean package -DskipTests -B --enable-preview
+RUN cd apps/engine/engine-core && mvn clean package -DskipTests -Dmaven.test.skip=true -B
 
 # ============================================================
 # Stage 2: Runtime
 # ============================================================
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre
 
 # Download and install OpenTelemetry Java agent
-RUN apk add --no-cache wget curl
-
-# Create agent directory
-RUN mkdir -p /app/agent && \
+RUN apt-get update && apt-get install -y --no-install-recommends wget && \
+    mkdir -p /app/agent && \
     wget -q -O /app/agent/opentelemetry-javaagent.jar \
     https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.9.0/opentelemetry-javaagent.jar && \
-    chmod 644 /app/agent/opentelemetry-javaagent.jar
+    chmod 644 /app/agent/opentelemetry-javaagent.jar && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
-RUN addgroup -g 1001 appgroup && \
-    adduser -u 1001 -G appgroup -D appuser
+RUN groupadd -g 1001 appgroup && \
+    useradd -u 1001 -g appgroup -m appuser
 
 WORKDIR /app
 
 # Copy the fat JAR from builder
-COPY --from=builder /build/app/target/*.jar app.jar
-
-# Copy OTEL agent
-COPY --from=runtime /app/agent/opentelemetry-javaagent.jar /app/agent/
+COPY --from=builder /build/apps/engine/engine-core/app/target/*.jar app.jar
 
 # Change ownership
 RUN chown -R appuser:appgroup /app

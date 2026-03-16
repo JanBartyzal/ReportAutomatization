@@ -42,4 +42,4 @@ GRANT USAGE ON SCHEMA rls TO audit_user;
 GRANT EXECUTE ON FUNCTION rls.set_org_context(UUID) TO audit_user;
 GRANT EXECUTE ON FUNCTION rls.get_current_org_id() TO audit_user;
 
-RAISE NOTICE 'P4a service users created successfully';
+DO $$ BEGIN RAISE NOTICE 'P4a service users created successfully'; END $$;

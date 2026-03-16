@@ -1,26 +1,32 @@
 # Stage 1: Build
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM eclipse-temurin:25-jdk AS builder
+
+# Install Maven (binary) and protobuf compiler
+ARG MAVEN_VERSION=3.9.6
+RUN apt-get update && apt-get install -y --no-install-recommends curl protobuf-compiler && \
+    rm -rf /var/lib/apt/lists/* && \
+    curl -fsSL https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz | tar xz -C /opt && \
+    ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/bin/mvn
 
 WORKDIR /build
 
-# Copy parent POM and modules for dependency resolution
-COPY packages/java-base/pom.xml packages/java-base/pom.xml
-COPY packages/java-base/java-base-grpc packages/java-base/java-base-grpc
-COPY packages/java-base/java-base-dapr packages/java-base/java-base-dapr
-COPY packages/java-base/java-base-observability packages/java-base/java-base-observability
-COPY packages/java-base/java-base-security packages/java-base/java-base-security
+# Copy protobuf definitions (needed by java-base-protos)
+COPY packages/protos packages/protos
+
+# Copy all java-base modules
+COPY packages/java-base packages/java-base
+
+# Build and install all parent modules
+RUN cd packages/java-base && mvn -B install -DskipTests \
+    -Dprotoc.executable=/usr/bin/protoc
 
 # Copy service source
 COPY apps/engine/engine-orchestration/pom.xml apps/engine/engine-orchestration/pom.xml
 COPY apps/engine/engine-orchestration/src apps/engine/engine-orchestration/src
 
-# Build parent modules first
-RUN cd packages/java-base && \
-    ./mvnw -B -ntp install -DskipTests -pl java-base-grpc,java-base-dapr,java-base-observability
-
 # Build the service
 RUN cd apps/engine/engine-orchestration && \
-    mvn -B -ntp package -DskipTests
+    mvn -B package -DskipTests
 
 # Extract layers for optimized Docker caching
 RUN java -Djarmode=layertools \
@@ -28,17 +34,18 @@ RUN java -Djarmode=layertools \
     --destination /extracted
 
 # Stage 2: Runtime
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre
 
 # Download and install OpenTelemetry Java agent
-RUN apk add --no-cache wget curl && \
+RUN apt-get update && apt-get install -y --no-install-recommends wget && \
     mkdir -p /app/agent && \
     wget -q -O /app/agent/opentelemetry-javaagent.jar \
     https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.9.0/opentelemetry-javaagent.jar && \
-    chmod 644 /app/agent/opentelemetry-javaagent.jar
+    chmod 644 /app/agent/opentelemetry-javaagent.jar && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN addgroup --system appgroup && \
-    adduser --system --ingroup appgroup appuser
+RUN groupadd -g 1001 appgroup && \
+    useradd -u 1001 -g appgroup -m appuser
 
 WORKDIR /app
 
@@ -47,9 +54,6 @@ COPY --from=builder /extracted/dependencies/ ./
 COPY --from=builder /extracted/spring-boot-loader/ ./
 COPY --from=builder /extracted/snapshot-dependencies/ ./
 COPY --from=builder /extracted/application/ ./
-
-# Copy OTEL agent layer
-COPY --from=runtime /app/agent/opentelemetry-javaagent.jar /app/agent/
 
 RUN chown -R appuser:appgroup /app
 USER appuser

@@ -55,9 +55,9 @@ CREATE INDEX idx_mapping_history_org_source ON mapping_history(org_id, source_co
 CREATE INDEX idx_mapping_history_used_count ON mapping_history(org_id, used_count DESC);
 
 -- Permissions
-GRANT SELECT, INSERT, UPDATE, DELETE ON mapping_templates TO ms_tmpl;
-GRANT SELECT, INSERT, UPDATE, DELETE ON mapping_rules TO ms_tmpl;
-GRANT SELECT, INSERT, UPDATE, DELETE ON mapping_history TO ms_tmpl;
+GRANT SELECT, INSERT, UPDATE, DELETE ON mapping_templates TO engine_data_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON mapping_rules TO engine_data_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON mapping_history TO engine_data_user;
 
 -- Comments
 COMMENT ON TABLE mapping_templates IS 'Versioned mapping template definitions scoped to org or global';

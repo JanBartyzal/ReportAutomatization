@@ -10,9 +10,12 @@ import {
     RadioGroup,
     Radio,
     Label,
+    Select,
+    Option,
 } from '@fluentui/react-components';
 import { ArrowUpload24Regular } from '@fluentui/react-icons';
 import { useUpload } from '../hooks/useFiles';
+import { useBatches, useAddFileToBatch } from '../hooks/useBatches';
 
 const useStyles = makeStyles({
     container: {
@@ -66,13 +69,16 @@ export default function UploadPage() {
     const styles = useStyles();
     const navigate = useNavigate();
     const uploadMutation = useUpload();
+    const addFileToBatch = useAddFileToBatch();
+    const { data: batches } = useBatches();
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [selectedPurpose, setSelectedPurpose] = useState<string>('PARSE');
+    const [selectedBatchId, setSelectedBatchId] = useState<string>('');
 
     const onDrop = useCallback(async (acceptedFiles: File[]) => {
         for (const file of acceptedFiles) {
             try {
-                await uploadMutation.mutateAsync({
+                const result = await uploadMutation.mutateAsync({
                     file,
                     purpose: selectedPurpose as any,
                     onProgress: (event) => {
@@ -82,13 +88,26 @@ export default function UploadPage() {
                     },
                 });
                 setUploadProgress(null);
+
+                // Auto-assign to batch if selected
+                if (selectedBatchId && result?.file_id) {
+                    try {
+                        await addFileToBatch.mutateAsync({
+                            batchId: selectedBatchId,
+                            fileId: result.file_id,
+                        });
+                    } catch (batchError) {
+                        console.error('Failed to assign file to batch:', batchError);
+                    }
+                }
+
                 navigate('/files');
             } catch (error) {
                 console.error('Upload failed:', error);
                 setUploadProgress(null);
             }
         }
-    }, [uploadMutation, selectedPurpose, navigate]);
+    }, [uploadMutation, selectedPurpose, selectedBatchId, addFileToBatch, navigate]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
@@ -120,6 +139,23 @@ export default function UploadPage() {
                     <Radio value="PARSE" label="Data Parsing" />
                     <Radio value="FORM_IMPORT" label="Form Import" />
                 </RadioGroup>
+            </div>
+
+            <div style={{ marginBottom: tokens.spacingHorizontalL }}>
+                <Label style={{ display: 'block', marginBottom: tokens.spacingVerticalS }}>
+                    Assign to Batch (optional)
+                </Label>
+                <Select
+                    value={selectedBatchId}
+                    onChange={(_: any, data: any) => setSelectedBatchId(data.value)}
+                >
+                    <Option value="">— No batch —</Option>
+                    {(batches || []).map((batch: any) => (
+                        <Option key={batch.id} value={batch.id} text={`${batch.name} (${batch.period}) — ${batch.status}`}>
+                            {batch.name} ({batch.period}) — {batch.status}
+                        </Option>
+                    ))}
+                </Select>
             </div>
 
             <div

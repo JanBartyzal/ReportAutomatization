@@ -16,7 +16,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 
-@Service
+@Service("periodDeadlineService")
 public class DeadlineService {
 
     private static final Logger log = LoggerFactory.getLogger(DeadlineService.class);

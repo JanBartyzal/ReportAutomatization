@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,7 +12,6 @@ import java.util.UUID;
 /**
  * Repository for parsed_tables table operations.
  */
-@Repository
 public interface ParsedTableRepository extends JpaRepository<ParsedTableEntity, UUID> {
 
     /**
@@ -31,6 +29,6 @@ public interface ParsedTableRepository extends JpaRepository<ParsedTableEntity, 
      * Used for Saga compensating action.
      */
     @Modifying
-    @Query("DELETE FROM ParsedTableEntity p WHERE p.fileId = :fileId")
+    @Query("DELETE FROM SinkParsedTableEntity p WHERE p.fileId = :fileId")
     int deleteByFileId(@Param("fileId") String fileId);
 }

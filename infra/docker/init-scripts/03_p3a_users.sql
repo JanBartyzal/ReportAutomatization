@@ -18,4 +18,4 @@ GRANT USAGE ON SCHEMA rls TO ms_tmpl;
 GRANT EXECUTE ON FUNCTION rls.set_org_context(UUID) TO ms_tmpl;
 GRANT EXECUTE ON FUNCTION rls.get_current_org_id() TO ms_tmpl;
 
-RAISE NOTICE 'P3a service users created successfully';
+DO $$ BEGIN RAISE NOTICE 'P3a service users created successfully'; END $$;

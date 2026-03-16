@@ -2,6 +2,21 @@
 -- P6-W3-001: Seed data for LOCAL scope PPTX templates
 -- Sample local templates that subsidiaries can create and use
 
+-- Temporarily disable RLS so seed data can be inserted by the migration user
+ALTER TABLE IF EXISTS pptx_templates DISABLE ROW LEVEL SECURITY;
+
+-- Widen scope column to accommodate 'SHARED_WITHIN_HOLDING' (21 chars)
+DROP POLICY IF EXISTS pptx_templates_scope_access ON pptx_templates;
+ALTER TABLE pptx_templates ALTER COLUMN scope TYPE VARCHAR(30);
+CREATE POLICY pptx_templates_scope_access ON pptx_templates
+    USING (
+        current_setting('app.current_role', TRUE) = 'HOLDING_ADMIN'
+        OR scope = 'CENTRAL'
+        OR (scope = 'LOCAL' AND owner_org_id = current_setting('app.current_org_id', TRUE))
+        OR (scope = 'SHARED_WITHIN_HOLDING'
+            AND current_setting('app.current_role', TRUE) IN ('ADMIN', 'COMPANY_ADMIN'))
+    );
+
 -- ============================================================================
 -- LOCAL SCOPE TEMPLATES - Company-specific report templates
 -- ============================================================================
@@ -54,3 +69,7 @@ VALUES (
 -- ============================================================================
 CREATE INDEX IF NOT EXISTS idx_local_templates_owner_org ON pptx_templates (owner_org_id) WHERE scope = 'LOCAL';
 CREATE INDEX IF NOT EXISTS idx_shared_templates_holding ON pptx_templates (org_id) WHERE scope = 'SHARED_WITHIN_HOLDING';
+
+-- Re-enable RLS after seeding
+ALTER TABLE IF EXISTS pptx_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS pptx_templates FORCE ROW LEVEL SECURITY;

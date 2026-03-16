@@ -66,11 +66,11 @@ BEGIN
 END;
 $$;
 
--- Grant read permissions to ms_qry user
-GRANT SELECT ON mv_file_summary TO ms_qry;
-GRANT SELECT ON mv_org_tables TO ms_qry;
-GRANT SELECT ON parsed_tables TO ms_qry;
-GRANT SELECT ON documents TO ms_qry;
-GRANT SELECT ON processing_logs TO ms_qry;
-GRANT SELECT ON files TO ms_qry;
-GRANT EXECUTE ON FUNCTION refresh_query_views() TO ms_qry;
+-- Grant read permissions to engine_data_user user
+GRANT SELECT ON mv_file_summary TO engine_data_user;
+GRANT SELECT ON mv_org_tables TO engine_data_user;
+GRANT SELECT ON parsed_tables TO engine_data_user;
+GRANT SELECT ON documents TO engine_data_user;
+GRANT SELECT ON processing_logs TO engine_data_user;
+GRANT SELECT ON files TO engine_data_user;
+GRANT EXECUTE ON FUNCTION refresh_query_views() TO engine_data_user;
