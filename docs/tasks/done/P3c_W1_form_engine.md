@@ -10,7 +10,7 @@
 
 ---
 
-## P3c-W1-001: MS-FORM – Form Builder & Data Collection Service
+## P3c-W1-001: engine-reporting:form – Form Builder & Data Collection Service
 
 **Type:** Core Service
 **Effort:** 24 MD
@@ -64,14 +64,14 @@
   - `DRAFT` → `PUBLISHED` → `CLOSED`
   - PUBLISHED: visible to assigned users
   - CLOSED: no new submissions (deadline or manual)
-  - Deadline integration: auto-close from MS-PERIOD
+  - Deadline integration: auto-close from engine-reporting:period
 - [ ] **Form Assignment**:
   - Assign form to specific orgs (not all fill same form)
   - Per-org assignment status tracking
-- [ ] **Submission Integration**: After submit → create/update report in MS-LIFECYCLE (DRAFT → SUBMITTED)
+- [ ] **Submission Integration**: After submit → create/update report in engine-reporting:lifecycle (DRAFT → SUBMITTED)
 - [ ] Flyway migrations: `forms`, `form_versions`, `form_fields`, `form_responses`, `form_field_values`, `form_field_comments`, `form_assignments` tables
 - [ ] Docker Compose entry + Dapr sidecar
-- [ ] Nginx routing: `/api/forms/*` → MS-FORM
+- [ ] Nginx routing: `/api/forms/*` → engine-reporting:form
 
 **AC:**
 - [ ] HoldingAdmin creates and publishes form in < 10 minutes
@@ -82,7 +82,7 @@
 
 ---
 
-## P3c-W1-002: MS-FORM – Excel Template Export
+## P3c-W1-002: engine-reporting:form – Excel Template Export
 
 **Type:** Service Feature
 **Effort:** 4 MD
@@ -98,13 +98,13 @@
 - [ ] **Excel Import Back**:
   - Read metadata sheet → verify `form_version_id`
   - Version match: direct mapping (no user confirmation needed)
-  - Version mismatch: warn user, offer best-effort mapping via MS-TMPL
+  - Version mismatch: warn user, offer best-effort mapping via engine-data:template
   - Parse values per column → map to form fields
   - Return pre-populated form in UI for visual review before submit
 - [ ] **Arbitrary Excel Import** (no template):
   - Upload any Excel file
-  - Parse via MS-ATM-XLS (Dapr gRPC → MS-ORCH)
-  - Offer column → form field mapping via MS-TMPL
+  - Parse via processor-atomizers:xls (Dapr gRPC → engine-orchestrator)
+  - Offer column → form field mapping via engine-data:template
   - Editor reviews and confirms mapping
   - Import into form as editable data
   - Original Excel stored as audit attachment
@@ -116,7 +116,7 @@
 
 ---
 
-## P3c-W1-003: MS-SINK-TBL Extension – Form Response Storage
+## P3c-W1-003: engine-data:sink-tbl Extension – Form Response Storage
 
 **Type:** Service Extension
 **Effort:** 2 MD
@@ -128,5 +128,5 @@
   - Field-level audit trail (old_value, new_value, changed_by, changed_at)
   - Index on `(org_id, period_id, form_version_id)` for fast queries
 - [ ] Flyway migration for schema updates
-- [ ] MS-QRY extension: form response data accessible via existing query API
+- [ ] engine-data:query extension: form response data accessible via existing query API
 - [ ] RLS policy on form_responses

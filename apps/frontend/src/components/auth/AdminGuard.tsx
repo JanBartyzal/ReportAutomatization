@@ -29,7 +29,7 @@ export const AdminGuard: React.FC<AdminGuardProps> = ({
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    const hasAccess = user.roles.some(role => allowedRoles.includes(role));
+    const hasAccess = (user.roles || []).some(role => allowedRoles.includes(role));
 
     if (!hasAccess) {
         console.warn(`[AdminGuard] Access denied for user ${user.email}. Required roles: ${allowedRoles.join(', ')}`);

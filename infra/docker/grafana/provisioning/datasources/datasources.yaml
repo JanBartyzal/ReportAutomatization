@@ -1,3 +1,6 @@
+# Grafana datasources configuration
+# Auto-provisions Prometheus as a data source
+
 apiVersion: 1
 
 datasources:
@@ -6,36 +9,7 @@ datasources:
     access: proxy
     url: http://prometheus:9090
     isDefault: true
-    editable: false
-
-  - name: Tempo
-    type: tempo
-    access: proxy
-    url: http://tempo:3200
-    editable: false
+    editable: true
     jsonData:
-      tracesToLogsV2:
-        datasourceUid: loki
-        filterByTraceID: true
-        filterBySpanID: true
-      tracesToMetrics:
-        datasourceUid: prometheus
-      serviceMap:
-        datasourceUid: prometheus
-      nodeGraph:
-        enabled: true
-      lokiSearch:
-        datasourceUid: loki
-
-  - name: Loki
-    type: loki
-    access: proxy
-    url: http://loki:3100
-    editable: false
-    jsonData:
-      derivedFields:
-        - datasourceUid: tempo
-          matcherRegex: '"trace_id":"(\w+)"'
-          name: TraceID
-          url: "$${__value.raw}"
-          urlDisplayLabel: View Trace
+      timeInterval: "15s"
+      queryTimeout: "60s"

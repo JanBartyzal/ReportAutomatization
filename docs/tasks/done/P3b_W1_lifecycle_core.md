@@ -10,7 +10,7 @@
 
 ---
 
-## P3b-W1-001: MS-LIFECYCLE – Report Lifecycle Service
+## P3b-W1-001: engine-reporting:lifecycle – Report Lifecycle Service
 
 **Type:** Core Service
 **Effort:** 12 MD
@@ -56,10 +56,10 @@
 - [ ] **Dapr Pub/Sub Events**:
   - Publish `report.status_changed` on every transition
   - Publish `report.data_locked` on APPROVED
-  - MS-ORCH subscribes for downstream workflows (notifications, PPTX generation)
+  - engine-orchestrator subscribes for downstream workflows (notifications, PPTX generation)
 - [ ] **Audit Integration**: Every transition logged with `user_id`, `from_state`, `to_state`, `timestamp`, `comment`
 - [ ] Flyway migrations: `reports`, `report_status_history`, `submission_checklists` tables
-- [ ] Nginx routing: `/api/reports/*` → MS-LIFECYCLE
+- [ ] Nginx routing: `/api/reports/*` → engine-reporting:lifecycle
 - [ ] Docker Compose entry + Dapr sidecar
 
 **AC:**
@@ -71,7 +71,7 @@
 
 ---
 
-## P3b-W1-002: MS-PERIOD – Reporting Period Manager
+## P3b-W1-002: engine-reporting:period – Reporting Period Manager
 
 **Type:** Core Service
 **Effort:** 8 MD
@@ -93,7 +93,7 @@
   - Submission deadline: auto-close forms after deadline
   - Review deadline: target for HoldingAdmin review
   - Late submission requires explicit HoldingAdmin override
-- [ ] **Automatic Notifications** (via Dapr Pub/Sub → MS-NOTIF):
+- [ ] **Automatic Notifications** (via Dapr Pub/Sub → engine-reporting:notification):
   - X days before deadline → remind users with DRAFT/empty forms
   - Configurable: 7, 3, 1 day before (default)
   - After deadline: escalation to HoldingAdmin listing non-compliant orgs
@@ -106,9 +106,9 @@
   - New dates, same structure
 - [ ] **Historical Access**:
   - Closed periods archived, accessible for comparison
-  - Link to MS-VER for version history within period
+  - Link to engine-core:versioning for version history within period
 - [ ] Flyway migrations: `periods`, `period_org_assignments` tables
-- [ ] Nginx routing: `/api/periods/*` → MS-PERIOD
+- [ ] Nginx routing: `/api/periods/*` → engine-reporting:period
 - [ ] Docker Compose entry + Dapr sidecar
 
 **AC:**
@@ -120,7 +120,7 @@
 
 ---
 
-## P3b-W1-003: MS-ORCH Extension – Lifecycle Workflows
+## P3b-W1-003: engine-orchestrator Extension – Lifecycle Workflows
 
 **Type:** Service Extension
 **Effort:** 5 MD
@@ -133,8 +133,8 @@
   - On APPROVED: trigger inclusion in central reporting, optional PPTX generation
   - On REJECTED: trigger notification to Editor
 - [ ] **Orchestration Actions**:
-  - Validate data completeness → check all required fields via MS-QRY
+  - Validate data completeness → check all required fields via engine-data:query
   - Notify → publish to `notify` topic
   - Lock data → publish `report.data_locked`
-  - Generate PPTX (prepared for P4b) → trigger MS-GEN-PPTX workflow
+  - Generate PPTX (prepared for P4b) → trigger processor-generators:pptx workflow
 - [ ] Integration tests: full lifecycle flow DRAFT → APPROVED

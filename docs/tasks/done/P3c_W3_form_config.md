@@ -13,10 +13,10 @@
 **Effort:** 0.5 MD
 
 **Tasks:**
-- [x] Add MS-FORM to docker-compose.yml
+- [x] Add engine-reporting:form to docker-compose.yml
 - [x] Dapr sidecar config
-- [x] Nginx routing: `/api/forms/*` → MS-FORM
-- [x] Update MS-SINK-TBL, MS-TMPL, MS-ORCH docker configs if needed
+- [x] Nginx routing: `/api/forms/*` → engine-reporting:form
+- [x] Update engine-data:sink-tbl, engine-data:template, engine-orchestrator docker configs if needed
 
 ---
 

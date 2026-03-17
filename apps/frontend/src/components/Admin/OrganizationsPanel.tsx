@@ -14,7 +14,7 @@ import {
     DialogContent,
     Input,
     Label,
-    Select,
+    Dropdown,
     Option,
     Badge,
     makeStyles,
@@ -70,6 +70,12 @@ function flattenOrgs(orgs: OrganizationAdmin[]): OrganizationAdmin[] {
     recurse(orgs);
     return result;
 }
+
+const ORG_TYPES = [
+    { value: 'HOLDING', label: 'Holding' },
+    { value: 'COMPANY', label: 'Company' },
+    { value: 'DIVISION', label: 'Division' },
+];
 
 const OrganizationsPanel: React.FC = () => {
     const { data: organizations, isLoading, error } = useOrganizations();
@@ -180,6 +186,11 @@ const OrganizationsPanel: React.FC = () => {
         });
     };
 
+    const typeDisplayText = ORG_TYPES.find(t => t.value === newOrgType)?.label ?? 'Company';
+    const parentDisplayText = newOrgParentId
+        ? flatOrgs.find(o => o.id === newOrgParentId)?.name ?? '— No parent (top-level) —'
+        : '— No parent (top-level) —';
+
     return (
         <div className={styles.container}>
             <div className={styles.header}>
@@ -202,26 +213,32 @@ const OrganizationsPanel: React.FC = () => {
                                     placeholder="Enter organization name"
                                 />
                                 <Label required>Type</Label>
-                                <Select
-                                    value={newOrgType}
-                                    onChange={(_e: any, data: any) => setNewOrgType(data.value)}
+                                <Dropdown
+                                    value={typeDisplayText}
+                                    selectedOptions={[newOrgType]}
+                                    onOptionSelect={(_e: any, data: any) => setNewOrgType(data.optionValue ?? 'COMPANY')}
+                                    listbox={{ style: { zIndex: 10000000 } }}
                                 >
-                                    <Option value="HOLDING">Holding</Option>
-                                    <Option value="COMPANY">Company</Option>
-                                    <Option value="DIVISION">Division</Option>
-                                </Select>
+                                    {ORG_TYPES.map((t) => (
+                                        <Option key={t.value} value={t.value}>
+                                            {t.label}
+                                        </Option>
+                                    ))}
+                                </Dropdown>
                                 <Label>Parent Organization</Label>
-                                <Select
-                                    value={newOrgParentId}
-                                    onChange={(_e: any, data: any) => setNewOrgParentId(data.value)}
+                                <Dropdown
+                                    value={parentDisplayText}
+                                    selectedOptions={[newOrgParentId]}
+                                    onOptionSelect={(_e: any, data: any) => setNewOrgParentId(data.optionValue ?? '')}
+                                    listbox={{ style: { zIndex: 10000000 } }}
                                 >
                                     <Option value="">— No parent (top-level) —</Option>
                                     {flatOrgs.map((org) => (
                                         <Option key={org.id} value={org.id} text={`${org.name} (${org.type})`}>
-                                            {org.name} ({org.type})
+                                            {`${org.name} (${org.type})`}
                                         </Option>
                                     ))}
-                                </Select>
+                                </Dropdown>
                             </div>
                         </DialogContent>
                         <DialogActions>

@@ -1,5 +1,6 @@
 package com.reportplatform.snow.service;
 
+import com.reportplatform.base.dapr.DaprClientWrapper;
 import com.reportplatform.snow.model.entity.SyncJobHistoryEntity;
 import com.reportplatform.snow.model.entity.SyncJobHistoryEntity.JobStatus;
 import com.reportplatform.snow.model.entity.SyncScheduleEntity;
@@ -8,6 +9,7 @@ import com.reportplatform.snow.repository.SyncJobHistoryRepository;
 import com.reportplatform.snow.repository.SyncScheduleRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Map;
 
 @Service
 public class SyncJobService {
@@ -24,13 +27,19 @@ public class SyncJobService {
     private final SyncScheduleRepository syncScheduleRepository;
     private final SyncJobHistoryRepository syncJobHistoryRepository;
     private final DataFetchService dataFetchService;
+    private final DaprClientWrapper daprClientWrapper;
+
+    @Value("${dapr.pubsub.name:reportplatform-pubsub}")
+    private String pubsubName;
 
     public SyncJobService(SyncScheduleRepository syncScheduleRepository,
                           SyncJobHistoryRepository syncJobHistoryRepository,
-                          DataFetchService dataFetchService) {
+                          DataFetchService dataFetchService,
+                          DaprClientWrapper daprClientWrapper) {
         this.syncScheduleRepository = syncScheduleRepository;
         this.syncJobHistoryRepository = syncJobHistoryRepository;
         this.dataFetchService = dataFetchService;
+        this.daprClientWrapper = daprClientWrapper;
     }
 
     /**
@@ -78,8 +87,19 @@ public class SyncJobService {
             logger.info("Sync completed for schedule: {}. Fetched: {}, Stored: {}",
                     schedule.getId(), result.getRecordsFetched(), result.getRecordsStored());
 
-            // TODO: Publish event to Dapr Pub/Sub (snow.sync.completed)
-            // daprClient.publishEvent(pubsubName, "snow.sync.completed", eventPayload);
+            // Publish snow.sync.completed event via Dapr Pub/Sub
+            try {
+                daprClientWrapper.publishEvent(pubsubName, "snow.sync.completed",
+                        Map.of("scheduleId", schedule.getId().toString(),
+                                "connectionId", schedule.getConnectionId().toString(),
+                                "recordsFetched", result.getRecordsFetched(),
+                                "recordsStored", result.getRecordsStored(),
+                                "completedAt", Instant.now().toString()))
+                        .block();
+                logger.info("Published snow.sync.completed for schedule {}", schedule.getId());
+            } catch (Exception pubEx) {
+                logger.warn("Failed to publish snow.sync.completed: {}", pubEx.getMessage());
+            }
 
         } catch (Exception ex) {
             logger.error("Sync failed for schedule: {}", schedule.getId(), ex);
@@ -95,8 +115,18 @@ public class SyncJobService {
             schedule.setNextRunAt(calculateNextRun(schedule.getCronExpression()));
             syncScheduleRepository.save(schedule);
 
-            // TODO: Publish event to Dapr Pub/Sub (snow.sync.failed)
-            // daprClient.publishEvent(pubsubName, "snow.sync.failed", eventPayload);
+            // Publish snow.sync.failed event via Dapr Pub/Sub
+            try {
+                daprClientWrapper.publishEvent(pubsubName, "snow.sync.failed",
+                        Map.of("scheduleId", schedule.getId().toString(),
+                                "connectionId", schedule.getConnectionId().toString(),
+                                "error", ex.getMessage() != null ? ex.getMessage() : ex.getClass().getName(),
+                                "failedAt", Instant.now().toString()))
+                        .block();
+                logger.info("Published snow.sync.failed for schedule {}", schedule.getId());
+            } catch (Exception pubEx) {
+                logger.warn("Failed to publish snow.sync.failed: {}", pubEx.getMessage());
+            }
         }
     }
 

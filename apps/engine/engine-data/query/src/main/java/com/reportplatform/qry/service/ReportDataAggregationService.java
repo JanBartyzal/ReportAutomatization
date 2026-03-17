@@ -133,42 +133,9 @@ public class ReportDataAggregationService {
             logger.warn("Failed to fetch placeholder mappings from MS-TMPL-PPTX: {}", e.getMessage());
         }
 
-        // Add default placeholders if empty
-        if (textPlaceholders.isEmpty()) {
-            textPlaceholders.put("company_name", "Acme Corporation");
-            textPlaceholders.put("period", "Q1 2026");
-            textPlaceholders.put("total_opex", "1,234,567 CZK");
-            availableFields.add("company_name");
-            availableFields.add("period");
-            availableFields.add("total_opex");
-            availableFields.add("opex_items");
-            availableFields.add("monthly_costs");
-
-            // Sample table data as fallback
-            List<String> tableHeaders = Arrays.asList("Category", "Q1", "Q2", "Q3", "Q4", "Total");
-            List<List<String>> tableRows = new ArrayList<>();
-            tableRows.add(Arrays.asList("Personnel", "300,000", "310,000", "320,000", "330,000", "1,260,000"));
-            tableRows.add(Arrays.asList("Materials", "150,000", "155,000", "160,000", "165,000", "630,000"));
-            tableRows.add(Arrays.asList("Services", "80,000", "85,000", "90,000", "95,000", "350,000"));
-
-            tables.add(new TableData(
-                    "TABLE:opex_summary",
-                    tableHeaders,
-                    tableRows,
-                    TableAggregationType.DETAIL));
-
-            // Sample chart data
-            List<String> chartLabels = Arrays.asList("Jan", "Feb", "Mar", "Apr", "May", "Jun");
-            List<ChartSeries> chartSeriesList = new ArrayList<>();
-            chartSeriesList
-                    .add(new ChartSeries("Costs", Arrays.asList(180000.0, 195000.0, 210000.0, 185000.0, 200000.0, 215000.0)));
-
-            charts.add(new ChartData(
-                    "CHART:monthly_trend",
-                    "LINE",
-                    chartLabels,
-                    chartSeriesList,
-                    ChartAggregationType.NONE));
+        // Log warning if no data was retrieved from any upstream service
+        if (textPlaceholders.isEmpty() && tables.isEmpty() && charts.isEmpty()) {
+            logger.warn("No data from any upstream service for report {}. Returning empty aggregation.", reportId);
         }
 
         return new AggregatedReportData(

@@ -10,7 +10,7 @@
  *
  * Part of P5-W4-002: Health Dashboard Page (Admin)
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Title3,
@@ -39,8 +39,11 @@ import {
     ArrowExportUp24Regular,
     DataTrending24Regular,
     DataPie24Regular,
+    Settings24Regular,
+    ChevronLeft24Regular,
 } from '@fluentui/react-icons';
 import { getHealthDashboard } from '../api/health';
+import HealthServicesSettingsPanel from '../components/Admin/HealthServicesSettingsPanel';
 
 const useStyles = makeStyles({
     page: {
@@ -174,12 +177,36 @@ function formatRelativeTime(timestamp: string): string {
  */
 const HealthDashboardPage: React.FC = () => {
     const styles = useStyles();
+    const [showSettings, setShowSettings] = useState(false);
 
     const { data, isLoading, error, refetch, isRefetching } = useQuery({
         queryKey: ['health-dashboard'],
         queryFn: getHealthDashboard,
         refetchInterval: 30000, // Refresh every 30 seconds
     });
+
+    if (showSettings) {
+        return (
+            <div className={styles.page}>
+                <div className={styles.headerRow}>
+                    <div className={styles.header}>
+                        <Title3 className={styles.title}>Health Service Settings</Title3>
+                        <Body1 className={styles.subtitle}>
+                            Manage monitored services and their health check URLs
+                        </Body1>
+                    </div>
+                    <Button
+                        appearance="subtle"
+                        icon={<ChevronLeft24Regular />}
+                        onClick={() => setShowSettings(false)}
+                    >
+                        Back to Dashboard
+                    </Button>
+                </div>
+                <HealthServicesSettingsPanel />
+            </div>
+        );
+    }
 
     if (isLoading) {
         return (
@@ -209,6 +236,14 @@ const HealthDashboardPage: React.FC = () => {
                         System monitoring and service status • Last updated: {formatRelativeTime(data.lastUpdated)}
                     </Body1>
                 </div>
+                <Button
+                    appearance="subtle"
+                    icon={<Settings24Regular />}
+                    onClick={() => setShowSettings(true)}
+                    style={{ marginRight: tokens.spacingHorizontalS }}
+                >
+                    Settings
+                </Button>
                 <Button
                     appearance="subtle"
                     icon={isRefetching ? <Spinner size="tiny" /> : <ArrowExportUp24Regular />}

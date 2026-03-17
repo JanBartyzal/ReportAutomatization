@@ -155,36 +155,36 @@ P0 (API Contracts)
 
 | Service | P0 | P1 | P2 | P3a | P3b | P3c | P4a | P4b | P5 | P6 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| MS-GW | proto | impl | | | routing | routing | routing | routing | | |
-| MS-AUTH | proto+api | impl | | | | | | | | ext |
-| MS-ING | proto+api | impl | | | | | | | | |
-| MS-SCAN | proto | impl | | | | | | | | |
-| MS-ORCH | proto | impl | ext | | ext | ext | | ext | | |
-| MS-ATM-PPTX | proto | impl | | | | | | | | |
-| MS-ATM-XLS | proto | | impl | | | | | | | |
-| MS-ATM-PDF | proto | | impl | | | | | | | |
-| MS-ATM-CSV | proto | | impl | | | | | | | |
-| MS-ATM-AI | proto | | | impl | | | | | | |
-| MS-ATM-CLN | | | impl | | | | | | | |
-| MS-SINK-TBL | proto | impl | | | | ext | | | | |
-| MS-SINK-DOC | proto | impl | | | | | | | | |
-| MS-SINK-LOG | proto | impl | | | | | | | | |
-| MS-QRY | api | | impl | | | ext | | ext | | ext |
-| MS-DASH | api | | impl | | | | ext | ext | | ext |
-| MS-SRCH | api | | | | | | impl | | | |
-| MS-ADMIN | api | | | impl | | | | | | ext |
-| MS-BATCH | | | | impl | | | | | | |
-| MS-TMPL | proto | | | impl | | ext | | | | |
-| MS-NOTIF | proto | | | | prep | | impl | | | |
-| MS-LIFECYCLE | proto+api | | | | impl | | | | | ext |
-| MS-PERIOD | api | | | | impl | | | | | ext |
-| MS-FORM | api | | | | | impl | | | | ext |
-| MS-TMPL-PPTX | | | | | | | | impl | | ext |
-| MS-GEN-PPTX | proto | | | | | | | impl | | |
-| MS-MCP | | | | impl | | | | | | |
-| MS-VER | api | | | | | | impl | | | |
-| MS-AUDIT | api | | | | | | impl | | | |
-| MS-FE | types | impl | ext | ext | ext | ext | ext | ext | ext | ext |
+| router | proto | impl | | | routing | routing | routing | routing | | |
+| engine-core:auth | proto+api | impl | | | | | | | | ext |
+| engine-ingestor | proto+api | impl | | | | | | | | |
+| engine-ingestor:scanner | proto | impl | | | | | | | | |
+| engine-orchestrator | proto | impl | ext | | ext | ext | | ext | | |
+| processor-atomizers:pptx | proto | impl | | | | | | | | |
+| processor-atomizers:xls | proto | | impl | | | | | | | |
+| processor-atomizers:pdf | proto | | impl | | | | | | | |
+| processor-atomizers:csv | proto | | impl | | | | | | | |
+| processor-atomizers:ai | proto | | | impl | | | | | | |
+| processor-atomizers:cleanup | | | impl | | | | | | | |
+| engine-data:sink-tbl | proto | impl | | | | ext | | | | |
+| engine-data:sink-doc | proto | impl | | | | | | | | |
+| engine-data:sink-log | proto | impl | | | | | | | | |
+| engine-data:query | api | | impl | | | ext | | ext | | ext |
+| engine-data:dashboard | api | | impl | | | | ext | ext | | ext |
+| engine-data:search | api | | | | | | impl | | | |
+| engine-core:admin | api | | | impl | | | | | | ext |
+| engine-core:batch | | | | impl | | | | | | |
+| engine-data:template | proto | | | impl | | ext | | | | |
+| engine-reporting:notification | proto | | | | prep | | impl | | | |
+| engine-reporting:lifecycle | proto+api | | | | impl | | | | | ext |
+| engine-reporting:period | api | | | | impl | | | | | ext |
+| engine-reporting:form | api | | | | | impl | | | | ext |
+| engine-reporting:pptx-template | | | | | | | | impl | | ext |
+| processor-generators:pptx | proto | | | | | | | impl | | |
+| processor-generators:mcp | | | | impl | | | | | | |
+| engine-core:versioning | api | | | | | | impl | | | |
+| engine-core:audit | api | | | | | | impl | | | |
+| frontend | types | impl | ext | ext | ext | ext | ext | ext | ext | ext |
 
 **Legend:** proto = proto/API definition, impl = initial implementation, ext = extension, prep = preparation, routing = nginx config, types = TS types
 
@@ -197,7 +197,7 @@ P0 (API Contracts)
 
 Examples:
   P0-W1-001: Proto Package Structure & Build Setup
-  P1-W1-003: MS-ORCH – Custom Orchestrator (Core Engine)
+  P1-W1-003: engine-orchestrator – Custom Orchestrator (Core Engine)
   P3c-W4-002: Form Filling UI
 ```
 

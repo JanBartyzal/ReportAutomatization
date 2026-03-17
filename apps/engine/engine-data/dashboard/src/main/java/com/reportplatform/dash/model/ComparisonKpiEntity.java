@@ -1,6 +1,8 @@
 package com.reportplatform.dash.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -27,6 +29,7 @@ public class ComparisonKpiEntity {
     @Column(nullable = false, length = 10)
     private String aggregation = "SUM";
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "group_by", columnDefinition = "JSONB", nullable = false)
     private String groupBy = "[]";
 

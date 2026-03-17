@@ -49,6 +49,7 @@ public class WorkflowService {
     private final FileTypeRouter fileTypeRouter;
     private final IdempotencyService idempotencyService;
     private final DaprClient daprClient;
+    private final DirectServiceClient directServiceClient;
     private final WorkflowHistoryRepository workflowHistoryRepository;
     private final FailedJobRepository failedJobRepository;
     private final ObjectMapper objectMapper;
@@ -59,6 +60,7 @@ public class WorkflowService {
             FileTypeRouter fileTypeRouter,
             IdempotencyService idempotencyService,
             DaprClient daprClient,
+            DirectServiceClient directServiceClient,
             WorkflowHistoryRepository workflowHistoryRepository,
             FailedJobRepository failedJobRepository,
             ObjectMapper objectMapper,
@@ -68,6 +70,7 @@ public class WorkflowService {
         this.fileTypeRouter = fileTypeRouter;
         this.idempotencyService = idempotencyService;
         this.daprClient = daprClient;
+        this.directServiceClient = directServiceClient;
         this.workflowHistoryRepository = workflowHistoryRepository;
         this.failedJobRepository = failedJobRepository;
         this.objectMapper = objectMapper;
@@ -196,13 +199,12 @@ public class WorkflowService {
             request.put("file_id", fileId);
             request.put("blob_url", blobUrl);
 
-            // Call processor-atomizers via Dapr service invocation
-            Map<String, Object> response = daprClient.invokeMethod(
+            // Call processor-atomizers (direct HTTP with Dapr fallback)
+            Map<String, Object> response = directServiceClient.invokeMethod(
                     routingConfig.processorAtomizers(),
                     "/api/v1/excel/extract",
                     request,
-                    HttpExtension.POST,
-                    Map.class).block();
+                    Map.class);
 
             if (response != null) {
                 // Extract headers and sample rows from response
@@ -249,13 +251,12 @@ public class WorkflowService {
             request.put("sample_rows", sampleRows);
             request.put("mapping_type", "EXCEL_TO_FORM");
 
-            // Call engine-data (template service) via Dapr service invocation
-            Map<String, Object> response = daprClient.invokeMethod(
+            // Call engine-data (template service) - direct HTTP with Dapr fallback
+            Map<String, Object> response = directServiceClient.invokeMethod(
                     routingConfig.engineData(),
                     "/api/v1/mapping/suggest",
                     request,
-                    HttpExtension.POST,
-                    Map.class).block();
+                    Map.class);
 
             if (response != null) {
                 List<Object> mappings = new ArrayList<>();
@@ -415,8 +416,7 @@ public class WorkflowService {
 
                 String atomizerAppId = fileTypeRouter.resolveAtomizerAppId(ctx.fileType());
                 Map<String, String> request = Map.of("fileId", ctx.fileId(), "action", "scan");
-                daprClient.invokeMethod(atomizerAppId, "scan", request,
-                        HttpExtension.POST, Map.class).block();
+                directServiceClient.invokeMethod(atomizerAppId, "scan", request, Map.class);
 
                 idempotencyService.markProcessed(ctx.fileId(), "SCAN", "OK");
                 sendEvent(sm, WorkflowEvent.SCAN_COMPLETE, fileId, workflowId);
@@ -450,9 +450,8 @@ public class WorkflowService {
 
                 try {
                     @SuppressWarnings("unchecked")
-                    Map<String, Object> response = daprClient.invokeMethod(
-                            atomizerAppId, "parse", request,
-                            HttpExtension.POST, Map.class).block();
+                    Map<String, Object> response = directServiceClient.invokeMethod(
+                            atomizerAppId, "parse", request, Map.class);
                     String resultJson = objectMapper.writeValueAsString(response);
                     ctx.put("parseResult", resultJson);
                     idempotencyService.markProcessed(ctx.fileId(), "PARSE", resultJson);
@@ -491,9 +490,8 @@ public class WorkflowService {
                         "parsedData", parseResult != null ? parseResult : "");
 
                 @SuppressWarnings("unchecked")
-                Map<String, Object> response = daprClient.invokeMethod(
-                        routingConfig.engineData(), "map", request,
-                        HttpExtension.POST, Map.class).block();
+                Map<String, Object> response = directServiceClient.invokeMethod(
+                        routingConfig.engineData(), "map", request, Map.class);
 
                 String resultJson = objectMapper.writeValueAsString(response);
                 ctx.put("mapResult", resultJson);
@@ -531,12 +529,10 @@ public class WorkflowService {
 
                 try {
                     // Store to table sink (engine-data)
-                    daprClient.invokeMethod(routingConfig.engineData(), "store", request,
-                            HttpExtension.POST, Map.class).block();
+                    directServiceClient.invokeMethod(routingConfig.engineData(), "store", request, Map.class);
 
                     // Store to document sink (engine-data)
-                    daprClient.invokeMethod(routingConfig.engineData(), "store-doc", request,
-                            HttpExtension.POST, Map.class).block();
+                    directServiceClient.invokeMethod(routingConfig.engineData(), "store-doc", request, Map.class);
 
                     idempotencyService.markProcessed(ctx.fileId(), "STORE", "OK");
                     sendEvent(sm, WorkflowEvent.STORE_COMPLETE, fileId, workflowId);
@@ -553,10 +549,8 @@ public class WorkflowService {
                             "orgId", ctx.orgId());
 
                     // Compensate document sink first, then table sink (reverse order)
-                    daprClient.invokeMethod(routingConfig.engineData(), "rollback-doc", request,
-                            HttpExtension.POST, Map.class).block();
-                    daprClient.invokeMethod(routingConfig.engineData(), "rollback", request,
-                            HttpExtension.POST, Map.class).block();
+                    directServiceClient.invokeMethod(routingConfig.engineData(), "rollback-doc", request, Map.class);
+                    directServiceClient.invokeMethod(routingConfig.engineData(), "rollback", request, Map.class);
 
                     idempotencyService.invalidate(ctx.fileId(), "STORE");
                     log.info("Store step compensated for file [{}]", ctx.fileId());

@@ -1,19 +1,20 @@
 package com.reportplatform.snow.service;
 
+import com.reportplatform.base.dapr.DaprClientWrapper;
 import com.reportplatform.snow.model.dto.ServiceNowTableDataDTO;
 import com.reportplatform.snow.model.entity.AuthType;
 import com.reportplatform.snow.model.entity.ServiceNowConnectionEntity;
 import com.reportplatform.snow.repository.ServiceNowConnectionRepository;
+import io.dapr.client.domain.HttpExtension;
+import io.dapr.utils.TypeRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,13 +27,22 @@ public class DataFetchService {
     private final ServiceNowConnectionRepository connectionRepository;
     private final ServiceNowClient serviceNowClient;
     private final KeyVaultService keyVaultService;
+    private final DaprClientWrapper daprClientWrapper;
+
+    @Value("${dapr.remote.ms-tmpl-app-id:ms-tmpl}")
+    private String msTmplAppId;
+
+    @Value("${dapr.remote.ms-sink-tbl-app-id:ms-sink-tbl}")
+    private String msSinkTblAppId;
 
     public DataFetchService(ServiceNowConnectionRepository connectionRepository,
                             ServiceNowClient serviceNowClient,
-                            KeyVaultService keyVaultService) {
+                            KeyVaultService keyVaultService,
+                            DaprClientWrapper daprClientWrapper) {
         this.connectionRepository = connectionRepository;
         this.serviceNowClient = serviceNowClient;
         this.keyVaultService = keyVaultService;
+        this.daprClientWrapper = daprClientWrapper;
     }
 
     /**
@@ -105,16 +115,54 @@ public class DataFetchService {
             }
         }
 
-        // TODO: Send fetched data to MS-TMPL via Dapr gRPC for template matching/transformation
-        // TODO: Send transformed data to MS-SINK-TBL via Dapr gRPC for persistence
-        // For now, count stored = fetched (will be adjusted when sinks are wired)
-        totalStored = totalFetched;
+        // Step 5a: Send fetched data to MS-TMPL via Dapr for template matching/transformation
+        Map<String, Object> transformRequest = Map.of(
+                "connectionId", connectionId.toString(),
+                "records", allRecords);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> transformResponse = daprClientWrapper.invokeMethod(
+                msTmplAppId,
+                "/api/v1/transform",
+                transformRequest,
+                HttpExtension.POST,
+                new TypeRef<Map<String, Object>>() {})
+                .block();
+
+        List<Map<String, Object>> transformedRecords = Collections.emptyList();
+        if (transformResponse != null && transformResponse.get("transformedRecords") != null) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> records = (List<Map<String, Object>>) transformResponse.get("transformedRecords");
+            transformedRecords = records;
+        }
+
+        // Step 5b: Send transformed data to MS-SINK-TBL via Dapr for persistence
+        if (!transformedRecords.isEmpty()) {
+            Map<String, Object> persistRequest = Map.of(
+                    "connectionId", connectionId.toString(),
+                    "records", transformedRecords);
+
+            Map<String, Object> persistResponse = daprClientWrapper.invokeMethod(
+                    msSinkTblAppId,
+                    "/api/v1/persist",
+                    persistRequest,
+                    HttpExtension.POST,
+                    new TypeRef<Map<String, Object>>() {})
+                    .block();
+
+            if (persistResponse != null && persistResponse.get("recordsPersisted") != null) {
+                totalStored = ((Number) persistResponse.get("recordsPersisted")).intValue();
+            }
+        }
+
+        logger.info("Data pipeline complete: fetched={}, transformed={}, stored={}",
+                totalFetched, transformedRecords.size(), totalStored);
 
         // Update last sync timestamp
         connection.setUpdatedAt(Instant.now());
         connectionRepository.save(connection);
 
-        // Step 5: Log the fetch result
+        // Step 6: Log the fetch result
         logger.info("Data fetch complete for connection: {}. Records fetched: {}, stored: {}",
                 connectionId, totalFetched, totalStored);
 

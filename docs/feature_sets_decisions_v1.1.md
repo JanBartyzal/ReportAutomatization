@@ -12,7 +12,7 @@
 | D1 | Formulář vs. Excel | Formulář je **doplněk** Excelu. Formulář umožňuje export Excel šablony pro offline vyplnění a import zpět. | FS19 – rozšíření |
 | D2 | Granularita formuláře | Formuláře centrální (holding reporting) i **lokální** (na úrovni jednotky). Lokální data lze "uvolnit" pro centralizované použití. | FS19 + nový **FS21** (lokální scope), vlastní fáze |
 | D3 | PPTX šablona ownership | Stejný princip jako D2: centrální + lokální šablony. Lokální PPTX = vlastní **FS21**, vlastní fáze. | FS18 (pouze centrální) + FS21 |
-| D4 | Workflow customizace | N8N orchestruje různé workflow. Microservices (MS-LIFECYCLE) připravují jen dílčí kroky – neobsahují hardcoded sekvenci. | FS17 – zjednodušení MS-LIFECYCLE |
+| D4 | Workflow customizace | N8N orchestruje různé workflow. Microservices (engine-reporting:lifecycle) připravují jen dílčí kroky – neobsahují hardcoded sekvenci. | FS17 – zjednodušení engine-reporting:lifecycle |
 | D5 | Srovnání period | Srovnání as-is (stejná metrika, různé periody). Granularita srovnání = samostatný **FS22**, implementace later. | FS20 – zúžení + nový FS22 |
 
 ---
@@ -51,37 +51,37 @@ Formuláře budou mít příznak `scope`:
 
 - **`LOCAL` formuláře** jsou implementovány jako součást **FS21** (vlastní fáze).
 - V FS19 se nyní implementují pouze `CENTRAL` formuláře.
-- Datový model MS-FORM musí `scope` a `owner_org_id` zohledňovat od začátku, aby FS21 nevyžadovalo migraci schématu.
+- Datový model engine-reporting:form musí `scope` a `owner_org_id` zohledňovat od začátku, aby FS21 nevyžadovalo migraci schématu.
 - "Uvolnění" lokálních dat pro centralizované použití = změna příznaku `scope: LOCAL → RELEASED` + notifikace HoldingAdminu (implementace v FS21).
 
 ---
 
 ## Aktualizace FS17 – OPEX Report Lifecycle (D4: N8N workflow customizace)
 
-### Přepracování architektury MS-LIFECYCLE
+### Přepracování architektury engine-reporting:lifecycle
 
-Původní návrh předpokládal, že MS-LIFECYCLE řídí sekvenci kroků. Po rozhodnutí D4 je rozdělení odpovědností jasné:
+Původní návrh předpokládal, že engine-reporting:lifecycle řídí sekvenci kroků. Po rozhodnutí D4 je rozdělení odpovědností jasné:
 
-**MS-LIFECYCLE dělá:**
+**engine-reporting:lifecycle dělá:**
 - Spravuje stavový automat entity `Report` (DRAFT / SUBMITTED / UNDER_REVIEW / APPROVED / REJECTED).
 - Vystavuje endpointy pro přechody stavů: `POST /reports/{id}/submit`, `POST /reports/{id}/approve`, `POST /reports/{id}/reject`.
 - Validuje, zda je přechod povolen (RBAC + business rules – nelze schválit bez UNDER_REVIEW).
-- Loguje každý přechod do MS-AUDIT.
+- Loguje každý přechod do engine-core:audit.
 - Publikuje event `report.status_changed` do Dapr PubSub po každém přechodu.
 
 **N8N dělá:**
 - Odebírá event `report.status_changed` a orchestruje co se má stát dál.
 - Pro `SUBMITTED`: N8N spustí validační kroky, notifikaci Reviewerovi, případné automatické kontroly dat.
-- Pro `APPROVED`: N8N triggeruje generování PPTX (MS-GEN-PPTX), aktualizaci centrálního dashboardu, archivaci.
+- Pro `APPROVED`: N8N triggeruje generování PPTX (processor-generators:pptx), aktualizaci centrálního dashboardu, archivaci.
 - Pro `REJECTED`: N8N odesílá notifikaci Editorovi s komentářem.
 - Různé `report_type` nebo `period_type` mohou mít různý N8N workflow (různá délka review procesu, různé validace) – N8N router rozhodne dle metadat eventu.
 
-Tím MS-LIFECYCLE zůstává jako jednoduchý, spolehlivý state machine. Veškerá business orchestrace je v N8N a lze ji měnit bez re-deploymentu microservice.
+Tím engine-reporting:lifecycle zůstává jako jednoduchý, spolehlivý state machine. Veškerá business orchestrace je v N8N a lze ji měnit bez re-deploymentu microservice.
 
 ```
 Editor klikne "Submit"
         ↓
-MS-LIFECYCLE: DRAFT → SUBMITTED (validace, zápis, audit)
+engine-reporting:lifecycle: DRAFT → SUBMITTED (validace, zápis, audit)
         ↓
 Dapr PubSub: event { report_id, from: DRAFT, to: SUBMITTED, report_type, org_id }
         ↓
@@ -98,10 +98,10 @@ N8N: odebere event → rozhodne dle report_type → spustí odpovídající work
 
 FS18 implementuje **pouze centrální PPTX šablony** (scope `CENTRAL`, owner = HoldingAdmin). Tato rozhodnutí zpřehledňují implementaci:
 
-- MS-TMPL-PPTX spravuje pouze `CENTRAL` šablony.
+- engine-reporting:pptx-template spravuje pouze `CENTRAL` šablony.
 - Datový model obsahuje `scope` a `owner_org_id` od začátku (příprava na FS21 bez migrace).
 - Lokální PPTX šablony (pro interní reporty jednotek) jsou součástí **FS21**.
-- Generátor (MS-GEN-PPTX) je architektonicky agnostický vůči `scope` – generuje dle dodané `template_id` bez ohledu na ownership. Tím FS21 jen přidá nové šablony, generátor se nemění.
+- Generátor (processor-generators:pptx) je architektonicky agnostický vůči `scope` – generuje dle dodané `template_id` bez ohledu na ownership. Tím FS21 jen přidá nové šablony, generátor se nemění.
 
 ---
 
@@ -143,7 +143,7 @@ Po nasazení centrálního reportingového cyklu vznikne přirozená poptávka z
 
 #### Lokální PPTX šablony
 - CompanyAdmin může nahrát vlastní PPTX šablonu (scope: `LOCAL`).
-- Generátor (MS-GEN-PPTX) je schopný generovat PPTX z lokální šablony pro potřeby interního reportu.
+- Generátor (processor-generators:pptx) je schopný generovat PPTX z lokální šablony pro potřeby interního reportu.
 - Vygenerovaný lokální report není automaticky sdílen s holdingem.
 
 #### Sdílení lokálních šablon
@@ -154,10 +154,10 @@ Po nasazení centrálního reportingového cyklu vznikne přirozená poptávka z
 
 | Dopad | Popis |
 |---|---|
-| MS-FORM (rozšíření) | Podpora `scope: LOCAL` a `scope: RELEASED`. Nová role CompanyAdmin. |
-| MS-TMPL-PPTX (rozšíření) | Podpora lokálních šablon. |
-| MS-ADMIN (rozšíření) | Správa role CompanyAdmin, přehled lokálních šablon/formulářů pro HoldingAdmin. |
-| MS-LIFECYCLE (rozšíření) | Lokální lifecycle bez holdingového approval (zjednodušený stavový automat). |
+| engine-reporting:form (rozšíření) | Podpora `scope: LOCAL` a `scope: RELEASED`. Nová role CompanyAdmin. |
+| engine-reporting:pptx-template (rozšíření) | Podpora lokálních šablon. |
+| engine-core:admin (rozšíření) | Správa role CompanyAdmin, přehled lokálních šablon/formulářů pro HoldingAdmin. |
+| engine-reporting:lifecycle (rozšíření) | Lokální lifecycle bez holdingového approval (zjednodušený stavový automat). |
 
 *Žádná nová standalone microservice – FS21 rozšiřuje stávající.*
 
@@ -188,7 +188,7 @@ Po nasazení centrálního reportingového cyklu vznikne přirozená poptávka z
 |---|---|---|---|
 | FS01 | Infrastructure & Core | P1 | Beze změny |
 | FS02 | File Ingestor | P1 | Rozšíření: `upload_purpose` flag |
-| FS03 | Atomizers | P1–P2 | Rozšíření: MS-GEN-PPTX jako "obrácený atomizer" |
+| FS03 | Atomizers | P1–P2 | Rozšíření: processor-generators:pptx jako "obrácený atomizer" |
 | FS04 | N8N Orchestrator | P1 | Rozšíření: workflow pro lifecycle eventy (D4) |
 | FS05 | Sinks & Persistence | P1 | Rozšíření: `form_responses` tabulka |
 | FS06 | Analytics & Query | P2 | Rozšíření: `source_type` flag (FORM / FILE) |
@@ -217,10 +217,10 @@ Po nasazení centrálního reportingového cyklu vznikne přirozená poptávka z
 | P1 | MVP Core (GW, Auth, Ingestor, PPTX Atomizer, N8N základní, Sinks, FE základní) | Fungující upload + extrakce + viewer |
 | P2 | Extended Parsing (XLS, PDF, CSV, Query, Dash) | Plná podpora formátů + BI |
 | P3 | Intelligence & Admin (Admin UI, Batch, AI, MCP, Schema Mapping) | Holdingová hierarchie + AI |
-| **P3b** | **Lifecycle + Period Mgmt (MS-LIFECYCLE, MS-PERIOD)** | **Řízení OPEX cyklu, deadliny, stavový automat** |
-| **P3c** | **Form Builder – centrální (MS-FORM, Excel export/import)** | **Sběr dat bez Excelu po e-mailu** |
+| **P3b** | **Lifecycle + Period Mgmt (engine-reporting:lifecycle, engine-reporting:period)** | **Řízení OPEX cyklu, deadliny, stavový automat** |
+| **P3c** | **Form Builder – centrální (engine-reporting:form, Excel export/import)** | **Sběr dat bez Excelu po e-mailu** |
 | P4 | Enterprise Features (Notif, Versioning, Audit, Search) | Compliance + versioning |
-| **P4b** | **PPTX Generator (MS-TMPL-PPTX, MS-GEN-PPTX)** | **Automatické generování standardizovaných reportů** |
+| **P4b** | **PPTX Generator (engine-reporting:pptx-template, processor-generators:pptx)** | **Automatické generování standardizovaných reportů** |
 | **P4c** | **Advanced Period Mgmt (deadliny, eskalace, as-is srovnání)** | **Plná správa reportingových cyklů** |
 | P5 | DevOps Maturity + **FS21 Local Forms & Templates** | Production-ready + lokální scope |
 | P6 | **FS22 Advanced Comparison** (placeholder) | Granulární srovnání period |

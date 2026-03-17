@@ -15,8 +15,8 @@ import {
     TableCell,
     Badge,
 } from '@fluentui/react-components';
-import { ChevronLeft24Regular, ChevronRight24Regular, HistoryRegular } from '@fluentui/react-icons';
-import { useFile } from '../hooks/useFiles';
+import { ArrowSyncRegular, ChevronLeft24Regular, ChevronRight24Regular, HistoryRegular } from '@fluentui/react-icons';
+import { useFile, useReprocessFile } from '../hooks/useFiles';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import { useNavigate } from 'react-router-dom';
@@ -108,7 +108,8 @@ export default function FileDetailPage() {
     const styles = useStyles();
     const navigate = useNavigate();
     const { fileId } = useParams<{ fileId: string }>();
-    const { data: file, isLoading } = useFile(fileId || '');
+    const { data: file, isLoading } = useFile(fileId || '', { pollingInterval: 5000 });
+    const reprocess = useReprocessFile();
     const [currentSlide, setCurrentSlide] = useState(1);
 
     if (isLoading) {
@@ -134,6 +135,14 @@ export default function FileDetailPage() {
                 <Title2>{file.filename}</Title2>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: tokens.spacingHorizontalS }}>
                     <Button
+                        appearance="primary"
+                        icon={<ArrowSyncRegular />}
+                        disabled={reprocess.isPending}
+                        onClick={() => fileId && reprocess.mutate(fileId)}
+                    >
+                        {reprocess.isPending ? 'Triggering...' : 'Reprocess'}
+                    </Button>
+                    <Button
                         appearance="subtle"
                         icon={<HistoryRegular />}
                         onClick={() => navigate(`/admin/audit?entity_type=FILE&entity_id=${fileId}`)}
@@ -142,6 +151,17 @@ export default function FileDetailPage() {
                     </Button>
                 </div>
             </div>
+
+            {reprocess.isSuccess && (
+                <Badge appearance="filled" color="success" style={{ marginBottom: tokens.spacingVerticalS }}>
+                    Reprocessing triggered — status will update automatically
+                </Badge>
+            )}
+            {reprocess.isError && (
+                <Badge appearance="filled" color="danger" style={{ marginBottom: tokens.spacingVerticalS }}>
+                    Failed to trigger reprocessing: {(reprocess.error as Error).message}
+                </Badge>
+            )}
 
             <div className={styles.content}>
                 <div>

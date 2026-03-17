@@ -38,24 +38,24 @@ Service Mesh: Dapr (Distributed Application Runtime) is mandatory for all servic
 
 ### Protocol Rules (strict)
 - **Internal (service-to-service):** gRPC via Dapr sidecars is the **primary and mandatory** protocol. All Atomizers, Sinks, Orchestrator, and support services communicate exclusively via Dapr gRPC service invocation.
-- **External (frontend-facing):** REST API exposed **only** through API Gateway (MS-GW). Only edge services (MS-AUTH, MS-ING upload endpoint, MS-QRY, MS-DASH) expose REST endpoints. Internal services (MS-ATM-*, MS-SINK-*, MS-TMPL, MS-ORCH) **never** expose REST endpoints to the outside.
+- **External (frontend-facing):** REST API exposed **only** through API Gateway (router). Only edge services (engine-core:auth, engine-ingestor upload endpoint, engine-data:query, engine-data:dashboard) expose REST endpoints. Internal services (processor-atomizers, engine-data (sink modules), engine-data:template, engine-orchestrator) **never** expose REST endpoints to the outside.
 - **Event-driven:** Dapr Pub/Sub for asynchronous inter-service events (e.g., `file-uploaded`, `report.status_changed`).
 - **Frontend → Backend:** Always REST via API Gateway. Frontend never calls gRPC directly.
-- **Nginx auth_request:** REST call from MS-GW to MS-AUTH for token validation (exception to gRPC rule – Nginx does not support gRPC auth_request).
+- **Nginx auth_request:** REST call from router to engine-core:auth for token validation (exception to gRPC rule – Nginx does not support gRPC auth_request).
 
 ### Protocol Selection Guide
 | Communication Path | Protocol | Reason |
 |---|---|---|
 | Frontend → API Gateway | REST (HTTPS) | Browser compatibility |
-| API Gateway → MS-AUTH (auth_request) | REST | Nginx auth_request limitation |
-| API Gateway → MS-ING, MS-QRY, MS-DASH | REST | Frontend-facing edge services |
-| MS-ING → MS-SCAN | Dapr gRPC | Internal service |
-| MS-ING → MS-ORCH | Dapr Pub/Sub | Async event trigger |
-| MS-ORCH → MS-ATM-* | Dapr gRPC | Internal processing |
-| MS-ORCH → MS-SINK-* | Dapr gRPC | Internal persistence |
-| MS-ORCH → MS-TMPL | Dapr gRPC | Internal mapping |
-| MS-ORCH → MS-NOTIF | Dapr Pub/Sub | Async notification |
-| MS-NOTIF → MS-FE | WebSocket / SSE | Real-time push |
+| API Gateway → engine-core:auth (auth_request) | REST | Nginx auth_request limitation |
+| API Gateway → engine-ingestor, engine-data:query, engine-data:dashboard | REST | Frontend-facing edge services |
+| engine-ingestor → engine-ingestor:scanner | Dapr gRPC | Internal service |
+| engine-ingestor → engine-orchestrator | Dapr Pub/Sub | Async event trigger |
+| engine-orchestrator → processor-atomizers | Dapr gRPC | Internal processing |
+| engine-orchestrator → engine-data (sink modules) | Dapr gRPC | Internal persistence |
+| engine-orchestrator → engine-data:template | Dapr gRPC | Internal mapping |
+| engine-orchestrator → engine-reporting:notification | Dapr Pub/Sub | Async notification |
+| engine-reporting:notification → frontend | WebSocket / SSE | Real-time push |
 | Any service → PostgreSQL / Redis | TCP | Direct data access |
 
 Cloud: Optimized for Azure Container Apps and AWS Fargate.

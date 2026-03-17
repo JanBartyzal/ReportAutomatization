@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     Body1,
     Button,
@@ -11,7 +11,7 @@ import {
     DialogContent,
     Input,
     Label,
-    Select,
+    Dropdown,
     Option,
     Badge,
     makeStyles,
@@ -26,6 +26,7 @@ import {
 import { Add24Regular, Dismiss24Regular } from '@fluentui/react-icons';
 import { useUsers, useAssignRole, useRemoveRole, useOrganizations } from '../../hooks/useAdmin';
 import { Role } from '@reportplatform/types';
+import type { OrganizationAdmin } from '@reportplatform/types';
 
 const useStyles = makeStyles({
     container: {
@@ -89,6 +90,20 @@ const roleBadgeColor = (role: string) => {
     }
 };
 
+function flattenOrgs(orgs: OrganizationAdmin[]): OrganizationAdmin[] {
+    const result: OrganizationAdmin[] = [];
+    const recurse = (list: OrganizationAdmin[]) => {
+        for (const org of list) {
+            result.push(org);
+            if (org.children && org.children.length > 0) {
+                recurse(org.children);
+            }
+        }
+    };
+    recurse(orgs);
+    return result;
+}
+
 const UsersPanel: React.FC = () => {
     const [filterOrgId, setFilterOrgId] = useState<string>('');
     const [isAssignOpen, setIsAssignOpen] = useState(false);
@@ -104,6 +119,8 @@ const UsersPanel: React.FC = () => {
     const { data: organizations } = useOrganizations();
     const assignRoleMutation = useAssignRole();
     const removeRoleMutation = useRemoveRole();
+
+    const flatOrgs = useMemo(() => flattenOrgs(organizations || []), [organizations]);
 
     if (isLoading) {
         return <Spinner label="Loading users..." />;
@@ -140,6 +157,14 @@ const UsersPanel: React.FC = () => {
         }
     };
 
+    const filterDisplayText = filterOrgId
+        ? flatOrgs.find(o => o.id === filterOrgId)?.name ?? 'All Organizations'
+        : 'All Organizations';
+
+    const assignOrgDisplayText = assignOrgId
+        ? flatOrgs.find(o => o.id === assignOrgId)?.name ?? 'Select organization...'
+        : 'Select organization...';
+
     return (
         <div className={styles.container}>
             <div className={styles.header}>
@@ -156,17 +181,18 @@ const UsersPanel: React.FC = () => {
             <div className={styles.filterRow}>
                 <div>
                     <Label>Filter by Organization</Label>
-                    <Select
-                        value={filterOrgId}
-                        onChange={(_e: any, data: any) => setFilterOrgId(data.value)}
+                    <Dropdown
+                        value={filterDisplayText}
+                        selectedOptions={[filterOrgId]}
+                        onOptionSelect={(_e: any, data: any) => setFilterOrgId(data.optionValue ?? '')}
                     >
                         <Option value="">All Organizations</Option>
-                        {(organizations || []).map((org: any) => (
+                        {flatOrgs.map((org) => (
                             <Option key={org.id} value={org.id}>
                                 {org.name}
                             </Option>
                         ))}
-                    </Select>
+                    </Dropdown>
                 </div>
             </div>
 
@@ -227,28 +253,31 @@ const UsersPanel: React.FC = () => {
                                     placeholder="e.g. user@company.com or Azure AD Object ID"
                                 />
                                 <Label required>Organization</Label>
-                                <Select
-                                    value={assignOrgId}
-                                    onChange={(_e: any, data: any) => setAssignOrgId(data.value)}
+                                <Dropdown
+                                    value={assignOrgDisplayText}
+                                    selectedOptions={assignOrgId ? [assignOrgId] : []}
+                                    onOptionSelect={(_e: any, data: any) => setAssignOrgId(data.optionValue ?? '')}
+                                    listbox={{ style: { zIndex: 10000000 } }}
                                 >
-                                    <Option value="">Select organization...</Option>
-                                    {(organizations || []).map((org: any) => (
+                                    {flatOrgs.map((org) => (
                                         <Option key={org.id} value={org.id} text={`${org.name} (${org.type})`}>
-                                            {org.name} ({org.type})
+                                            {`${org.name} (${org.type})`}
                                         </Option>
                                     ))}
-                                </Select>
+                                </Dropdown>
                                 <Label required>Role</Label>
-                                <Select
+                                <Dropdown
                                     value={assignRole}
-                                    onChange={(_e: any, data: any) => setAssignRole(data.value)}
+                                    selectedOptions={[assignRole]}
+                                    onOptionSelect={(_e: any, data: any) => setAssignRole(data.optionValue ?? Role.VIEWER)}
+                                    listbox={{ style: { zIndex: 10000000 } }}
                                 >
                                     {ROLES.map((role) => (
                                         <Option key={role} value={role}>
                                             {role}
                                         </Option>
                                     ))}
-                                </Select>
+                                </Dropdown>
                             </div>
                         </DialogContent>
                         <DialogActions>

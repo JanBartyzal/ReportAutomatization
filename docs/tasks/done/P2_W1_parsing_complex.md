@@ -11,7 +11,7 @@
 
 ---
 
-## P2-W1-001: MS-ATM-XLS – Excel Atomizer
+## P2-W1-001: processor-atomizers:xls – Excel Atomizer
 
 **Type:** Core Service
 **Effort:** 8 MD
@@ -46,7 +46,7 @@
 
 ---
 
-## P2-W1-002: MS-QRY – Query API (CQRS Read Model)
+## P2-W1-002: engine-data:query – Query API (CQRS Read Model)
 
 **Type:** Core Service
 **Effort:** 6 MD
@@ -79,7 +79,7 @@
 
 ---
 
-## P2-W1-003: MS-DASH – Dashboard Aggregation
+## P2-W1-003: engine-data:dashboard – Dashboard Aggregation
 
 **Type:** Core Service
 **Effort:** 10 MD

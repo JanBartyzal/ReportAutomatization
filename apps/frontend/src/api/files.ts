@@ -45,3 +45,9 @@ export async function getFileTables(fileId: string): Promise<FileContent['tables
   const { data } = await apiClient.get<FileContent['tables']>(`/files/${fileId}/tables`);
   return data;
 }
+
+/** Trigger reprocessing of a file through the orchestration pipeline */
+export async function reprocessFile(fileId: string): Promise<{ status: string; file_id: string }> {
+  const { data } = await apiClient.post<{ status: string; file_id: string }>(`/files/${fileId}/reprocess`);
+  return data;
+}

@@ -7,7 +7,7 @@
 
 ---
 
-## P3c-W2-001: MS-TMPL Extension – Excel-to-Form Mapping
+## P3c-W2-001: engine-data:template Extension – Excel-to-Form Mapping
 
 **Type:** Service Extension
 **Effort:** 3 MD
@@ -19,13 +19,13 @@
   - Match Excel column headers to form field names
   - Fuzzy matching with confidence score
   - Historical mappings (same org previously imported)
-  - AI suggestion via MS-ATM-AI for low-confidence matches
+  - AI suggestion via processor-atomizers:ai for low-confidence matches
 - [x] Response includes: mapped pairs, unmapped Excel columns, unmapped form fields
 - [ ] Integration test with sample Excel and form definitions
 
 ---
 
-## P3c-W2-002: MS-ORCH Extension – Form Import Workflow
+## P3c-W2-002: engine-orchestrator Extension – Form Import Workflow
 
 **Type:** Service Extension
 **Effort:** 3 MD
@@ -34,14 +34,14 @@
 **Tasks:**
 - [x] New workflow: `FORM_IMPORT`
   - Triggered when `upload_purpose: FORM_IMPORT`
-  - Steps: Parse Excel (MS-ATM-XLS) → Suggest Mapping (MS-TMPL) → Return to FE for confirmation
-  - After user confirms: Store in form_responses (MS-SINK-TBL)
+  - Steps: Parse Excel (processor-atomizers:xls) → Suggest Mapping (engine-data:template) → Return to FE for confirmation
+  - After user confirms: Store in form_responses (engine-data:sink-tbl)
 - [x] JSON workflow definition for FORM_IMPORT
 - [ ] Error handling: malformed Excel, version mismatch
 
 ---
 
-## P3c-W2-003: MS-QRY Extension – Form Data Queries
+## P3c-W2-003: engine-data:query Extension – Form Data Queries
 
 **Type:** Service Extension
 **Effort:** 2 MD

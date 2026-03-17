@@ -1,95 +1,62 @@
 # OpenTelemetry Collector Configuration
-# Receives traces from all services (via OTLP and Zipkin for Dapr compat)
-# Exports to Grafana Tempo (traces), Prometheus (metrics), Loki (logs)
+# Opravená verze pro rok 2026
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  zpages:
+    endpoint: 0.0.0.0:55679
 
 receivers:
+  # OTLP receiver - přijímá data z vašich aplikací
   otlp:
     protocols:
       grpc:
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
-        cors:
-          allowed_origins:
-            - "http://localhost:5173"
-            - "http://localhost"
-          allowed_headers:
-            - "*"
-  zipkin:
-    endpoint: 0.0.0.0:9411
+
+  # Scrape vlastních metrik collectoru
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otel-collector'
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['localhost:8888']
 
 processors:
   batch:
-    timeout: 200ms
-    send_batch_size: 512
-    send_batch_max_size: 1024
+    timeout: 10s
+    send_batch_size: 1000
 
   memory_limiter:
     check_interval: 1s
     limit_mib: 512
     spike_limit_mib: 128
 
-  resource:
-    attributes:
-      - key: deployment.environment
-        value: local
-        action: upsert
-      - key: service.namespace
-        value: reportplatform
-        action: upsert
-
-  attributes/loki:
-    actions:
-      - key: service.name
-        action: upsert
-      - key: severity
-        action: upsert
-
 exporters:
-  otlp/tempo:
-    endpoint: tempo:4317
-    tls:
-      insecure: true
-
-  prometheus:
-    endpoint: 0.0.0.0:8889
-    namespace: reportplatform
-    resource_to_telemetry_conversion:
-      enabled: true
-
-  loki:
-    endpoint: http://loki:3100/loki/api/v1/push
-    default_labels_enabled:
-      exporter: true
-      job: true
-
+  # Debug exportér pro výpis do konzole (vhodné pro logy)
   debug:
     verbosity: basic
 
-extensions:
-  health_check:
-    endpoint: 0.0.0.0:13133
-
-  zpages:
-    endpoint: 0.0.0.0:55679
+  # Prometheus exportér (vytvoří endpoint pro scrape na portu 8889)
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    send_timestamps: true
 
 service:
-  extensions: [health_check, zpages]
   pipelines:
-    traces:
-      receivers: [otlp, zipkin]
-      processors: [memory_limiter, resource, batch]
-      exporters: [otlp/tempo]
+    # Metriky posíláme do Promethea
     metrics:
-      receivers: [otlp]
-      processors: [memory_limiter, resource, batch]
-      exporters: [prometheus]
+      receivers: [otlp, prometheus]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus, debug]
+
+    # Logy posíláme POUZE do debug (Prometheus logy nepodporuje)
     logs:
       receivers: [otlp]
-      processors: [memory_limiter, resource, batch]
-      exporters: [loki]
-  telemetry:
-    logs:
-      level: info
-    metrics:
-      address: 0.0.0.0:8888
+      processors: [memory_limiter, batch]
+      exporters: [debug]
+
+  extensions: [health_check, zpages]

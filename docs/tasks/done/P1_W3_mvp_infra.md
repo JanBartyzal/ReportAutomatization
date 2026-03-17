@@ -17,10 +17,10 @@
 
 **Tasks:**
 - [ ] `infra/docker/docker-compose.yml` with all P1 services:
-  - MS-GW (Nginx), MS-AUTH, MS-ING, MS-SCAN, MS-ORCH
-  - MS-ATM-PPTX, MS-SINK-TBL, MS-SINK-DOC, MS-SINK-LOG
+  - router (Nginx), engine-core:auth, engine-ingestor, engine-ingestor:scanner, engine-orchestrator
+  - processor-atomizers:pptx, engine-data:sink-tbl, engine-data:sink-doc, engine-data:sink-log
   - PostgreSQL 16, Redis, Azurite (Blob emulator)
-  - MS-FE (Vite dev server)
+  - frontend (Vite dev server)
 - [ ] Dapr sidecar containers for each service
 - [ ] Dapr component definitions (pubsub, statestore)
 - [ ] `.env.example` with all configurable variables
@@ -47,13 +47,13 @@
 
 **Tasks:**
 - [ ] `nginx.conf` with:
-  - `/api/auth/*` → MS-AUTH (port 8081)
-  - `/api/upload/*` → MS-ING (port 8082)
-  - `/api/files/*` → MS-QRY (prepared, 404 until P2)
-  - `/api/query/*` → MS-QRY (prepared)
-  - `/api/dashboards/*` → MS-DASH (prepared)
-  - `/api/admin/*` → MS-ADMIN (prepared)
-  - `auth_request` → MS-AUTH verify endpoint
+  - `/api/auth/*` → engine-core:auth (port 8081)
+  - `/api/upload/*` → engine-ingestor (port 8082)
+  - `/api/files/*` → engine-data:query (prepared, 404 until P2)
+  - `/api/query/*` → engine-data:query (prepared)
+  - `/api/dashboards/*` → engine-data:dashboard (prepared)
+  - `/api/admin/*` → engine-core:admin (prepared)
+  - `auth_request` → engine-core:auth verify endpoint
 - [ ] Rate limiting zones (100r/s API, 10r/s Auth/Upload)
 - [ ] CORS headers configuration
 - [ ] Health check endpoint `/health`
@@ -88,8 +88,8 @@
 - [ ] Redis configuration for:
   - Dapr state store
   - Dapr pub/sub (Redis Streams)
-  - Token cache (MS-AUTH)
-  - Workflow state (MS-ORCH)
+  - Token cache (engine-core:auth)
+  - Workflow state (engine-orchestrator)
 - [ ] Key naming conventions documented
 
 ---

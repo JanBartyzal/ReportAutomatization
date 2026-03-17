@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -23,6 +24,20 @@ public class FileTypeRouter {
 
     private static final Set<String> SUPPORTED_FILE_TYPES = Set.of(
             "PPTX", "XLSX", "DOCX", "PDF", "CSV", "JSON", "XML");
+
+    private static final Map<String, String> MIME_TO_EXTENSION = Map.ofEntries(
+            Map.entry("application/vnd.openxmlformats-officedocument.presentationml.presentation", "PPTX"),
+            Map.entry("application/vnd.ms-powerpoint", "PPTX"),
+            Map.entry("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "XLSX"),
+            Map.entry("application/vnd.ms-excel", "XLSX"),
+            Map.entry("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "DOCX"),
+            Map.entry("application/msword", "DOCX"),
+            Map.entry("application/pdf", "PDF"),
+            Map.entry("text/csv", "CSV"),
+            Map.entry("application/json", "JSON"),
+            Map.entry("application/xml", "XML"),
+            Map.entry("text/xml", "XML")
+    );
 
     private final ServiceRoutingConfig routingConfig;
 
@@ -43,7 +58,19 @@ public class FileTypeRouter {
      * @throws IllegalArgumentException if the file type is not supported
      */
     public String resolveAtomizerAppId(String fileType) {
-        String normalized = fileType.toUpperCase().trim();
+        String normalized = fileType.trim();
+        // If input looks like a MIME type, map it to an extension first
+        if (normalized.contains("/")) {
+            String mapped = MIME_TO_EXTENSION.get(normalized.toLowerCase());
+            if (mapped != null) {
+                normalized = mapped;
+            } else {
+                log.error("Unsupported MIME type: {}", fileType);
+                throw new IllegalArgumentException("Unsupported file type: " + fileType);
+            }
+        } else {
+            normalized = normalized.toUpperCase();
+        }
         if (!SUPPORTED_FILE_TYPES.contains(normalized)) {
             log.error("Unsupported file type: {}", fileType);
             throw new IllegalArgumentException("Unsupported file type: " + fileType);
@@ -60,6 +87,10 @@ public class FileTypeRouter {
      * @return true if a matching atomizer exists
      */
     public boolean isSupported(String fileType) {
-        return SUPPORTED_FILE_TYPES.contains(fileType.toUpperCase().trim());
+        String normalized = fileType.trim();
+        if (normalized.contains("/")) {
+            return MIME_TO_EXTENSION.containsKey(normalized.toLowerCase());
+        }
+        return SUPPORTED_FILE_TYPES.contains(normalized.toUpperCase());
     }
 }

@@ -13,9 +13,9 @@
 **Effort:** 0.5 MD
 
 **Tasks:**
-- [ ] Add MS-GEN-PPTX, MS-TMPL-PPTX to docker-compose.yml
+- [ ] Add processor-generators:pptx, engine-reporting:pptx-template to docker-compose.yml
 - [ ] Dapr sidecar configs
-- [ ] Nginx routing: `/api/templates/pptx/*` → MS-TMPL-PPTX
+- [ ] Nginx routing: `/api/templates/pptx/*` → engine-reporting:pptx-template
 - [ ] LibreOffice headless container for validation
 
 ---

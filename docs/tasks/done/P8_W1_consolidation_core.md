@@ -13,21 +13,21 @@
 ## Consolidation Strategy
 
 ### Current State: 29+ Microservices
-**Java (23 services):** MS-AUTH, MS-ING, MS-SCAN, MS-ORCH, MS-SINK-TBL, MS-SINK-DOC, MS-SINK-LOG, MS-QRY, MS-DASH, MS-SRCH, MS-ADMIN, MS-BATCH, MS-TMPL, MS-NOTIF, MS-LIFECYCLE, MS-PERIOD, MS-FORM, MS-TMPL-PPTX, MS-VER, MS-AUDIT, MS-EXT-SNOW, MS-GW (Nginx)
-**Python (8 services):** MS-ATM-PPTX, MS-ATM-XLS, MS-ATM-PDF, MS-ATM-CSV, MS-ATM-AI, MS-ATM-CLN, MS-MCP, MS-GEN-PPTX, MS-GEN-XLS
+**Java (23 services):** engine-core:auth, engine-ingestor, engine-ingestor:scanner, engine-orchestrator, engine-data:sink-tbl, engine-data:sink-doc, engine-data:sink-log, engine-data:query, engine-data:dashboard, engine-data:search, engine-core:admin, engine-core:batch, engine-data:template, engine-reporting:notification, engine-reporting:lifecycle, engine-reporting:period, engine-reporting:form, engine-reporting:pptx-template, engine-core:versioning, engine-core:audit, engine-integrations:servicenow, router (Nginx)
+**Python (8 services):** processor-atomizers:pptx, processor-atomizers:xls, processor-atomizers:pdf, processor-atomizers:csv, processor-atomizers:ai, processor-atomizers:cleanup, processor-generators:mcp, processor-generators:pptx, processor-generators:xls
 
 ### Target State: 8 Deployment Units
 
 | # | Unit Name | Merged Services | Rationale |
 |---|-----------|----------------|-----------|
-| 1 | **engine-core** | MS-AUTH, MS-ADMIN, MS-BATCH, MS-VER, MS-AUDIT | Core platform: auth, admin, batch management, versioning, audit |
-| 2 | **engine-ingestor** | MS-ING, MS-SCAN | File ingestion pipeline (tightly coupled) |
-| 3 | **engine-orchestrator** | MS-ORCH | Stays separate — complex state machine, independent scaling |
-| 4 | **engine-data** | MS-SINK-TBL, MS-SINK-DOC, MS-SINK-LOG, MS-QRY, MS-DASH, MS-SRCH, MS-TMPL | Data layer: all sinks + read models + schema mapping |
-| 5 | **engine-reporting** | MS-LIFECYCLE, MS-PERIOD, MS-FORM, MS-TMPL-PPTX, MS-NOTIF | Reporting lifecycle: forms, periods, templates, notifications |
-| 6 | **engine-integrations** | MS-EXT-SNOW | External integrations (extensible for future connectors) |
-| 7 | **processor-atomizers** | MS-ATM-PPTX, MS-ATM-XLS, MS-ATM-PDF, MS-ATM-CSV, MS-ATM-AI, MS-ATM-CLN | All Python extractors in one deployable unit |
-| 8 | **processor-generators** | MS-GEN-PPTX, MS-GEN-XLS, MS-MCP | All Python generators + AI agent |
+| 1 | **engine-core** | engine-core:auth, engine-core:admin, engine-core:batch, engine-core:versioning, engine-core:audit | Core platform: auth, admin, batch management, versioning, audit |
+| 2 | **engine-ingestor** | engine-ingestor, engine-ingestor:scanner | File ingestion pipeline (tightly coupled) |
+| 3 | **engine-orchestrator** | engine-orchestrator | Stays separate — complex state machine, independent scaling |
+| 4 | **engine-data** | engine-data:sink-tbl, engine-data:sink-doc, engine-data:sink-log, engine-data:query, engine-data:dashboard, engine-data:search, engine-data:template | Data layer: all sinks + read models + schema mapping |
+| 5 | **engine-reporting** | engine-reporting:lifecycle, engine-reporting:period, engine-reporting:form, engine-reporting:pptx-template, engine-reporting:notification | Reporting lifecycle: forms, periods, templates, notifications |
+| 6 | **engine-integrations** | engine-integrations:servicenow | External integrations (extensible for future connectors) |
+| 7 | **processor-atomizers** | processor-atomizers:pptx, processor-atomizers:xls, processor-atomizers:pdf, processor-atomizers:csv, processor-atomizers:ai, processor-atomizers:cleanup | All Python extractors in one deployable unit |
+| 8 | **processor-generators** | processor-generators:pptx, processor-generators:xls, processor-generators:mcp | All Python generators + AI agent |
 
 ### Architecture Principles
 - **Internal modularity preserved**: Each former service becomes a Spring Boot module/package within the consolidated unit
@@ -76,7 +76,7 @@
 **AC:**
 - [x] Single JAR serves all auth, admin, batch, versioning, audit endpoints
 - [x] All existing unit tests pass without modification
-- [x] Dapr gRPC calls from MS-ORCH reach correct service handlers
+- [x] Dapr gRPC calls from engine-orchestrator reach correct service handlers
 - [x] DB migrations run in correct order across all modules
 
 ---
@@ -93,16 +93,16 @@
   - Root: `apps/engine/engine-data/`
   - Submodules: `sink-tbl`, `sink-doc`, `sink-log`, `query`, `dashboard`, `search`, `template`, `common`
   - Shared PostgreSQL connection pool (HikariCP, max 30 connections)
-  - Shared Redis client for caching (MS-QRY cache, rate limit counters)
+  - Shared Redis client for caching (engine-data:query cache, rate limit counters)
 - [x] **gRPC service consolidation**:
   - Single gRPC server exposing all sink services + template mapping
   - Service names preserved: `TableSinkService`, `DocumentSinkService`, `LogSinkService`, `TemplateMappingService`
-  - MS-ORCH continues calling by service name (Dapr routes to engine-data)
+  - engine-orchestrator continues calling by service name (Dapr routes to engine-data)
 - [x] **REST endpoint consolidation**:
   - Single HTTP port (8100) serving all read-model endpoints
   - Path prefixes: `/api/query/*`, `/api/dashboards/*`, `/api/search/*`, `/api/templates/*`
 - [x] **CQRS preserved**:
-  - Write side (sinks) accessed only via gRPC from MS-ORCH
+  - Write side (sinks) accessed only via gRPC from engine-orchestrator
   - Read side (query, dashboard, search) accessed via REST from frontend
   - Separation maintained by package structure, not network boundary
 - [x] **Flyway migrations merged**:
@@ -112,7 +112,7 @@
 
 **AC:**
 - [x] Single process handles all data operations (write + read)
-- [x] MS-ORCH gRPC calls to sinks and template work unchanged
+- [x] engine-orchestrator gRPC calls to sinks and template work unchanged
 - [x] Frontend REST calls to query/dashboard/search work unchanged
 - [x] Redis caching works for query module within consolidated service
 
@@ -132,11 +132,11 @@
 - [x] **Event consolidation**:
   - Dapr PubSub subscriptions merged: `report.status_changed`, `notify`, `deadline.*`
   - Internal module-to-module calls become direct method invocations (no network hop)
-  - e.g., MS-LIFECYCLE publishing event → MS-NOTIF consuming → now same process: direct Spring Event
+  - e.g., engine-reporting:lifecycle publishing event → engine-reporting:notification consuming → now same process: direct Spring Event
 - [x] **REST endpoints**:
   - Single HTTP port (8105) serving: `/api/reports/*`, `/api/periods/*`, `/api/forms/*`, `/api/templates/pptx/*`, `/api/notifications/*`
 - [x] **gRPC services**:
-  - MS-ORCH calls to lifecycle and form services via single Dapr app-id `engine-reporting`
+  - engine-orchestrator calls to lifecycle and form services via single Dapr app-id `engine-reporting`
 - [x] **Shared state**:
   - Period ↔ Form ↔ Lifecycle tight coupling benefits from shared DB connection
   - Cross-module validation (e.g., form deadline from period) becomes local call
@@ -145,7 +145,7 @@
 
 **AC:**
 - [x] Report lifecycle, forms, periods, notifications served from single process
-- [x] PubSub events from external services (MS-ORCH) still received correctly
+- [x] PubSub events from external services (engine-orchestrator) still received correctly
 - [x] Internal events (lifecycle → notification) handled via Spring ApplicationEvent
 - [x] WebSocket/SSE push notifications still work
 
@@ -178,7 +178,7 @@
 
 **AC:**
 - [x] Single Python process handles all file format extractions
-- [x] MS-ORCH gRPC calls route to correct atomizer handler
+- [x] engine-orchestrator gRPC calls route to correct atomizer handler
 - [x] Cleanup worker runs on schedule within same process
 - [x] Docker image builds successfully with all dependencies
 
@@ -206,7 +206,7 @@
 
 **AC:**
 - [x] PPTX and Excel generation + MCP from single process
-- [x] MS-ORCH gRPC calls route correctly
+- [x] engine-orchestrator gRPC calls route correctly
 - [x] MCP Server REST endpoints accessible via API Gateway
 
 ---
@@ -236,7 +236,7 @@
 - [x] **Backwards compatibility**: Verify all Saga compensating actions still work
 
 **AC:**
-- [x] MS-ORCH routes to all consolidated services correctly
+- [x] engine-orchestrator routes to all consolidated services correctly
 - [x] Full file processing pipeline works end-to-end
 - [x] Saga rollback still functions across consolidated boundaries
 
@@ -267,7 +267,7 @@
 - [x] **Dapr consolidation**:
   - Single Dapr app-id: `engine-ingestor`
   - PubSub: `file.uploaded` event publishing merged
-  - MS-ORCH calls updated to target `engine-ingestor` instead of `ms-ing`
+  - engine-orchestrator calls updated to target `engine-ingestor` instead of `ms-ing`
 - [x] **Blob Storage integration**:
   - Shared Azure Blob client (streaming upload, MIME validation)
   - Scan triggered internally after upload (direct method call instead of network hop)
@@ -282,7 +282,7 @@
 **AC:**
 - [x] Single JAR handles file upload, MIME validation, and antivirus scanning
 - [x] All existing unit tests pass without modification
-- [x] MS-ORCH receives `file.uploaded` event from `engine-ingestor`
+- [x] engine-orchestrator receives `file.uploaded` event from `engine-ingestor`
 - [x] ClamAV sidecar integration works from consolidated service
 - [x] Streaming upload to Blob Storage works unchanged
 
@@ -307,11 +307,11 @@
   - Single HTTP port (8106) serving: `/api/integrations/servicenow/*`
   - Future connectors will add: `/api/integrations/{connector}/*`
 - [x] **gRPC services**:
-  - Single gRPC port (50056) for internal calls from MS-ORCH
+  - Single gRPC port (50056) for internal calls from engine-orchestrator
   - Service name preserved: `ServiceNowIntegrationService`
 - [x] **Dapr consolidation**:
   - Single Dapr app-id: `engine-integrations`
-  - PubSub subscriptions from MS-EXT-SNOW merged
+  - PubSub subscriptions from engine-integrations:servicenow merged
   - State store for sync status shared
 - [x] **Resilience patterns**:
   - Circuit breaker for external API calls (Service-Now)
@@ -325,7 +325,7 @@
 **AC:**
 - [x] Single JAR serves all Service-Now integration endpoints
 - [x] All existing unit tests pass without modification
-- [x] MS-ORCH gRPC calls route to `engine-integrations` correctly
+- [x] engine-orchestrator gRPC calls route to `engine-integrations` correctly
 - [x] Circuit breaker and retry patterns functional
 - [x] Structure ready for adding future connectors without architectural changes
 
@@ -348,7 +348,7 @@
     - `ms-lifecycle`, `ms-period`, `ms-form`, `ms-tmpl-pptx`, `ms-notif` → `engine-reporting:8105`
     - `ms-ext-snow` → `engine-integrations:8106`
     - `ms-gen-pptx`, `ms-mcp` → `processor-generators:8111`
-  - MS-ORCH upstream unchanged (stays `engine-orchestrator`)
+  - engine-orchestrator upstream unchanged (stays `engine-orchestrator`)
 - [x] **Rate limiting review**:
   - Verify rate limit zones still apply correctly per endpoint group
   - Adjust connection pool sizes for fewer upstream targets

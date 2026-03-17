@@ -10,7 +10,7 @@
 
 ---
 
-## P7-W1-001: MS-EXT-SNOW – Service-Now REST API Connector
+## P7-W1-001: engine-integrations:servicenow – Service-Now REST API Connector
 
 **Type:** New Service
 **Effort:** 10 MD
@@ -31,18 +31,18 @@
   - Rate limiting awareness (respect `X-RateLimit-*` headers)
   - Retry with exponential backoff on 429/503
 - [ ] **Connection Configuration**:
-  - Admin UI endpoint (REST via MS-GW): `POST /api/admin/integrations/servicenow`
+  - Admin UI endpoint (REST via router): `POST /api/admin/integrations/servicenow`
   - Config entity: `{ instance_url, auth_type, credentials_ref, tables[], mapping_template_id }`
   - Credentials stored as KeyVault references (never plaintext in DB)
   - Connection test endpoint: `POST /api/admin/integrations/servicenow/test`
 - [ ] **Data Fetch & Transform**:
   - Fetch raw JSON from Service-Now table
-  - Apply Schema Mapping (MS-TMPL via Dapr gRPC) for column normalization
+  - Apply Schema Mapping (engine-data:template via Dapr gRPC) for column normalization
   - Transform to platform-standard JSONB format
-  - Store via MS-SINK-TBL (Dapr gRPC)
+  - Store via engine-data:sink-tbl (Dapr gRPC)
 - [ ] **Error handling**:
-  - Connection failures → retry + log to MS-SINK-LOG
-  - Auth failures → alert via MS-NOTIF (Dapr Pub/Sub)
+  - Connection failures → retry + log to engine-data:sink-log
+  - Auth failures → alert via engine-reporting:notification (Dapr Pub/Sub)
   - Partial data fetch → store what's available, log gaps
 - [ ] Unit tests with WireMock for Service-Now API simulation
 
@@ -54,7 +54,7 @@
 
 ---
 
-## P7-W1-002: MS-EXT-SNOW – Scheduled Data Sync (Scheduler)
+## P7-W1-002: engine-integrations:servicenow – Scheduled Data Sync (Scheduler)
 
 **Type:** Feature Extension
 **Effort:** 5 MD
@@ -74,9 +74,9 @@
 - [ ] **Job History & Monitoring**:
   - Log each run: `{ job_id, start_time, end_time, records_fetched, records_stored, status, error }`
   - Admin UI: list of sync jobs with status, duration, record counts
-  - Failed jobs visible in existing Failed Jobs UI (MS-ADMIN)
+  - Failed jobs visible in existing Failed Jobs UI (engine-core:admin)
 - [ ] **Notifications**:
-  - Sync completed → optional notification (MS-NOTIF, Dapr Pub/Sub)
+  - Sync completed → optional notification (engine-reporting:notification, Dapr Pub/Sub)
   - Sync failed → mandatory alert to Admin
 - [ ] Unit tests for scheduler logic, integration tests with Testcontainers
 
@@ -88,7 +88,7 @@
 
 ---
 
-## P7-W1-003: MS-GEN-XLS – Excel Report Generator
+## P7-W1-003: processor-generators:xls – Excel Report Generator
 
 **Type:** New Service
 **Effort:** 5 MD
@@ -114,7 +114,7 @@
 - [ ] **Output**:
   - Generated .xlsx stored in Blob Storage
   - URL returned in response
-  - Cleanup Worker (MS-ATM-CLN) extended to include generated Excel files
+  - Cleanup Worker (processor-atomizers:cleanup) extended to include generated Excel files
 - [ ] Unit tests with sample data, verify .xlsx validity with openpyxl
 
 **AC:**
@@ -125,11 +125,11 @@
 
 ---
 
-## P7-W1-004: MS-EXT-SNOW – Automated Report Distribution
+## P7-W1-004: engine-integrations:servicenow – Automated Report Distribution
 
 **Type:** Feature Extension
 **Effort:** 3 MD
-**Service:** apps/engine/microservices/units/ms-ext-snow + MS-NOTIF
+**Service:** apps/engine/microservices/units/ms-ext-snow + engine-reporting:notification
 **Feature Set:** FS23
 
 **Tasks:**
@@ -137,12 +137,12 @@
   - Admin defines distribution rules: `{ schedule_id, report_template_id, recipients[], format: XLSX }`
   - Recipients: email addresses or platform user IDs
 - [ ] **Distribution Pipeline**:
-  - After scheduled sync: trigger MS-GEN-XLS (Dapr gRPC) to generate report
-  - Attach generated Excel to email notification (MS-NOTIF, Dapr Pub/Sub)
+  - After scheduled sync: trigger processor-generators:xls (Dapr gRPC) to generate report
+  - Attach generated Excel to email notification (engine-reporting:notification, Dapr Pub/Sub)
   - SMTP delivery with .xlsx attachment
 - [ ] **Audit Trail**:
   - Each distribution logged: `{ distribution_id, recipients, timestamp, status }`
-  - Logged via MS-SINK-LOG (Dapr gRPC)
+  - Logged via engine-data:sink-log (Dapr gRPC)
 - [ ] Integration tests for full pipeline: fetch → generate → distribute
 
 **AC:**
@@ -154,15 +154,15 @@
 
 ## P7-W1-005: Smart Persistence Promotion – Detection & Proposal
 
-**Type:** New Feature (MS-ADMIN + MS-TMPL Extension)
+**Type:** New Feature (engine-core:admin + engine-data:template Extension)
 **Effort:** 5 MD
 **Service:** apps/engine/microservices/units/ms-admin + ms-tmpl (extension)
 **Feature Set:** FS24
 
 **Tasks:**
-- [ ] **Usage Tracking** (MS-TMPL extension):
+- [ ] **Usage Tracking** (engine-data:template extension):
   - Track Schema Mapping usage: `{ mapping_id, usage_count, last_used, distinct_org_count }`
-  - Increment counter on each MS-ORCH → MS-TMPL mapping call
+  - Increment counter on each engine-orchestrator → engine-data:template mapping call
   - Flyway migration for usage tracking table
 - [ ] **Promotion Detection**:
   - Background job (hourly): scan mappings with `usage_count >= threshold` (default: 5)
@@ -176,9 +176,9 @@
     - Date fields → `DATE` or `TIMESTAMP`
     - Boolean fields → `BOOLEAN`
   - Generate DDL: `CREATE TABLE promoted_{mapping_name} (...)`
-  - Include suggested indexes based on query patterns from MS-QRY logs
+  - Include suggested indexes based on query patterns from engine-data:query logs
 - [ ] **Admin Notification**:
-  - Notify Admin via MS-NOTIF (Dapr Pub/Sub) when new candidate detected
+  - Notify Admin via engine-reporting:notification (Dapr Pub/Sub) when new candidate detected
   - Candidate visible in Admin UI with proposed schema
 - [ ] Unit tests for type inference and DDL generation
 
@@ -203,12 +203,12 @@
   - `PUT /api/admin/promotions/{id}` → modify DDL (column names, types, indexes)
   - `POST /api/admin/promotions/{id}/approve` → trigger table creation
   - `DELETE /api/admin/promotions/{id}` → dismiss candidate
-- [ ] **Table Creation** (MS-SINK-TBL extension):
+- [ ] **Table Creation** (engine-data:sink-tbl extension):
   - Execute approved DDL via Flyway dynamic migration
   - Apply RLS policy to new table (copy from template)
   - Register new table in metadata registry
-- [ ] **Transparent Routing** (MS-ORCH extension):
-  - After promotion: MS-ORCH checks if mapping has promoted table
+- [ ] **Transparent Routing** (engine-orchestrator extension):
+  - After promotion: engine-orchestrator checks if mapping has promoted table
   - If yes: route data to dedicated table instead of generic JSONB store
   - Dual-write period: write to both old and new for 7 days (configurable)
   - Fallback: if promoted table write fails, fall back to JSONB

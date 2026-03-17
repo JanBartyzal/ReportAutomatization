@@ -10,7 +10,7 @@
 
 ---
 
-## P2-W2-001: MS-ATM-PDF – PDF/OCR Atomizer
+## P2-W2-001: processor-atomizers:pdf – PDF/OCR Atomizer
 
 **Type:** Data Service
 **Effort:** 7 MD
@@ -35,7 +35,7 @@
 
 ---
 
-## P2-W2-002: MS-ATM-CSV – CSV Atomizer
+## P2-W2-002: processor-atomizers:csv – CSV Atomizer
 
 **Type:** Data Service
 **Effort:** 2 MD
@@ -57,7 +57,7 @@
 
 ---
 
-## P2-W2-003: MS-ATM-CLN – Cleanup Worker
+## P2-W2-003: processor-atomizers:cleanup – Cleanup Worker
 
 **Type:** CronJob
 **Effort:** 2 MD
@@ -76,7 +76,7 @@
 
 ---
 
-## P2-W2-004: MS-ORCH Extension – Multi-Format Router
+## P2-W2-004: engine-orchestrator Extension – Multi-Format Router
 
 **Type:** Service Extension
 **Effort:** 3 MD
@@ -84,9 +84,9 @@
 
 **Tasks:**
 - [x] Add routing for new file types in workflow definitions:
-  - `.xlsx` → MS-ATM-XLS
-  - `.pdf` → MS-ATM-PDF
-  - `.csv` → MS-ATM-CSV
+  - `.xlsx` → processor-atomizers:xls
+  - `.pdf` → processor-atomizers:pdf
+  - `.csv` → processor-atomizers:csv
 - [x] JSON workflow definitions for each file type
 - [x] Error handling specific to each atomizer type
 - [ ] Integration tests: upload each file type → verify full pipeline

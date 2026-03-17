@@ -1,5 +1,6 @@
 package com.reportplatform.snow.service;
 
+import com.reportplatform.base.dapr.DaprClientWrapper;
 import com.reportplatform.snow.model.dto.CreateDistributionRuleRequest;
 import com.reportplatform.snow.model.dto.DistributionHistoryDTO;
 import com.reportplatform.snow.model.dto.DistributionRuleDTO;
@@ -8,8 +9,11 @@ import com.reportplatform.snow.model.entity.DistributionHistoryEntity.Distributi
 import com.reportplatform.snow.model.entity.DistributionRuleEntity;
 import com.reportplatform.snow.repository.DistributionHistoryRepository;
 import com.reportplatform.snow.repository.DistributionRuleRepository;
+import io.dapr.client.domain.HttpExtension;
+import io.dapr.utils.TypeRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -27,11 +32,20 @@ public class DistributionService {
 
     private final DistributionRuleRepository distributionRuleRepository;
     private final DistributionHistoryRepository distributionHistoryRepository;
+    private final DaprClientWrapper daprClientWrapper;
+
+    @Value("${dapr.remote.ms-gen-xls-app-id:ms-gen-xls}")
+    private String msGenXlsAppId;
+
+    @Value("${dapr.pubsub.name:reportplatform-pubsub}")
+    private String pubsubName;
 
     public DistributionService(DistributionRuleRepository distributionRuleRepository,
-                               DistributionHistoryRepository distributionHistoryRepository) {
+                               DistributionHistoryRepository distributionHistoryRepository,
+                               DaprClientWrapper daprClientWrapper) {
         this.distributionRuleRepository = distributionRuleRepository;
         this.distributionHistoryRepository = distributionHistoryRepository;
+        this.daprClientWrapper = daprClientWrapper;
     }
 
     // ==================== CRUD for distribution rules ====================
@@ -131,24 +145,29 @@ public class DistributionService {
         history = distributionHistoryRepository.save(history);
 
         try {
-            // TODO: Step 1 - Call MS-GEN-XLS via Dapr gRPC to generate the report
-            // DaprClient daprClient = ...;
-            // GenerateReportRequest grpcRequest = GenerateReportRequest.newBuilder()
-            //     .setTemplateId(rule.getReportTemplateId().toString())
-            //     .setFormat(rule.getFormat())
-            //     .build();
-            // GenerateReportResponse grpcResponse = daprClient.invokeMethod(
-            //     "ms-gen-xls", "generateReport", grpcRequest, HttpExtension.POST).block();
-            // String blobUrl = grpcResponse.getBlobUrl();
-            String blobUrl = null; // Placeholder until MS-GEN-XLS integration is implemented
+            // Step 1 - Call MS-GEN-XLS via Dapr to generate the report
+            Map<String, Object> genRequest = Map.of(
+                    "reportTemplateId", rule.getReportTemplateId().toString(),
+                    "format", rule.getFormat(),
+                    "orgId", rule.getOrgId().toString());
 
-            // TODO: Step 2 - Publish email notification event via Dapr Pub/Sub to MS-NOTIF
-            // Map<String, Object> notificationEvent = new HashMap<>();
-            // notificationEvent.put("recipients", rule.getRecipients());
-            // notificationEvent.put("reportBlobUrl", blobUrl);
-            // notificationEvent.put("templateId", rule.getReportTemplateId().toString());
-            // notificationEvent.put("format", rule.getFormat());
-            // daprClient.publishEvent("pubsub", "distribution.email.send", notificationEvent).block();
+            Map<String, Object> genResponse = daprClientWrapper.invokeMethod(
+                    msGenXlsAppId,
+                    "/api/v1/generate",
+                    genRequest,
+                    HttpExtension.POST,
+                    new TypeRef<Map<String, Object>>() {})
+                    .block();
+
+            String blobUrl = genResponse != null ? (String) genResponse.get("blobUrl") : null;
+
+            // Step 2 - Publish email notification event via Dapr Pub/Sub to MS-NOTIF
+            daprClientWrapper.publishEvent(pubsubName, "distribution.email.send",
+                    Map.of("recipients", rule.getRecipients(),
+                            "reportBlobUrl", blobUrl != null ? blobUrl : "",
+                            "templateId", rule.getReportTemplateId().toString(),
+                            "format", rule.getFormat()))
+                    .block();
 
             // Step 3 - Update history record as SENT
             history.setReportBlobUrl(blobUrl);

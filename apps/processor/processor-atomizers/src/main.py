@@ -17,6 +17,7 @@ from fastapi import FastAPI
 
 from src.common.config import Settings
 from src.common.grpc_server import create_grpc_server
+from src.common.api_router import api_router, init_settings as init_api_settings
 from src.common.health import health_router
 from src.common.logging_config import setup_logging
 from src.common.tracing import setup_tracing
@@ -56,6 +57,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(health_router)
+init_api_settings(settings)
+app.include_router(api_router)
 
 
 if __name__ == "__main__":

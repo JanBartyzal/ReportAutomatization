@@ -13,11 +13,11 @@
 **Effort:** 1 MD
 
 **Tasks:**
-- [x] Add MS-ATM-XLS, MS-ATM-PDF, MS-ATM-CSV, MS-ATM-CLN to docker-compose.yml
-- [x] Add MS-QRY, MS-DASH to docker-compose.yml
+- [x] Add processor-atomizers:xls, processor-atomizers:pdf, processor-atomizers:csv, processor-atomizers:cleanup to docker-compose.yml
+- [x] Add engine-data:query, engine-data:dashboard to docker-compose.yml
 - [x] Dapr sidecar configs for new services
 - [x] Nginx routing updates for `/api/query/*` and `/api/dashboards/*`
-- [x] Tesseract language data volume for MS-ATM-PDF
+- [x] Tesseract language data volume for processor-atomizers:pdf
 
 ---
 
@@ -27,7 +27,7 @@
 **Effort:** 1 MD
 
 **Tasks:**
-- [x] Flyway migration: materialized views for MS-QRY
+- [x] Flyway migration: materialized views for engine-data:query
 - [x] Indexes on JSONB columns for common query patterns
 - [x] Refresh strategy for materialized views (triggered by new data)
 - [x] RLS policies for new tables/views

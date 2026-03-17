@@ -11,8 +11,6 @@ import {
     DialogContent,
     Input,
     Label,
-    Select,
-    Option,
     Badge,
     makeStyles,
     tokens,
@@ -244,17 +242,26 @@ const BatchesPanel: React.FC = () => {
             <div className={styles.filterRow}>
                 <div>
                     <Label>Filter by Holding</Label>
-                    <Select
+                    <select
                         value={filterHoldingId}
-                        onChange={(_e: any, data: any) => setFilterHoldingId(data.value)}
+                        onChange={(e) => setFilterHoldingId(e.target.value)}
+                        style={{
+                            padding: '6px 8px',
+                            borderRadius: '4px',
+                            border: `1px solid ${tokens.colorNeutralStroke1}`,
+                            backgroundColor: tokens.colorNeutralBackground1,
+                            color: tokens.colorNeutralForeground1,
+                            fontSize: '14px',
+                            width: '100%',
+                        }}
                     >
-                        <Option value="">All Holdings</Option>
+                        <option value="">All Holdings</option>
                         {holdings.map((org) => (
-                            <Option key={org.id} value={org.id}>
+                            <option key={org.id} value={org.id}>
                                 {org.name}
-                            </Option>
+                            </option>
                         ))}
-                    </Select>
+                    </select>
                 </div>
             </div>
 
@@ -344,17 +351,26 @@ const BatchesPanel: React.FC = () => {
                                     placeholder="e.g. Q1-2026"
                                 />
                                 <Label required>Holding Organization</Label>
-                                <Select
+                                <select
                                     value={newHoldingId}
-                                    onChange={(_e: any, data: any) => setNewHoldingId(data.value)}
+                                    onChange={(e) => setNewHoldingId(e.target.value)}
+                                    style={{
+                                        padding: '6px 8px',
+                                        borderRadius: '4px',
+                                        border: `1px solid ${tokens.colorNeutralStroke1}`,
+                                        backgroundColor: tokens.colorNeutralBackground1,
+                                        color: tokens.colorNeutralForeground1,
+                                        fontSize: '14px',
+                                        width: '100%',
+                                    }}
                                 >
-                                    <Option value="">Select holding...</Option>
+                                    <option value="">-- Select holding --</option>
                                     {holdings.map((org) => (
-                                        <Option key={org.id} value={org.id}>
+                                        <option key={org.id} value={org.id}>
                                             {org.name}
-                                        </Option>
+                                        </option>
                                     ))}
-                                </Select>
+                                </select>
                                 <Label>Description</Label>
                                 <Textarea
                                     value={newDescription}

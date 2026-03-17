@@ -1,5 +1,7 @@
 package com.reportplatform.admin.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -9,9 +11,12 @@ public class OrganizationDTO {
     private String code;
     private String name;
     private OrganizationType type;
+    @JsonProperty("parent_id")
     private UUID parentId;
     private List<OrganizationDTO> children;
+    @JsonProperty("created_at")
     private Instant createdAt;
+    @JsonProperty("updated_at")
     private Instant updatedAt;
 
     public UUID getId() {

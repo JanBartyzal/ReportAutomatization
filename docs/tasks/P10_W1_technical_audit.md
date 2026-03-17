@@ -58,10 +58,10 @@
   - [ ] `form_responses` table schema present
   - [ ] Document API: pgVector embeddings generated async
 - [ ] **FS06 – Analytics & Query**:
-  - [ ] MS-QRY: Redis caching TTL 5 min
-  - [ ] MS-DASH: Recharts + Nivo chart support
-  - [ ] MS-DASH: `source_type` flag (FORM/FILE)
-  - [ ] MS-SRCH: Full-text search + vector search
+  - [ ] engine-data:query: Redis caching TTL 5 min
+  - [ ] engine-data:dashboard: Recharts + Nivo chart support
+  - [ ] engine-data:dashboard: `source_type` flag (FORM/FILE)
+  - [ ] engine-data:search: Full-text search + vector search
 - [ ] **FS07 – Admin**:
   - [ ] Role management UI
   - [ ] API key management (bcrypt hashed)
@@ -100,7 +100,7 @@
   - [ ] Column mapping editor UI
   - [ ] Learning from history (auto-suggest)
   - [ ] `POST /map/excel-to-form` endpoint
-  - [ ] MS-ORCH integration via gRPC
+  - [ ] engine-orchestrator integration via gRPC
 - [ ] **FS16 – Audit & Compliance**:
   - [ ] Immutable logs (INSERT only, no UPDATE/DELETE for app user)
   - [ ] Read access logging
@@ -258,7 +258,7 @@
 **Tasks:**
 - [ ] **Protocol compliance** (per project charter §2.1):
   - [ ] Internal services use Dapr gRPC only (no internal REST)
-  - [ ] Edge services expose REST only (MS-GW routes)
+  - [ ] Edge services expose REST only (router routes)
   - [ ] Binary data transferred as Blob URL references, never inline
   - [ ] Every request carries JWT in Authorization header
 - [ ] **Proto/OpenAPI consistency**:

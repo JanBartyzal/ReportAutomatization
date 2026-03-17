@@ -1,12 +1,12 @@
+# Grafana dashboards provisioning configuration
+# Auto-provisions dashboards on startup
+
 apiVersion: 1
 
 providers:
-  - name: ReportPlatform
-    orgId: 1
+  - name: 'Default'
+    folder: 'Observability'
     type: file
-    disableDeletion: false
-    updateIntervalSeconds: 30
-    allowUiUpdates: true
     options:
-      path: /var/lib/grafana/dashboards
-      foldersFromFilesStructure: false
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: true

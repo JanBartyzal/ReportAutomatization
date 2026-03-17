@@ -7,14 +7,14 @@
 
 ---
 
-## P3b-W2-001: MS-NOTIF Integration for Lifecycle Events
+## P3b-W2-001: engine-reporting:notification Integration for Lifecycle Events
 
 **Type:** Service Extension
 **Effort:** 4 MD
 **Service:** apps/engine/microservices/units/ms-notif (preparation)
 
 **Tasks:**
-- [ ] Prepare MS-NOTIF scaffolding (full impl in P4a)
+- [ ] Prepare engine-reporting:notification scaffolding (full impl in P4a)
 - [ ] **Dapr Pub/Sub Subscriber**: Subscribe to `notify` topic
 - [ ] **Notification Routing**:
   - `REPORT_SUBMITTED` → notify HoldingAdmin

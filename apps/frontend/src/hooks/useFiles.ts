@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listFiles, getFile, uploadFile, getFileContent, getFileTables } from '../api/files';
+import { listFiles, getFile, uploadFile, getFileContent, getFileTables, reprocessFile } from '../api/files';
 import type { FileListParams, FileDetails, UploadPurpose, FileContent } from '@reportplatform/types';
 
 export function useFiles(params: FileListParams = {}) {
@@ -49,6 +49,16 @@ export function useUpload() {
     }) => uploadFile(file, purpose, onProgress),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
+    },
+  });
+}
+
+export function useReprocessFile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (fileId: string) => reprocessFile(fileId),
+    onSuccess: (_data, fileId) => {
+      queryClient.invalidateQueries({ queryKey: ['files', fileId] });
     },
   });
 }

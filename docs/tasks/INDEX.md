@@ -139,8 +139,8 @@ All task files moved to `docs/tasks/done/`:
 | W3 | [P7_W3_servicenow_infra.md](P7_W3_servicenow_infra.md) | Haiku/Gemini | ~3 MD |
 | W4 | [P7_W4_servicenow_frontend.md](P7_W4_servicenow_frontend.md) | Flash/MiniMax | ~10 MD |
 
-**New Services:** MS-EXT-SNOW (Java), MS-GEN-XLS (Python)
-**Extensions:** MS-ADMIN, MS-TMPL, MS-SINK-TBL, MS-ORCH, MS-DASH, MS-NOTIF
+**New Services:** engine-integrations:servicenow (Java), processor-generators:xls (Python)
+**Extensions:** engine-core:admin, engine-data:template, engine-data:sink-tbl, engine-orchestrator, engine-data:dashboard, engine-reporting:notification
 
 ### P8 – Microservice Consolidation (~55 MD)
 
@@ -157,14 +157,14 @@ All task files moved to `docs/tasks/done/`:
 
 | # | Unit | Merged From | Tech |
 |---|------|-------------|------|
-| 1 | engine-core | MS-AUTH, MS-ADMIN, MS-BATCH, MS-VER, MS-AUDIT | Java 21 |
-| 2 | engine-ingestor | MS-ING, MS-SCAN | Java 21 |
-| 3 | engine-orchestrator | MS-ORCH | Java 21 |
-| 4 | engine-data | MS-SINK-TBL/DOC/LOG, MS-QRY, MS-DASH, MS-SRCH, MS-TMPL | Java 21 |
-| 5 | engine-reporting | MS-LIFECYCLE, MS-PERIOD, MS-FORM, MS-TMPL-PPTX, MS-NOTIF | Java 21 |
-| 6 | engine-integrations | MS-EXT-SNOW | Java 21 |
-| 7 | processor-atomizers | MS-ATM-PPTX/XLS/PDF/CSV/AI/CLN | Python |
-| 8 | processor-generators | MS-GEN-PPTX, MS-GEN-XLS, MS-MCP | Python |
+| 1 | engine-core | engine-core:auth, engine-core:admin, engine-core:batch, engine-core:versioning, engine-core:audit | Java 21 |
+| 2 | engine-ingestor | engine-ingestor, engine-ingestor:scanner | Java 21 |
+| 3 | engine-orchestrator | engine-orchestrator | Java 21 |
+| 4 | engine-data | engine-data:sink-tbl/DOC/LOG, engine-data:query, engine-data:dashboard, engine-data:search, engine-data:template | Java 21 |
+| 5 | engine-reporting | engine-reporting:lifecycle, engine-reporting:period, engine-reporting:form, engine-reporting:pptx-template, engine-reporting:notification | Java 21 |
+| 6 | engine-integrations | engine-integrations:servicenow | Java 21 |
+| 7 | processor-atomizers | processor-atomizers:pptx/XLS/PDF/CSV/AI/CLN | Python |
+| 8 | processor-generators | processor-generators:pptx, processor-generators:xls, processor-generators:mcp | Python |
 
 **Scripts (PowerShell + Bash):**
 - `scripts/build.ps1` / `build.sh` — Build Docker images

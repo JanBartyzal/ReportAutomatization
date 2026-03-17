@@ -17,7 +17,7 @@
 
 **Tasks:**
 - [ ] **Environment variables**:
-  - Update `infra/docker/.env.example` with MS-EXT-SNOW variables:
+  - Update `infra/docker/.env.example` with engine-integrations:servicenow variables:
     - `SERVICENOW_INSTANCE_URL`, `SERVICENOW_AUTH_TYPE`
     - `EXCEL_GENERATOR_PORT`, `SERVICENOW_CONNECTOR_PORT`
   - Update `apps/frontend/.env.example` with new API base URLs
@@ -69,12 +69,12 @@
 **Effort:** 1 MD
 
 **Tasks:**
-- [ ] **MS-EXT-SNOW README.md**:
+- [ ] **engine-integrations:servicenow README.md**:
   - Purpose, Dapr app-id, port allocation
   - Mermaid sequence diagram: Admin → Config → Schedule → Fetch → Transform → Store
   - Environment variables reference
   - API endpoint list
-- [ ] **MS-GEN-XLS README.md**:
+- [ ] **processor-generators:xls README.md**:
   - Purpose, Dapr app-id, gRPC service definition
   - Mermaid diagram: Request → Load Template → Fill Data → Generate → Store → Return URL
 - [ ] **FS24 Documentation**:

@@ -13,7 +13,7 @@
 **Effort:** 0.5 MD
 
 **Tasks:**
-- [ ] Add MS-ADMIN, MS-BATCH, MS-ATM-AI, MS-MCP, MS-TMPL to docker-compose.yml
+- [ ] Add engine-core:admin, engine-core:batch, processor-atomizers:ai, processor-generators:mcp, engine-data:template to docker-compose.yml
 - [ ] Dapr sidecar configs for new services
 - [ ] Nginx routing updates for `/api/admin/*`, `/api/batches/*`
 - [ ] LiteLLM configuration (API key, model selection)

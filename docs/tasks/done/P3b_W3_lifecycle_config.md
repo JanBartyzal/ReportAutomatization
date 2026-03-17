@@ -13,7 +13,7 @@
 **Effort:** 0.5 MD
 
 **Tasks:**
-- [ ] Add MS-LIFECYCLE, MS-PERIOD to docker-compose.yml
+- [ ] Add engine-reporting:lifecycle, engine-reporting:period to docker-compose.yml
 - [ ] Dapr sidecar configs
 - [ ] Nginx routing: `/api/reports/*`, `/api/periods/*`
 - [ ] Dapr Pub/Sub topic subscriptions for lifecycle events

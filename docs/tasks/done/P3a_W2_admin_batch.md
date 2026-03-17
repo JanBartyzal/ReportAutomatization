@@ -7,7 +7,7 @@
 
 ---
 
-## P3a-W2-001: MS-ADMIN – Admin Backend
+## P3a-W2-001: engine-core:admin – Admin Backend
 
 **Type:** Core Service
 **Effort:** 12 MD
@@ -41,21 +41,21 @@
   - Only accessible to Superadmin role
 - [ ] **Failed Jobs UI Support**:
   - List failed jobs with filters (date, error type, org)
-  - Reprocess trigger → calls MS-ORCH.ReprocessFailedJob
+  - Reprocess trigger → calls engine-orchestrator.ReprocessFailedJob
   - Job detail with full error stacktrace
 - [ ] Flyway migrations: `api_keys` table
 - [ ] Docker Compose entry + Dapr sidecar
-- [ ] Nginx routing: `/api/admin/*` → MS-ADMIN
+- [ ] Nginx routing: `/api/admin/*` → engine-core:admin
 
 **AC:**
 - [ ] Org hierarchy CRUD works with validation
 - [ ] API key generation returns key only once (on create)
-- [ ] Failed job reprocess triggers MS-ORCH workflow
+- [ ] Failed job reprocess triggers engine-orchestrator workflow
 - [ ] Non-admin users get `403` on admin endpoints
 
 ---
 
-## P3a-W2-002: MS-BATCH – Batch & Org Service
+## P3a-W2-002: engine-core:batch – Batch & Org Service
 
 **Type:** Core Service
 **Effort:** 8 MD

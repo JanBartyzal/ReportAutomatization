@@ -1,7 +1,11 @@
 package com.reportplatform.admin.service;
 
+import com.reportplatform.base.dapr.DaprClientWrapper;
+import io.dapr.client.domain.HttpExtension;
+import io.dapr.utils.TypeRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -23,6 +27,15 @@ public class SchemaProposalGenerator {
     private static final int MAX_VARCHAR_LENGTH = 4000;
     private static final double VARCHAR_LENGTH_MULTIPLIER = 1.5;
 
+    private final DaprClientWrapper daprClientWrapper;
+
+    @Value("${dapr.remote.ms-tmpl-app-id:ms-tmpl}")
+    private String msTmplAppId;
+
+    public SchemaProposalGenerator(DaprClientWrapper daprClientWrapper) {
+        this.daprClientWrapper = daprClientWrapper;
+    }
+
     /**
      * Generate a full DDL proposal for promoting a mapping template to a dedicated table.
      *
@@ -34,9 +47,22 @@ public class SchemaProposalGenerator {
         // Derive a safe table name from the mapping name
         String tableName = deriveTableName(mappingName);
 
-        // TODO: Fetch sample data from ms-tmpl via Dapr service invocation
-        // For now, return an empty-column proposal as a placeholder
-        List<Map<String, Object>> sampleData = Collections.emptyList();
+        List<Map<String, Object>> sampleData;
+        try {
+            sampleData = daprClientWrapper.invokeMethod(
+                    msTmplAppId,
+                    "/api/v1/mappings/" + mappingTemplateId + "/sample-data",
+                    HttpExtension.GET,
+                    new TypeRef<List<Map<String, Object>>>() {})
+                    .block();
+            if (sampleData == null) {
+                sampleData = Collections.emptyList();
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to fetch sample data from ms-tmpl for template {}: {}",
+                    mappingTemplateId, e.getMessage());
+            sampleData = Collections.emptyList();
+        }
 
         Map<String, ColumnTypeInfo> columns = analyzeColumnTypes(sampleData);
         String ddl = generateDDL(tableName, columns);

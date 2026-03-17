@@ -104,10 +104,10 @@
 
 | # | Requirement | Status | Evidence | Severity |
 |---|------------|--------|----------|----------|
-| 1 | MS-QRY: Redis caching TTL 5 min | **PASS** | `CacheService.java:30` — ttl-minutes:5; `ReportDataAggregationService.java:26` — 300s |  |
-| 2 | MS-DASH: Recharts + Nivo chart support | **PASS** | Backend: bar/line/pie/heatmap/table types. Frontend: Recharts + @nivo/heatmap |  |
-| 3 | MS-DASH: `source_type` flag (FORM/FILE) | **PASS** | `AggregationService.java:78`; `ComparisonKpiRequest.java:15` — FILE\|FORM\|ALL |  |
-| 4 | MS-SRCH: Full-text search + vector search | **PASS** | `SearchRepository.java:45` — tsvector FTS; line 58 — pgvector |  |
+| 1 | engine-data:query: Redis caching TTL 5 min | **PASS** | `CacheService.java:30` — ttl-minutes:5; `ReportDataAggregationService.java:26` — 300s |  |
+| 2 | engine-data:dashboard: Recharts + Nivo chart support | **PASS** | Backend: bar/line/pie/heatmap/table types. Frontend: Recharts + @nivo/heatmap |  |
+| 3 | engine-data:dashboard: `source_type` flag (FORM/FILE) | **PASS** | `AggregationService.java:78`; `ComparisonKpiRequest.java:15` — FILE\|FORM\|ALL |  |
+| 4 | engine-data:search: Full-text search + vector search | **PASS** | `SearchRepository.java:45` — tsvector FTS; line 58 — pgvector |  |
 
 **FS06 Score: 4/4 (100%)**
 
@@ -217,7 +217,7 @@
 | 1 | Column mapping editor UI | **FAIL** | `SchemaMappingPage.tsx:43` — placeholder text only: "implementation in progress" | HIGH |
 | 2 | Learning from history (auto-suggest) | **PARTIAL** | Backend: `TemplateMappingGrpcService.suggestMapping()` ✓. Frontend: mock data only in `ExcelImportPage.tsx:72` | MEDIUM |
 | 3 | `POST /map/excel-to-form` endpoint | **PASS** | `TemplateMappingGrpcService.mapExcelToForm()` — gRPC implementation |  |
-| 4 | MS-ORCH integration via gRPC | **PASS** | `ServiceRoutingConfig.java` routes MAPPING step to template service via Dapr |  |
+| 4 | engine-orchestrator integration via gRPC | **PASS** | `ServiceRoutingConfig.java` routes MAPPING step to template service via Dapr |  |
 
 **FS15 Score: 2/4 (50%)**
 

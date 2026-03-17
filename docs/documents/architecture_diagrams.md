@@ -13,26 +13,26 @@
 ```mermaid
 graph TB
     subgraph "Edge"
-        GW["MS-GW\nAPI Gateway\n(Traefik)"]
-        AUTH["MS-AUTH\nAuth Service\n(Entra ID + RBAC)"]
+        GW["router\nAPI Gateway\n(Traefik)"]
+        AUTH["engine-core:auth\nAuth Service\n(Entra ID + RBAC)"]
     end
 
     subgraph "Ingestion"
-        ING["MS-ING\nFile Ingestor\n(streaming upload)"]
-        SCAN["MS-SCAN\nSecurity Scanner\n(ClamAV)"]
+        ING["engine-ingestor\nFile Ingestor\n(streaming upload)"]
+        SCAN["engine-ingestor:scanner\nSecurity Scanner\n(ClamAV)"]
     end
 
     subgraph "Orchestration"
-        N8N["MS-N8N\nN8N Orchestrator\n(basic pipeline)"]
+        N8N["engine-orchestrator\nN8N Orchestrator\n(basic pipeline)"]
     end
 
     subgraph "Processing"
-        PPTX["MS-ATM-PPTX\nPPTX Atomizer\n(text + tables + images)"]
+        PPTX["processor-atomizers:pptx\nPPTX Atomizer\n(text + tables + images)"]
     end
 
     subgraph "Persistence"
-        SINKTBL["MS-SINK-TBL\nTable API"]
-        SINKLOG["MS-SINK-LOG\nLog API"]
+        SINKTBL["engine-data:sink-tbl\nTable API"]
+        SINKLOG["engine-data:sink-log\nLog API"]
     end
 
     subgraph "Data Stores"
@@ -41,7 +41,7 @@ graph TB
     end
 
     subgraph "Frontend"
-        FE["MS-FE\nReact SPA\n(upload + viewer)"]
+        FE["frontend\nReact SPA\n(upload + viewer)"]
     end
 
     subgraph "External"
@@ -85,35 +85,35 @@ graph TB
 ```mermaid
 graph TB
     subgraph "Edge"
-        GW["MS-GW\nAPI Gateway"]
-        AUTH["MS-AUTH\nAuth Service"]
+        GW["router\nAPI Gateway"]
+        AUTH["engine-core:auth\nAuth Service"]
     end
 
     subgraph "Ingestion"
-        ING["MS-ING\nFile Ingestor"]
-        SCAN["MS-SCAN\nSecurity Scanner"]
+        ING["engine-ingestor\nFile Ingestor"]
+        SCAN["engine-ingestor:scanner\nSecurity Scanner"]
     end
 
     subgraph "Orchestration"
-        N8N["MS-N8N\nN8N Orchestrator"]
+        N8N["engine-orchestrator\nN8N Orchestrator"]
     end
 
     subgraph "Processing"
-        PPTX["MS-ATM-PPTX\nPPTX Atomizer"]
-        XLS["MS-ATM-XLS\nExcel Atomizer ★"]
-        PDF["MS-ATM-PDF\nPDF/OCR Atomizer ★"]
-        CSV["MS-ATM-CSV\nCSV Atomizer ★"]
-        CLN["MS-ATM-CLN\nCleanup Worker ★"]
+        PPTX["processor-atomizers:pptx\nPPTX Atomizer"]
+        XLS["processor-atomizers:xls\nExcel Atomizer ★"]
+        PDF["processor-atomizers:pdf\nPDF/OCR Atomizer ★"]
+        CSV["processor-atomizers:csv\nCSV Atomizer ★"]
+        CLN["processor-atomizers:cleanup\nCleanup Worker ★"]
     end
 
     subgraph "Persistence"
-        SINKTBL["MS-SINK-TBL\nTable API"]
-        SINKLOG["MS-SINK-LOG\nLog API"]
+        SINKTBL["engine-data:sink-tbl\nTable API"]
+        SINKLOG["engine-data:sink-log\nLog API"]
     end
 
     subgraph "Read Layer"
-        QRY["MS-QRY\nQuery API ★"]
-        DASH["MS-DASH\nDashboard Aggregation ★"]
+        QRY["engine-data:query\nQuery API ★"]
+        DASH["engine-data:dashboard\nDashboard Aggregation ★"]
     end
 
     subgraph "Data Stores"
@@ -123,7 +123,7 @@ graph TB
     end
 
     subgraph "Frontend"
-        FE["MS-FE\nReact SPA\n(upload + viewer\n+ dashboards ★)"]
+        FE["frontend\nReact SPA\n(upload + viewer\n+ dashboards ★)"]
     end
 
     FE --> GW
@@ -167,44 +167,44 @@ graph TB
 ```mermaid
 graph TB
     subgraph "Edge"
-        GW["MS-GW\nAPI Gateway"]
-        AUTH["MS-AUTH\nAuth Service"]
+        GW["router\nAPI Gateway"]
+        AUTH["engine-core:auth\nAuth Service"]
     end
 
     subgraph "Ingestion"
-        ING["MS-ING\nFile Ingestor"]
-        SCAN["MS-SCAN\nSecurity Scanner"]
+        ING["engine-ingestor\nFile Ingestor"]
+        SCAN["engine-ingestor:scanner\nSecurity Scanner"]
     end
 
     subgraph "Orchestration"
-        N8N["MS-N8N\nN8N Orchestrator"]
+        N8N["engine-orchestrator\nN8N Orchestrator"]
     end
 
     subgraph "Processing"
-        PPTX["MS-ATM-PPTX"]
-        XLS["MS-ATM-XLS"]
-        PDF["MS-ATM-PDF"]
-        CSV["MS-ATM-CSV"]
-        CLN["MS-ATM-CLN"]
-        AI["MS-ATM-AI\nAI Gateway ★\n(LiteLLM)"]
-        MCP["MS-MCP\nMCP Server ★\n(AI Agents + OBO)"]
+        PPTX["processor-atomizers:pptx"]
+        XLS["processor-atomizers:xls"]
+        PDF["processor-atomizers:pdf"]
+        CSV["processor-atomizers:csv"]
+        CLN["processor-atomizers:cleanup"]
+        AI["processor-atomizers:ai\nAI Gateway ★\n(LiteLLM)"]
+        MCP["processor-generators:mcp\nMCP Server ★\n(AI Agents + OBO)"]
     end
 
     subgraph "Schema & Admin"
-        TMPL["MS-TMPL\nSchema Mapping Registry ★\n(column normalization + learning)"]
-        ADMIN["MS-ADMIN\nAdmin Backend ★\n(roles, holding hierarchy, API keys)"]
-        BATCH["MS-BATCH\nBatch & Org Service ★\n(org metadata + RLS)"]
+        TMPL["engine-data:template\nSchema Mapping Registry ★\n(column normalization + learning)"]
+        ADMIN["engine-core:admin\nAdmin Backend ★\n(roles, holding hierarchy, API keys)"]
+        BATCH["engine-core:batch\nBatch & Org Service ★\n(org metadata + RLS)"]
     end
 
     subgraph "Persistence"
-        SINKTBL["MS-SINK-TBL\nTable API"]
-        SINKLOG["MS-SINK-LOG\nLog API"]
-        SINKDOC["MS-SINK-DOC\nDocument API ★\n(+ pgVector embeddings)"]
+        SINKTBL["engine-data:sink-tbl\nTable API"]
+        SINKLOG["engine-data:sink-log\nLog API"]
+        SINKDOC["engine-data:sink-doc\nDocument API ★\n(+ pgVector embeddings)"]
     end
 
     subgraph "Read Layer"
-        QRY["MS-QRY\nQuery API"]
-        DASH["MS-DASH\nDashboard Aggregation"]
+        QRY["engine-data:query\nQuery API"]
+        DASH["engine-data:dashboard\nDashboard Aggregation"]
     end
 
     subgraph "Data Stores"
@@ -215,7 +215,7 @@ graph TB
     end
 
     subgraph "Frontend"
-        FE["MS-FE\nReact SPA\n(+ Admin UI ★\n+ AI Query ★)"]
+        FE["frontend\nReact SPA\n(+ Admin UI ★\n+ AI Query ★)"]
     end
 
     FE --> GW
@@ -266,42 +266,42 @@ graph TB
 ```mermaid
 graph TB
     subgraph "Edge"
-        GW["MS-GW\nAPI Gateway"]
-        AUTH["MS-AUTH\nAuth Service"]
+        GW["router\nAPI Gateway"]
+        AUTH["engine-core:auth\nAuth Service"]
     end
 
     subgraph "Reporting Lifecycle ★"
-        LIFE["MS-LIFECYCLE\nReport Lifecycle ★\n(Draft→Submitted\n→Approved/Rejected)"]
-        PERIOD["MS-PERIOD\nReporting Period Mgr ★\n(deadlines + escalation\n+ completion tracking)"]
+        LIFE["engine-reporting:lifecycle\nReport Lifecycle ★\n(Draft→Submitted\n→Approved/Rejected)"]
+        PERIOD["engine-reporting:period\nReporting Period Mgr ★\n(deadlines + escalation\n+ completion tracking)"]
     end
 
     subgraph "Orchestration"
-        N8N["MS-N8N\nN8N Orchestrator\n(+ lifecycle workflows ★)"]
+        N8N["engine-orchestrator\nN8N Orchestrator\n(+ lifecycle workflows ★)"]
     end
 
     subgraph "Processing"
-        PPTX["MS-ATM-PPTX"]
-        XLS["MS-ATM-XLS"]
-        PDF["MS-ATM-PDF"]
-        CSV["MS-ATM-CSV"]
-        AI["MS-ATM-AI\nAI Gateway"]
+        PPTX["processor-atomizers:pptx"]
+        XLS["processor-atomizers:xls"]
+        PDF["processor-atomizers:pdf"]
+        CSV["processor-atomizers:csv"]
+        AI["processor-atomizers:ai\nAI Gateway"]
     end
 
     subgraph "Schema & Admin"
-        TMPL["MS-TMPL\nSchema Mapping"]
-        ADMIN["MS-ADMIN\nAdmin Backend\n(+ Reviewer role ★)"]
-        BATCH["MS-BATCH\nBatch & Org"]
+        TMPL["engine-data:template\nSchema Mapping"]
+        ADMIN["engine-core:admin\nAdmin Backend\n(+ Reviewer role ★)"]
+        BATCH["engine-core:batch\nBatch & Org"]
     end
 
     subgraph "Persistence"
-        SINKTBL["MS-SINK-TBL"]
-        SINKLOG["MS-SINK-LOG"]
-        SINKDOC["MS-SINK-DOC"]
+        SINKTBL["engine-data:sink-tbl"]
+        SINKLOG["engine-data:sink-log"]
+        SINKDOC["engine-data:sink-doc"]
     end
 
     subgraph "Read Layer"
-        QRY["MS-QRY\nQuery API"]
-        DASH["MS-DASH\nDashboard\n(+ period matrix ★)"]
+        QRY["engine-data:query\nQuery API"]
+        DASH["engine-data:dashboard\nDashboard\n(+ period matrix ★)"]
     end
 
     subgraph "Data Stores"
@@ -311,7 +311,7 @@ graph TB
     end
 
     subgraph "Frontend"
-        FE["MS-FE\nReact SPA\n(+ lifecycle UI ★\n+ period dashboard ★\n+ submission flow ★)"]
+        FE["frontend\nReact SPA\n(+ lifecycle UI ★\n+ period dashboard ★\n+ submission flow ★)"]
     end
 
     subgraph "External"
@@ -352,38 +352,38 @@ graph TB
 ```mermaid
 graph TB
     subgraph "Edge"
-        GW["MS-GW\nAPI Gateway"]
-        AUTH["MS-AUTH\nAuth Service"]
+        GW["router\nAPI Gateway"]
+        AUTH["engine-core:auth\nAuth Service"]
     end
 
     subgraph "Data Collection ★"
-        FORM["MS-FORM\nForm Builder ★\n(drag & drop editor\nvalidation + auto-save\nversioning + PUBLISHED/CLOSED)"]
-        FORMXLS["MS-FORM\nExcel Export/Import ★\n(template export\n+ re-import with form_version_id)"]
+        FORM["engine-reporting:form\nForm Builder ★\n(drag & drop editor\nvalidation + auto-save\nversioning + PUBLISHED/CLOSED)"]
+        FORMXLS["engine-reporting:form\nExcel Export/Import ★\n(template export\n+ re-import with form_version_id)"]
     end
 
     subgraph "Reporting Lifecycle"
-        LIFE["MS-LIFECYCLE\nReport Lifecycle\n(Draft→Submitted\n→Approved/Rejected)"]
-        PERIOD["MS-PERIOD\nReporting Period Mgr"]
+        LIFE["engine-reporting:lifecycle\nReport Lifecycle\n(Draft→Submitted\n→Approved/Rejected)"]
+        PERIOD["engine-reporting:period\nReporting Period Mgr"]
     end
 
     subgraph "Orchestration"
-        N8N["MS-N8N\nN8N Orchestrator"]
+        N8N["engine-orchestrator\nN8N Orchestrator"]
     end
 
     subgraph "Schema & Admin"
-        TMPL["MS-TMPL\nSchema Mapping\n(+ excel-to-form mapping ★)"]
-        ADMIN["MS-ADMIN\nAdmin Backend\n(+ form management ★)"]
+        TMPL["engine-data:template\nSchema Mapping\n(+ excel-to-form mapping ★)"]
+        ADMIN["engine-core:admin\nAdmin Backend\n(+ form management ★)"]
     end
 
     subgraph "Persistence"
-        SINKTBL["MS-SINK-TBL\nTable API\n(+ form_responses ★)"]
-        SINKLOG["MS-SINK-LOG"]
-        SINKDOC["MS-SINK-DOC"]
+        SINKTBL["engine-data:sink-tbl\nTable API\n(+ form_responses ★)"]
+        SINKLOG["engine-data:sink-log"]
+        SINKDOC["engine-data:sink-doc"]
     end
 
     subgraph "Read Layer"
-        QRY["MS-QRY\nQuery API\n(source_type: FORM/FILE ★)"]
-        DASH["MS-DASH\nDashboard"]
+        QRY["engine-data:query\nQuery API\n(source_type: FORM/FILE ★)"]
+        DASH["engine-data:dashboard\nDashboard"]
     end
 
     subgraph "Data Stores"
@@ -393,7 +393,7 @@ graph TB
     end
 
     subgraph "Frontend"
-        FE["MS-FE\nReact SPA\n(+ Form Builder editor ★\n+ form fill UI ★\n+ Excel export/import UI ★\n+ field-level comments ★)"]
+        FE["frontend\nReact SPA\n(+ Form Builder editor ★\n+ form fill UI ★\n+ Excel export/import UI ★\n+ field-level comments ★)"]
     end
 
     FE --> GW
@@ -424,49 +424,49 @@ graph TB
 ```mermaid
 graph TB
     subgraph "Edge"
-        GW["MS-GW\nAPI Gateway"]
-        AUTH["MS-AUTH\nAuth Service"]
+        GW["router\nAPI Gateway"]
+        AUTH["engine-core:auth\nAuth Service"]
     end
 
     subgraph "Enterprise Layer ★"
-        NOTIF["MS-NOTIF\nNotification Center ★\n(WebSocket/SSE\n+ SendGrid e-mail\n+ lifecycle triggers)"]
-        VER["MS-VER\nVersioning Service ★\n(v1→v2 + diff tool\n+ lock on APPROVED)"]
-        AUDIT["MS-AUDIT\nAudit & Compliance ★\n(immutable logs\n+ AI audit\n+ export)"]
-        SRCH["MS-SRCH\nSearch Service ★\n(FTS + vector search)"]
+        NOTIF["engine-reporting:notification\nNotification Center ★\n(WebSocket/SSE\n+ SendGrid e-mail\n+ lifecycle triggers)"]
+        VER["engine-core:versioning\nVersioning Service ★\n(v1→v2 + diff tool\n+ lock on APPROVED)"]
+        AUDIT["engine-core:audit\nAudit & Compliance ★\n(immutable logs\n+ AI audit\n+ export)"]
+        SRCH["engine-data:search\nSearch Service ★\n(FTS + vector search)"]
     end
 
     subgraph "Reporting Lifecycle"
-        LIFE["MS-LIFECYCLE\nReport Lifecycle"]
-        PERIOD["MS-PERIOD\nReporting Period Mgr"]
-        FORM["MS-FORM\nForm Builder"]
+        LIFE["engine-reporting:lifecycle\nReport Lifecycle"]
+        PERIOD["engine-reporting:period\nReporting Period Mgr"]
+        FORM["engine-reporting:form\nForm Builder"]
     end
 
     subgraph "Orchestration"
-        N8N["MS-N8N\nN8N Orchestrator\n(+ notif triggers ★)"]
+        N8N["engine-orchestrator\nN8N Orchestrator\n(+ notif triggers ★)"]
     end
 
     subgraph "Processing"
-        PPTX["MS-ATM-PPTX"]
-        XLS["MS-ATM-XLS"]
-        AI["MS-ATM-AI"]
-        MCP["MS-MCP\nMCP Server"]
+        PPTX["processor-atomizers:pptx"]
+        XLS["processor-atomizers:xls"]
+        AI["processor-atomizers:ai"]
+        MCP["processor-generators:mcp\nMCP Server"]
     end
 
     subgraph "Schema & Admin"
-        TMPL["MS-TMPL\nSchema Mapping"]
-        ADMIN["MS-ADMIN\nAdmin Backend"]
-        BATCH["MS-BATCH\nBatch & Org"]
+        TMPL["engine-data:template\nSchema Mapping"]
+        ADMIN["engine-core:admin\nAdmin Backend"]
+        BATCH["engine-core:batch\nBatch & Org"]
     end
 
     subgraph "Persistence"
-        SINKTBL["MS-SINK-TBL"]
-        SINKLOG["MS-SINK-LOG"]
-        SINKDOC["MS-SINK-DOC"]
+        SINKTBL["engine-data:sink-tbl"]
+        SINKLOG["engine-data:sink-log"]
+        SINKDOC["engine-data:sink-doc"]
     end
 
     subgraph "Read Layer"
-        QRY["MS-QRY\nQuery API"]
-        DASH["MS-DASH\nDashboard"]
+        QRY["engine-data:query\nQuery API"]
+        DASH["engine-data:dashboard\nDashboard"]
     end
 
     subgraph "Data Stores"
@@ -478,7 +478,7 @@ graph TB
     end
 
     subgraph "Frontend"
-        FE["MS-FE\nReact SPA\n(+ diff viewer ★\n+ audit trail UI ★\n+ search ★)"]
+        FE["frontend\nReact SPA\n(+ diff viewer ★\n+ audit trail UI ★\n+ search ★)"]
     end
 
     FE --> GW
@@ -514,14 +514,14 @@ graph TB
 ```mermaid
 graph LR
     subgraph "Report Generation ★"
-        TMPLPPTX["MS-TMPL-PPTX\nPPTX Template Manager ★\n(upload šablony\nplaceholder extrakce\nplaceholder → field mapping)"]
-        GEN["MS-GEN-PPTX\nPPTX Generator ★\n(python-pptx + matplotlib\nasync + batch generování\nDATA MISSING fallback)"]
+        TMPLPPTX["engine-reporting:pptx-template\nPPTX Template Manager ★\n(upload šablony\nplaceholder extrakce\nplaceholder → field mapping)"]
+        GEN["processor-generators:pptx\nPPTX Generator ★\n(python-pptx + matplotlib\nasync + batch generování\nDATA MISSING fallback)"]
     end
 
     subgraph "Trigger Flow"
-        LIFE["MS-LIFECYCLE\nReport Lifecycle\n(APPROVED event)"]
+        LIFE["engine-reporting:lifecycle\nReport Lifecycle\n(APPROVED event)"]
         PUBSUB["Dapr PubSub\nreport.status_changed"]
-        N8N["MS-N8N\nN8N Orchestrator\n(+ generation workflow ★)"]
+        N8N["engine-orchestrator\nN8N Orchestrator\n(+ generation workflow ★)"]
     end
 
     subgraph "Data Sources"
@@ -530,11 +530,11 @@ graph LR
     end
 
     subgraph "Notification"
-        NOTIF["MS-NOTIF\nNotification Center\n(PPTX ready alert ★)"]
+        NOTIF["engine-reporting:notification\nNotification Center\n(PPTX ready alert ★)"]
     end
 
     subgraph "Frontend"
-        FE["MS-FE\nReact SPA\n(+ Template Manager UI ★\n+ placeholder mapping UI ★\n+ download & batch generate ★)"]
+        FE["frontend\nReact SPA\n(+ Template Manager UI ★\n+ placeholder mapping UI ★\n+ download & batch generate ★)"]
     end
 
     LIFE -->|APPROVED| PUBSUB
@@ -573,54 +573,54 @@ graph TB
 
     subgraph "Azure Container Apps Environment"
         subgraph "Namespace: edge"
-            GW["MS-GW\nTraefik"]
-            AUTH["MS-AUTH"]
+            GW["router\nTraefik"]
+            AUTH["engine-core:auth"]
         end
 
         subgraph "Namespace: ingestion"
-            ING["MS-ING"]
-            SCAN["MS-SCAN"]
+            ING["engine-ingestor"]
+            SCAN["engine-ingestor:scanner"]
         end
 
         subgraph "Namespace: lifecycle"
-            LIFE["MS-LIFECYCLE"]
-            PERIOD["MS-PERIOD"]
-            FORM["MS-FORM"]
+            LIFE["engine-reporting:lifecycle"]
+            PERIOD["engine-reporting:period"]
+            FORM["engine-reporting:form"]
         end
 
         subgraph "Namespace: orchestration"
-            N8N["MS-N8N"]
+            N8N["engine-orchestrator"]
         end
 
         subgraph "Namespace: atomizers"
-            PPTX["MS-ATM-PPTX"]
-            XLS["MS-ATM-XLS"]
-            PDF["MS-ATM-PDF"]
-            AI["MS-ATM-AI"]
-            GEN["MS-GEN-PPTX"]
+            PPTX["processor-atomizers:pptx"]
+            XLS["processor-atomizers:xls"]
+            PDF["processor-atomizers:pdf"]
+            AI["processor-atomizers:ai"]
+            GEN["processor-generators:pptx"]
         end
 
         subgraph "Namespace: sinks"
-            SINKTBL["MS-SINK-TBL"]
-            SINKDOC["MS-SINK-DOC"]
-            SINKLOG["MS-SINK-LOG"]
+            SINKTBL["engine-data:sink-tbl"]
+            SINKDOC["engine-data:sink-doc"]
+            SINKLOG["engine-data:sink-log"]
         end
 
         subgraph "Namespace: read"
-            QRY["MS-QRY"]
-            DASH["MS-DASH"]
-            SRCH["MS-SRCH"]
+            QRY["engine-data:query"]
+            DASH["engine-data:dashboard"]
+            SRCH["engine-data:search"]
         end
 
         subgraph "Namespace: support"
-            ADMIN["MS-ADMIN"]
-            NOTIF["MS-NOTIF"]
-            TMPL["MS-TMPL"]
-            AUDIT["MS-AUDIT"]
-            VER["MS-VER"]
-            MCP["MS-MCP"]
-            BATCH["MS-BATCH"]
-            TMPLPPTX["MS-TMPL-PPTX"]
+            ADMIN["engine-core:admin"]
+            NOTIF["engine-reporting:notification"]
+            TMPL["engine-data:template"]
+            AUDIT["engine-core:audit"]
+            VER["engine-core:versioning"]
+            MCP["processor-generators:mcp"]
+            BATCH["engine-core:batch"]
+            TMPLPPTX["engine-reporting:pptx-template"]
         end
 
         subgraph "Namespace: observability ★"
@@ -676,19 +676,19 @@ graph TB
 graph TB
     subgraph "Central Scope (Holding)"
         direction TB
-        ADMIN_H["MS-ADMIN\nHoldingAdmin\n(přehled lokálních\nšablon/formulářů)"]
-        PERIOD_C["MS-PERIOD\nCentral Periods\n(+ Advanced Comparison ★)"]
-        FORM_C["MS-FORM\nCentral Forms\n(scope: CENTRAL)"]
-        TMPL_C["MS-TMPL-PPTX\nCentral Templates\n(scope: CENTRAL)"]
+        ADMIN_H["engine-core:admin\nHoldingAdmin\n(přehled lokálních\nšablon/formulářů)"]
+        PERIOD_C["engine-reporting:period\nCentral Periods\n(+ Advanced Comparison ★)"]
+        FORM_C["engine-reporting:form\nCentral Forms\n(scope: CENTRAL)"]
+        TMPL_C["engine-reporting:pptx-template\nCentral Templates\n(scope: CENTRAL)"]
     end
 
     subgraph "Local Scope – Dceřiná společnost ★"
         direction TB
         CADMIN["CompanyAdmin ★\n(nová role)"]
-        FORM_L["MS-FORM\nLocal Forms ★\n(scope: LOCAL)"]
-        TMPL_L["MS-TMPL-PPTX\nLocal Templates ★\n(scope: LOCAL)"]
-        LIFE_L["MS-LIFECYCLE\nLocal Lifecycle ★\n(bez holdingového\napproval)"]
-        GEN_L["MS-GEN-PPTX\nLocal Report ★\n(interní report)"]
+        FORM_L["engine-reporting:form\nLocal Forms ★\n(scope: LOCAL)"]
+        TMPL_L["engine-reporting:pptx-template\nLocal Templates ★\n(scope: LOCAL)"]
+        LIFE_L["engine-reporting:lifecycle\nLocal Lifecycle ★\n(bez holdingového\napproval)"]
+        GEN_L["processor-generators:pptx\nLocal Report ★\n(interní report)"]
     end
 
     subgraph "Release Flow ★"
@@ -697,7 +697,7 @@ graph TB
 
     subgraph "Advanced Analytics ★"
         COMP["Advanced Period\nComparison ★\n(multi-org benchmarking\ncost center drill-down)"]
-        DASH["MS-DASH\n(extended ★)"]
+        DASH["engine-data:dashboard\n(extended ★)"]
     end
 
     subgraph "Data Store"
@@ -742,56 +742,56 @@ graph TB
 
     subgraph "Azure Container Apps"
         subgraph "Edge Layer"
-            GW["MS-GW\nAPI Gateway"]
-            AUTH["MS-AUTH\nAuth Service"]
+            GW["router\nAPI Gateway"]
+            AUTH["engine-core:auth\nAuth Service"]
         end
 
         subgraph "Ingestion Layer"
-            ING["MS-ING\nFile Ingestor"]
-            SCAN["MS-SCAN\nSecurity Scanner"]
+            ING["engine-ingestor\nFile Ingestor"]
+            SCAN["engine-ingestor:scanner\nSecurity Scanner"]
         end
 
         subgraph "Lifecycle Layer"
-            LIFE["MS-LIFECYCLE\nReport Lifecycle"]
-            PERIOD["MS-PERIOD\nReporting Period"]
-            FORM["MS-FORM\nForm Builder"]
+            LIFE["engine-reporting:lifecycle\nReport Lifecycle"]
+            PERIOD["engine-reporting:period\nReporting Period"]
+            FORM["engine-reporting:form\nForm Builder"]
         end
 
         subgraph "Orchestration Layer"
-            N8N["MS-N8N\nN8N Orchestrator"]
+            N8N["engine-orchestrator\nN8N Orchestrator"]
         end
 
         subgraph "Processing Layer"
-            PPTX["MS-ATM-PPTX"]
-            XLS["MS-ATM-XLS"]
-            PDF["MS-ATM-PDF"]
-            CSV["MS-ATM-CSV"]
-            CLN["MS-ATM-CLN"]
-            AI["MS-ATM-AI\nAI Gateway"]
-            GEN["MS-GEN-PPTX\nPPTX Generator"]
+            PPTX["processor-atomizers:pptx"]
+            XLS["processor-atomizers:xls"]
+            PDF["processor-atomizers:pdf"]
+            CSV["processor-atomizers:csv"]
+            CLN["processor-atomizers:cleanup"]
+            AI["processor-atomizers:ai\nAI Gateway"]
+            GEN["processor-generators:pptx\nPPTX Generator"]
         end
 
         subgraph "Sink Layer"
-            SINKTBL["MS-SINK-TBL"]
-            SINKDOC["MS-SINK-DOC"]
-            SINKLOG["MS-SINK-LOG"]
+            SINKTBL["engine-data:sink-tbl"]
+            SINKDOC["engine-data:sink-doc"]
+            SINKLOG["engine-data:sink-log"]
         end
 
         subgraph "Read Layer"
-            QRY["MS-QRY\nQuery API"]
-            DASH["MS-DASH\nDashboard Agg"]
-            SRCH["MS-SRCH\nSearch"]
+            QRY["engine-data:query\nQuery API"]
+            DASH["engine-data:dashboard\nDashboard Agg"]
+            SRCH["engine-data:search\nSearch"]
         end
 
         subgraph "Support Layer"
-            ADMIN["MS-ADMIN"]
-            NOTIF["MS-NOTIF"]
-            TMPL["MS-TMPL\nSchema Mapping"]
-            AUDIT["MS-AUDIT"]
-            VER["MS-VER"]
-            MCP["MS-MCP"]
-            BATCH["MS-BATCH"]
-            TMPLPPTX["MS-TMPL-PPTX"]
+            ADMIN["engine-core:admin"]
+            NOTIF["engine-reporting:notification"]
+            TMPL["engine-data:template\nSchema Mapping"]
+            AUDIT["engine-core:audit"]
+            VER["engine-core:versioning"]
+            MCP["processor-generators:mcp"]
+            BATCH["engine-core:batch"]
+            TMPLPPTX["engine-reporting:pptx-template"]
         end
 
         subgraph "Observability"

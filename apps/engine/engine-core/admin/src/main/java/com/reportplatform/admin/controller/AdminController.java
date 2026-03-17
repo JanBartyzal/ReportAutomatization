@@ -3,6 +3,8 @@ package com.reportplatform.admin.controller;
 import com.reportplatform.admin.model.dto.*;
 import com.reportplatform.admin.service.ApiKeyService;
 import com.reportplatform.admin.service.FailedJobService;
+import com.reportplatform.admin.service.HealthDashboardService;
+import com.reportplatform.admin.service.HealthServiceRegistryService;
 import com.reportplatform.admin.service.OrganizationService;
 import com.reportplatform.admin.service.RoleManagementService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,16 +30,22 @@ public class AdminController {
     private final ApiKeyService apiKeyService;
     private final FailedJobService failedJobService;
     private final RoleManagementService roleManagementService;
+    private final HealthDashboardService healthDashboardService;
+    private final HealthServiceRegistryService healthServiceRegistryService;
 
     public AdminController(
             OrganizationService organizationService,
             ApiKeyService apiKeyService,
             FailedJobService failedJobService,
-            RoleManagementService roleManagementService) {
+            RoleManagementService roleManagementService,
+            HealthDashboardService healthDashboardService,
+            HealthServiceRegistryService healthServiceRegistryService) {
         this.organizationService = organizationService;
         this.apiKeyService = apiKeyService;
         this.failedJobService = failedJobService;
         this.roleManagementService = roleManagementService;
+        this.healthDashboardService = healthDashboardService;
+        this.healthServiceRegistryService = healthServiceRegistryService;
     }
 
     // ==================== Organizations ====================
@@ -213,5 +221,42 @@ public class AdminController {
     @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of("status", "UP"));
+    }
+
+    @GetMapping("/health/dashboard")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<HealthDashboardDTO> getHealthDashboard() {
+        return ResponseEntity.ok(healthDashboardService.getDashboard());
+    }
+
+    // ==================== Health Service Registry ====================
+
+    @GetMapping("/health/services")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<List<HealthServiceRegistryDTO>> listHealthServices() {
+        return ResponseEntity.ok(healthServiceRegistryService.listAll());
+    }
+
+    @PostMapping("/health/services")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<HealthServiceRegistryDTO> createHealthService(
+            @Valid @RequestBody CreateHealthServiceRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(healthServiceRegistryService.create(request));
+    }
+
+    @PutMapping("/health/services/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<HealthServiceRegistryDTO> updateHealthService(
+            @PathVariable UUID id,
+            @Valid @RequestBody CreateHealthServiceRequest request) {
+        return ResponseEntity.ok(healthServiceRegistryService.update(id, request));
+    }
+
+    @DeleteMapping("/health/services/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<Void> deleteHealthService(@PathVariable UUID id) {
+        healthServiceRegistryService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

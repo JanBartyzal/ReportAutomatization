@@ -4,18 +4,23 @@ import com.reportplatform.ing.model.FileEntity;
 import com.reportplatform.ing.model.dto.FileDetailResponse;
 import com.reportplatform.ing.model.dto.FileListResponse;
 import com.reportplatform.ing.repository.FileRepository;
+import com.reportplatform.ing.service.OrchestratorTriggerService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Map;
 import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -24,10 +29,15 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @RequestMapping("/api/files")
 public class FileController {
 
-    private final FileRepository fileRepository;
+    private static final Logger log = LoggerFactory.getLogger(FileController.class);
 
-    public FileController(FileRepository fileRepository) {
+    private final FileRepository fileRepository;
+    private final OrchestratorTriggerService orchestratorTriggerService;
+
+    public FileController(FileRepository fileRepository,
+                          OrchestratorTriggerService orchestratorTriggerService) {
         this.fileRepository = fileRepository;
+        this.orchestratorTriggerService = orchestratorTriggerService;
     }
 
     /**
@@ -80,6 +90,27 @@ public class FileController {
                         "File not found: " + fileId));
 
         return ResponseEntity.ok(toDetailResponse(entity));
+    }
+
+    /**
+     * POST /api/files/{file_id}/reprocess - Re-triggers the orchestration pipeline for this file.
+     */
+    @PostMapping("/{file_id}/reprocess")
+    public ResponseEntity<Map<String, String>> reprocessFile(
+            @PathVariable("file_id") UUID fileId,
+            @RequestHeader(value = "X-Org-Id") UUID orgId) {
+
+        FileEntity entity = fileRepository.findByIdAndOrgId(fileId, orgId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND,
+                        "File not found: " + fileId));
+
+        log.info("Reprocess requested for file {} by org {}", fileId, orgId);
+        orchestratorTriggerService.publishFileUploaded(entity);
+
+        return ResponseEntity.ok(Map.of(
+                "status", "REPROCESS_TRIGGERED",
+                "file_id", fileId.toString()
+        ));
     }
 
     private FileDetailResponse toDetailResponse(FileEntity entity) {

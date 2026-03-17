@@ -5,7 +5,7 @@
    - `docs/roadmap.md` - Implementation roadmap
 
 ## Tech Stack
-- Core Microservices - Java -   Spring Boot 3.x.
+- Core Microservices - Java 21 - Spring Boot 3.x.
 - Data Conversion & AI - Python - FastAPI for REST/gRPC endpoints.
 - Frontend - React 18+ (Vite) - TypeScript
 - AI Integration: All LLM calls MUST go through the LiteLLM gateway (OpenAI-compatible).
@@ -28,7 +28,7 @@
 - if I approve the plan, proceed with the implementation in automated mode (minimize user interaction)
 - if you need to change the plan, share it with me for review
 - you have approval for create or edit any file
-- you have approval for bash commands ls, find, dir, for etc... for search and list files and in find in files
+- you have approval for bash commands ls, find, dir, for,curl,curl -X POST,curl -X GET etc... for search and list files and in find in files
 
 
 

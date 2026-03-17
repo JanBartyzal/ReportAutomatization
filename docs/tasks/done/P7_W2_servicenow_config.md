@@ -10,7 +10,7 @@
 
 ---
 
-## P7-W2-001: MS-EXT-SNOW – Docker & Dapr Configuration
+## P7-W2-001: engine-integrations:servicenow – Docker & Dapr Configuration
 
 **Type:** Infrastructure
 **Effort:** 2 MD
@@ -26,9 +26,9 @@
   - `infra/docker/dapr/ms-ext-snow/` component configs
   - PubSub subscription for sync events
   - State store for scheduler distributed lock
-- [ ] **Nginx routing** (MS-GW):
+- [ ] **Nginx routing** (router):
   - `/api/admin/integrations/*` → ms-ext-snow:8110
-  - `/api/reports/excel/*` → ms-gen-xls:8111 (via MS-GW)
+  - `/api/reports/excel/*` → ms-gen-xls:8111 (via router)
 - [ ] **Tilt configuration** (`tilt/`) for local dev hot-reload
 
 **AC:**
@@ -44,7 +44,7 @@
 **Effort:** 3 MD
 
 **Tasks:**
-- [ ] **MS-EXT-SNOW migrations** (Flyway):
+- [ ] **engine-integrations:servicenow migrations** (Flyway):
   - `V1__create_integration_configs.sql`:
     ```
     integration_configs (id, instance_url, auth_type, credentials_ref, org_id, created_at, updated_at)
@@ -61,12 +61,12 @@
     distribution_history (id, rule_id, recipients, timestamp, status, error_detail)
     ```
   - RLS policies on all tables (org_id based)
-- [ ] **MS-TMPL migration** (FS24 – usage tracking):
+- [ ] **engine-data:template migration** (FS24 – usage tracking):
   - `V{next}__add_mapping_usage_tracking.sql`:
     ```
     mapping_usage (id, mapping_id, usage_count, last_used, distinct_org_count, candidate_status)
     ```
-- [ ] **MS-ADMIN migration** (FS24 – promotion):
+- [ ] **engine-core:admin migration** (FS24 – promotion):
   - `V{next}__create_promotion_candidates.sql`:
     ```
     promotion_candidates (id, mapping_id, proposed_ddl, proposed_indexes, status, admin_notes, approved_at, approved_by)
@@ -92,8 +92,8 @@
   - `generator/v1/excel_report.proto`:
     - `service ExcelGenerator { rpc GenerateExcel(GenerateExcelRequest) returns (GenerateExcelResponse); }`
   - `integration/v1/servicenow.proto`:
-    - Internal gRPC contracts for MS-ORCH ↔ MS-EXT-SNOW communication
-- [ ] **OpenAPI specs** (REST endpoints via MS-GW):
+    - Internal gRPC contracts for engine-orchestrator ↔ engine-integrations:servicenow communication
+- [ ] **OpenAPI specs** (REST endpoints via router):
   - `docs/api/ms-ext-snow-openapi.yaml`: Admin integration endpoints
   - `docs/api/ms-gen-xls-openapi.yaml`: Excel generation endpoints
 - [ ] **TypeScript types** (`packages/types/src/`):
@@ -108,7 +108,7 @@
 
 ---
 
-## P7-W2-004: MS-DASH Extension – Service-Now Data Visualization
+## P7-W2-004: engine-data:dashboard Extension – Service-Now Data Visualization
 
 **Type:** Service Extension
 **Effort:** 1.5 MD
@@ -119,7 +119,7 @@
   - New `source_type: SERVICENOW` alongside existing `FILE` and `FORM`
   - Dashboard queries can filter/group by source type
 - [ ] **Aggregation Endpoints**:
-  - Service-Now data queryable via same MS-DASH REST API
+  - Service-Now data queryable via same engine-data:dashboard REST API
   - Support for cross-source dashboards (Service-Now + Form + File data)
 - [ ] Unit tests for new source type queries
 

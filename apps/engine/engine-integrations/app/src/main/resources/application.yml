@@ -65,6 +65,10 @@ dapr:
     name: ${DAPR_PUBSUB_NAME:reportplatform-pubsub}
   statestore:
     name: ${DAPR_STATESTORE_NAME:reportplatform-statestore}
+  remote:
+    ms-tmpl-app-id: ${DAPR_MS_TMPL_APP_ID:ms-tmpl}
+    ms-sink-tbl-app-id: ${DAPR_MS_SINK_TBL_APP_ID:ms-sink-tbl}
+    ms-gen-xls-app-id: ${DAPR_MS_GEN_XLS_APP_ID:ms-gen-xls}
 
 # Azure Key Vault
 azure:

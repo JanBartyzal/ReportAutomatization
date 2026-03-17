@@ -68,7 +68,7 @@
 
 ---
 
-## P1-W1-003: MS-ORCH – Custom Orchestrator (Core Engine)
+## P1-W1-003: engine-orchestrator – Custom Orchestrator (Core Engine)
 
 **Type:** Core Service
 **Effort:** 18 MD
@@ -90,13 +90,13 @@
   - Subscribe to `file-uploaded` topic
   - Deserialize `FileUploadedEvent`, trigger `StartFileWorkflow`
 - [ ] **Dapr gRPC Client** calls:
-  - MS-ATM-* (atomizers) via Dapr service invocation
-  - MS-SINK-* (sinks) via Dapr service invocation
-  - MS-TMPL (template mapping) via Dapr service invocation
+  - processor-atomizers (atomizers) via Dapr service invocation
+  - engine-data (sink modules) (sinks) via Dapr service invocation
+  - engine-data:template (template mapping) via Dapr service invocation
 - [ ] **Saga Pattern**:
   - Each step defines compensating action
   - On failure: execute compensating actions in reverse order
-  - Example: if MS-SINK-TBL.BulkInsert fails → MS-SINK-DOC.DeleteByFileId
+  - Example: if engine-data:sink-tbl.BulkInsert fails → engine-data:sink-doc.DeleteByFileId
 - [ ] **Type-Safe Contracts**:
   - Java interfaces for each Atomizer and Sink call
   - DTOs generated from proto files
@@ -112,8 +112,8 @@
   - Redis: running workflow state (low latency)
   - PostgreSQL: paused/waiting/failed workflows (persistence)
 - [ ] **Router Logic**:
-  - File type → Atomizer mapping (PPTX→MS-ATM-PPTX, etc.)
-  - Filter after extraction: table data → MS-SINK-TBL, text → MS-SINK-DOC
+  - File type → Atomizer mapping (PPTX→processor-atomizers:pptx, etc.)
+  - Filter after extraction: table data → engine-data:sink-tbl, text → engine-data:sink-doc
 - [ ] Flyway migrations for `failed_jobs` and `workflow_history` tables
 - [ ] Dockerfile + Docker Compose entry (port 8095:8080, debug 5010)
 
@@ -125,7 +125,7 @@
 
 ---
 
-## P1-W1-004: MS-AUTH – Auth Service (Full Implementation)
+## P1-W1-004: engine-core:auth – Auth Service (Full Implementation)
 
 **Type:** Core Service
 **Effort:** 9 MD
@@ -166,7 +166,7 @@
 
 ---
 
-## P1-W1-005: MS-ING – File Ingestor (Full Implementation)
+## P1-W1-005: engine-ingestor – File Ingestor (Full Implementation)
 
 **Type:** Core Service
 **Effort:** 8 MD
@@ -183,10 +183,10 @@
   - Allowlist: `.pptx`, `.xlsx`, `.pdf`, `.csv`
   - Magic bytes verification (binary header check)
   - Reject with `415` for unsupported types
-- [ ] **Security Scan** (Dapr gRPC → MS-SCAN):
+- [ ] **Security Scan** (Dapr gRPC → engine-ingestor:scanner):
   - Call `ScannerService.ScanFile()` before saving to Blob
   - Infected → reject with `422`
-- [ ] **Sanitization** (Dapr gRPC → MS-SCAN):
+- [ ] **Sanitization** (Dapr gRPC → engine-ingestor:scanner):
   - Call `ScannerService.SanitizeFile()` – remove VBA macros, external links
   - Store original in `_raw/` path (90-day retention)
   - Store sanitized version at standard path
@@ -211,7 +211,7 @@
 
 ---
 
-## P1-W1-006: MS-ATM-PPTX – PPTX Atomizer (Full Implementation)
+## P1-W1-006: processor-atomizers:pptx – PPTX Atomizer (Full Implementation)
 
 **Type:** Core Service
 **Effort:** 16 MD

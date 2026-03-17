@@ -10,7 +10,7 @@
 
 ---
 
-## P6-W1-001: MS-FORM Extension – Local Forms
+## P6-W1-001: engine-reporting:form Extension – Local Forms
 
 **Type:** Service Extension
 **Effort:** 8 MD
@@ -48,7 +48,7 @@
 
 ---
 
-## P6-W1-002: MS-TMPL-PPTX Extension – Local Templates
+## P6-W1-002: engine-reporting:pptx-template Extension – Local Templates
 
 **Type:** Service Extension
 **Effort:** 5 MD
@@ -69,7 +69,7 @@
 
 ---
 
-## P6-W1-003: MS-ADMIN Extension – CompanyAdmin Role
+## P6-W1-003: engine-core:admin Extension – CompanyAdmin Role
 
 **Type:** Service Extension
 **Effort:** 3 MD
@@ -82,7 +82,7 @@
   - Cannot access other orgs' data (except shared)
 - [ ] **Role Assignment**: HoldingAdmin or Admin assigns CompanyAdmin role
 - [ ] **Admin UI Extension**: CompanyAdmin section in admin panel
-- [ ] RBAC engine update in MS-AUTH
+- [ ] RBAC engine update in engine-core:auth
 
 ---
 
@@ -105,7 +105,7 @@
 - [ ] **Drill-Down**:
   - From holding → company → division → cost center
   - Requires granular data from local forms
-- [ ] **Export**: Comparison report as PPTX (via MS-GEN-PPTX integration)
+- [ ] **Export**: Comparison report as PPTX (via processor-generators:pptx integration)
 - [ ] REST endpoints for comparison queries
 - [ ] Redis caching for computed comparisons
 

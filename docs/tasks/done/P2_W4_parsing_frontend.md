@@ -4,7 +4,7 @@
 **Agent:** Gemini Flash / MiniMax
 **Complexity:** Frontend
 **Total Effort:** ~9 MD
-**Depends on:** P2-W1 (MS-QRY, MS-DASH endpoints)
+**Depends on:** P2-W1 (engine-data:query, engine-data:dashboard endpoints)
 
 ---
 

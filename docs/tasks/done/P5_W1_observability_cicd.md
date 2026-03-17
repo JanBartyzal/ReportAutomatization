@@ -40,7 +40,7 @@
   - Loki for log aggregation: `infra/docker/loki-config.yaml`
   - Prometheus: `infra/docker/prometheus.yml`
   - Grafana with auto-provisioned datasources + dashboards
-- [x] **End-to-end trace**: FE → GW → MS-AUTH → MS-ING → MS-ORCH → MS-ATM-* → MS-SINK-*
+- [x] **End-to-end trace**: FE → GW → engine-core:auth → engine-ingestor → engine-orchestrator → processor-atomizers → engine-data (sink modules)
   - Dapr tracing redirected to OTEL Collector (`infra/dapr/config.yaml`)
   - OTEL env vars injected via docker-compose overlay for all 30 services
 - [x] Trace correlation with structured logs (trace_id/span_id in log entries)

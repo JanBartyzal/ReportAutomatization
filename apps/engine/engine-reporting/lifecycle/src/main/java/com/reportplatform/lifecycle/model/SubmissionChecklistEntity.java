@@ -7,6 +7,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -22,6 +25,7 @@ public class SubmissionChecklistEntity {
     @Column(name = "report_id", nullable = false, unique = true)
     private UUID reportId;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "checklist_json", columnDefinition = "JSONB", nullable = false)
     private String checklistJson;
 

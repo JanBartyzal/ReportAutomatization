@@ -7,7 +7,7 @@
 
 ---
 
-## P4a-W2-001: MS-NOTIF – Notification Center (Full Implementation)
+## P4a-W2-001: engine-reporting:notification – Notification Center (Full Implementation)
 
 **Type:** Core Service
 **Effort:** 8 MD
@@ -38,7 +38,7 @@
   - BATCH_COMPLETED
 - [ ] Flyway migrations: `notifications`, `notification_settings` tables
 - [ ] Docker Compose entry + Dapr sidecar
-- [ ] Nginx routing: `/api/notifications/*` → MS-NOTIF
+- [ ] Nginx routing: `/api/notifications/*` → engine-reporting:notification
 
 **AC:**
 - [ ] In-app notification appears in < 2s after event
@@ -48,7 +48,7 @@
 
 ---
 
-## P4a-W2-002: MS-SRCH – Search Service
+## P4a-W2-002: engine-data:search – Search Service
 
 **Type:** Core Service
 **Effort:** 4 MD
@@ -60,11 +60,11 @@
   - Index parsed text from documents and table data
   - Language support: Czech, English
 - [ ] **Vector Search**: pgVector cosine similarity
-  - Semantic search using embeddings from MS-SINK-DOC
+  - Semantic search using embeddings from engine-data:sink-doc
   - Threshold-based filtering (relevance > 0.7)
 - [ ] **REST Endpoints**:
   - `GET /api/search?q=query&type=text|semantic` – combined search
   - `GET /api/search/suggest?q=partial` – autocomplete suggestions
 - [ ] Results ranked by relevance, scoped by org_id (RLS)
 - [ ] Docker Compose entry + Dapr sidecar
-- [ ] Nginx routing: `/api/search/*` → MS-SRCH
+- [ ] Nginx routing: `/api/search/*` → engine-data:search

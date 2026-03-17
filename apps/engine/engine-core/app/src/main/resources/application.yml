@@ -58,6 +58,9 @@ dapr:
     name: ${DAPR_PUBSUB_NAME:reportplatform-pubsub}
   statestore:
     name: ${DAPR_STATESTORE_NAME:reportplatform-statestore}
+  remote:
+    ms-tmpl-app-id: ${DAPR_MS_TMPL_APP_ID:ms-tmpl}
+    ms-sink-tbl-app-id: ${DAPR_MS_SINK_TBL_APP_ID:ms-sink-tbl}
 
 # Azure Entra ID (AAD) Configuration
 azure:
@@ -72,6 +75,7 @@ azure:
 
 # Auth service settings
 auth:
+  mode: ${AUTH_MODE:production}
   jwks:
     cache-ttl-minutes: 5
   api-key:
@@ -94,6 +98,10 @@ management:
   metrics:
     tags:
       application: engine-core
+
+# Health dashboard (service URLs are stored in DB table health_service_registry)
+health:
+  grafana-url: ${GRAFANA_URL:http://localhost:3000/grafana}
 
 # Logging
 logging:

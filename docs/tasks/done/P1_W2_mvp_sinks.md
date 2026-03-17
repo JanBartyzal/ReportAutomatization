@@ -10,7 +10,7 @@
 
 ---
 
-## P1-W2-001: MS-SINK-TBL – Table API (Sink)
+## P1-W2-001: engine-data:sink-tbl – Table API (Sink)
 
 **Type:** Data Service
 **Effort:** 5 MD
@@ -37,7 +37,7 @@
 
 ---
 
-## P1-W2-002: MS-SINK-DOC – Document API (Sink)
+## P1-W2-002: engine-data:sink-doc – Document API (Sink)
 
 **Type:** Data Service
 **Effort:** 5 MD
@@ -63,7 +63,7 @@
 
 ---
 
-## P1-W2-003: MS-SINK-LOG – Log API (Sink)
+## P1-W2-003: engine-data:sink-log – Log API (Sink)
 
 **Type:** Data Service
 **Effort:** 2 MD
@@ -85,7 +85,7 @@
 
 ---
 
-## P1-W2-004: MS-SCAN – Security Scanner Setup
+## P1-W2-004: engine-ingestor:scanner – Security Scanner Setup
 
 **Type:** Infrastructure / Sidecar
 **Effort:** 4 MD

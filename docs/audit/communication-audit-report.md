@@ -25,8 +25,8 @@
 ### Charter Rules
 - **Internal (service-to-service):** Dapr gRPC ONLY
 - **Edge (frontend-facing):** REST ONLY via API Gateway
-- **MS-ORCH:** Internal only, no REST exposed externally
-- **Atomizers/Sinks:** gRPC only, called exclusively via MS-ORCH
+- **engine-orchestrator:** Internal only, no REST exposed externally
+- **Atomizers/Sinks:** gRPC only, called exclusively via engine-orchestrator
 - **Frontend:** Communicates ONLY with API Gateway
 
 ### Communication Path Audit

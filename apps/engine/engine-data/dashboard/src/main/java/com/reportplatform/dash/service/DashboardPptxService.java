@@ -216,8 +216,8 @@ public class DashboardPptxService {
 
         return new DashboardGeneratePptxResponse(
                 jobId,
-                "UNKNOWN",
-                "Job status tracking not yet implemented or job not found",
+                "NOT_FOUND",
+                "Job not found in cache or MS-GEN-PPTX. It may have expired.",
                 null,
                 null);
     }

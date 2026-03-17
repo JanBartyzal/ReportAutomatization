@@ -26,7 +26,7 @@ NOVÝ SCOPE:
 
 ## FS17 – OPEX Report Lifecycle & Submission Workflow
 **Priorita: KRITICKÁ**  
-**Tech Stack:** Java 21 + Spring Boot (MS-LIFECYCLE)
+**Tech Stack:** Java 21 + Spring Boot (engine-reporting:lifecycle)
 
 ### Business kontext
 
@@ -71,13 +71,13 @@ DRAFT → SUBMITTED → UNDER_REVIEW → APPROVED
 
 | Unit ID | Název | Popis | Tech Stack | Effort |
 |---|---|---|---|---|
-| **MS-LIFECYCLE** | Report Lifecycle Service | Správa stavového automatu reportů, submission checklist, rejection flow, hromadné akce | Java 21 + Spring Boot | **L** |
+| **engine-reporting:lifecycle** | Report Lifecycle Service | Správa stavového automatu reportů, submission checklist, rejection flow, hromadné akce | Java 21 + Spring Boot | **L** |
 
 ---
 
 ## FS18 – PPTX Report Generation (Template Engine)
 **Priorita: KRITICKÁ**  
-**Tech Stack:** Python + FastAPI (MS-GEN-PPTX) + Java (MS-TMPL-PPTX)
+**Tech Stack:** Python + FastAPI (processor-generators:pptx) + Java (engine-reporting:pptx-template)
 
 ### Business kontext
 
@@ -89,14 +89,14 @@ Toto je **"obrácený Atomizer"** – místo extrakce dat z PPTX do DB jde o ren
 
 ### Požadavky
 
-#### Správa PPTX šablon (MS-TMPL-PPTX)
+#### Správa PPTX šablon (engine-reporting:pptx-template)
 - HoldingAdmin nahraje PPTX soubor jako šablonu (`POST /templates/pptx`).
 - Šablona obsahuje **placeholder tagy** ve formátu `{{variable_name}}` v textových polích, `{{TABLE:table_name}}` pro tabulky, `{{CHART:metric_name}}` pro grafy.
 - Systém šablonu naparsuje a extrahuje seznam všech placeholderů → zobrazí v UI jako "požadované datové vstupy".
 - Šablony jsou verzovány (v1, v2). Přiřazení šablony k `period_id` nebo `report_type`.
 - Náhled šablony v UI bez dat (placeholder hodnoty zobrazeny jako ukázka).
 
-#### Generování reportu (MS-GEN-PPTX)
+#### Generování reportu (processor-generators:pptx)
 - `POST /generate/pptx` s `{ template_id, report_id }` → systém načte schválená zdrojová data z DB a vyrenderuje PPTX.
 - Generátor nahradí textové placeholdery hodnotami, vyplní tabulky, vygeneruje grafy (python-pptx + matplotlib/plotly pro grafy).
 - Výsledný PPTX uložen do Blob Storage, URL uložena k `report_id`.
@@ -120,14 +120,14 @@ Toto je **"obrácený Atomizer"** – místo extrakce dat z PPTX do DB jde o ren
 
 | Unit ID | Název | Popis | Tech Stack | Effort |
 |---|---|---|---|---|
-| **MS-TMPL-PPTX** | PPTX Template Manager | Nahrávání, verzování a správa PPTX šablon; extrakce placeholderů; mapování na datové zdroje | Java 21 + Spring Boot | **L** |
-| **MS-GEN-PPTX** | PPTX Generator | Renderování PPTX ze zdrojových dat + šablony; placeholder substituce; grafy; batch generování | Python + FastAPI (python-pptx, matplotlib) | **L** |
+| **engine-reporting:pptx-template** | PPTX Template Manager | Nahrávání, verzování a správa PPTX šablon; extrakce placeholderů; mapování na datové zdroje | Java 21 + Spring Boot | **L** |
+| **processor-generators:pptx** | PPTX Generator | Renderování PPTX ze zdrojových dat + šablony; placeholder substituce; grafy; batch generování | Python + FastAPI (python-pptx, matplotlib) | **L** |
 
 ---
 
 ## FS19 – Dynamic Form Builder & Data Collection
 **Priorita: KRITICKÁ**  
-**Tech Stack:** Java 21 + Spring Boot (MS-FORM) + React (součást MS-FE)
+**Tech Stack:** Java 21 + Spring Boot (engine-reporting:form) + React (součást frontend)
 
 ### Business kontext
 
@@ -164,7 +164,7 @@ Platforma zároveň nadále podporuje **nahrávání Excel souborů jako datový
 
 #### Excel jako alternativní datový vstup
 - Vedle formuláře může Editor nahrát Excel soubor jako datový vstup.
-- Systém Excel naparsuje (MS-ATM-XLS) a nabídne **mapování sloupců → pole formuláře** (napojení na FS15 Schema Mapping).
+- Systém Excel naparsuje (processor-atomizers:xls) a nabídne **mapování sloupců → pole formuláře** (napojení na FS15 Schema Mapping).
 - Editor zkontroluje a potvrdí mapování → data jsou importována do formuláře.
 - Po importu jsou data editovatelná jako kdyby byla zadána ručně.
 - Původní Excel soubor je uložen jako příloha reportu (auditní stopa).
@@ -182,13 +182,13 @@ Platforma zároveň nadále podporuje **nahrávání Excel souborů jako datový
 
 | Unit ID | Název | Popis | Tech Stack | Effort |
 |---|---|---|---|---|
-| **MS-FORM** | Form Builder & Data Collection | Definice formulářů, správa verzí, sběr dat, validace, Excel import, napojení na MS-LIFECYCLE | Java 21 + Spring Boot | **XL** |
+| **engine-reporting:form** | Form Builder & Data Collection | Definice formulářů, správa verzí, sběr dat, validace, Excel import, napojení na engine-reporting:lifecycle | Java 21 + Spring Boot | **XL** |
 
 ---
 
 ## FS20 – Reporting Period & Deadline Management
 **Priorita: VYSOKÁ**  
-**Tech Stack:** Java 21 + Spring Boot (MS-PERIOD)
+**Tech Stack:** Java 21 + Spring Boot (engine-reporting:period)
 
 ### Business kontext
 
@@ -216,7 +216,7 @@ OPEX reporting probíhá v opakujících se cyklech (měsíčně, kvartálně, r
 #### Historická data a srovnání period
 - Každá uzavřená perioda je archivována a přístupná pro srovnávací analýzu.
 - Dashboard umožní srovnání stejné metriky napříč periodami (Q1/2024 vs. Q1/2025).
-- Napojení na MS-VER (FS14): opravy v rámci periody vytvářejí verze, nikoli přepisují historii.
+- Napojení na engine-core:versioning (FS14): opravy v rámci periody vytvářejí verze, nikoli přepisují historii.
 
 ### Acceptance kritéria
 
@@ -230,7 +230,7 @@ OPEX reporting probíhá v opakujících se cyklech (měsíčně, kvartálně, r
 
 | Unit ID | Název | Popis | Tech Stack | Effort |
 |---|---|---|---|---|
-| **MS-PERIOD** | Reporting Period Manager | Správa period a deadlinů, automatické uzavírání, completion tracking, eskalace, historické srovnání | Java 21 + Spring Boot | **M** |
+| **engine-reporting:period** | Reporting Period Manager | Správa period a deadlinů, automatické uzavírání, completion tracking, eskalace, historické srovnání | Java 21 + Spring Boot | **M** |
 
 ---
 
@@ -240,15 +240,15 @@ Nový scope nevyžaduje přepsání FS01–FS16, ale mění nebo rozšiřuje kon
 
 | Stávající FS | Změna / Rozšíření |
 |---|---|
-| **FS02 – File Ingestor** | Excel upload nyní slouží jako **datový vstup do formuláře** (FS19), nejen jako soubor k parsování. Ingestor musí rozlišit `upload_purpose: PARSE` (původní flow) vs. `upload_purpose: FORM_IMPORT` (nový flow → MS-FORM). |
-| **FS03 – Atomizers** | Přidává se **obrácený směr**: MS-GEN-PPTX (generování). Cleanup Worker (MS-ATM-CLN) musí zahrnout i dočasné soubory generátoru. |
-| **FS05 – Sinks** | MS-SINK-TBL musí ukládat i data z formulářů (FS19). Schéma: `form_responses` tabulka s `(org_id, period_id, form_version_id, field_id, value, submitted_at)`. |
-| **FS06 – Analytics & Query** | MS-DASH musí zobrazovat i data pocházející z formulářů, nejen z parsovaných souborů. Zdroj dat je transparentní (flag `source_type: FORM / FILE`). |
+| **FS02 – File Ingestor** | Excel upload nyní slouží jako **datový vstup do formuláře** (FS19), nejen jako soubor k parsování. Ingestor musí rozlišit `upload_purpose: PARSE` (původní flow) vs. `upload_purpose: FORM_IMPORT` (nový flow → engine-reporting:form). |
+| **FS03 – Atomizers** | Přidává se **obrácený směr**: processor-generators:pptx (generování). Cleanup Worker (processor-atomizers:cleanup) musí zahrnout i dočasné soubory generátoru. |
+| **FS05 – Sinks** | engine-data:sink-tbl musí ukládat i data z formulářů (FS19). Schéma: `form_responses` tabulka s `(org_id, period_id, form_version_id, field_id, value, submitted_at)`. |
+| **FS06 – Analytics & Query** | engine-data:dashboard musí zobrazovat i data pocházející z formulářů, nejen z parsovaných souborů. Zdroj dat je transparentní (flag `source_type: FORM / FILE`). |
 | **FS07 – Admin Backend** | Přidávají se správa formulářů a šablon jako admin sekce. Role "Reviewer" jako nová sub-role HoldingAdmina pro schvalování reportů (FS17). |
 | **FS08 – Batch Management** | "Batch" se nově mapuje přímo na "Reporting Period" (FS20). Koncepty se slučují – `period_id` nahrazuje generický `batch_id` tam, kde jde o OPEX reporting. |
-| **FS09 – Frontend** | Nové obrazovky: Form Builder UI, formulář pro vyplnění, submission workflow UI, period dashboard, PPTX generator trigger. Celkový rozsah MS-FE roste z **XL** na **XXL**. |
+| **FS09 – Frontend** | Nové obrazovky: Form Builder UI, formulář pro vyplnění, submission workflow UI, period dashboard, PPTX generator trigger. Celkový rozsah frontend roste z **XL** na **XXL**. |
 | **FS13 – Notifications** | Přidávají se notifikační triggery z FS17 (stavové přechody) a FS20 (deadliny, eskalace). Typy notifikací rozšířeny o: `REPORT_SUBMITTED`, `REPORT_APPROVED`, `REPORT_REJECTED`, `DEADLINE_APPROACHING`, `DEADLINE_MISSED`. |
-| **FS15 – Schema Mapping** | Nově voláno i z FS19 (Excel import do formuláře), nejen z N8N pipeline. MS-TMPL dostane nový endpoint `POST /map/excel-to-form`. |
+| **FS15 – Schema Mapping** | Nově voláno i z FS19 (Excel import do formuláře), nejen z N8N pipeline. engine-data:template dostane nový endpoint `POST /map/excel-to-form`. |
 | **FS16 – Audit Log** | Auditovány i stavové přechody z FS17 a veškeré akce ve formuláři (pole změněno, komentář přidán, import potvrzen). |
 
 ---
@@ -257,11 +257,11 @@ Nový scope nevyžaduje přepsání FS01–FS16, ale mění nebo rozšiřuje kon
 
 | Unit ID | Název | FS | Tech Stack | Effort |
 |---|---|---|---|---|
-| **MS-LIFECYCLE** | Report Lifecycle Service | FS17 | Java 21 + Spring Boot | **L** |
-| **MS-TMPL-PPTX** | PPTX Template Manager | FS18 | Java 21 + Spring Boot | **L** |
-| **MS-GEN-PPTX** | PPTX Generator | FS18 | Python + FastAPI | **L** |
-| **MS-FORM** | Form Builder & Data Collection | FS19 | Java 21 + Spring Boot | **XL** |
-| **MS-PERIOD** | Reporting Period Manager | FS20 | Java 21 + Spring Boot | **M** |
+| **engine-reporting:lifecycle** | Report Lifecycle Service | FS17 | Java 21 + Spring Boot | **L** |
+| **engine-reporting:pptx-template** | PPTX Template Manager | FS18 | Java 21 + Spring Boot | **L** |
+| **processor-generators:pptx** | PPTX Generator | FS18 | Python + FastAPI | **L** |
+| **engine-reporting:form** | Form Builder & Data Collection | FS19 | Java 21 + Spring Boot | **XL** |
+| **engine-reporting:period** | Reporting Period Manager | FS20 | Java 21 + Spring Boot | **M** |
 
 **Celkový počet microservices po rozšíření: 30** (původně 25)
 
@@ -273,10 +273,10 @@ Nové FS jsou navrženy tak, aby navazovaly na stávající fáze a neblokují M
 
 | Fáze | Název | Nové součásti | Napojení na původní fáze |
 |---|---|---|---|
-| **P3b** | Core Lifecycle | MS-LIFECYCLE, MS-PERIOD (základní) | Po P2 – vyžaduje fungující Sinks a Auth |
-| **P3c** | Data Collection | MS-FORM (základní formulář + Excel import) | Paralelně s P3b |
-| **P4b** | Report Generation | MS-TMPL-PPTX, MS-GEN-PPTX | Po P3b – vyžaduje schválená data v DB |
-| **P4c** | Advanced Period Mgmt | MS-PERIOD (deadliny, eskalace, srovnání) | Po P3b + P4b |
+| **P3b** | Core Lifecycle | engine-reporting:lifecycle, engine-reporting:period (základní) | Po P2 – vyžaduje fungující Sinks a Auth |
+| **P3c** | Data Collection | engine-reporting:form (základní formulář + Excel import) | Paralelně s P3b |
+| **P4b** | Report Generation | engine-reporting:pptx-template, processor-generators:pptx | Po P3b – vyžaduje schválená data v DB |
+| **P4c** | Advanced Period Mgmt | engine-reporting:period (deadliny, eskalace, srovnání) | Po P3b + P4b |
 
 ---
 
@@ -285,10 +285,10 @@ Nové FS jsou navrženy tak, aby navazovaly na stávající fáze a neblokují M
 Před implementací je třeba upřesnit:
 
 1. **Formulář vs. Excel** – Bude formulář **povinný** vstup, nebo alternativní k Excel uploadu? Nebo záleží na type reportu? Toto ovlivňuje submission checklist v FS17.
-2. **Granularita formuláře** – Formulář pro celou společnost, nebo per-divize/cost center? (Ovlivňuje datový model MS-FORM a RLS.)
-3. **PPTX šablona – ownership** – Kdo smí šablonu měnit? Pouze HoldingAdmin, nebo i lokální Editori mohou mít vlastní varianty? (Ovlivňuje MS-TMPL-PPTX verzování.)
+2. **Granularita formuláře** – Formulář pro celou společnost, nebo per-divize/cost center? (Ovlivňuje datový model engine-reporting:form a RLS.)
+3. **PPTX šablona – ownership** – Kdo smí šablonu měnit? Pouze HoldingAdmin, nebo i lokální Editori mohou mít vlastní varianty? (Ovlivňuje engine-reporting:pptx-template verzování.)
 4. **Workflow customizace** – Je stavový automat v FS17 pevný, nebo bude různý pro různé typy reportů? (Např. měsíční report má jen 2 kroky, roční má 4.)
-5. **Srovnání period** – Jaká je granularita historického srovnání? Pouze stejná perioda v jiném roce, nebo libovolné porovnání? (Ovlivňuje komplexitu MS-DASH a MS-PERIOD.)
+5. **Srovnání period** – Jaká je granularita historického srovnání? Pouze stejná perioda v jiném roce, nebo libovolné porovnání? (Ovlivňuje komplexitu engine-data:dashboard a engine-reporting:period.)
 
 ---
 

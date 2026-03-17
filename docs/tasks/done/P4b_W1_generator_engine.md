@@ -10,7 +10,7 @@
 
 ---
 
-## P4b-W1-001: MS-GEN-PPTX – PPTX Generator
+## P4b-W1-001: processor-generators:pptx – PPTX Generator
 
 **Type:** Core Service
 **Effort:** 16 MD
@@ -52,7 +52,7 @@
   - 10 reports < 15 minutes target
 - [ ] **Async Processing**:
   - Generation runs asynchronously
-  - Completion notification via Dapr Pub/Sub → MS-NOTIF
+  - Completion notification via Dapr Pub/Sub → engine-reporting:notification
   - WebSocket/SSE push to frontend
 - [ ] Dockerfile with python-pptx, matplotlib, LibreOffice (for validation)
 - [ ] Docker Compose entry + Dapr sidecar
@@ -66,7 +66,7 @@
 
 ---
 
-## P4b-W1-002: MS-TMPL-PPTX – PPTX Template Manager
+## P4b-W1-002: engine-reporting:pptx-template – PPTX Template Manager
 
 **Type:** Core Service
 **Effort:** 9 MD
@@ -99,7 +99,7 @@
 - [ ] **Template Scope**: `CENTRAL` (HoldingAdmin only) – `LOCAL` prepared for FS21
 - [ ] Flyway migrations: `pptx_templates`, `template_versions`, `template_placeholders`, `placeholder_mappings` tables
 - [ ] Docker Compose entry + Dapr sidecar
-- [ ] Nginx routing: `/api/templates/pptx/*` → MS-TMPL-PPTX
+- [ ] Nginx routing: `/api/templates/pptx/*` → engine-reporting:pptx-template
 
 **AC:**
 - [ ] Upload PPTX → placeholders auto-extracted and listed
@@ -109,7 +109,7 @@
 
 ---
 
-## P4b-W1-003: MS-ORCH Extension – Generation Workflow
+## P4b-W1-003: engine-orchestrator Extension – Generation Workflow
 
 **Type:** Service Extension
 **Effort:** 6 MD
@@ -119,12 +119,12 @@
 - [ ] New workflow: `PPTX_GENERATION`
   - Triggered by: manual request or APPROVED event
   - Steps:
-    1. Load template config from MS-TMPL-PPTX (Dapr gRPC)
-    2. Load report data from MS-QRY (Dapr gRPC)
+    1. Load template config from engine-reporting:pptx-template (Dapr gRPC)
+    2. Load report data from engine-data:query (Dapr gRPC)
     3. Apply placeholder mapping
-    4. Call MS-GEN-PPTX.GenerateReport (Dapr gRPC)
+    4. Call processor-generators:pptx.GenerateReport (Dapr gRPC)
     5. Store generated file URL on report entity
-    6. Notify user (Dapr Pub/Sub → MS-NOTIF)
+    6. Notify user (Dapr Pub/Sub → engine-reporting:notification)
 - [ ] **Batch Generation Workflow**:
   - HoldingAdmin triggers batch for all APPROVED reports in period
   - Orchestrate sequential generation with progress tracking

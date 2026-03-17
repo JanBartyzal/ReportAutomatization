@@ -13,7 +13,7 @@
 **Effort:** 0.5 MD
 
 **Tasks:**
-- [ ] Add MS-NOTIF, MS-VER, MS-AUDIT, MS-SRCH to docker-compose.yml
+- [ ] Add engine-reporting:notification, engine-core:versioning, engine-core:audit, engine-data:search to docker-compose.yml
 - [ ] Dapr sidecar configs
 - [ ] Nginx routing updates
 - [ ] SMTP test server (MailHog) for local dev

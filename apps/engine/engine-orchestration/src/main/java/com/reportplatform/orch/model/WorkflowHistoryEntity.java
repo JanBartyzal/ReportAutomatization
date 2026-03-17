@@ -7,6 +7,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -31,6 +34,7 @@ public class WorkflowHistoryEntity {
     @Column(name = "status", nullable = false)
     private String status;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "steps_json", columnDefinition = "JSONB")
     private String stepsJson;
 

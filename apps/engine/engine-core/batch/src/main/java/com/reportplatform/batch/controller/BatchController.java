@@ -31,7 +31,7 @@ public class BatchController {
         this.batchFileRepository = batchFileRepository;
     }
 
-    @GetMapping
+    @GetMapping({"", "/"})
     @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<List<BatchEntity>> listBatches(
             @RequestParam(required = false) UUID holdingId,
@@ -56,7 +56,7 @@ public class BatchController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
+    @PostMapping({"", "/"})
     @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<BatchEntity> createBatch(@RequestBody Map<String, Object> request) {
         BatchEntity batch = new BatchEntity();

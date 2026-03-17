@@ -61,7 +61,7 @@ The platform has **strong functional implementation** — core business logic (o
 |---|------|----------|----------|--------|
 | 1 | **No ForwardAuth at API Gateway** | CRITICAL | Security | Any unauthenticated request reaches backend services. Zero-trust requirement violated. |
 | 2 | **ClamAV scan after blob upload** | CRITICAL | Security | Malicious files stored in Blob Storage before antivirus scan. 100% scan requirement violated. |
-| 3 | **Orchestrator exposed externally** | CRITICAL | Communication | MS-ORCH accessible via nginx `/api/orch/` and `/api/` catch-all. Internal-only service exposed. |
+| 3 | **Orchestrator exposed externally** | CRITICAL | Communication | engine-orchestrator accessible via nginx `/api/orch/` and `/api/` catch-all. Internal-only service exposed. |
 | 4 | **No method-level authorization** | HIGH | Security | Zero @PreAuthorize/@Secured annotations. Any authenticated user can access any endpoint. |
 | 5 | **CORS reflects any origin** | HIGH | Security | `$http_origin` reflected without whitelist. Cross-origin attacks possible from any domain. |
 | 6 | **~29 tables without RLS** | HIGH | Security | Cross-tenant data leakage risk for documents, processing_logs, reports, notifications, etc. |

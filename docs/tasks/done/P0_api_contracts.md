@@ -164,7 +164,7 @@ message ErrorDetail {
 
 ---
 
-### P0-W1-003: Orchestrator Proto (MS-ORCH)
+### P0-W1-003: Orchestrator Proto (engine-orchestrator)
 
 **Type:** Proto Definition
 **Effort:** 1 MD
@@ -180,7 +180,7 @@ import "common/v1/common.proto";
 option java_package = "com.reportplatform.proto.orchestrator.v1";
 option java_multiple_files = true;
 
-// MS-ORCH: Workflow Engine
+// engine-orchestrator: Workflow Engine
 // Called via Dapr Pub/Sub (file-uploaded event) and gRPC (manual trigger)
 
 service OrchestratorService {
@@ -287,7 +287,7 @@ message FailedJob {
 
 // --- Dapr Pub/Sub Events ---
 
-// Published by MS-ING on topic "file-uploaded"
+// Published by engine-ingestor on topic "file-uploaded"
 message FileUploadedEvent {
   string file_id = 1;
   string file_type = 2;
@@ -298,7 +298,7 @@ message FileUploadedEvent {
   string uploaded_at = 7;
 }
 
-// Published by MS-ORCH on topic "processing-completed"
+// Published by engine-orchestrator on topic "processing-completed"
 message ProcessingCompletedEvent {
   string file_id = 1;
   string workflow_id = 2;
@@ -315,7 +315,7 @@ message ProcessingCompletedEvent {
 
 ---
 
-### P0-W1-004: Atomizer Protos (MS-ATM-*)
+### P0-W1-004: Atomizer Protos (processor-atomizers)
 
 **Type:** Proto Definition
 **Effort:** 2 MD
@@ -630,7 +630,7 @@ message ColumnSuggestion {
 
 ---
 
-### P0-W1-005: Sink Protos (MS-SINK-*)
+### P0-W1-005: Sink Protos (engine-data (sink modules))
 
 **Type:** Proto Definition
 **Effort:** 1 MD
@@ -741,7 +741,7 @@ message StoreDocumentRequest {
 
 message StoreDocumentResponse {
   string document_id = 1;
-  bool embedding_queued = 2;  // true if sent to MS-ATM-AI for embedding
+  bool embedding_queued = 2;  // true if sent to processor-atomizers:ai for embedding
 }
 ```
 
@@ -786,13 +786,13 @@ message AppendLogResponse {
 ```
 
 **AC:**
-- [ ] All sinks are write-optimized (no read endpoints – reading via MS-QRY)
+- [ ] All sinks are write-optimized (no read endpoints – reading via engine-data:query)
 - [ ] DeleteByFileId present on all sinks for Saga rollback
 - [ ] Form response storage integrated into table sink
 
 ---
 
-### P0-W1-006: Scanner Proto (MS-SCAN)
+### P0-W1-006: Scanner Proto (engine-ingestor:scanner)
 
 **Type:** Proto Definition
 **Effort:** 0.5 MD
@@ -852,7 +852,7 @@ message SanitizeFileResponse {
 
 ---
 
-### P0-W1-007: Template & Schema Mapping Proto (MS-TMPL)
+### P0-W1-007: Template & Schema Mapping Proto (engine-data:template)
 
 **Type:** Proto Definition
 **Effort:** 0.5 MD
@@ -934,7 +934,7 @@ message FormFieldMapping {
 
 ---
 
-### P0-W1-008: Lifecycle Proto (MS-LIFECYCLE)
+### P0-W1-008: Lifecycle Proto (engine-reporting:lifecycle)
 
 **Type:** Proto Definition
 **Effort:** 0.5 MD
@@ -950,8 +950,8 @@ import "common/v1/common.proto";
 option java_package = "com.reportplatform.proto.lifecycle.v1";
 option java_multiple_files = true;
 
-// Note: MS-LIFECYCLE exposes REST for frontend via API Gateway
-// and publishes Dapr Pub/Sub events consumed by MS-ORCH.
+// Note: engine-reporting:lifecycle exposes REST for frontend via API Gateway
+// and publishes Dapr Pub/Sub events consumed by engine-orchestrator.
 // This proto defines the Pub/Sub event schemas only.
 
 // Published on topic "report.status_changed"
@@ -986,7 +986,7 @@ message ReportDataLockedEvent {
 
 ---
 
-### P0-W1-009: Notification Proto (MS-NOTIF)
+### P0-W1-009: Notification Proto (engine-reporting:notification)
 
 **Type:** Proto Definition
 **Effort:** 0.5 MD
@@ -1002,7 +1002,7 @@ import "common/v1/common.proto";
 option java_package = "com.reportplatform.proto.notification.v1";
 option java_multiple_files = true;
 
-// MS-NOTIF is called via Dapr Pub/Sub (fire-and-forget)
+// engine-reporting:notification is called via Dapr Pub/Sub (fire-and-forget)
 // These are the event schemas published to topic "notify"
 
 message NotificationEvent {
@@ -1039,7 +1039,7 @@ enum NotificationChannel {
 
 ---
 
-### P0-W1-010: PPTX Generator Proto (MS-GEN-PPTX)
+### P0-W1-010: PPTX Generator Proto (processor-generators:pptx)
 
 **Type:** Proto Definition
 **Effort:** 0.5 MD
@@ -1122,7 +1122,7 @@ message BatchGenerateResponse {
 
 ---
 
-### P0-W2-001: REST API – Auth Service (MS-AUTH)
+### P0-W2-001: REST API – Auth Service (engine-core:auth)
 
 **Type:** OpenAPI Spec
 **Effort:** 1 MD
@@ -1161,7 +1161,7 @@ paths:
 
 ---
 
-### P0-W2-002: REST API – File Ingestor (MS-ING)
+### P0-W2-002: REST API – File Ingestor (engine-ingestor)
 
 **Type:** OpenAPI Spec
 **Effort:** 0.5 MD
@@ -1197,7 +1197,7 @@ paths:
 
 ---
 
-### P0-W2-003: REST API – Query Service (MS-QRY)
+### P0-W2-003: REST API – Query Service (engine-data:query)
 
 **Type:** OpenAPI Spec
 **Effort:** 1 MD
@@ -1240,7 +1240,7 @@ paths:
 
 ---
 
-### P0-W2-004: REST API – Dashboard Service (MS-DASH)
+### P0-W2-004: REST API – Dashboard Service (engine-data:dashboard)
 
 **Type:** OpenAPI Spec
 **Effort:** 1 MD
@@ -1280,7 +1280,7 @@ paths:
 
 ---
 
-### P0-W2-005: REST API – Admin Service (MS-ADMIN)
+### P0-W2-005: REST API – Admin Service (engine-core:admin)
 
 **Type:** OpenAPI Spec
 **Effort:** 1 MD
@@ -1309,7 +1309,7 @@ paths:
 
 ---
 
-### P0-W2-006: REST API – Lifecycle Service (MS-LIFECYCLE)
+### P0-W2-006: REST API – Lifecycle Service (engine-reporting:lifecycle)
 
 **Type:** OpenAPI Spec
 **Effort:** 1 MD
@@ -1343,7 +1343,7 @@ paths:
 
 ---
 
-### P0-W2-007: REST API – Form Service (MS-FORM)
+### P0-W2-007: REST API – Form Service (engine-reporting:form)
 
 **Type:** OpenAPI Spec
 **Effort:** 1.5 MD
@@ -1385,7 +1385,7 @@ paths:
 
 ---
 
-### P0-W2-008: REST API – Period Service (MS-PERIOD)
+### P0-W2-008: REST API – Period Service (engine-reporting:period)
 
 **Type:** OpenAPI Spec
 **Effort:** 0.5 MD
@@ -1457,11 +1457,11 @@ paths:
 - [ ] Topic definitions document:
   | Topic | Publisher | Subscriber | Event Schema |
   |---|---|---|---|
-  | `file-uploaded` | MS-ING | MS-ORCH | `FileUploadedEvent` |
-  | `processing-completed` | MS-ORCH | MS-NOTIF | `ProcessingCompletedEvent` |
-  | `report.status_changed` | MS-LIFECYCLE | MS-ORCH, MS-NOTIF | `ReportStatusChangedEvent` |
-  | `report.data_locked` | MS-LIFECYCLE | MS-SINK-TBL | `ReportDataLockedEvent` |
-  | `notify` | MS-ORCH | MS-NOTIF | `NotificationEvent` |
+  | `file-uploaded` | engine-ingestor | engine-orchestrator | `FileUploadedEvent` |
+  | `processing-completed` | engine-orchestrator | engine-reporting:notification | `ProcessingCompletedEvent` |
+  | `report.status_changed` | engine-reporting:lifecycle | engine-orchestrator, engine-reporting:notification | `ReportStatusChangedEvent` |
+  | `report.data_locked` | engine-reporting:lifecycle | engine-data:sink-tbl | `ReportDataLockedEvent` |
+  | `notify` | engine-orchestrator | engine-reporting:notification | `NotificationEvent` |
 - [ ] Dead letter topic configuration
 
 ---
@@ -1472,7 +1472,7 @@ paths:
 **Effort:** 0.5 MD
 
 **Tasks:**
-- [ ] `infra/dapr/components/statestore.yaml` – Redis state store for MS-ORCH workflow state
+- [ ] `infra/dapr/components/statestore.yaml` – Redis state store for engine-orchestrator workflow state
 - [ ] Key naming convention: `workflow:{workflow_id}:state`
 - [ ] TTL configuration for running workflows
 - [ ] `infra/dapr/components/statestore-pg.yaml` – PostgreSQL state store for paused workflows
@@ -1488,21 +1488,21 @@ paths:
 - [ ] Per-service Dapr config files in `infra/dapr/config/`:
   | Service | app-id | app-protocol | app-port |
   |---|---|---|---|
-  | MS-AUTH | `ms-auth` | `http` | `8000` |
-  | MS-ING | `ms-ing` | `http` | `8000` |
-  | MS-ORCH | `ms-orch` | `grpc` | `50051` |
-  | MS-ATM-PPTX | `ms-atm-pptx` | `grpc` | `50051` |
-  | MS-ATM-XLS | `ms-atm-xls` | `grpc` | `50051` |
-  | MS-ATM-PDF | `ms-atm-pdf` | `grpc` | `50051` |
-  | MS-ATM-CSV | `ms-atm-csv` | `grpc` | `50051` |
-  | MS-ATM-AI | `ms-atm-ai` | `grpc` | `50051` |
-  | MS-SINK-TBL | `ms-sink-tbl` | `grpc` | `50051` |
-  | MS-SINK-DOC | `ms-sink-doc` | `grpc` | `50051` |
-  | MS-SINK-LOG | `ms-sink-log` | `grpc` | `50051` |
-  | MS-TMPL | `ms-tmpl` | `grpc` | `50051` |
-  | MS-NOTIF | `ms-notif` | `grpc` | `50051` |
-  | MS-QRY | `ms-qry` | `http` | `8080` |
-  | MS-DASH | `ms-dash` | `http` | `8080` |
+  | engine-core:auth | `ms-auth` | `http` | `8000` |
+  | engine-ingestor | `ms-ing` | `http` | `8000` |
+  | engine-orchestrator | `ms-orch` | `grpc` | `50051` |
+  | processor-atomizers:pptx | `ms-atm-pptx` | `grpc` | `50051` |
+  | processor-atomizers:xls | `ms-atm-xls` | `grpc` | `50051` |
+  | processor-atomizers:pdf | `ms-atm-pdf` | `grpc` | `50051` |
+  | processor-atomizers:csv | `ms-atm-csv` | `grpc` | `50051` |
+  | processor-atomizers:ai | `ms-atm-ai` | `grpc` | `50051` |
+  | engine-data:sink-tbl | `ms-sink-tbl` | `grpc` | `50051` |
+  | engine-data:sink-doc | `ms-sink-doc` | `grpc` | `50051` |
+  | engine-data:sink-log | `ms-sink-log` | `grpc` | `50051` |
+  | engine-data:template | `ms-tmpl` | `grpc` | `50051` |
+  | engine-reporting:notification | `ms-notif` | `grpc` | `50051` |
+  | engine-data:query | `ms-qry` | `http` | `8080` |
+  | engine-data:dashboard | `ms-dash` | `http` | `8080` |
 - [ ] Access control policies (which service can call which)
 
 ---

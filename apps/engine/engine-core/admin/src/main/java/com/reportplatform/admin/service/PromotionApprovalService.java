@@ -1,13 +1,15 @@
 package com.reportplatform.admin.service;
 
-import com.reportplatform.admin.model.dto.PaginatedResponse;
-import com.reportplatform.admin.model.dto.PromotionCandidateDTO;
-import com.reportplatform.admin.model.dto.UpdatePromotionRequest;
+import com.reportplatform.admin.model.dto.*;
 import com.reportplatform.admin.model.entity.PromotionCandidateEntity;
 import com.reportplatform.admin.model.entity.PromotionCandidateEntity.PromotionStatus;
 import com.reportplatform.admin.repository.PromotionCandidateRepository;
+import com.reportplatform.base.dapr.DaprClientWrapper;
+import io.dapr.client.domain.HttpExtension;
+import io.dapr.utils.TypeRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -15,10 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -32,9 +31,15 @@ public class PromotionApprovalService {
     private static final Logger logger = LoggerFactory.getLogger(PromotionApprovalService.class);
 
     private final PromotionCandidateRepository candidateRepository;
+    private final DaprClientWrapper daprClientWrapper;
 
-    public PromotionApprovalService(PromotionCandidateRepository candidateRepository) {
+    @Value("${dapr.remote.ms-sink-tbl-app-id:ms-sink-tbl}")
+    private String msSinkTblAppId;
+
+    public PromotionApprovalService(PromotionCandidateRepository candidateRepository,
+                                     DaprClientWrapper daprClientWrapper) {
         this.candidateRepository = candidateRepository;
+        this.daprClientWrapper = daprClientWrapper;
     }
 
     /**
@@ -171,16 +176,8 @@ public class PromotionApprovalService {
         // Determine the DDL to apply (finalDdl takes precedence over proposedDdl)
         String ddlToApply = entity.getFinalDdl() != null ? entity.getFinalDdl() : entity.getProposedDdl();
 
-        // TODO: Call MS-SINK-TBL via Dapr gRPC to create the promoted table
-        // DaprClient.invokeMethod("ms-sink-tbl", "createPromotedTable",
-        // CreateTableRequest{
-        // ddl: ddlToApply,
-        // mappingTemplateId: entity.getMappingTemplateId(),
-        // tableName: entity.getProposedTableName(),
-        // dualWriteDays: 30
-        // })
-        logger.info("TODO: Calling MS-SINK-TBL to create table '{}' for mapping template {}",
-                entity.getProposedTableName(), entity.getMappingTemplateId());
+        // Call MS-SINK-TBL via Dapr to create the promoted table
+        callCreatePromotedTable(ddlToApply, entity);
 
         // On successful table creation, update status to CREATED
         entity.setStatus(PromotionStatus.CREATED);
@@ -232,13 +229,12 @@ public class PromotionApprovalService {
         entity.setReviewedAt(Instant.now());
         candidateRepository.save(entity);
 
-        // TODO: Call MS-SINK-TBL via Dapr gRPC to create the promoted table
-        logger.info("TODO: Calling MS-SINK-TBL to create table '{}' for mapping template {}",
-                entity.getProposedTableName(), entity.getMappingTemplateId());
+        // Call MS-SINK-TBL via Dapr to create the promoted table
+        callCreatePromotedTable(ddlToApply, entity);
 
         // On successful table creation, update status to CREATED
         entity.setStatus(PromotionStatus.CREATED);
-        PromotionCandidateEntity saved = candidateRepository.save(entity);
+        candidateRepository.save(entity);
 
         logger.info("Promotion approved and table created: id={}, table={}", promotionId,
                 entity.getProposedTableName());
@@ -284,8 +280,24 @@ public class PromotionApprovalService {
         boolean inDualWrite = candidate.getStatus() == PromotionStatus.CREATED
                 || candidate.getStatus() == PromotionStatus.MIGRATING;
 
-        // TODO: Query MS-SINK-TBL for actual dual-write end date
-        String dualWriteUntil = inDualWrite ? "2026-12-31" : null;
+        // Query MS-SINK-TBL for actual dual-write end date
+        String dualWriteUntil = null;
+        if (inDualWrite) {
+            try {
+                DualWriteInfoResponse dualWriteInfo = daprClientWrapper.invokeMethod(
+                        msSinkTblAppId,
+                        "/api/v1/tables/" + candidate.getProposedTableName() + "/dual-write-info",
+                        HttpExtension.GET,
+                        new TypeRef<DualWriteInfoResponse>() {})
+                        .block();
+                if (dualWriteInfo != null) {
+                    dualWriteUntil = dualWriteInfo.dualWriteUntil();
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to query dual-write info from MS-SINK-TBL for table '{}': {}",
+                        candidate.getProposedTableName(), e.getMessage());
+            }
+        }
 
         return new RoutingInfoResult(true, candidate.getProposedTableName(), inDualWrite, dualWriteUntil);
     }
@@ -326,22 +338,14 @@ public class PromotionApprovalService {
         entity.setStatus(PromotionStatus.MIGRATING);
         candidateRepository.save(entity);
 
-        // TODO: Call MS-SINK-TBL via Dapr gRPC to start data migration
-        // DaprClient.invokeMethod("ms-sink-tbl", "migrateData", MigrateDataRequest{
-        // mappingTemplateId: entity.getMappingTemplateId(),
-        // tableName: entity.getProposedTableName()
-        // })
-        logger.info("TODO: Calling MS-SINK-TBL to migrate data for table '{}', mapping template {}",
-                entity.getProposedTableName(), entity.getMappingTemplateId());
+        // Call MS-SINK-TBL via Dapr to start data migration
+        MigrateDataResponse migrateResponse = callMigrateData(entity);
 
-        // Simulate migration completion
-        entity.setStatus(PromotionStatus.ACTIVE);
-        candidateRepository.save(entity);
+        logger.info("Migration started for promotion: {}, migrationId={}", promotionId,
+                migrateResponse.migrationId());
 
-        String migrationId = UUID.randomUUID().toString();
-        logger.info("Migration completed for promotion: {}, migrationId={}", promotionId, migrationId);
-
-        return new MigrationResult(migrationId, 1000, "Data migration completed successfully");
+        return new MigrationResult(migrateResponse.migrationId(), migrateResponse.recordsMigrated(),
+                migrateResponse.message());
     }
 
     /**
@@ -397,13 +401,11 @@ public class PromotionApprovalService {
         entity.setStatus(PromotionStatus.MIGRATING);
         candidateRepository.save(entity);
 
-        // TODO: Call MS-SINK-TBL via Dapr gRPC to start data migration
-        // DaprClient.invokeMethod("ms-sink-tbl", "migrateData", MigrateDataRequest{
-        // mappingTemplateId: entity.getMappingTemplateId(),
-        // tableName: entity.getProposedTableName()
-        // })
-        logger.info("TODO: Calling MS-SINK-TBL to migrate data for table '{}', mapping template {}",
-                entity.getProposedTableName(), entity.getMappingTemplateId());
+        // Call MS-SINK-TBL via Dapr to start data migration
+        callMigrateData(entity);
+
+        logger.info("Migration triggered for promotion candidate: id={}, table={}",
+                id, entity.getProposedTableName());
     }
 
     /**
@@ -420,15 +422,86 @@ public class PromotionApprovalService {
         PromotionCandidateEntity entity = candidateRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Promotion candidate not found: " + id));
 
-        // TODO: Query MS-SINK-TBL for actual migration progress
-        // For now return the local status
-        return Map.of(
-                "candidate_id", entity.getId().toString(),
-                "mapping_template_id", entity.getMappingTemplateId().toString(),
-                "table_name", entity.getProposedTableName(),
-                "status", entity.getStatus().name(),
-                "updated_at", entity.getUpdatedAt().toString());
+        Map<String, Object> result = new HashMap<>();
+        result.put("candidate_id", entity.getId().toString());
+        result.put("mapping_template_id", entity.getMappingTemplateId().toString());
+        result.put("table_name", entity.getProposedTableName());
+        result.put("status", entity.getStatus().name());
+        result.put("updated_at", entity.getUpdatedAt().toString());
+
+        // Query MS-SINK-TBL for actual migration progress
+        try {
+            MigrationProgressResponse progress = daprClientWrapper.invokeMethod(
+                    msSinkTblAppId,
+                    "/api/v1/tables/" + entity.getProposedTableName() + "/migration-progress",
+                    HttpExtension.GET,
+                    new TypeRef<MigrationProgressResponse>() {})
+                    .block();
+            if (progress != null) {
+                result.put("records_migrated", progress.recordsMigrated());
+                result.put("total_records", progress.totalRecords());
+                result.put("progress_percent", progress.progressPercent());
+                result.put("migration_status", progress.status());
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to get migration progress from MS-SINK-TBL for table '{}': {}",
+                    entity.getProposedTableName(), e.getMessage());
+        }
+
+        return result;
     }
+
+    // ==================== Private Helpers ====================
+
+    /**
+     * Call MS-SINK-TBL to create a promoted table.
+     */
+    private void callCreatePromotedTable(String ddl, PromotionCandidateEntity entity) {
+        CreatePromotedTableRequest request = new CreatePromotedTableRequest(
+                ddl, entity.getMappingTemplateId(), entity.getProposedTableName(), 30);
+
+        CreatePromotedTableResponse response = daprClientWrapper.invokeMethod(
+                msSinkTblAppId,
+                "/api/v1/tables/create-promoted",
+                request,
+                HttpExtension.POST,
+                new TypeRef<CreatePromotedTableResponse>() {})
+                .block();
+
+        if (response == null || !response.success()) {
+            throw new RuntimeException("Failed to create promoted table '" + entity.getProposedTableName()
+                    + "': " + (response != null ? response.message() : "null response from MS-SINK-TBL"));
+        }
+
+        logger.info("Created promoted table '{}' via MS-SINK-TBL", entity.getProposedTableName());
+    }
+
+    /**
+     * Call MS-SINK-TBL to start data migration.
+     */
+    private MigrateDataResponse callMigrateData(PromotionCandidateEntity entity) {
+        MigrateDataRequest request = new MigrateDataRequest(
+                entity.getMappingTemplateId(), entity.getProposedTableName());
+
+        MigrateDataResponse response = daprClientWrapper.invokeMethod(
+                msSinkTblAppId,
+                "/api/v1/tables/migrate",
+                request,
+                HttpExtension.POST,
+                new TypeRef<MigrateDataResponse>() {})
+                .block();
+
+        if (response == null) {
+            throw new RuntimeException("Null response from MS-SINK-TBL when migrating data for table '"
+                    + entity.getProposedTableName() + "'");
+        }
+
+        logger.info("Migration started for table '{}': migrationId={}", entity.getProposedTableName(),
+                response.migrationId());
+        return response;
+    }
+
+    // ==================== Mapping Helpers ====================
 
     /**
      * Convert a PromotionCandidateEntity to a PromotionCandidateDTO.

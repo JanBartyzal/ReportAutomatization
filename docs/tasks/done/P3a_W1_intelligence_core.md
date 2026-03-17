@@ -10,7 +10,7 @@
 
 ---
 
-## P3a-W1-001: MS-TMPL – Template & Schema Mapping Registry
+## P3a-W1-001: engine-data:template – Template & Schema Mapping Registry
 
 **Type:** Core Service
 **Effort:** 17 MD
@@ -26,7 +26,7 @@
   - Exact match rules (column name → target name)
   - Synonym rules (`Cena`, `Cost`, `Naklady` → `amount_czk`)
   - Regex pattern rules (`^IT.*cost$` → `it_costs`)
-  - AI-suggested rules (via MS-ATM-AI)
+  - AI-suggested rules (via processor-atomizers:ai)
 - [ ] **Learning from History**:
   - Store successful mappings per org
   - Rank suggestions by historical frequency
@@ -36,7 +36,7 @@
   - Templates scoped to org or global (admin)
   - Version mapping templates
 - [ ] Flyway migrations: `mapping_templates`, `mapping_rules`, `mapping_history` tables
-- [ ] Called from MS-ORCH via Dapr gRPC BEFORE sink write
+- [ ] Called from engine-orchestrator via Dapr gRPC BEFORE sink write
 - [ ] Docker Compose entry + Dapr sidecar
 
 **AC:**
@@ -46,7 +46,7 @@
 
 ---
 
-## P3a-W1-002: MS-ATM-AI – AI Gateway
+## P3a-W1-002: processor-atomizers:ai – AI Gateway
 
 **Type:** Core Service
 **Effort:** 10 MD
@@ -66,7 +66,7 @@
   - Token counter per request
   - Monthly quota per user and per org
   - Quota exceeded → gRPC `RESOURCE_EXHAUSTED` (maps to `429`)
-  - Token usage logged to MS-SINK-LOG
+  - Token usage logged to engine-data:sink-log
 - [ ] **Prompt Engineering**:
   - Classification prompts for OPEX data categories
   - Entity extraction prompts for financial data
@@ -83,7 +83,7 @@
 
 ---
 
-## P3a-W1-003: MS-MCP – MCP Server (AI Agent)
+## P3a-W1-003: processor-generators:mcp – MCP Server (AI Agent)
 
 **Type:** Core Service
 **Effort:** 8 MD
@@ -104,7 +104,7 @@
   - `search_documents(query, semantic=true)` → relevant documents
   - `get_report_status(period_id)` → submission matrix
   - `compare_periods(period_a, period_b, metric)` → delta analysis
-- [ ] **Cost Control**: Same quota system as MS-ATM-AI
+- [ ] **Cost Control**: Same quota system as processor-atomizers:ai
 - [ ] Docker Compose entry
 
 **AC:**

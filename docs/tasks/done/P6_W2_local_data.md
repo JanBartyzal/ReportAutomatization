@@ -4,13 +4,13 @@
 **Agent:** Sonnet
 **Complexity:** Medium
 **Total Effort:** ~5 MD
-**Depends on:** P6-W1 (scope support in MS-FORM, MS-TMPL-PPTX, MS-ADMIN)
+**Depends on:** P6-W1 (scope support in engine-reporting:form, engine-reporting:pptx-template, engine-core:admin)
 
 > Extending query and lifecycle services to support multi-scope data flows.
 
 ---
 
-## P6-W2-001: MS-QRY Extension – Multi-Scope Queries
+## P6-W2-001: engine-data:query Extension – Multi-Scope Queries
 
 **Type:** Service Extension
 **Effort:** 3 MD
@@ -25,7 +25,7 @@
 
 ---
 
-## P6-W2-002: MS-LIFECYCLE Extension – Local Report Flow
+## P6-W2-002: engine-reporting:lifecycle Extension – Local Report Flow
 
 **Type:** Service Extension
 **Effort:** 2 MD

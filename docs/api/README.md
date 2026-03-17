@@ -6,18 +6,18 @@ These YAML files define the REST API contracts for all frontend-facing services:
 
 | File | Service | Description |
 |------|---------|-------------|
-| ms-auth-openapi.yaml | MS-AUTH | Authentication & user context |
-| ms-ing-openapi.yaml | MS-ING | File upload & management |
-| ms-qry-openapi.yaml | MS-QRY | Query API (CQRS read model) |
-| ms-dash-openapi.yaml | MS-DASH | Dashboard aggregation |
-| ms-admin-openapi.yaml | MS-ADMIN | Admin operations |
-| ms-lifecycle-openapi.yaml | MS-LIFECYCLE | Report lifecycle |
-| ms-form-openapi.yaml | MS-FORM | Form builder & data collection |
-| ms-period-openapi.yaml | MS-PERIOD | Reporting period management |
-| ms-notif-openapi.yaml | MS-NOTIF | Notifications |
-| ms-ver-openapi.yaml | MS-VER | Data versioning |
-| ms-audit-openapi.yaml | MS-AUDIT | Audit & compliance |
-| ms-srch-openapi.yaml | MS-SRCH | Search |
+| ms-auth-openapi.yaml | engine-core:auth | Authentication & user context |
+| ms-ing-openapi.yaml | engine-ingestor | File upload & management |
+| ms-qry-openapi.yaml | engine-data:query | Query API (CQRS read model) |
+| ms-dash-openapi.yaml | engine-data:dashboard | Dashboard aggregation |
+| ms-admin-openapi.yaml | engine-core:admin | Admin operations |
+| ms-lifecycle-openapi.yaml | engine-reporting:lifecycle | Report lifecycle |
+| ms-form-openapi.yaml | engine-reporting:form | Form builder & data collection |
+| ms-period-openapi.yaml | engine-reporting:period | Reporting period management |
+| ms-notif-openapi.yaml | engine-reporting:notification | Notifications |
+| ms-ver-openapi.yaml | engine-core:versioning | Data versioning |
+| ms-audit-openapi.yaml | engine-core:audit | Audit & compliance |
+| ms-srch-openapi.yaml | engine-data:search | Search |
 
 ## Legacy Documentation (*.md files)
 

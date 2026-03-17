@@ -14,6 +14,7 @@ import com.reportplatform.auth.service.TokenValidationService.ValidatedClaims;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +41,12 @@ import java.util.stream.Collectors;
 public class AuthController {
 
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+
+    @Value("${auth.mode:production}")
+    private String authMode;
+
+    @Value("${auth.dev-user-oid:6bbc3213-00ac-4d30-bf27-7477b207c515}")
+    private String devUserOid;
 
     private final TokenValidationService tokenValidationService;
     private final RbacService rbacService;
@@ -98,6 +105,31 @@ public class AuthController {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new AuthVerifyResponse(null, null, null, Collections.emptyList(), false));
+        }
+
+        // DEV MODE: skip JWT validation, use dev user identity
+        if ("development".equalsIgnoreCase(authMode)) {
+            log.info("DEV MODE: bypassing JWT validation for /verify");
+            var activeOrgRole = userRoleRepository.findByUserOidAndActiveOrgTrue(devUserOid);
+            String orgId = activeOrgRole
+                    .map(ur -> ur.getOrganization().getId().toString())
+                    .orElse("");
+
+            List<String> devRoles = rbacService.getAllUserRoles(devUserOid).stream()
+                    .map(ur -> ur.getRole().name())
+                    .toList();
+            if (devRoles.isEmpty()) {
+                devRoles = List.of("HOLDING_ADMIN");
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-User-Id", devUserOid);
+            headers.set("X-Org-Id", orgId);
+            headers.set("X-Roles", String.join(",", devRoles));
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(new AuthVerifyResponse(devUserOid, "dev", orgId, devRoles, true));
         }
 
         String token = authHeader.substring(7);

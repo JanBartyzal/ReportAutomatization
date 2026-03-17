@@ -10,7 +10,7 @@
 
 ---
 
-## P4a-W1-001: MS-VER – Versioning Service
+## P4a-W1-001: engine-core:versioning – Versioning Service
 
 **Type:** Core Service
 **Effort:** 7 MD
@@ -44,7 +44,7 @@
 
 ---
 
-## P4a-W1-002: MS-AUDIT – Audit & Compliance
+## P4a-W1-002: engine-core:audit – Audit & Compliance
 
 **Type:** Core Service
 **Effort:** 10 MD
@@ -75,7 +75,7 @@
 - [ ] Flyway migrations: `audit_logs`, `read_access_logs`, `ai_audit_logs` tables
 - [ ] RLS: HoldingAdmin sees all orgs, Admin sees own org only
 - [ ] Docker Compose entry + Dapr sidecar
-- [ ] Nginx routing: `/api/audit/*` → MS-AUDIT
+- [ ] Nginx routing: `/api/audit/*` → engine-core:audit
 
 **AC:**
 - [ ] Audit log entries are truly immutable (DB constraints verified)

@@ -1,10 +1,13 @@
 package com.reportplatform.admin.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.UUID;
 
 public class CreateOrganizationRequest {
     private String name;
     private String type;
+    @JsonProperty("parent_id")
     private UUID parentId;
 
     public String getName() {

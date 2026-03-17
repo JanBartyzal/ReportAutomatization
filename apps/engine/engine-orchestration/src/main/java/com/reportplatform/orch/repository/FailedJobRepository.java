@@ -24,4 +24,8 @@ public interface FailedJobRepository extends JpaRepository<FailedJobEntity, UUID
     List<FailedJobEntity> findByFileId(String fileId);
 
     long countByOrgId(String orgId);
+
+    List<FailedJobEntity> findTop20ByOrderByFailedAtDesc();
+
+    long countByRetryCountGreaterThanEqual(int retryCount);
 }

@@ -1,5 +1,9 @@
 # Prometheus Configuration - Metrics Collection
 # Scrapes OTEL Collector metrics + Spring Boot Actuator + Python services + Dapr metrics
+#
+# Aligned with consolidated docker-compose.yml topology (P8):
+#   engine-core, engine-ingestor, engine-orchestrator, engine-data,
+#   engine-reporting, engine-integrations, processor-atomizers, processor-generators
 
 global:
   scrape_interval: 15s
@@ -20,51 +24,33 @@ scrape_configs:
     static_configs:
       - targets: ["otel-collector:8888"]
 
-  # Java microservices - Spring Boot Actuator Prometheus endpoint
+  # Consolidated Java services - Spring Boot Actuator Prometheus endpoint
+  # Ports match docker-compose.yml internal ports
   - job_name: java-services
     scrape_interval: 10s
     metrics_path: /actuator/prometheus
     static_configs:
       - targets:
-          - "ms-auth:8080"
-          - "ms-ing:8080"
-          - "ms-orch:8080"
-          - "ms-scan:8080"
-          - "ms-sink-tbl:8080"
-          - "ms-sink-doc:8080"
-          - "ms-sink-log:8080"
-          - "ms-qry:8080"
-          - "ms-tmpl:8080"
-          - "ms-dash:8080"
-          - "ms-admin:8080"
-          - "ms-batch:8080"
-          - "ms-lifecycle:8080"
-          - "ms-period:8080"
-          - "ms-notif:8080"
-          - "ms-form:8080"
-          - "ms-ver:8080"
-          - "ms-audit:8080"
-          - "ms-srch:8080"
-          - "ms-tmpl-pptx:8080"
+          - "engine-core:8081"          # Auth + Admin + Batch + Versioning + Audit
+          - "engine-ingestor:8082"      # File ingestion + virus scanning
+          - "engine-orchestrator:8080"  # Workflow orchestration (State Machine + Saga)
+          - "engine-data:8100"          # Sinks (tbl/doc/log) + Query + Dashboard + Search + Template
+          - "engine-reporting:8105"     # Lifecycle + Period + Form + PPTX Template + Notification
+          - "engine-integrations:8106"  # ServiceNow integration
 
-  # Python microservices - prometheus_client HTTP endpoint
+  # Consolidated Python services - prometheus_client HTTP endpoint
   - job_name: python-services
     scrape_interval: 10s
     metrics_path: /metrics
     static_configs:
       - targets:
-          - "ms-atm-pptx:9090"
-          - "ms-atm-xls:9090"
-          - "ms-atm-pdf:9090"
-          - "ms-atm-csv:9090"
-          - "ms-atm-ai:9090"
-          - "ms-atm-cln:9090"
-          - "ms-gen-pptx:9090"
-          - "ms-mcp:9090"
+          - "processor-atomizers:8088"    # PPTX/Excel/PDF/CSV parsing + AI + Cleanup
+          - "processor-generators:8111"   # PPTX/Excel generation + MCP AI agent
 
-  # Dapr sidecar metrics
+  # Dapr placement service metrics
   - job_name: dapr
     scrape_interval: 15s
+    metrics_path: /metrics
     static_configs:
       - targets: ["dapr:9090"]
 

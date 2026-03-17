@@ -5,6 +5,9 @@ import com.reportplatform.admin.model.dto.PromotionCandidateDTO;
 import com.reportplatform.admin.model.entity.PromotionCandidateEntity;
 import com.reportplatform.admin.model.entity.PromotionCandidateEntity.PromotionStatus;
 import com.reportplatform.admin.repository.PromotionCandidateRepository;
+import com.reportplatform.base.dapr.DaprClientWrapper;
+import io.dapr.client.domain.HttpExtension;
+import io.dapr.utils.TypeRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,17 +41,26 @@ public class PromotionDetectionService {
     private final PromotionCandidateRepository candidateRepository;
     private final SchemaProposalGenerator schemaProposalGenerator;
     private final PromotionApprovalService promotionApprovalService;
+    private final DaprClientWrapper daprClientWrapper;
 
     @Value("${smart-persistence.promotion-threshold:5}")
     private long promotionThreshold;
 
+    @Value("${dapr.remote.ms-tmpl-app-id:ms-tmpl}")
+    private String msTmplAppId;
+
+    @Value("${dapr.pubsub.name:reportplatform-pubsub}")
+    private String pubsubName;
+
     public PromotionDetectionService(
             PromotionCandidateRepository candidateRepository,
             SchemaProposalGenerator schemaProposalGenerator,
-            PromotionApprovalService promotionApprovalService) {
+            PromotionApprovalService promotionApprovalService,
+            DaprClientWrapper daprClientWrapper) {
         this.candidateRepository = candidateRepository;
         this.schemaProposalGenerator = schemaProposalGenerator;
         this.promotionApprovalService = promotionApprovalService;
+        this.daprClientWrapper = daprClientWrapper;
     }
 
     /**
@@ -66,9 +78,6 @@ public class PromotionDetectionService {
     public void detectCandidates() {
         logger.info("Starting promotion candidate detection (threshold={})", promotionThreshold);
 
-        // TODO: Replace with actual Dapr service invocation to ms-tmpl
-        // GET /api/v1/usage/high-usage?threshold={promotionThreshold}
-        // Returns list of {mappingTemplateId, mappingName, usageCount}
         List<HighUsageMapping> highUsageMappings = fetchHighUsageMappingsFromTmpl();
 
         int created = 0;
@@ -101,11 +110,16 @@ public class PromotionDetectionService {
             candidateRepository.save(candidate);
             created++;
 
-            // TODO: Publish promotion.candidate.detected event via Dapr Pub/Sub
-            // daprClient.publishEvent("pubsub", "promotion.candidate.detected",
-            // Map.of("candidateId", candidate.getId(),
-            // "mappingTemplateId", mapping.mappingTemplateId(),
-            // "usageCount", mapping.usageCount()));
+            // Publish promotion.candidate.detected event via Dapr Pub/Sub
+            try {
+                daprClientWrapper.publishEvent(pubsubName, "promotion.candidate.detected",
+                        Map.of("candidateId", candidate.getId().toString(),
+                                "mappingTemplateId", mapping.mappingTemplateId().toString(),
+                                "usageCount", mapping.usageCount()))
+                        .block();
+            } catch (Exception e) {
+                logger.warn("Failed to publish promotion.candidate.detected event: {}", e.getMessage());
+            }
 
             logger.info("Created promotion candidate for template={} table={} usage={}",
                     mapping.mappingTemplateId(), candidate.getProposedTableName(), mapping.usageCount());
@@ -116,17 +130,21 @@ public class PromotionDetectionService {
     }
 
     /**
-     * Fetch high-usage mappings from ms-tmpl.
-     * TODO: Replace with actual Dapr service invocation.
+     * Fetch high-usage mappings from ms-tmpl via Dapr service invocation.
      */
     private List<HighUsageMapping> fetchHighUsageMappingsFromTmpl() {
-        // TODO: Implement Dapr service invocation to ms-tmpl
-        // Example:
-        // String url = "http://ms-tmpl/api/v1/usage/high-usage?threshold=" +
-        // promotionThreshold;
-        // Response from Dapr sidecar would contain list of high-usage mapping records
-        logger.debug("TODO: Fetch high-usage mappings from ms-tmpl via Dapr (threshold={})", promotionThreshold);
-        return Collections.emptyList();
+        try {
+            List<HighUsageMapping> result = daprClientWrapper.invokeMethod(
+                    msTmplAppId,
+                    "/api/v1/usage/high-usage?threshold=" + promotionThreshold,
+                    HttpExtension.GET,
+                    new TypeRef<List<HighUsageMapping>>() {})
+                    .block();
+            return result != null ? result : Collections.emptyList();
+        } catch (Exception e) {
+            logger.error("Failed to fetch high-usage mappings from ms-tmpl: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
     }
 
     private String deriveTableName(String mappingName) {

@@ -1,6 +1,8 @@
 package com.reportplatform.dash.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -21,6 +23,7 @@ public class ComparisonConfigEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSONB", nullable = false)
     private String config = "{}";
 

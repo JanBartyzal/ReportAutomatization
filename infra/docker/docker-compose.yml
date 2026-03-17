@@ -85,11 +85,14 @@ services:
       - JWT_JWKS_URI=${JWT_JWKS_URI:-https://login.microsoftonline.com/common/discovery/v2.0/keys}
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - AUTH_MODE=${AUTH_MODE:-development}
     ports:
       - "8081:8081"
     depends_on:
       postgres:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -132,6 +135,8 @@ services:
         condition: service_healthy
       clamav:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -175,6 +180,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -218,6 +225,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -261,6 +270,8 @@ services:
         condition: service_healthy
       azurite:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -305,6 +316,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -356,6 +369,8 @@ services:
         condition: service_healthy
       litellm:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -403,6 +418,8 @@ services:
         condition: service_healthy
       azurite:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -574,6 +591,70 @@ services:
     healthcheck:
       disable: true
 
+  # =============================================================================
+  # OBSERVABILITY
+  # =============================================================================
+
+  # OpenTelemetry Collector - receives telemetry data from all services
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.102.0
+    container_name: otel-collector
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+      - "8888:8888" # Prometheus exporter metrics
+      - "8889:8889" # Prometheus scrape endpoint
+      - "13133:13133" # health_check extension
+    networks:
+      - report-net
+    healthcheck:
+      disable: true
+
+  # Grafana - Metrics visualization and dashboards
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - otel-collector
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-alerts.yml:/etc/prometheus/prometheus-alerts.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+    networks:
+      - report-net
+    container_name: prometheus
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 networks:
   report-net:
     driver: bridge
@@ -585,3 +666,4 @@ volumes:
   clamav_data:
   tesseract_data:
   mailhog_data:
+  grafana_data:

@@ -1,6 +1,8 @@
 package com.reportplatform.auth.config;
 
+import com.reportplatform.auth.model.RoleType;
 import com.reportplatform.auth.service.ApiKeyService;
+import com.reportplatform.auth.service.RbacService;
 import com.reportplatform.auth.service.TokenValidationService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -27,6 +29,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Unified security configuration for all engine-core modules.
@@ -46,13 +49,27 @@ public class SecurityConfig {
 
     private final TokenValidationService tokenValidationService;
     private final ApiKeyService apiKeyService;
+    private final RbacService rbacService;
 
     @Value("${auth.api-key.header-name:X-API-Key}")
     private String apiKeyHeaderName;
 
-    public SecurityConfig(TokenValidationService tokenValidationService, ApiKeyService apiKeyService) {
+    @Value("${auth.mode:production}")
+    private String authMode;
+
+    @Value("${auth.dev-user-oid:6bbc3213-00ac-4d30-bf27-7477b207c515}")
+    private String devUserOid;
+
+    public SecurityConfig(TokenValidationService tokenValidationService,
+                          ApiKeyService apiKeyService,
+                          RbacService rbacService) {
         this.tokenValidationService = tokenValidationService;
         this.apiKeyService = apiKeyService;
+        this.rbacService = rbacService;
+    }
+
+    private boolean isDevMode() {
+        return "development".equalsIgnoreCase(authMode);
     }
 
     @SuppressWarnings("deprecation")
@@ -126,11 +143,41 @@ public class SecurityConfig {
                 String authHeader = request.getHeader("Authorization");
                 if (authHeader != null && authHeader.startsWith("Bearer ")) {
                     String token = authHeader.substring(7);
+
+                    // DEV MODE: skip JWT signature validation, accept any Bearer token
+                    if (isDevMode()) {
+                        var dbAuthorities = rbacService.getAllUserRoles(devUserOid).stream()
+                                .map(ur -> new SimpleGrantedAuthority("ROLE_" + ur.getRole().name()));
+
+                        // Always include HOLDING_ADMIN in dev mode
+                        var authorities = Stream.concat(
+                                dbAuthorities,
+                                Stream.of(new SimpleGrantedAuthority("ROLE_HOLDING_ADMIN"))
+                        ).distinct().toList();
+
+                        var auth = new UsernamePasswordAuthenticationToken(
+                                devUserOid, null, authorities);
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                        log.info("DEV MODE: authenticated as {} with roles {}", devUserOid, authorities);
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+
                     var claims = tokenValidationService.validateToken(token);
                     if (claims.isPresent()) {
                         var validated = claims.get();
-                        var authorities = validated.roles().stream()
-                                .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
+
+                        // Start with JWT roles from Azure AD
+                        var jwtAuthorities = validated.roles().stream()
+                                .map(r -> new SimpleGrantedAuthority("ROLE_" + r));
+
+                        // Also look up internal platform roles from the database
+                        var dbAuthorities = rbacService.getAllUserRoles(validated.oid()).stream()
+                                .map(ur -> new SimpleGrantedAuthority("ROLE_" + ur.getRole().name()));
+
+                        // Merge both sets of authorities (JWT + DB)
+                        var authorities = Stream.concat(jwtAuthorities, dbAuthorities)
+                                .distinct()
                                 .toList();
 
                         var auth = new UsernamePasswordAuthenticationToken(
