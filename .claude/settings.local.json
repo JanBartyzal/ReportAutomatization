@@ -72,7 +72,9 @@
       "Bash(python test_08_batch_organization.py)",
       "Bash(curl -s -w '\\\\nHTTP %{http_code}' -H 'Authorization: Bearer dev' -H 'Content-Type: application/json' -H 'X-Org-Id: a0000000-0000-0000-0000-000000000010' -X POST http://localhost:8081/api/batches -d '{\"\"\"\"name\"\"\"\":\"\"\"\"Test Batch\"\"\"\",\"\"\"\"period\"\"\"\":\"\"\"\"Q1/2026\"\"\"\",\"\"\"\"holdingId\"\"\"\":\"\"\"\"a0000000-0000-0000-0000-000000000010\"\"\"\"}')",
       "Bash(curl -s -H 'Authorization: Bearer dev' -H 'X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515' -H 'X-Org-Id: a0000000-0000-0000-0000-000000000001' -X POST http://localhost:8082/api/upload -F \"file=@i:/Codes/GCP/ReportAutomatization/tests/UAT/data/Test.xlsx;type=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\")",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''fileId={d[fileId]}''''\\)\")"
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''fileId={d[fileId]}''''\\)\")",
+      "Bash(python -c \"import sys,json; print\\(json.dumps\\(json.load\\(sys.stdin\\), indent=2\\)\\)\")",
+      "Bash(python -c \"import sys,json; print\\(json.load\\(sys.stdin\\)[''''fileId'''']\\)\")"
     ]
   }
 }

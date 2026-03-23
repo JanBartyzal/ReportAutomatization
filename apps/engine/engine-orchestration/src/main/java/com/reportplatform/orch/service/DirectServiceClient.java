@@ -45,7 +45,9 @@ public class DirectServiceClient {
             @Value("${direct.engine-core:http://engine-core:8081}") String coreUrl) {
         this.daprClient = daprClient;
         this.objectMapper = objectMapper;
-        this.httpClient = HttpClient.newHttpClient();
+        this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
         this.serviceUrls = Map.of(
                 "processor-atomizers", atomizerUrl,
                 "engine-data", dataUrl,

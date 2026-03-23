@@ -48,7 +48,7 @@ public class OrchestratorGrpcService extends OrchestratorServiceGrpc.Orchestrato
                     request.getFileId(), request.getFileType(), request.getOrgId());
 
             String workflowId = workflowService.startWorkflow(
-                    request.getFileId(), request.getFileType(), request.getOrgId());
+                    request.getFileId(), request.getFileType(), request.getOrgId(), null);
 
             StartFileWorkflowResponse response = StartFileWorkflowResponse.newBuilder()
                     .setWorkflowId(workflowId)

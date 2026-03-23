@@ -118,6 +118,38 @@ public class PipelineStoreService {
             }
         }
 
+        // Handle PPTX format: slides[].tables[] → extract tables from slides
+        if (storedCount == 0) {
+            Object slidesObj = parsedData.get("slides");
+            if (slidesObj instanceof List<?> slides) {
+                for (Object slideObj : slides) {
+                    if (slideObj instanceof Map<?, ?> slideMap) {
+                        Object tablesObj = slideMap.get("tables");
+                        if (tablesObj instanceof List<?> tables) {
+                            for (Object tableObj : tables) {
+                                if (tableObj instanceof Map<?, ?> table) {
+                                    @SuppressWarnings("unchecked")
+                                    Map<String, Object> tableMap = (Map<String, Object>) table;
+                                    // Use table_id as sheet_name for PPTX pseudo-tables
+                                    if (!tableMap.containsKey("sheet_name") && tableMap.containsKey("table_id")) {
+                                        tableMap.put("sheet_name", tableMap.get("table_id"));
+                                    }
+                                    // Store template info in metadata
+                                    if (slideMap.containsKey("template_name")) {
+                                        tableMap.put("template_name", slideMap.get("template_name"));
+                                    }
+                                    if (slideMap.containsKey("extraction_method")) {
+                                        tableMap.put("extraction_method", slideMap.get("extraction_method"));
+                                    }
+                                    storedCount += persistSheet(fileId, orgId, tableMap);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Handle case where data has top-level headers/rows (single table, no sheets wrapper)
         if (storedCount == 0 && parsedData.containsKey("headers")) {
             storedCount += persistSheet(fileId, orgId, parsedData);

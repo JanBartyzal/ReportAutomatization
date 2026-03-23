@@ -6,6 +6,7 @@ for local development. Atomizer-specific settings extend this base.
 
 from __future__ import annotations
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -24,7 +25,7 @@ class Settings(BaseSettings):
     # -- Azure Blob Storage --
     blob_storage_url: str = "http://127.0.0.1:10000/devstoreaccount1"
     azure_storage_connection_string: str | None = None
-    blob_container: str = "files"
+    blob_container: str = Field(default="file-uploads", validation_alias="AZURE_STORAGE_CONTAINER")
     artifacts_container: str = "artifacts"
     temp_container: str = "temp"
 

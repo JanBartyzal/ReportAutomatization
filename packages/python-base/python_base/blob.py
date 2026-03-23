@@ -130,19 +130,24 @@ class BlobStorageClient:
     async def download_bytes(self, container: str, blob_path: str) -> bytes:
         """Download a blob and return its contents as bytes.
 
-        Args:
-            container: Blob container name.
-            blob_path: Path to the blob within the container.
-
-        Returns:
-            The blob content as bytes.
-
-        Raises:
-            httpx.HTTPStatusError: If the download request fails.
+        Tries httpx first, falls back to Azure SDK for authenticated access.
         """
+        # Try Azure SDK first (handles auth properly for Azurite and prod)
+        if self._connection_string:
+            try:
+                from azure.storage.blob import BlobServiceClient
+                service = BlobServiceClient.from_connection_string(self._connection_string)
+                blob_client = service.get_blob_client(container, blob_path)
+                data = blob_client.download_blob().readall()
+                logger.info("Downloaded blob via SDK: %s/%s (%d bytes)", container, blob_path, len(data))
+                return data
+            except Exception as sdk_err:
+                logger.debug("Azure SDK download failed, trying httpx: %s", sdk_err)
+
+        # Fallback to httpx (for non-authenticated endpoints)
         client = await self._get_client()
         url = self._build_url(container, blob_path)
-        logger.debug("Downloading blob: %s/%s", container, blob_path)
+        logger.debug("Downloading blob via httpx: %s/%s", container, blob_path)
 
         response = await client.get(url)
         response.raise_for_status()

@@ -364,6 +364,7 @@ services:
       - "50090:50090"
     volumes:
       - tesseract_data:/usr/share/tesseract-ocr/5/tessdata
+      - ../../tests/UAT/data:/app/data:ro
     depends_on:
       azurite:
         condition: service_healthy
@@ -501,7 +502,7 @@ services:
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
     container_name: azurite
-    command: azurite-blob --blobHost 0.0.0.0 --blobPort 10000 --silent
+    command: azurite-blob --blobHost 0.0.0.0 --blobPort 10000 --silent --skipApiVersionCheck
     volumes:
       - azurite_data:/data
     ports:

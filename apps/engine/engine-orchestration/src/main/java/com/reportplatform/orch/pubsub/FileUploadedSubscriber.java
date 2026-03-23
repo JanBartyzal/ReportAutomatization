@@ -3,7 +3,7 @@ package com.reportplatform.orch.pubsub;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.reportplatform.orch.service.WorkflowService;
 import io.dapr.Topic;
-import io.dapr.client.domain.CloudEvent;
+// CloudEvent no longer used — parsing raw JSON Map instead
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -40,13 +40,31 @@ public class FileUploadedSubscriber {
     @Topic(name = "file-uploaded", pubsubName = "${dapr.pubsub.name:reportplatform-pubsub}")
     @PostMapping(path = "/api/v1/events/file-uploaded", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> handleFileUploaded(
-            @RequestBody CloudEvent<FileUploadedEvent> cloudEvent) {
+            @RequestBody java.util.Map<String, Object> rawBody) {
 
-        FileUploadedEvent event = cloudEvent.getData();
-        if (event == null) {
-            log.warn("Received file-uploaded event with null data, skipping");
+        // Parse event from raw JSON — handles both Dapr CloudEvent and HTTP fallback
+        java.util.Map<?, ?> data;
+        if (rawBody.containsKey("data") && rawBody.get("data") instanceof java.util.Map<?, ?> d) {
+            // CloudEvent wrapper: {"specversion": "1.0", "data": {...}}
+            data = d;
+        } else if (rawBody.containsKey("fileId")) {
+            // Direct payload (no CloudEvent wrapper)
+            data = rawBody;
+        } else {
+            log.warn("Unrecognized event format, keys: {}", rawBody.keySet());
             return ResponseEntity.ok().build();
         }
+
+        FileUploadedEvent event = new FileUploadedEvent(
+                str(data.get("fileId")),
+                str(data.get("fileName")),
+                str(data.get("fileType")),
+                str(data.get("orgId")),
+                str(data.get("uploadedBy")),
+                data.get("fileSizeBytes") instanceof Number n ? n.longValue() : 0L,
+                str(data.get("uploadPurpose")),
+                str(data.get("blobUrl"))
+        );
 
         log.info("Received file-uploaded event: fileId={}, fileType={}, orgId={}, purpose={}",
                 event.fileId(), event.fileType(), event.orgId(), event.uploadPurpose());
@@ -61,7 +79,7 @@ public class FileUploadedSubscriber {
                 log.info("FORM_IMPORT Workflow [{}] started for file [{}]", workflowId, event.fileId());
             } else {
                 workflowId = workflowService.startWorkflow(
-                        event.fileId(), event.fileType(), event.orgId());
+                        event.fileId(), event.fileType(), event.orgId(), event.blobUrl());
                 log.info("FILE_PROCESSING Workflow [{}] started for file [{}]", workflowId, event.fileId());
             }
         } catch (Exception e) {
@@ -77,6 +95,10 @@ public class FileUploadedSubscriber {
      * Event payload for file upload notifications.
      * Includes upload_purpose to route to appropriate workflow.
      */
+    private static String str(Object obj) {
+        return obj != null ? obj.toString() : "";
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record FileUploadedEvent(
             String fileId,

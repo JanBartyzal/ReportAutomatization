@@ -85,10 +85,10 @@ public class WorkflowService {
      * @param orgId    organization identifier
      * @return the generated workflow ID
      */
-    public String startWorkflow(String fileId, String fileType, String orgId) {
+    public String startWorkflow(String fileId, String fileType, String orgId, String blobUrl) {
         String workflowId = UUID.randomUUID().toString();
-        log.info("Starting workflow [{}] for file [{}] type [{}] org [{}]",
-                workflowId, fileId, fileType, orgId);
+        log.info("Starting workflow [{}] for file [{}] type [{}] org [{}] blobUrl [{}]",
+                workflowId, fileId, fileType, orgId, blobUrl);
 
         // Persist workflow history
         var history = new WorkflowHistoryEntity(fileId, workflowId,
@@ -104,6 +104,9 @@ public class WorkflowService {
 
         // Execute the saga pipeline
         var context = new SagaOrchestrator.SagaContext(workflowId, fileId, fileType, orgId);
+        if (blobUrl != null && !blobUrl.isBlank()) {
+            context.put("blobUrl", blobUrl);
+        }
         List<SagaOrchestrator.SagaStep> steps = buildPipelineSteps(sm, fileId, workflowId);
         SagaOrchestrator.SagaResult result = sagaOrchestrator.execute(steps, context);
 
@@ -345,7 +348,7 @@ public class WorkflowService {
         log.info("Retrying workflow [{}] for file [{}]", workflowId, history.getFileId());
         // Start a new workflow for the same file - file type must be re-derived
         // For retry we store the file type in the context; fallback to UNKNOWN
-        return startWorkflow(history.getFileId(), "UNKNOWN", history.getOrgId());
+        return startWorkflow(history.getFileId(), "UNKNOWN", history.getOrgId(), null);
     }
 
     /**
@@ -390,7 +393,7 @@ public class WorkflowService {
         log.info("Reprocessing failed job [{}] for file [{}], retry count: {}",
                 jobId, failedJob.getFileId(), failedJob.getRetryCount());
 
-        return startWorkflow(failedJob.getFileId(), "UNKNOWN", failedJob.getOrgId());
+        return startWorkflow(failedJob.getFileId(), "UNKNOWN", failedJob.getOrgId(), null);
     }
 
     private List<SagaOrchestrator.SagaStep> buildPipelineSteps(
@@ -446,7 +449,13 @@ public class WorkflowService {
                 }
 
                 String atomizerAppId = fileTypeRouter.resolveAtomizerAppId(ctx.fileType());
-                Map<String, String> request = Map.of("fileId", ctx.fileId());
+                java.util.Map<String, String> request = new java.util.HashMap<>();
+                request.put("fileId", ctx.fileId());
+                request.put("fileType", ctx.fileType());
+                String blobUrl = ctx.get("blobUrl", String.class);
+                if (blobUrl != null) {
+                    request.put("blobUrl", blobUrl);
+                }
 
                 try {
                     @SuppressWarnings("unchecked")
