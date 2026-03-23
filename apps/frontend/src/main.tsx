@@ -31,18 +31,24 @@ const queryClient = new QueryClient({
 
 // Initialize app
 async function initializeApp() {
-    await msalInstance.initialize();
+    const authBypass = import.meta.env.VITE_AUTH_BYPASS === 'true';
 
-    // Restore active account from session cache
-    const accounts = msalInstance.getAllAccounts();
-    if (accounts.length > 0) {
-        msalInstance.setActiveAccount(accounts[0]);
+    if (!authBypass) {
+        await msalInstance.initialize();
+
+        // Restore active account from session cache
+        const accounts = msalInstance.getAllAccounts();
+        if (accounts.length > 0) {
+            msalInstance.setActiveAccount(accounts[0]);
+        }
+
+        // Link MSAL to Axios
+        import('./api/axios').then(({ setMsalInstance }) => {
+            setMsalInstance(msalInstance);
+        });
+    } else {
+        console.log('[AUTH BYPASS] Skipping MSAL initialization');
     }
-
-    // Link MSAL to Axios
-    import('./api/axios').then(({ setMsalInstance }) => {
-        setMsalInstance(msalInstance);
-    });
 
     ReactDOM.createRoot(document.getElementById('root')!).render(
         <React.StrictMode>

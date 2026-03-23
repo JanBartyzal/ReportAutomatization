@@ -39,6 +39,11 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         String userId = request.getHeader(USER_ID_HEADER);
         String rolesHeader = request.getHeader(ROLES_HEADER);
 
+        // Debug logging
+        org.slf4j.LoggerFactory.getLogger(HeaderAuthenticationFilter.class)
+            .info("HeaderAuthFilter: path={}, userId={}, roles={}",
+                  request.getRequestURI(), userId, rolesHeader);
+
         if (userId != null && !userId.isBlank()) {
             List<SimpleGrantedAuthority> authorities;
             if (rolesHeader != null && !rolesHeader.isBlank()) {
@@ -55,6 +60,9 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
             var auth = new UsernamePasswordAuthenticationToken(userId, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(auth);
+            org.slf4j.LoggerFactory.getLogger(HeaderAuthenticationFilter.class)
+                .info("HeaderAuthFilter: set auth with {} authorities: {}",
+                      authorities.size(), authorities);
         }
 
         filterChain.doFilter(request, response);

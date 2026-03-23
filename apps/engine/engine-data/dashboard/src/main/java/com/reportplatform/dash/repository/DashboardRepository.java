@@ -20,7 +20,7 @@ public interface DashboardRepository extends JpaRepository<DashboardEntity, UUID
     Optional<DashboardEntity> findByIdAndOrgId(UUID id, UUID orgId);
 
     @Query("SELECT d FROM DashboardEntity d WHERE d.orgId = :orgId " +
-           "AND (d.isPublic = true OR d.createdBy = :userId) " +
+           "AND (d.isPublic = true OR :userId IS NULL OR d.createdBy = :userId) " +
            "ORDER BY d.createdAt DESC")
     List<DashboardEntity> findAccessibleDashboards(
             @Param("orgId") UUID orgId,

@@ -7,10 +7,17 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
 const TOKEN_SCOPES = ['openid', 'profile'];
 
 let msalInstance: PublicClientApplication | null = null;
+// Default to holding org — will be updated after /auth/me resolves
+let devOrgId: string | null = 'a0000000-0000-0000-0000-000000000010';
 
 /** Set the MSAL instance for token acquisition. Call once during app initialization. */
 export function setMsalInstance(instance: PublicClientApplication): void {
   msalInstance = instance;
+}
+
+/** Set org ID for dev bypass mode (called after /auth/me resolves). */
+export function setDevOrgId(orgId: string): void {
+  devOrgId = orgId;
 }
 
 const apiClient: AxiosInstance = axios.create({
@@ -19,12 +26,25 @@ const apiClient: AxiosInstance = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Request interceptor: attach Bearer token via MSAL acquireTokenSilent
+// Request interceptor: attach Bearer token via MSAL or dev bypass
 apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
-  if (!msalInstance) return config;
+  // Dev bypass mode: send Bearer token + X-headers for direct service access
+  const authBypass = import.meta.env.VITE_AUTH_BYPASS === 'true';
+  if (authBypass || !msalInstance) {
+    config.headers.Authorization = 'Bearer dev-bypass-token';
+    // Headers required by backend services for auth context (normally set by nginx ForwardAuth)
+    config.headers['X-User-Id'] = '6bbc3213-00ac-4d30-bf27-7477b207c515';
+    config.headers['X-Org-Id'] = devOrgId || 'a0000000-0000-0000-0000-000000000010';
+    config.headers['X-Roles'] = 'HOLDING_ADMIN';
+    return config;
+  }
 
   const activeAccount = msalInstance.getActiveAccount() ?? msalInstance.getAllAccounts()[0];
-  if (!activeAccount) return config;
+  if (!activeAccount) {
+    // No active account — send dev token as fallback
+    config.headers.Authorization = 'Bearer dev-bypass-token';
+    return config;
+  }
 
   try {
     const response = await msalInstance.acquireTokenSilent({

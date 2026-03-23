@@ -449,6 +449,12 @@ services:
       - VITE_AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-}
       - VITE_AZURE_TENANT_ID=${AZURE_TENANT_ID:-common}
       - VITE_AZURE_REDIRECT_URI=http://localhost:5173
+      - VITE_AUTH_BYPASS=true
+      - VITE_DEBUG=true
+      - VITE_ENGINE_CORE_URL=http://engine-core:8081
+      - VITE_ENGINE_INGESTOR_URL=http://engine-ingestor:8082
+      - VITE_ENGINE_DATA_URL=http://engine-data:8100
+      - VITE_ENGINE_REPORTING_URL=http://engine-reporting:8105
     command: sh -c "npm install && npm run dev -- --host"
     depends_on:
       router:

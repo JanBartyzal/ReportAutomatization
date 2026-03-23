@@ -31,6 +31,9 @@ public class DashboardService {
 
     @Transactional(readOnly = true)
     public DashboardListResponse listDashboards(UUID orgId, UUID userId) {
+        if (orgId == null) {
+            return new DashboardListResponse(java.util.List.of());
+        }
         var entities = dashboardRepository.findAccessibleDashboards(orgId, userId);
         var responses = entities.stream()
                 .map(this::toResponse)

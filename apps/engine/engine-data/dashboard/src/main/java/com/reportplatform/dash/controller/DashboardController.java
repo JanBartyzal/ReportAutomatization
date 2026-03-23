@@ -51,9 +51,14 @@ public class DashboardController {
     @GetMapping
     @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<DashboardListResponse> listDashboards(
-            @RequestHeader("X-Org-Id") UUID orgId,
-            @RequestHeader("X-User-Id") UUID userId) {
+            @RequestHeader(value = "X-Org-Id", required = false) String orgIdStr,
+            @RequestHeader(value = "X-User-Id", required = false) String userIdStr) {
 
+        UUID orgId = parseUuidOrNull(orgIdStr);
+        UUID userId = parseUuidOrNull(userIdStr);
+        if (orgId == null) {
+            return ResponseEntity.ok(new DashboardListResponse(java.util.List.of()));
+        }
         var response = dashboardService.listDashboards(orgId, userId);
         return ResponseEntity.ok(response);
     }
@@ -64,10 +69,12 @@ public class DashboardController {
     @PostMapping
     @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<DashboardResponse> createDashboard(
-            @RequestHeader("X-Org-Id") UUID orgId,
-            @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader(value = "X-Org-Id", required = false) String orgIdStr,
+            @RequestHeader(value = "X-User-Id", required = false) String userIdStr,
             @Valid @RequestBody DashboardRequest request) {
 
+        UUID orgId = parseUuidOrNull(orgIdStr);
+        UUID userId = parseUuidOrNull(userIdStr);
         var response = dashboardService.createDashboard(orgId, userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -167,5 +174,14 @@ public class DashboardController {
         headers.setContentLength(excelBytes.length);
 
         return ResponseEntity.ok().headers(headers).body(excelBytes);
+    }
+
+    private static UUID parseUuidOrNull(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

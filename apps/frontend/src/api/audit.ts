@@ -54,12 +54,12 @@ export async function listAuditLogs(params: AuditLogParams = {}): Promise<{
         total_pages: number;
     };
 }> {
-    const { data } = await apiClient.get('/audit-logs', { params });
+    const { data } = await apiClient.get('/audit/logs', { params });
     return data;
 }
 
 export async function getAuditLogDetail(id: string): Promise<AuditLogEntry> {
-    const { data } = await apiClient.get<AuditLogEntry>(`/audit-logs/${id}`);
+    const { data } = await apiClient.get<AuditLogEntry>(`/audit/logs/${id}`);
     return data;
 }
 
@@ -67,7 +67,7 @@ export async function exportAuditLogs(
     params: AuditLogParams = {},
     format: 'csv' | 'json'
 ): Promise<Blob> {
-    const { data } = await apiClient.get('/audit-logs/export', {
+    const { data } = await apiClient.get('/audit/export', {
         params: { ...params, format },
         responseType: 'blob',
     });

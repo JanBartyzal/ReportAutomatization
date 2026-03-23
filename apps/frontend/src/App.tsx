@@ -1,5 +1,6 @@
 import { AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { isAuthBypassed } from './auth/msalConfig';
 
 import AppLayout from './components/Layout/AppLayout';
 import AdminGuard from './components/auth/AdminGuard';
@@ -113,6 +114,16 @@ function AuthenticatedRoutes() {
 }
 
 function App() {
+    // In dev bypass mode, skip MSAL auth checks entirely
+    if (isAuthBypassed) {
+        return (
+            <>
+                <ToastContainer />
+                <AuthenticatedRoutes />
+            </>
+        );
+    }
+
     return (
         <>
             <ToastContainer />

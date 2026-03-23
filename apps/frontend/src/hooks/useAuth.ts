@@ -1,12 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMsal } from '@azure/msal-react';
 import { getMe, switchOrg } from '../api/auth';
+import { setDevOrgId } from '../api/axios';
 import type { UserContext } from '@reportplatform/types';
 
 export function useMe() {
   return useQuery<UserContext>({
     queryKey: ['auth', 'me'],
-    queryFn: getMe,
+    queryFn: async () => {
+      const data = await getMe();
+      // In dev bypass mode, set the org_id from the first holding org
+      if (data?.organizations?.length) {
+        const holding = data.organizations.find((o: any) => o.organizationCode?.startsWith('HOLD'));
+        const orgId = holding?.organizationId || data.organizations[0].organizationId;
+        if (orgId) setDevOrgId(orgId);
+      }
+      return data;
+    },
     staleTime: 5 * 60 * 1000,
   });
 }
