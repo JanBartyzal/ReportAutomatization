@@ -1,0 +1,51 @@
+{
+  "tokens": {
+    "admin1": "dev-bypass",
+    "user1": "XkOx8xDVqqovwldxII6VH7h142qG5eoBMj2blkN82vk",
+    "admin2": "Qcv42PsuZFnqwKbZ9eNTOsBkAs6KtJ8cgUYlTW0rE4U",
+    "user2": "IwMCIYy4K_Kit93EwQt-KZkGpN4n1E32FfhDxsa4p_o"
+  },
+  "org_ids": {
+    "HOLD-001": "a0000000-0000-0000-0000-000000000010",
+    "hold-001": "a0000000-0000-0000-0000-000000000010",
+    "TEST-ORG-1": "a0000000-0000-0000-0000-000000000001",
+    "test-org-1": "a0000000-0000-0000-0000-000000000001",
+    "TEST-ORG-2": "a0000000-0000-0000-0000-000000000002",
+    "test-org-2": "a0000000-0000-0000-0000-000000000002"
+  },
+  "plan_ids": {},
+  "api_keys": {
+    "admin1": {
+      "key": "OoikXUAs2yyDYDG49KqhwE8wJs5DEBsSvV_Z40ao8MI",
+      "role": "ADMIN"
+    },
+    "user1": {
+      "key": "XkOx8xDVqqovwldxII6VH7h142qG5eoBMj2blkN82vk",
+      "role": "EDITOR"
+    },
+    "admin2": {
+      "key": "Qcv42PsuZFnqwKbZ9eNTOsBkAs6KtJ8cgUYlTW0rE4U",
+      "role": "ADMIN"
+    },
+    "user2": {
+      "key": "IwMCIYy4K_Kit93EwQt-KZkGpN4n1E32FfhDxsa4p_o",
+      "role": "VIEWER"
+    }
+  },
+  "auth_mode": "api_key",
+  "file_ids": {
+    "pptx": "3d919a79-540a-44dc-a5ef-af10abc59420",
+    "xlsx": "480fbe07-538d-4b5d-aa76-10dea0064cb1"
+  },
+  "dev_user_id": "6bbc3213-00ac-4d30-bf27-7477b207c515",
+  "dev_org_id": "a0000000-0000-0000-0000-000000000001",
+  "pptx_extraction": {
+    "slide_count": 1,
+    "main_table_rows": 14,
+    "total_table_rows": 3,
+    "net_saving_sum": -50.7
+  },
+  "batch_ids": {
+    "q1_2026": "b926a4b0-7a2a-422f-abc2-9fceed1ebb99"
+  }
+}

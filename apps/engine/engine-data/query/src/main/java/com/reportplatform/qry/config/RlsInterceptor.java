@@ -15,6 +15,9 @@ import org.springframework.web.servlet.HandlerInterceptor;
  * Before each query request, sets {@code app.current_org_id}, {@code app.current_user_role},
  * and {@code app.query_scope} on the database connection so that RLS policies filter
  * results correctly based on organization, role, and scope.
+ *
+ * NOTE: SET LOCAL does not support prepared statement parameters ($1).
+ * Values are validated (UUID format, alphanumeric) before inline SQL to prevent injection.
  */
 @Component("queryRlsInterceptor")
 public class RlsInterceptor implements HandlerInterceptor {
@@ -42,8 +45,9 @@ public class RlsInterceptor implements HandlerInterceptor {
                 return false;
             }
 
-            entityManager.createNativeQuery("SET LOCAL app.current_org_id = :orgId")
-                    .setParameter("orgId", orgId)
+            // SET LOCAL does not support prepared statement parameters —
+            // use validated UUID string directly (safe after UUID.fromString validation)
+            entityManager.createNativeQuery("SET LOCAL app.current_org_id = '" + orgId + "'")
                     .executeUpdate();
 
             log.debug("RLS org_id set to: {}", orgId);
@@ -52,24 +56,24 @@ public class RlsInterceptor implements HandlerInterceptor {
         // Set user role for RLS policies (enables HOLDING_ADMIN cross-org access)
         String userRole = request.getHeader(USER_ROLE_HEADER);
         if (userRole != null && !userRole.isBlank()) {
-            // Sanitize: only allow known role values
+            // Sanitize: only allow known role values (A-Z and underscore)
             String sanitizedRole = userRole.replaceAll("[^A-Z_]", "");
-            entityManager.createNativeQuery("SET LOCAL app.current_user_role = :role")
-                    .setParameter("role", sanitizedRole)
-                    .executeUpdate();
-
-            log.debug("RLS user_role set to: {}", sanitizedRole);
+            if (!sanitizedRole.isEmpty()) {
+                entityManager.createNativeQuery("SET LOCAL app.current_user_role = '" + sanitizedRole + "'")
+                        .executeUpdate();
+                log.debug("RLS user_role set to: {}", sanitizedRole);
+            }
         }
 
         // Set query scope for scope-aware queries
         String queryScope = request.getHeader(QUERY_SCOPE_HEADER);
         if (queryScope != null && !queryScope.isBlank()) {
             String sanitizedScope = queryScope.replaceAll("[^A-Z_]", "");
-            entityManager.createNativeQuery("SET LOCAL app.query_scope = :scope")
-                    .setParameter("scope", sanitizedScope)
-                    .executeUpdate();
-
-            log.debug("RLS query_scope set to: {}", sanitizedScope);
+            if (!sanitizedScope.isEmpty()) {
+                entityManager.createNativeQuery("SET LOCAL app.query_scope = '" + sanitizedScope + "'")
+                        .executeUpdate();
+                log.debug("RLS query_scope set to: {}", sanitizedScope);
+            }
         }
 
         return true;

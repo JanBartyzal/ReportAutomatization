@@ -11,6 +11,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.time.Instant;
 import java.util.List;
@@ -26,16 +28,23 @@ public class BatchController {
     private final BatchRepository batchRepository;
     private final BatchFileRepository batchFileRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     public BatchController(BatchRepository batchRepository, BatchFileRepository batchFileRepository) {
         this.batchRepository = batchRepository;
         this.batchFileRepository = batchFileRepository;
     }
 
     @GetMapping({"", "/"})
+    @Transactional
     @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<List<BatchEntity>> listBatches(
             @RequestParam(required = false) UUID holdingId,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestHeader(value = "X-Org-Id", required = false) String orgId) {
+
+        setRlsContext(orgId);
 
         if (holdingId != null) {
             if (status != null) {
@@ -49,23 +58,37 @@ public class BatchController {
     }
 
     @GetMapping("/{batchId}")
+    @Transactional
     @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
-    public ResponseEntity<BatchEntity> getBatch(@PathVariable UUID batchId) {
+    public ResponseEntity<BatchEntity> getBatch(@PathVariable UUID batchId,
+            @RequestHeader(value = "X-Org-Id", required = false) String orgId) {
+        setRlsContext(orgId);
         return batchRepository.findById(batchId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping({"", "/"})
+    @Transactional
     @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<BatchEntity> createBatch(@RequestBody Map<String, Object> request) {
         BatchEntity batch = new BatchEntity();
         batch.setName((String) request.get("name"));
         batch.setPeriod((String) request.get("period"));
         batch.setDescription((String) request.get("description"));
-        batch.setHoldingId(UUID.fromString((String) request.get("holding_id")));
+        String holdingId = (String) request.get("holding_id");
+        if (holdingId == null) holdingId = (String) request.get("holdingId");
+        if (holdingId == null) holdingId = (String) request.get("orgId");
+        if (holdingId != null) {
+            batch.setHoldingId(UUID.fromString(holdingId));
+        }
         batch.setCreatedBy((String) request.getOrDefault("created_by", "system"));
         batch.setStatus(BatchEntity.BatchStatus.OPEN);
+
+        // Set RLS context for the INSERT (holding_id must match app.current_org_id)
+        if (batch.getHoldingId() != null) {
+            setRlsContext(batch.getHoldingId().toString());
+        }
 
         BatchEntity saved = batchRepository.save(batch);
         logger.info("Created batch: {} ({})", saved.getName(), saved.getId());
@@ -185,5 +208,16 @@ public class BatchController {
     @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, String>> health() {
         return ResponseEntity.ok(Map.of("status", "UP"));
+    }
+
+    private void setRlsContext(String orgId) {
+        if (orgId != null && !orgId.isBlank()) {
+            try {
+                UUID.fromString(orgId);
+                entityManager.createNativeQuery("SET LOCAL app.current_org_id = '" + orgId + "'")
+                        .executeUpdate();
+                entityManager.flush();
+            } catch (IllegalArgumentException ignored) {}
+        }
     }
 }

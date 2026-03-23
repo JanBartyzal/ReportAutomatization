@@ -30,7 +30,9 @@
 - you have approval for create or edit any file
 - you have approval for bash commands ls, find, dir, for,curl,curl -X POST,curl -X GET etc... for search and list files and in find in files
 
-
+## MISC
+ - RA = ReportAutomatization = this project
+ 
 
 
 

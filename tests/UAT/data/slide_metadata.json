@@ -1,0 +1,154 @@
+{
+  "schema_version": "slide_metadata/v1",
+  "description": "Strukturální šablona pro extrakci pseudotabulek z PPTX slidů. Definuje JAK rozpoznat tabulku — ne jaká data v ní jsou.",
+  "name": "Cost Optimization Report",
+  "version": 1,
+  "source_layout": "Title and Content",
+
+  "slides": [
+    {
+      "slide_index": 0,
+      "role": "data_slide",
+
+      "title_detection": {
+        "shape_type": "PLACEHOLDER",
+        "shape_name_pattern": "Title *"
+      },
+
+      "tables": [
+        {
+          "table_id": "cost_optimization_main",
+          "type": "pseudo_table",
+          "description": "Hlavní tabulka — rekonstruovaná z text boxů a horizontálních čar. Žádná nativní PPTX tabulka.",
+
+          "columns": [
+            {
+              "id": "cost_category",
+              "header_text_pattern": "Cost Category",
+              "data_type": "text",
+              "region": {"left_min_emu": 771788, "left_max_emu": 2750000},
+              "shape_name_pattern": "object 18"
+            },
+            {
+              "id": "description",
+              "header_text_pattern": "Main saving initiatives*",
+              "data_type": "text",
+              "region": {"left_min_emu": 2900000, "left_max_emu": 8500000},
+              "shape_name_pattern": "Rectangle *"
+            },
+            {
+              "id": "net_saving",
+              "header_text_pattern": "Net saving*",
+              "data_type": "number",
+              "allow_wip": true,
+              "region": {"left_min_emu": 9019000, "left_max_emu": 10400000},
+              "shape_name_pattern": "Rectangle *"
+            },
+            {
+              "id": "additional_saving",
+              "header_text_pattern": "Additional net saving*",
+              "data_type": "number",
+              "region": {"left_min_emu": 10450000, "left_max_emu": 12000000},
+              "shape_name_pattern": "object 18"
+            }
+          ],
+
+          "row_detection": {
+            "method": "horizontal_lines",
+            "separator_shape_type": "LINE",
+            "separator_name_pattern": "Straight Connector *",
+            "data_region": {
+              "top_emu": 1452442,
+              "bottom_emu": 5903000
+            },
+            "multivalue_split": "\n",
+            "note": "Jeden shape může obsahovat více hodnot oddělených newline (např. '-3.2\\n-5.53\\n-0.3'). Každá hodnota = samostatný řádek."
+          },
+
+          "header_detection": {
+            "shape_names": ["ee4pHeader4", "object 22"],
+            "region_top_emu": 1000000,
+            "region_bottom_emu": 1452442
+          },
+
+          "output_sheet_name": "Cost optimatiztation"
+        },
+
+        {
+          "table_id": "cost_optimization_total",
+          "type": "pseudo_table",
+          "description": "Souhrnná tabulka — 3×3 grid z obdélníků ve spodní části slidu.",
+
+          "columns": [
+            {
+              "id": "label",
+              "data_type": "text",
+              "region": {"left_min_emu": 6600000, "left_max_emu": 9000000},
+              "shape_name_pattern": "Rectangle *"
+            },
+            {
+              "id": "value1",
+              "data_type": "number",
+              "parse_format": "strip_unit_M€",
+              "region": {"left_min_emu": 9000000, "left_max_emu": 10400000},
+              "shape_name_pattern": "Rectangle *"
+            },
+            {
+              "id": "value2",
+              "data_type": "number",
+              "parse_format": "strip_unit_M€",
+              "region": {"left_min_emu": 10400000, "left_max_emu": 12000000},
+              "shape_name_pattern": "Rectangle *"
+            }
+          ],
+
+          "row_detection": {
+            "method": "vertical_position",
+            "data_region": {
+              "top_emu": 5950000,
+              "bottom_emu": 6900000
+            },
+            "row_height_approx_emu": 250000
+          },
+
+          "output_sheet_name": "Total"
+        }
+      ],
+
+      "ignore_shapes": {
+        "note": "Tvary, které atomizer ignoruje při rekonstrukci tabulky.",
+        "patterns": [
+          {"type": "EMBEDDED_OLE_OBJECT"},
+          {"type": "PICTURE"},
+          {"name_pattern": "Oval *", "note": "Čísla sloupců (1, 2) — dekorace"},
+          {"name_pattern": "object 11", "note": "Dekorativní freeform"},
+          {"name_pattern": "object 13", "note": "Horizontální čáry v header regionu"},
+          {"name_pattern": "object 28", "note": "Vertikální freeform sloupce"}
+        ]
+      },
+
+      "text_elements_extraction": {
+        "note": "Textové elementy mimo tabulku — extrahovány jako metadata slidu.",
+        "rules": [
+          {"role": "title", "shape_type": "PLACEHOLDER", "name_pattern": "Title *"},
+          {"role": "subtitle", "shape_name": "TextBox 23"},
+          {"role": "annotation", "region_top_emu_min": 6100000, "shape_name": "ee4pHeader4"}
+        ]
+      }
+    }
+  ],
+
+  "parsing_rules": {
+    "number_parsing": {
+      "decimal_separator": "auto",
+      "strip_patterns": ["M€", "M�", "€", " "],
+      "wip_markers": ["WIP", "N/A", "TBD", "-"],
+      "note": "Čísla v PPTX mohou mít formát '-21.4', '-100M€', ' -2,3M€'. Parser musí zvládnout všechny varianty."
+    },
+    "text_cleanup": {
+      "strip_whitespace": true,
+      "collapse_newlines_in_cell": false,
+      "note": "Newline uvnitř shape = oddělovač řádků tabulky, NE odstavec v buňce."
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+    "Databases": {
+        "Platform": "Host=host.docker.internal;Port=5432;Database=ra_platform;Username=admin;Password=password",
+        "Business": "Host=host.docker.internal;Port=5433;Database=ra_business;Username=admin;Password=password"
+    },
+    "Admin": {
+        "Email": "admin@reportautomatization.com",
+        "TenantId": "reportautomatization-platform",
+        "FirstName": "Platform",
+        "LastName": "Administrator"
+    },
+    "AzureAccounts": [
+        {
+            "Email": "jan.bartyzal@wizardhub.cz",
+            "AzureObjectId": "80547cbe-36a3-4413-b9b6-546ab46dc0ae",
+            "AzureTenantId": "fb8ec60f-c919-4fea-bda0-1361c417c04e",
+            "DisplayName": "Demo Admin (Azure)",
+            "FirstName": "Demo",
+            "LastName": "Admin",
+            "Role": "admin",
+            "OrganizationName": "Wizard hub",
+            "OrganizationSlug": "wizard-hub"
+        }
+    ],
+    "IdentityProviders": [
+        {
+            "ProviderName": "azure-ad",
+            "ProviderType": "oidc",
+            "ClientId": "73b1d5c2-f05d-4c74-9f48-7c706535b72f",
+            "IssuerUrl": "https://login.microsoftonline.com/${AZURE_TENANT_ID}",
+            "RedirectUri": "https://app.ra.local/api/auth/sso/azure/callback",
+            "Scopes": "openid profile email offline_access",
+            "OrganizationSlug": "wizard-hub"
+        }
+    ],
+    "SlideMetadata": {
+        "Directory": "../../tests/UAT/data",
+        "Enabled": true
+    },
+    "DemoSeed": {
+        "DataDirectory": "./DemoData",
+        "Enabled": true
+    }
+}

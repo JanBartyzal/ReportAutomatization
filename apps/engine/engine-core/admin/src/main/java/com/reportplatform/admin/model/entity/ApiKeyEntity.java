@@ -15,6 +15,9 @@ public class ApiKeyEntity {
     @Column(name = "key_hash", nullable = false, unique = true)
     private String keyHash;
 
+    @Column(name = "key_prefix", nullable = false, length = 10)
+    private String keyPrefix;
+
     @Column(name = "key_name", nullable = false, length = 100)
     private String name;
 
@@ -40,7 +43,7 @@ public class ApiKeyEntity {
     private boolean revoked = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "org_id")
+    @JoinColumn(name = "organization_id")
     private OrganizationEntity organization;
 
     public ApiKeyEntity() {
@@ -60,6 +63,14 @@ public class ApiKeyEntity {
 
     public void setKeyHash(String keyHash) {
         this.keyHash = keyHash;
+    }
+
+    public String getKeyPrefix() {
+        return keyPrefix;
+    }
+
+    public void setKeyPrefix(String keyPrefix) {
+        this.keyPrefix = keyPrefix;
     }
 
     public String getName() {

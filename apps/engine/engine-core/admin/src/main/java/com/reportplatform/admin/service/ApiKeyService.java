@@ -49,14 +49,25 @@ public class ApiKeyService {
         // Hash the key for storage
         String keyHash = passwordEncoder.encode(rawKey);
 
+        // Key prefix = first 8 chars, used for efficient lookup
+        String keyPrefix = rawKey.substring(0, Math.min(8, rawKey.length()));
+
         ApiKeyEntity apiKey = new ApiKeyEntity();
         apiKey.setKeyHash(keyHash);
+        apiKey.setKeyPrefix(keyPrefix);
         apiKey.setName(request.getName());
         apiKey.setScopes(request.getScopes() != null ? request.getScopes() : new String[0]);
         apiKey.setCreatedBy(createdBy);
         apiKey.setCreatedAt(Instant.now());
         apiKey.setExpiresAt(request.getExpiresAt());
         apiKey.setRevoked(false);
+
+        // Set organization if provided
+        if (request.getOrgId() != null) {
+            var orgRef = new com.reportplatform.admin.model.entity.OrganizationEntity();
+            orgRef.setId(request.getOrgId());
+            apiKey.setOrganization(orgRef);
+        }
 
         ApiKeyEntity saved = apiKeyRepository.save(apiKey);
 
