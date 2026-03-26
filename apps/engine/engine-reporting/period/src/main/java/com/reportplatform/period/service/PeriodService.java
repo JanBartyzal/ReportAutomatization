@@ -35,22 +35,54 @@ public class PeriodService {
 
     @Transactional
     public PeriodEntity createPeriod(PeriodCreateRequest request, String userId) {
+        PeriodType periodType;
+        try {
+            periodType = request.periodType() != null
+                    ? PeriodType.valueOf(request.periodType())
+                    : PeriodType.QUARTERLY;
+        } catch (IllegalArgumentException e) {
+            log.warn("Unknown period type '{}', defaulting to QUARTERLY", request.periodType());
+            periodType = PeriodType.QUARTERLY;
+        }
+
+        // Provide sensible defaults for null fields
+        java.time.LocalDate startDate = request.startDate() != null ? request.startDate() : java.time.LocalDate.now();
+        java.time.LocalDate endDate = request.endDate() != null ? request.endDate() : startDate.plusMonths(3);
+        java.time.Instant submissionDeadline = request.submissionDeadline() != null
+                ? request.submissionDeadline()
+                : endDate.atStartOfDay(java.time.ZoneOffset.UTC).toInstant();
+        java.time.Instant reviewDeadline = request.reviewDeadline() != null
+                ? request.reviewDeadline()
+                : endDate.plusDays(15).atStartOfDay(java.time.ZoneOffset.UTC).toInstant();
+        String holdingId = request.holdingId() != null ? request.holdingId() : "default-holding";
+        String basePeriodCode = request.periodCode() != null ? request.periodCode()
+                : request.name() != null ? request.name().replaceAll("\\s+", "-") : "PERIOD-" + UUID.randomUUID().toString().substring(0, 8);
+        // Ensure uniqueness: if code already exists, append a short suffix
+        String periodCode = basePeriodCode;
+        if (periodRepository.existsByPeriodCode(periodCode)) {
+            periodCode = basePeriodCode + "-" + UUID.randomUUID().toString().substring(0, 4);
+        }
+
         var period = new PeriodEntity(
                 request.name(),
-                PeriodType.valueOf(request.periodType()),
-                request.periodCode(),
-                request.startDate(),
-                request.endDate(),
-                request.submissionDeadline(),
-                request.reviewDeadline(),
-                request.holdingId(),
+                periodType,
+                periodCode,
+                startDate,
+                endDate,
+                submissionDeadline,
+                reviewDeadline,
+                holdingId,
                 userId
         );
         period = periodRepository.save(period);
 
         if (request.orgIds() != null) {
-            for (String orgId : request.orgIds()) {
-                assignmentRepository.save(new PeriodOrgAssignmentEntity(period.getId(), orgId));
+            try {
+                for (String orgId : request.orgIds()) {
+                    assignmentRepository.save(new PeriodOrgAssignmentEntity(period.getId(), orgId));
+                }
+            } catch (Exception e) {
+                log.warn("Could not save org assignments for period {}: {}", period.getId(), e.getMessage());
             }
         }
 
@@ -81,6 +113,22 @@ public class PeriodService {
         if (request.reviewDeadline() != null) period.setReviewDeadline(request.reviewDeadline());
         if (request.status() != null) period.setStatus(PeriodState.valueOf(request.status()));
 
+        return periodRepository.save(period);
+    }
+
+    @Transactional
+    public PeriodEntity transitionToCollecting(UUID periodId, String userId) {
+        var period = getPeriod(periodId);
+        period.setStatus(PeriodState.COLLECTING);
+        log.info("Period {} transitioned to COLLECTING by {}", periodId, userId);
+        return periodRepository.save(period);
+    }
+
+    @Transactional
+    public PeriodEntity closePeriod(UUID periodId, String userId) {
+        var period = getPeriod(periodId);
+        period.setStatus(PeriodState.CLOSED);
+        log.info("Period {} closed by {}", periodId, userId);
         return periodRepository.save(period);
     }
 

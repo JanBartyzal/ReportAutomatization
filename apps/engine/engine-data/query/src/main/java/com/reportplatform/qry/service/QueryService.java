@@ -237,6 +237,19 @@ public class QueryService {
     }
 
     /**
+     * Returns documents for a specific file ID.
+     */
+    @Transactional(readOnly = true)
+    public List<DocumentDto> getDocumentsByFileId(String orgId, String fileId) {
+        if (fileId == null || fileId.isBlank()) {
+            return List.of();
+        }
+        return documentRepository.findByFileId(fileId).stream()
+                .map(this::toDocumentDto)
+                .toList();
+    }
+
+    /**
      * Returns the processing step timeline for a file.
      */
     @Transactional(readOnly = true)

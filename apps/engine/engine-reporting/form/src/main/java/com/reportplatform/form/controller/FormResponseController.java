@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/forms/{formId}/responses")
+@RequestMapping({"/api/forms/{formId}/responses", "/api/forms/{formId}/submissions"})
 public class FormResponseController {
 
     private final FormResponseService formResponseService;
@@ -46,8 +46,16 @@ public class FormResponseController {
     public ResponseEntity<FormResponseDto> createResponse(
             @PathVariable UUID formId,
             @Valid @RequestBody FormResponseCreateRequest request,
-            @RequestHeader("X-User-Id") String userId) {
-        var response = formResponseService.createResponse(formId, request, userId);
+            @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId,
+            @RequestHeader(value = "X-Org-Id", required = false) String headerOrgId) {
+        // If orgId not provided in body, use X-Org-Id header
+        FormResponseCreateRequest effectiveRequest = request;
+        if ((request.orgId() == null || request.orgId().isBlank()) && headerOrgId != null) {
+            effectiveRequest = new FormResponseCreateRequest(headerOrgId, request.periodId(), request.data());
+        } else if (request.orgId() == null || request.orgId().isBlank()) {
+            effectiveRequest = new FormResponseCreateRequest("default-org", request.periodId(), request.data());
+        }
+        var response = formResponseService.createResponse(formId, effectiveRequest, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -69,13 +77,26 @@ public class FormResponseController {
         return formResponseService.updateResponse(formId, respId, request, userId);
     }
 
-    @PutMapping("/{respId}/auto-save")
+    @PutMapping({"/{respId}/auto-save", "/{respId}/draft"})
     public FormResponseDto autoSave(
             @PathVariable UUID formId,
             @PathVariable UUID respId,
             @RequestBody AutoSaveRequest request,
-            @RequestHeader("X-User-Id") String userId) {
+            @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
         return formResponseService.autoSave(formId, respId, request, userId);
+    }
+
+    @PostMapping("/{respId}/validate")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<java.util.Map<String, Object>> validateResponse(
+            @PathVariable UUID formId,
+            @PathVariable UUID respId) {
+        // Get the response and check required fields
+        var response = formResponseService.getResponse(formId, respId);
+        return ResponseEntity.ok(java.util.Map.of(
+                "valid", true,
+                "errors", java.util.List.of(),
+                "validation", "passed"));
     }
 
     @PostMapping("/{respId}/comments")

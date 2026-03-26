@@ -112,7 +112,23 @@
       "Bash(curl -s -H 'X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515' -H 'X-Org-Id: a0000000-0000-0000-0000-000000000001' -H 'X-Roles: HOLDING_ADMIN' http://localhost:8100/api/dashboards)",
       "Bash(docker exec postgres sh -c 'psql -U postgres -d engine_data_db -c \"\":*)",
       "Bash(curl -s -H 'Authorization: Bearer dev-bypass-token' http://localhost:8081/api/auth/me)",
-      "Bash(curl -s -H \"Authorization: Bearer dev-bypass-token\" -H \"X-Org-Id: a0000000-0000-0000-0000-000000000010\" -H \"X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515\" -H \"X-Roles: HOLDING_ADMIN\" http://localhost:8081/api/batches)"
+      "Bash(curl -s -H \"Authorization: Bearer dev-bypass-token\" -H \"X-Org-Id: a0000000-0000-0000-0000-000000000010\" -H \"X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515\" -H \"X-Roles: HOLDING_ADMIN\" http://localhost:8081/api/batches)",
+      "Bash(xargs -I {} find {} -type d)",
+      "Bash(ls -la /i/Codes/GCP/ReportAutomatization/apps/engine/engine-data/*/pom.xml)",
+      "Bash(find i:/Codes/GCP/ReportAutomatization -type f \\\\\\(-name *controller* -o -name *Controller* \\\\\\))",
+      "Bash(find i:/Codes/GCP/ReportAutomatization -type f \\\\\\(-name *controller*.java -o -name *Controller*.java \\\\\\))",
+      "Bash(find i:/Codes/GCP/ReportAutomatization -type f \\\\\\(-name *proxy* -o -name *Proxy* \\\\\\))",
+      "Bash(grep -r \"FS0\\\\|FS1\\\\|FS2\\\\|FS9\" i:/Codes/GCP/ReportAutomatization --include=*.md --include=*.txt)",
+      "Bash(find i:/Codes/GCP/ReportAutomatization -name *.md -type f)",
+      "Bash(grep -r \"@PostMapping\\\\|@GetMapping\\\\|@PutMapping\\\\|@DeleteMapping\" i:/Codes/GCP/ReportAutomatization/apps/engine --include=*Controller.java)",
+      "Bash(find i:/Codes/GCP/ReportAutomatization/apps/engine -name *.java -type f -not -path */target/* -not -path */test/*)",
+      "Bash(find i:CodesGCPReportAutomatization/infra -name *.conf -o -name *.nginx -o -name nginx*)",
+      "Bash(find i:CodesGCPReportAutomatization/infra -type f \\\\\\(-name *.conf -o -name *.nginx -o -name *nginx* -o -name *.yaml \\\\\\))",
+      "Bash(grep -E '\\\\.\\(conf|yaml|yml|json\\)$')",
+      "Bash(find i:CodesGCPReportAutomatization/infra -type f -name *.conf -o -name *.yaml -o -name *.yml)",
+      "Bash(find i:CodesGCPReportAutomatization -type f \\\\\\(-name *nginx* -o -name *router* -o -name *.conf \\\\\\))",
+      "Bash(find i:CodesGCPReportAutomatization/apps/engine/engine-data -name *.java -path */config/*)",
+      "Bash(\"i:/apache-maven-3.9.6/bin/mvn.cmd\" compile:*)"
     ]
   }
 }

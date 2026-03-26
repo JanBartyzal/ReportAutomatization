@@ -94,10 +94,17 @@ public class AdminController {
 
     @PostMapping("/api-keys")
     @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
-    public ResponseEntity<ApiKeyCreatedResponse> createApiKey(@RequestBody CreateApiKeyRequest request) {
-        // Get user from security context (would come from JWT)
-        String createdBy = "system";
-        ApiKeyCreatedResponse response = apiKeyService.createApiKey(request, createdBy);
+    public ResponseEntity<ApiKeyCreatedResponse> createApiKey(
+            @RequestBody CreateApiKeyRequest request,
+            @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId,
+            @RequestHeader(value = "X-Org-Id", required = false) String orgId) {
+        // Set orgId from header if not provided in request body
+        if (request.getOrgId() == null && orgId != null && !orgId.isBlank()) {
+            try {
+                request.setOrgId(UUID.fromString(orgId));
+            } catch (IllegalArgumentException ignored) {}
+        }
+        ApiKeyCreatedResponse response = apiKeyService.createApiKey(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

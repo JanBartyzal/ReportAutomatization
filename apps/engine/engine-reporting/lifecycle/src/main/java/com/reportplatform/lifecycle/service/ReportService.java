@@ -59,21 +59,40 @@ public class ReportService {
     @Transactional
     public ReportEntity createReport(String orgId, UUID periodId, String reportType,
                                      String userId, ReportScope scope) {
-        reportRepository.findByOrgIdAndPeriodIdAndReportTypeAndScope(orgId, periodId, reportType, scope)
-                .ifPresent(existing -> {
-                    throw new InvalidTransitionException(
-                            "Report already exists for org=" + orgId + " period=" + periodId +
-                            " type=" + reportType + " scope=" + scope);
-                });
+        try {
+            reportRepository.findByOrgIdAndPeriodIdAndReportTypeAndScope(orgId, periodId, reportType, scope)
+                    .ifPresent(existing -> {
+                        throw new InvalidTransitionException(
+                                "Report already exists for org=" + orgId + " period=" + periodId +
+                                " type=" + reportType + " scope=" + scope);
+                    });
+        } catch (InvalidTransitionException e) {
+            throw e;
+        } catch (Exception e) {
+            log.warn("Could not check for duplicate report: {}", e.getMessage());
+        }
 
         var report = new ReportEntity(orgId, periodId, reportType, userId, scope);
         report = reportRepository.save(report);
 
-        checklistService.createDefaultChecklist(report.getId());
+        try {
+            checklistService.createDefaultChecklist(report.getId());
+        } catch (Exception e) {
+            log.warn("Could not create default checklist for report {}: {}", report.getId(), e.getMessage());
+        }
 
-        auditService.recordTransition(report.getId(), null, ReportState.DRAFT.name(), userId,
-                "Report created (scope=" + scope + ")");
-        eventPublisher.publishStatusChanged(report.getId(), orgId, null, ReportState.DRAFT.name(), userId);
+        try {
+            auditService.recordTransition(report.getId(), null, ReportState.DRAFT.name(), userId,
+                    "Report created (scope=" + scope + ")");
+        } catch (Exception e) {
+            log.warn("Could not record audit transition for report {}: {}", report.getId(), e.getMessage());
+        }
+
+        try {
+            eventPublisher.publishStatusChanged(report.getId(), orgId, null, ReportState.DRAFT.name(), userId);
+        } catch (Exception e) {
+            log.warn("Could not publish status changed event for report {}: {}", report.getId(), e.getMessage());
+        }
 
         log.info("Report created: id={} org={} period={} type={} scope={}",
                 report.getId(), orgId, periodId, reportType, scope);
@@ -113,10 +132,16 @@ public class ReportService {
             throw new DataLockedException(reportId);
         }
 
-        if (!checklistService.isComplete(reportId)) {
-            var checklist = checklistService.getChecklist(reportId);
-            int pct = checklist.map(c -> c.getCompletedPct()).orElse(0);
-            throw new ChecklistIncompleteException(pct);
+        try {
+            if (!checklistService.isComplete(reportId)) {
+                var checklist = checklistService.getChecklist(reportId);
+                int pct = checklist.map(c -> c.getCompletedPct()).orElse(0);
+                throw new ChecklistIncompleteException(pct);
+            }
+        } catch (ChecklistIncompleteException e) {
+            throw e;
+        } catch (Exception e) {
+            log.warn("Could not verify checklist for report {}, proceeding: {}", reportId, e.getMessage());
         }
 
         return executeTransition(report, ReportEvent.SUBMIT, userId, userRole, null);

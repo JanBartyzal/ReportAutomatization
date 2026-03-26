@@ -1,5 +1,6 @@
 package com.reportplatform.form.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.reportplatform.form.model.FormEntity;
 
 import java.time.Instant;
@@ -19,9 +20,17 @@ public record FormDto(
         String createdBy,
         Instant createdAt,
         Instant updatedAt,
-        Integer latestVersion,
+        @JsonProperty("version") Integer latestVersion,
         List<FormFieldDefinition> fields
 ) {
+    /**
+     * Alias for title — some clients use "name" instead of "title".
+     */
+    @JsonProperty("name")
+    public String name() {
+        return title;
+    }
+
     public static FormDto from(FormEntity entity, Integer latestVersion, List<FormFieldDefinition> fields) {
         return new FormDto(
                 entity.getId(),

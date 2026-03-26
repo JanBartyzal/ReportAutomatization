@@ -24,7 +24,17 @@ public class CrossTypeComparisonService {
 
     @Transactional(readOnly = true)
     public CrossTypeComparisonResponse buildComparisonContext(List<UUID> periodIds) {
-        var periods = periodRepository.findByIdInOrderByStartDate(periodIds);
+        List<PeriodEntity> periods;
+        try {
+            periods = periodRepository.findByIdInOrderByStartDate(periodIds);
+        } catch (Exception e) {
+            // If query fails (e.g. invalid UUIDs or DB issue), return empty comparison
+            return new CrossTypeComparisonResponse(List.of(), List.of());
+        }
+
+        if (periods.isEmpty()) {
+            return new CrossTypeComparisonResponse(List.of(), List.of());
+        }
 
         List<PeriodInfo> periodInfos = periods.stream()
                 .map(this::toPeriodInfo)

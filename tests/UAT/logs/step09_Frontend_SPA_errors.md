@@ -1,25 +1,8 @@
 # UAT Errors - step09_Frontend_SPA
 
-Timestamp: 2026-03-23T12:51:13
+Timestamp: 2026-03-26T18:32:04
 
-[FAIL] Expected 200, got 500 for POST auth-refresh
-## Unexpected Status
-- Endpoint: `POST /api/auth/refresh`
-- Expected: 200
-- Got: 500
-- Body: `<binary 138 bytes, content-type=application/problem+json>`
-
-## Missing Feature (informational)
-- Endpoint: `POST /api/auth/refresh`
-- Description: Token refresh not implemented
-
-[FAIL] Expected 200, got 500 for GET sse-stream
-## Unexpected Status
+[FAIL] Connection error: HTTPConnectionPool(host='localhost', port=8105): Read timed out.
+## Connection Error
 - Endpoint: `GET /api/notifications/stream`
-- Expected: 200
-- Got: 500
-- Body: `<binary 139 bytes, content-type=application/problem+json>`
-
-## Missing Feature (informational)
-- Endpoint: `GET /api/notifications/stream`
-- Description: SSE not implemented
+- Error: HTTPConnectionPool(host='localhost', port=8105): Read timed out.

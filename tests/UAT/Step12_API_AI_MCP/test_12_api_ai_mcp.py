@@ -51,22 +51,17 @@ def main() -> int:
     # ---------------------------------------------------------------
     # 2. API key auth — create key, then call /auth/me with it
     # ---------------------------------------------------------------
-    api_key = state.get("api_key")
-    if not api_key:
-        status, body = session.call("POST", "/api/admin/api-keys",
-                                    body={"name": "UAT API Key"},
-                                    expected_status=201,
-                                    tag="create-api-key")
-        if status in (404, 500):
-            session.missing_feature("POST /api/admin/api-keys", "Endpoint not implemented yet")
-        elif status == 201 and isinstance(body, dict):
-            api_key = body.get("key") or body.get("api_key") or body.get("token")
-            session.assert_true(api_key is not None, "API key returned on create")
-        elif status == 200 and isinstance(body, dict):
-            # Some implementations return 200
-            api_key = body.get("key") or body.get("api_key") or body.get("token")
-    else:
-        session._log("[INFO] Reusing API key from state")
+    # Always create a fresh API key (stale keys from previous runs may be invalid after DB reset)
+    api_key = None
+    status, body = session.call("POST", "/api/admin/api-keys",
+                                body={"name": "UAT API Key"},
+                                expected_status=201,
+                                tag="create-api-key")
+    if status in (404, 500):
+        session.missing_feature("POST /api/admin/api-keys", "Endpoint not implemented yet")
+    elif status in (200, 201) and isinstance(body, dict):
+        api_key = body.get("key") or body.get("api_key") or body.get("token")
+        session.assert_true(api_key is not None, "API key returned on create")
 
     if api_key:
         # Call /auth/me using API key instead of bearer token
@@ -80,24 +75,32 @@ def main() -> int:
         session.token = saved_token
 
     # ---------------------------------------------------------------
-    # 3. AI semantic analysis — no endpoint on engine-data
+    # 3. AI semantic analysis — POST /api/query/ai/analyze (engine-data)
     # ---------------------------------------------------------------
-    session.missing_feature("POST /api/query/ai/analyze", "AI semantic analysis endpoint not available on engine-data")
+    status, body = data_session.call("POST", "/api/query/ai/analyze",
+                                     body={"query": "analyze costs", "text": "Total cost is 1M"},
+                                     expected_status=200, tag="ai-analyze")
+    if status in (403, 404, 500):
+        data_session.missing_feature("POST /api/query/ai/analyze",
+                                     "AI semantic analysis endpoint not available on engine-data")
 
     # ---------------------------------------------------------------
-    # 4. AI cost control — no endpoint on engine-data
+    # 4. AI cost control — GET /api/query/ai/quota (engine-data)
     # ---------------------------------------------------------------
-    session.missing_feature("GET /api/query/ai/quota", "AI cost control / quota endpoint not available on engine-data")
+    status, body = data_session.call("GET", "/api/query/ai/quota",
+                                     expected_status=200, tag="ai-quota")
+    if status in (403, 404, 500):
+        data_session.missing_feature("GET /api/query/ai/quota",
+                                     "AI cost control / quota endpoint not available on engine-data")
 
     # ---------------------------------------------------------------
-    # 5. MCP server health — no endpoint on engine-data
+    # 5. MCP server health — GET /api/query/mcp/health (engine-data)
     # ---------------------------------------------------------------
-    session.missing_feature("GET /api/query/mcp/health", "MCP server health endpoint not available on engine-data")
-
-    # ---------------------------------------------------------------
-    # 6. AI without auth — skipped (no AI endpoint available)
-    # ---------------------------------------------------------------
-    session._log("[SKIP] AI no-auth test skipped — AI endpoint not available")
+    status, body = data_session.call("GET", "/api/query/mcp/health",
+                                     expected_status=200, tag="mcp-health")
+    if status in (403, 404, 500):
+        data_session.missing_feature("GET /api/query/mcp/health",
+                                     "MCP server health endpoint not available on engine-data")
 
     # ---------------------------------------------------------------
     # Save state

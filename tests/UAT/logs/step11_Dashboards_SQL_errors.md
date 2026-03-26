@@ -1,29 +1,26 @@
 # UAT Errors - step11_Dashboards_SQL
 
-Timestamp: 2026-03-23T12:51:13
+Timestamp: 2026-03-26T18:32:05
 
-[FAIL] Expected 201, got 403 for POST create-dashboard
+[FAIL] Created dashboard 39f3b62a-08f8-42ed-845e-2fe5c2beca6f found in list
+## Assertion Failed
+- Message: Created dashboard 39f3b62a-08f8-42ed-845e-2fe5c2beca6f found in list
+
+[FAIL] Viewer can see public dashboard
+## Assertion Failed
+- Message: Viewer can see public dashboard
+
+[FAIL] Dashboard data contains widget results
+## Assertion Failed
+- Message: Dashboard data contains widget results
+
+[FAIL] Dashboard data includes 5 project rows
+## Assertion Failed
+- Message: Dashboard data includes 5 project rows
+
+[FAIL] Expected 200, got 400 for POST dashboard-data-query
 ## Unexpected Status
-- Endpoint: `POST /api/dashboards`
-- Expected: 201
-- Got: 403
-- Body: `<binary 0 bytes, content-type=>`
-
-## Missing Feature (informational)
-- Endpoint: `POST /api/dashboards`
-- Description: Endpoint not implemented yet or auth headers not forwarded to engine-data
-
-[FAIL] Expected 200, got 403 for GET list-dashboards
-## Unexpected Status
-- Endpoint: `GET /api/dashboards`
+- Endpoint: `POST /api/dashboards/39f3b62a-08f8-42ed-845e-2fe5c2beca6f/data`
 - Expected: 200
-- Got: 403
-- Body: `<binary 0 bytes, content-type=>`
-
-## Missing Feature (informational)
-- Endpoint: `GET /api/dashboards`
-- Description: Endpoint not implemented yet or auth headers not forwarded to engine-data
-
-## Missing Feature (informational)
-- Endpoint: `POST /api/dashboards/{id}/data`
-- Description: No dashboard_id available to test data query
+- Got: 400
+- Body: `<binary 304 bytes, content-type=application/problem+json>`

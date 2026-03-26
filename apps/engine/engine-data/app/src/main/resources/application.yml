@@ -111,6 +111,8 @@ logging:
     org.springframework.web: INFO
     org.hibernate: WARN
     org.flywaydb: INFO
+    io.opentelemetry.exporter: ${OTEL_LOG_LEVEL:OFF}
+    io.opentelemetry.sdk: ${OTEL_LOG_LEVEL:WARN}
 
 springdoc:
   api-docs:

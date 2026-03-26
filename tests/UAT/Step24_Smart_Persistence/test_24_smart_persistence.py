@@ -65,7 +65,7 @@ def main() -> int:
     # ---------------------------------------------------------------
     # 3. Get schema proposal — GET /api/admin/promotions/candidates/{id}/schema
     # ---------------------------------------------------------------
-    cid = candidate_id or "candidate-1"
+    cid = candidate_id or "00000000-0000-0000-0000-000000000001"
     status, body = session.call("GET", f"/api/admin/promotions/candidates/{cid}/schema",
                                 expected_status=200,
                                 tag="get-schema-proposal")

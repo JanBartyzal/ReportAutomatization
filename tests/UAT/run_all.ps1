@@ -15,6 +15,11 @@ if (-not (Test-Path $logsDir)) {
     New-Item -ItemType Directory -Path $logsDir | Out-Null
 }
 
+if ( (Test-Path $logsDir)) {
+    Get-ChildItem -Path $logsDir -File | Remove-Item -Force
+}
+
+
 Write-Host "======================================================" -ForegroundColor Cyan
 Write-Host "  RA UAT Master Runner" -ForegroundColor Cyan
 Write-Host "  Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Cyan

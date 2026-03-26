@@ -1,9 +1,9 @@
 {
   "tokens": {
     "admin1": "dev-bypass",
-    "user1": "XkOx8xDVqqovwldxII6VH7h142qG5eoBMj2blkN82vk",
-    "admin2": "Qcv42PsuZFnqwKbZ9eNTOsBkAs6KtJ8cgUYlTW0rE4U",
-    "user2": "IwMCIYy4K_Kit93EwQt-KZkGpN4n1E32FfhDxsa4p_o"
+    "user1": "-sZoY4mLZlL1fqYtG7yFuBYTgCAV_jGgoAoWGDkUS5U",
+    "admin2": "YxY-DdZiTfghuLyPgCWYXIb1P1tTXv99qIao9JbcWZ4",
+    "user2": "sHAxBlqEBiD3C8YnUtQOuO9-01cS8bptKuqoXJ9lV7s"
   },
   "org_ids": {
     "HOLD-001": "a0000000-0000-0000-0000-000000000010",
@@ -16,36 +16,52 @@
   "plan_ids": {},
   "api_keys": {
     "admin1": {
-      "key": "OoikXUAs2yyDYDG49KqhwE8wJs5DEBsSvV_Z40ao8MI",
+      "key": "FDga9P8Kvxc-j1NwKYjXAQA4soL-EbVjuupAxajdnOg",
       "role": "ADMIN"
     },
     "user1": {
-      "key": "XkOx8xDVqqovwldxII6VH7h142qG5eoBMj2blkN82vk",
+      "key": "-sZoY4mLZlL1fqYtG7yFuBYTgCAV_jGgoAoWGDkUS5U",
       "role": "EDITOR"
     },
     "admin2": {
-      "key": "Qcv42PsuZFnqwKbZ9eNTOsBkAs6KtJ8cgUYlTW0rE4U",
+      "key": "YxY-DdZiTfghuLyPgCWYXIb1P1tTXv99qIao9JbcWZ4",
       "role": "ADMIN"
     },
     "user2": {
-      "key": "IwMCIYy4K_Kit93EwQt-KZkGpN4n1E32FfhDxsa4p_o",
+      "key": "sHAxBlqEBiD3C8YnUtQOuO9-01cS8bptKuqoXJ9lV7s",
       "role": "VIEWER"
     }
   },
   "auth_mode": "api_key",
-  "file_ids": {
-    "pptx": "3d919a79-540a-44dc-a5ef-af10abc59420",
-    "xlsx": "480fbe07-538d-4b5d-aa76-10dea0064cb1"
-  },
   "dev_user_id": "6bbc3213-00ac-4d30-bf27-7477b207c515",
-  "dev_org_id": "a0000000-0000-0000-0000-000000000001",
+  "file_ids": {
+    "pptx": "8bf86294-a852-4c83-9afd-f835163d7479",
+    "xlsx": "8b8f0e42-8c36-49bd-99ef-316b57aa031e"
+  },
   "pptx_extraction": {
     "slide_count": 1,
     "main_table_rows": 14,
     "total_table_rows": 3,
     "net_saving_sum": -50.7
   },
-  "batch_ids": {
-    "q1_2026": "b926a4b0-7a2a-422f-abc2-9fceed1ebb99"
-  }
+  "dashboard_id": "39f3b62a-08f8-42ed-845e-2fe5c2beca6f",
+  "widget_ids": [
+    "199e0a6f-c9a3-4aff-b7ef-771a517829d8",
+    "c574d2c9-2dba-46fd-ae77-ae780fae64b8",
+    "6672e67e-124e-422d-9f5f-2775dd9ed5e4"
+  ],
+  "api_key": "nkA7y2sble5lpQHC28-i4K_9FFgmmmeph21qCZNizzE",
+  "slide_metadata_id": "b47e1efd-7153-4a19-b8a4-fe213308933e",
+  "report_ids": {
+    "report_id": "2ebbe278-07ad-488a-966b-0fea5f1cec23",
+    "report_id2": "788e0c1a-70dc-4b41-9735-e7ea48dda90d"
+  },
+  "form_ids": {
+    "form_id": "e9db3eee-7e66-4c45-811f-f426c6c76661",
+    "submission_id": "7a614aff-7053-4e21-97c1-fc4726f779f3"
+  },
+  "period_ids": {
+    "period_id": "bc33a1c5-71bb-4d91-8fe6-2bf20d5525b0"
+  },
+  "local_form_id": "dcb12c3d-00c0-4cad-aa84-84a1376e6ff8"
 }

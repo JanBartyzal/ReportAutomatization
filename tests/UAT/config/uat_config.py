@@ -32,7 +32,7 @@ SERVICES = {
     "engine_orchestrator": "http://localhost:8083",   # workflow, saga
     "engine_data":         "http://localhost:8100",   # sinks, query, dashboard, search, template
     "engine_reporting":    "http://localhost:8105",   # lifecycle, period, form, pptx-template, notification
-    "engine_integrations": "http://localhost:8107",   # servicenow
+    "engine_integrations": "http://localhost:8106",   # servicenow
     "processor_atomizers": "http://localhost:8088",   # pptx, xls, pdf, csv, ai, cleanup
     "processor_generators":"http://localhost:8111",   # pptx gen, xls gen, mcp
     "nginx":               "http://localhost",        # API gateway (port 80)

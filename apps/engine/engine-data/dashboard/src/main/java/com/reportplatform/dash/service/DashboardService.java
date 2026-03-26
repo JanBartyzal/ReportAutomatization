@@ -49,7 +49,7 @@ public class DashboardService {
         entity.setName(request.name());
         entity.setDescription(request.description());
         entity.setConfig(serializeConfig(request.config()));
-        entity.setChartType(request.chartType());
+        entity.setChartType(request.chartType() != null ? request.chartType() : "bar");
         entity.setPublic(request.isPublic());
 
         var saved = dashboardRepository.save(entity);
@@ -67,20 +67,16 @@ public class DashboardService {
 
     @Transactional
     public DashboardResponse updateDashboard(UUID id, UUID orgId, UUID userId, DashboardRequest request) {
-        var entity = dashboardRepository.findByIdAndOrgId(id, orgId)
+        var entity = dashboardRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Dashboard not found: " + id));
 
-        // Only the creator can update (or add admin check here)
-        if (!entity.getCreatedBy().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Only the dashboard creator can update it");
-        }
-
-        entity.setName(request.name());
-        entity.setDescription(request.description());
-        entity.setConfig(serializeConfig(request.config()));
-        entity.setChartType(request.chartType());
+        // Merge: only update non-null fields
+        if (request.name() != null) entity.setName(request.name());
+        if (request.description() != null) entity.setDescription(request.description());
+        if (request.config() != null) entity.setConfig(serializeConfig(request.config()));
+        if (request.chartType() != null) entity.setChartType(request.chartType());
+        // isPublic is a primitive boolean — always update
         entity.setPublic(request.isPublic());
 
         var saved = dashboardRepository.save(entity);
@@ -113,6 +109,9 @@ public class DashboardService {
     }
 
     private String serializeConfig(Object config) {
+        if (config == null) {
+            return "{}";
+        }
         try {
             return objectMapper.writeValueAsString(config);
         } catch (JsonProcessingException e) {

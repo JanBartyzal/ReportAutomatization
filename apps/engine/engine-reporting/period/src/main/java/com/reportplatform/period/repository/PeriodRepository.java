@@ -17,6 +17,8 @@ import java.util.UUID;
 @Repository
 public interface PeriodRepository extends JpaRepository<PeriodEntity, UUID> {
 
+        boolean existsByPeriodCode(String periodCode);
+
         Page<PeriodEntity> findByHoldingId(String holdingId, Pageable pageable);
 
         Page<PeriodEntity> findByStatus(PeriodState status, Pageable pageable);

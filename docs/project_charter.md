@@ -1,6 +1,6 @@
 # Project Charter: PPTX Analyzer & Automation Platform
 
-**Verze:** 5.0 – Consolidated Topology (P8)
+**Verze:** 5.1 – Extended REST API Surface (P8+)
 **Datum:** Březen 2026
 **Architektura:** Event-Driven Microservices + Custom Orchestrator (engine-orchestrator)
 **Deployment Units:** 10 consolidated services (router, engine-core, engine-ingestor, engine-orchestrator, engine-data, engine-reporting, engine-integrations, processor-atomizers, processor-generators, frontend)
@@ -448,12 +448,17 @@ Business kontext: Oddělený read model optimalizovaný pro rychlé čtení. Fro
 ### FS12 – API Rozhraní & AI Integration (MCP)
 **Priorita: STŘEDNÍ**
 
-**Pokrývající microservices:** processor-atomizers:ai, processor-generators:mcp
+**Pokrývající microservices:** processor-atomizers:ai, processor-generators:mcp, engine-data:query (AI/MCP proxy)
 
 - API přístup přes API klíč (Bearer token v `Authorization` headeru).
 - **MCP Server (processor-generators:mcp):** Integrace AI agentů. Server dědí OAuth token uživatele přes On-Behalf-Of flow – AI nikdy nemá globální přístup.
 - **Security constraint:** MCP Server vynucuje RLS – každý AI dotaz je scoped na `org_id` uživatele.
 - **Cost Control:** Měsíční token quota na úrovni uživatele i firmy. Překročení → `429`. Spotřeba viditelná v Admin UI.
+- **AI/MCP REST Proxy (engine-data:query):** Frontend-facing REST endpointy na engine-data:query, které fungují jako proxy k interním AI a MCP službám:
+  - `POST /api/query/ai/analyze` – AI sémantická analýza textu (proxy na processor-atomizers:ai přes Dapr).
+  - `GET /api/query/ai/quota` – Stav spotřeby AI tokenů a zbývající kvóty pro organizaci.
+  - `GET /api/query/mcp/health` – Health check MCP serveru (proxy na processor-generators:mcp přes Dapr).
+  - Tyto endpointy jsou přístupné přes API Gateway (router → engine-data:query) a dědí autorizační kontext uživatele.
 
 ---
 
@@ -493,6 +498,13 @@ Business kontext: Oddělený read model optimalizovaný pro rychlé čtení. Fro
 - **Learning:** Systém si pamatuje předchozí mapování a navrhuje je automaticky pro nové soubory.
 - **engine-orchestrator integrace:** engine-data:template je voláno z engine-orchestrator workflow (gRPC) **PŘED** zápisem do DB.
 - **Excel import do formuláře** – nové volání, už nejen z orchestrátoru. engine-data:template dostane nový endpoint `POST /map/excel-to-form`.
+- **Schema Mapping REST API (engine-data:template):** Původně interní Dapr gRPC funkce template mappingu je nově vystavena i jako REST API přes API Gateway pro přímý přístup z frontendu:
+  - `GET/POST /api/query/templates/mappings` – CRUD operace nad mapovacími šablonami.
+  - `POST /api/query/templates/mappings/suggest` – Automatický návrh mapování na základě hlaviček sloupců.
+  - `POST /api/query/templates/mappings/excel-to-form` – Inference mapování z Excel hlaviček na pole formuláře (FS19).
+  - `GET/POST /api/query/templates/slide-metadata` – CRUD pro metadata slidů (popisky, kategorizace).
+  - `POST /api/query/templates/slide-metadata/validate` – Validace slide metadat proti šabloně.
+  - `GET /api/query/templates/slide-metadata/match` – Automatické párování slidů se šablonami na základě obsahu.
 
 ---
 
@@ -823,6 +835,8 @@ Priorita: STŘEDNÍ Pokrývající microservices: engine-core:admin, engine-data
 - **OpenTelemetry tracing:** E2E trace přes celý stack: Frontend → API Gateway → engine-orchestrator → Atomizer → Sink. Jaeger/Tempo jako trace backend.
 - **Centralizované logy:** Loki nebo ELK stack. Structured JSON logging ze všech služeb.
 - **Metriky:** Prometheus scrape z každé služby. Grafana dashboardy: chybovost, engine-orchestrator workflow queue, Atomizer latence, DB connection pool.
+- **Health Metrics Aggregation (engine-orchestrator):** Vlastní business-level health metrics endpoint na orchestrátoru:
+  - `GET /api/v1/health-metrics` – Agregované metriky o stavu orchestrace (počet běžících workflows, průměrná latence, error rate, queue depth). Volán z engine-core:admin přes Dapr service invocation pro zobrazení v Admin Health Dashboard.
 - **Local Dev:** `tilt up` spustí kompletní topologii v lokálním K8s (Kind) nebo Docker Compose s hot-reloadem pro React a Python služby.
 
 ---
@@ -924,6 +938,9 @@ Priorita: STŘEDNÍ Pokrývající microservices: engine-core:admin, engine-data
 | router | engine-data:query | REST | Sync | Frontend-facing read API |
 | router | engine-data:dashboard | REST | Sync | Frontend-facing dashboard API |
 | router | engine-core:admin | REST | Sync | Frontend-facing admin API |
+| router | engine-data:query (AI/MCP proxy) | REST | Sync | Frontend-facing AI analýza, quota, MCP health (FS12) |
+| router | engine-data:template (Schema Mapping) | REST | Sync | Frontend-facing mapovací šablony a slide metadata (FS15) |
+| engine-core:admin | engine-orchestrator | Dapr gRPC | Sync | Health metrics agregace (FS99) |
 | engine-ingestor | engine-ingestor:scanner | Dapr gRPC | Sync | Interní: AV scan před uložením |
 | engine-ingestor | engine-orchestrator | Dapr Pub/Sub | Async | Event `file-uploaded` → trigger workflow |
 | engine-orchestrator | processor-atomizers | Dapr gRPC | Sync | Interní: orchestrátor volá Atomizery |
@@ -959,4 +976,4 @@ Priorita: STŘEDNÍ Pokrývající microservices: engine-core:admin, engine-data
 
 ---
 
-*PPTX Analyzer & Automation Platform – Project Charter v4.0 | Únor 2026 | Interní dokument*
+*PPTX Analyzer & Automation Platform – Project Charter v5.1 | Březen 2026 | Interní dokument*

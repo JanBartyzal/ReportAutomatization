@@ -118,6 +118,8 @@ logging:
     com.reportplatform.snow: ${LOG_LEVEL_SNOW:INFO}
     org.springframework.security: WARN
     io.dapr: INFO
+    io.opentelemetry.exporter: ${OTEL_LOG_LEVEL:OFF}
+    io.opentelemetry.sdk: ${OTEL_LOG_LEVEL:WARN}
 
 springdoc:
   api-docs:

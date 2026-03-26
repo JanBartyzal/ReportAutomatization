@@ -89,6 +89,8 @@ logging:
     com.reportplatform.ing: ${LOG_LEVEL_ING:INFO}
     com.reportplatform.scan: ${LOG_LEVEL_SCAN:INFO}
     com.reportplatform.engineingestor: ${LOG_LEVEL_CORE:INFO}
+    io.opentelemetry.exporter: ${OTEL_LOG_LEVEL:OFF}
+    io.opentelemetry.sdk: ${OTEL_LOG_LEVEL:WARN}
 
 springdoc:
   api-docs:

@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM eclipse-temurin:25-jdk AS builder
+FROM eclipse-temurin:21-jdk AS builder
 
 # Install Maven (binary) and protobuf compiler
 ARG MAVEN_VERSION=3.9.6
@@ -34,7 +34,7 @@ RUN java -Djarmode=layertools \
     --destination /extracted
 
 # Stage 2: Runtime
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:21-jre
 
 # Download and install OpenTelemetry Java agent
 RUN apt-get update && apt-get install -y --no-install-recommends wget && \
@@ -67,7 +67,8 @@ ENV JAVA_OPTS="-XX:+UseZGC -XX:+ZGenerational -XX:MaxRAMPercentage=75.0 -XX:+Exi
     -javaagent:/app/agent/opentelemetry-javaagent.jar \
     -Dotel.service.name=engine-orchestration \
     -Dotel.exporter.otlp.endpoint=http://otel-collector:4317 \
-    -Dotel.resource.attributes=service.namespace=reportplatform,deployment.environment=local"
+    -Dotel.resource.attributes=service.namespace=reportplatform,deployment.environment=local \
+    -Dotel.javaagent.logging=application"
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]
 

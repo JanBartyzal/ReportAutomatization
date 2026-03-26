@@ -187,46 +187,153 @@ public class AuthController {
         }
 
         String userOid = auth.getPrincipal().toString();
-        ValidatedClaims claims = null;
-        if (auth.getCredentials() instanceof ValidatedClaims vc) {
-            claims = vc;
+
+        // If the principal looks like an API key reference, return API key context
+        if (userOid.startsWith("apikey:")) {
+            try {
+                String apiKeyIdStr = userOid.substring("apikey:".length());
+                UUID apiKeyId = UUID.fromString(apiKeyIdStr);
+                var apiKeyOpt = apiKeyService.findById(apiKeyId);
+                if (apiKeyOpt.isPresent()) {
+                    var apiKey = apiKeyOpt.get();
+                    var org = apiKey.getOrganization();
+                    String orgId = org != null ? org.getId().toString() : null;
+                    String orgCode = org != null ? org.getCode() : null;
+                    String orgName = org != null ? org.getName() : null;
+                    List<String> roles = List.of(apiKey.getRole().name());
+                    var orgRoles = org != null
+                            ? List.of(new UserContextResponse.OrgRole(orgId, orgCode, orgName, roles))
+                            : List.<UserContextResponse.OrgRole>of();
+                    String keyEmail = apiKey.getKeyName() != null
+                            ? apiKey.getKeyName().replaceAll("\\s+", ".").toLowerCase() + "@apikey.local"
+                            : "apikey@system.local";
+                    return ResponseEntity.ok(new UserContextResponse(
+                            userOid,
+                            apiKey.getKeyName() != null ? apiKey.getKeyName() : "API Key User",
+                            keyEmail,
+                            orgRoles,
+                            orgId
+                    ));
+                }
+            } catch (Exception e) {
+                log.warn("Failed to resolve API key context for {}: {}", userOid, e.getMessage());
+            }
+            return ResponseEntity.ok(new UserContextResponse(
+                    userOid, "API Key User", null, List.of(), null));
         }
 
-        List<UserRoleEntity> allRoles = rbacService.getAllUserRoles(userOid);
+        try {
+            ValidatedClaims claims = null;
+            if (auth.getCredentials() instanceof ValidatedClaims vc) {
+                claims = vc;
+            }
 
-        // Group by organization
-        Map<UUID, List<UserRoleEntity>> byOrg = allRoles.stream()
-                .collect(Collectors.groupingBy(ur -> ur.getOrganization().getId()));
+            List<UserRoleEntity> allRoles = rbacService.getAllUserRoles(userOid);
 
-        List<UserContextResponse.OrgRole> orgRoles = byOrg.entrySet().stream()
-                .map(entry -> {
-                    var firstRole = entry.getValue().getFirst();
-                    var org = firstRole.getOrganization();
-                    List<String> roles = entry.getValue().stream()
-                            .map(ur -> ur.getRole().name())
-                            .toList();
-                    return new UserContextResponse.OrgRole(
-                            org.getId().toString(),
-                            org.getCode(),
-                            org.getName(),
-                            roles
-                    );
-                })
-                .toList();
+            // Group by organization
+            Map<UUID, List<UserRoleEntity>> byOrg = allRoles.stream()
+                    .collect(Collectors.groupingBy(ur -> ur.getOrganization().getId()));
 
-        String activeOrgId = allRoles.stream()
-                .filter(UserRoleEntity::isActiveOrg)
-                .findFirst()
-                .map(ur -> ur.getOrganization().getId().toString())
-                .orElse(null);
+            List<UserContextResponse.OrgRole> orgRoles = byOrg.entrySet().stream()
+                    .map(entry -> {
+                        var firstRole = entry.getValue().getFirst();
+                        var org = firstRole.getOrganization();
+                        List<String> roles = entry.getValue().stream()
+                                .map(ur -> ur.getRole().name())
+                                .toList();
+                        return new UserContextResponse.OrgRole(
+                                org.getId().toString(),
+                                org.getCode(),
+                                org.getName(),
+                                roles
+                        );
+                    })
+                    .toList();
 
-        return ResponseEntity.ok(new UserContextResponse(
-                userOid,
-                claims != null ? claims.displayName() : null,
-                claims != null ? claims.preferredUsername() : null,
-                orgRoles,
-                activeOrgId
-        ));
+            String activeOrgId = allRoles.stream()
+                    .filter(UserRoleEntity::isActiveOrg)
+                    .findFirst()
+                    .map(ur -> ur.getOrganization().getId().toString())
+                    .orElse(null);
+
+            return ResponseEntity.ok(new UserContextResponse(
+                    userOid,
+                    claims != null ? claims.displayName() : null,
+                    claims != null ? claims.preferredUsername() : null,
+                    orgRoles,
+                    activeOrgId
+            ));
+        } catch (Exception e) {
+            log.warn("Failed to get user context for {}: {}", userOid, e.getMessage());
+            // Fallback: try to look up the credentials as an API key
+            try {
+                Object creds = auth.getCredentials();
+                if (creds instanceof String rawToken) {
+                    var apiKeyOpt = apiKeyService.validateApiKey(rawToken);
+                    if (apiKeyOpt.isPresent()) {
+                        var apiKey = apiKeyOpt.get();
+                        String orgId = apiKey.getOrganization().getId().toString();
+                        String orgName = apiKey.getOrganization().getName();
+                        String orgCode = apiKey.getOrganization().getCode();
+                        List<String> roles = List.of(apiKey.getRole().name());
+                        return ResponseEntity.ok(new UserContextResponse(
+                                "apikey:" + apiKey.getId(),
+                                apiKey.getKeyName(),
+                                null,
+                                List.of(new UserContextResponse.OrgRole(orgId, orgCode, orgName, roles)),
+                                orgId
+                        ));
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("API key fallback also failed: {}", ex.getMessage());
+            }
+            // Return minimal context to avoid 500
+            return ResponseEntity.ok(new UserContextResponse(
+                    userOid, null, null, List.of(), null));
+        }
+    }
+
+    /**
+     * POST /api/auth/refresh - Refresh/revalidate token.
+     * In production, token refresh is handled by MSAL on the client side.
+     * This endpoint revalidates the current token and returns updated context.
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthVerifyResponse> refreshToken(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader,
+            @RequestBody(required = false) Map<String, String> body) {
+
+        // Extract token from body or header
+        String token = null;
+        if (body != null && body.containsKey("token")) {
+            token = body.get("token");
+        }
+        if (token == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        }
+
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new AuthVerifyResponse(null, null, null, Collections.emptyList(), false));
+        }
+
+        // In dev mode, just return success with current user info
+        if ("development".equalsIgnoreCase(authMode)) {
+            var activeOrgRole = userRoleRepository.findByUserOidAndActiveOrgTrue(devUserOid);
+            String orgId = activeOrgRole
+                    .map(ur -> ur.getOrganization().getId().toString())
+                    .orElse("");
+            List<String> devRoles = rbacService.getAllUserRoles(devUserOid).stream()
+                    .map(ur -> ur.getRole().name())
+                    .toList();
+            if (devRoles.isEmpty()) devRoles = List.of("HOLDING_ADMIN");
+
+            return ResponseEntity.ok(new AuthVerifyResponse(devUserOid, "dev", orgId, devRoles, true));
+        }
+
+        // Validate and return refreshed context
+        return verifyToken("Bearer " + token, null);
     }
 
     /**

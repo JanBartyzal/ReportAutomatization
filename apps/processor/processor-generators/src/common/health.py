@@ -1,9 +1,10 @@
-"""Health check endpoints for processor-generators."""
+"""Health check and metrics endpoints for processor-generators."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 from src.common.config import SERVICE_NAME
 
@@ -20,3 +21,9 @@ async def health() -> JSONResponse:
 async def readiness() -> JSONResponse:
     """Readiness probe."""
     return JSONResponse({"status": "ready", "service": SERVICE_NAME})
+
+
+@router.get("/metrics")
+async def metrics() -> Response:
+    """Prometheus metrics endpoint."""
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)

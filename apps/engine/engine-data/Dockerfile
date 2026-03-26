@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM eclipse-temurin:25-jdk AS build
+FROM eclipse-temurin:21-jdk AS build
 
 WORKDIR /workspace
 
@@ -47,7 +47,7 @@ COPY apps/engine/engine-data/app/src apps/engine/engine-data/app/src
 RUN cd apps/engine/engine-data && mvn package -DskipTests -B
 
 # Stage 2: Runtime
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:21-jre
 
 # Download OpenTelemetry Java agent
 RUN apt-get update && apt-get install -y --no-install-recommends wget && \
@@ -77,9 +77,9 @@ ENTRYPOINT ["java", \
     "-XX:+UseZGC", \
     "-XX:MaxRAMPercentage=75.0", \
     "-Djava.security.egd=file:/dev/./urandom", \
-    "--enable-preview", \
     "-javaagent:/app/agent/opentelemetry-javaagent.jar", \
     "-Dotel.service.name=engine-data", \
     "-Dotel.exporter.otlp.endpoint=http://otel-collector:4317", \
     "-Dotel.resource.attributes=service.namespace=reportplatform,deployment.environment=local", \
+    "-Dotel.javaagent.logging=application", \
     "-jar", "app.jar"]

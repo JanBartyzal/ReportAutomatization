@@ -1,14 +1,8 @@
 # UAT Errors - step20_Period_Management
 
-Timestamp: 2026-03-23T12:51:16
+Timestamp: 2026-03-26T18:32:14
 
-[FAIL] Expected 201, got 400 for POST create-period
-## Unexpected Status
-- Endpoint: `POST /api/periods`
-- Expected: 201
-- Got: 400
-- Body: `<binary 350 bytes, content-type=application/problem+json>`
-
-## Missing Feature (informational)
-- Endpoint: `POST /api/periods`
-- Description: Endpoint not implemented yet
+[FAIL] Expected 201, got 500 for POST clone-period
+## Missing Feature (skipped)
+- Endpoint: `GET /api/periods/compare`
+- Description: No second period_id available for comparison test

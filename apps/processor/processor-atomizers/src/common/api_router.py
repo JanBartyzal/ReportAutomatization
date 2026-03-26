@@ -250,6 +250,18 @@ async def extract_pptx(req: ExtractRequest) -> dict[str, Any]:
             logger.warning("Failed to extract slide %d: %s", idx, str(e))
             slides.append({"slide_index": idx, "error": str(e)})
 
+    # Check if any slide used metatable extraction
+    has_metatable = any(
+        s.get("extraction_method") in ("metatable_heuristic", "spatial_metadata")
+        or any(
+            t.get("extraction_method") in ("metatable_heuristic", "spatial_metadata")
+            for t in s.get("tables", [])
+            if isinstance(t, dict)
+        )
+        for s in slides
+        if isinstance(s, dict)
+    )
+
     return {
         "file_id": req.file_id,
         "total_slides": structure.total_slides,
@@ -257,6 +269,8 @@ async def extract_pptx(req: ExtractRequest) -> dict[str, Any]:
         "status": "COMPLETED",
         "template_used": template_used,
         "template_confidence": template_confidence,
+        "metatable_support": True,
+        "metatable_detected": has_metatable,
     }
 
 

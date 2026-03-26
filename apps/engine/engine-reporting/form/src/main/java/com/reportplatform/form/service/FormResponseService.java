@@ -71,8 +71,8 @@ public class FormResponseService {
         var form = formRepository.findById(formId)
                 .orElseThrow(() -> new FormNotFoundException(formId));
 
-        if (form.getStatus() != FormState.PUBLISHED) {
-            throw new FormNotPublishedException(formId);
+        if (form.getStatus() == FormState.CLOSED) {
+            throw new FormClosedException(formId);
         }
 
         var latestVersion = formVersionRepository.findTopByFormIdOrderByVersionNumberDesc(formId)

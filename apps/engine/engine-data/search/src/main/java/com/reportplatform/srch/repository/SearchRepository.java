@@ -39,8 +39,8 @@ public interface SearchRepository extends JpaRepository<SearchIndexEntity, UUID>
     @Query(value = """
             SELECT * FROM search_index
             WHERE org_id = :orgId
-            AND search_vector @@ plainto_tsquery('czech,english', :query)
-            ORDER BY ts_rank(search_vector, plainto_tsquery('czech,english', :query)) DESC
+            AND search_vector @@ plainto_tsquery('english', :query)
+            ORDER BY ts_rank(search_vector, plainto_tsquery('english', :query)) DESC
             """, nativeQuery = true)
     List<SearchIndexEntity> fullTextSearch(
             @Param("orgId") String orgId,
@@ -67,11 +67,11 @@ public interface SearchRepository extends JpaRepository<SearchIndexEntity, UUID>
             SELECT * FROM search_index
             WHERE org_id = :orgId
             AND (
-                search_vector @@ plainto_tsquery('czech,english', :query)
+                search_vector @@ plainto_tsquery('english', :query)
                 OR (embedding IS NOT NULL AND embedding <=> CAST(:embedding AS vector) < :threshold)
             )
             ORDER BY (
-                ts_rank(search_vector, plainto_tsquery('czech,english', :query)) +
+                ts_rank(search_vector, plainto_tsquery('english', :query)) +
                 (1.0 - (embedding <=> CAST(:embedding AS vector)))
             ) DESC
             """, nativeQuery = true)

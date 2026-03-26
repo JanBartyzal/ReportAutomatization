@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service("authApiKeyService")
 public class ApiKeyService {
@@ -62,6 +63,13 @@ public class ApiKeyService {
 
         log.warn("API key validation failed for prefix: {}", prefix);
         return Optional.empty();
+    }
+
+    /**
+     * Find an API key entity by its UUID.
+     */
+    public Optional<ApiKeyEntity> findById(UUID id) {
+        return apiKeyRepository.findById(id);
     }
 
     /**

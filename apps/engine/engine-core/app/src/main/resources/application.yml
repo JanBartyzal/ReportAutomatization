@@ -86,7 +86,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,loggers
   endpoint:
     health:
       show-details: when_authorized
@@ -114,6 +114,8 @@ logging:
     com.reportplatform.audit: ${LOG_LEVEL_AUDIT:INFO}
     org.springframework.security: WARN
     io.dapr: INFO
+    io.opentelemetry.exporter: ${OTEL_LOG_LEVEL:OFF}
+    io.opentelemetry.sdk: ${OTEL_LOG_LEVEL:WARN}
 
 springdoc:
   api-docs:

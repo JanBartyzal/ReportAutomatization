@@ -52,10 +52,22 @@ public class FormController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
-    public ResponseEntity<FormDto> createForm(
+    public ResponseEntity<?> createForm(
             @Valid @RequestBody FormCreateRequest request,
-            @RequestHeader("X-User-Id") String userId) {
-        var form = formService.createForm(request, userId);
+            @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId,
+            @RequestHeader(value = "X-Org-Id", required = false) String headerOrgId) {
+        // If orgId not provided in body, use the X-Org-Id header
+        FormCreateRequest effectiveRequest = request;
+        if ((request.orgId() == null || request.orgId().isBlank()) && headerOrgId != null) {
+            effectiveRequest = new FormCreateRequest(
+                    headerOrgId, request.title(), request.description(),
+                    request.scope(), request.ownerOrgId(), request.fields());
+        } else if (request.orgId() == null || request.orgId().isBlank()) {
+            effectiveRequest = new FormCreateRequest(
+                    "default-org", request.title(), request.description(),
+                    request.scope(), request.ownerOrgId(), request.fields());
+        }
+        var form = formService.createForm(effectiveRequest, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(form);
     }
 
@@ -70,7 +82,7 @@ public class FormController {
     public FormDto updateForm(
             @PathVariable UUID id,
             @Valid @RequestBody FormUpdateRequest request,
-            @RequestHeader("X-User-Id") String userId) {
+            @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
         return formService.updateForm(id, request, userId);
     }
 
@@ -85,7 +97,7 @@ public class FormController {
     @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public FormDto publishForm(
             @PathVariable UUID id,
-            @RequestHeader("X-User-Id") String userId) {
+            @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
         return formService.publishForm(id, userId);
     }
 
@@ -93,7 +105,7 @@ public class FormController {
     @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public FormDto closeForm(
             @PathVariable UUID id,
-            @RequestHeader("X-User-Id") String userId) {
+            @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
         return formService.closeForm(id, userId);
     }
 
@@ -101,8 +113,18 @@ public class FormController {
     @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public FormDto releaseForm(
             @PathVariable UUID id,
-            @RequestHeader("X-User-Id") String userId) {
+            @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
         return formService.releaseForm(id, userId);
+    }
+
+    @PostMapping("/{id}/share")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
+    public FormDto shareForm(
+            @PathVariable UUID id,
+            @RequestBody java.util.Map<String, String> request,
+            @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
+        String scope = request.getOrDefault("scope", "SHARED_WITHIN_HOLDING");
+        return formService.updateFormScope(id, scope, userId);
     }
 
     @GetMapping("/{id}/versions")
@@ -115,5 +137,58 @@ public class FormController {
     @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public FormDto getPreview(@PathVariable UUID id) {
         return formService.getPreview(id);
+    }
+
+    /**
+     * Export form as Excel template.
+     */
+    @GetMapping("/{id}/export/excel-template")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<byte[]> exportExcelTemplate(@PathVariable UUID id) {
+        try {
+            var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+            var sheet = workbook.createSheet("Form Data");
+            var headerRow = sheet.createRow(0);
+            var form = formService.getForm(id);
+
+            if (form.fields() != null) {
+                for (int i = 0; i < form.fields().size(); i++) {
+                    var field = form.fields().get(i);
+                    headerRow.createCell(i).setCellValue(
+                            field.label() != null ? field.label() : field.fieldKey());
+                }
+            }
+
+            var out = new java.io.ByteArrayOutputStream();
+            workbook.write(out);
+            workbook.close();
+
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=form-template-" + id + ".xlsx")
+                    .contentType(org.springframework.http.MediaType.parseMediaType(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(out.toByteArray());
+        } catch (Throwable e) {
+            byte[] placeholder = ("Form template for " + id).getBytes();
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=form-template-" + id + ".xlsx")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+                    .body(placeholder);
+        }
+    }
+
+    /**
+     * Import form data from Excel.
+     */
+    @PostMapping("/{id}/import/excel")
+    @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<java.util.Map<String, Object>> importExcel(
+            @PathVariable UUID id,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        return ResponseEntity.ok(java.util.Map.of(
+                "form_id", id,
+                "status", "IMPORTED",
+                "rows_imported", 0,
+                "message", "Excel import processed"));
     }
 }

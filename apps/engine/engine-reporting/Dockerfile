@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM eclipse-temurin:25-jdk AS builder
+FROM eclipse-temurin:21-jdk AS builder
 
 # Install Maven (binary) and protobuf compiler
 ARG MAVEN_VERSION=3.9.6
@@ -44,7 +44,7 @@ RUN java -Djarmode=layertools \
     --destination /extracted
 
 # Stage 2: Runtime
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:21-jre
 
 # Download and install OpenTelemetry Java agent
 RUN apt-get update && apt-get install -y --no-install-recommends wget && \
@@ -69,11 +69,12 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 # JVM flags with OTEL agent
-ENV JAVA_OPTS="--enable-preview -XX:+UseZGC -XX:MaxRAMPercentage=75.0 \
+ENV JAVA_OPTS="-XX:+UseZGC -XX:MaxRAMPercentage=75.0 \
     -javaagent:/app/agent/opentelemetry-javaagent.jar \
     -Dotel.service.name=engine-reporting \
     -Dotel.exporter.otlp.endpoint=http://otel-collector:4317 \
-    -Dotel.resource.attributes=service.namespace=reportplatform,deployment.environment=local"
+    -Dotel.resource.attributes=service.namespace=reportplatform,deployment.environment=local \
+    -Dotel.javaagent.logging=application"
 
 EXPOSE 8105
 

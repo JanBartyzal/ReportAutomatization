@@ -10,12 +10,11 @@ public record DashboardRequest(
 
         String description,
 
-        @NotNull(message = "Config is required")
         Object config,
 
-        @NotBlank(message = "Chart type is required")
         @Pattern(regexp = "bar|line|pie|heatmap|table", message = "Invalid chart type")
         String chartType,
 
+        @com.fasterxml.jackson.annotation.JsonProperty("is_public")
         boolean isPublic
 ) {}

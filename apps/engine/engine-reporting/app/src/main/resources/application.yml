@@ -108,6 +108,8 @@ logging:
     com.reportplatform.enginereporting: ${LOG_LEVEL:INFO}
     org.springframework.statemachine: WARN
     io.dapr: INFO
+    io.opentelemetry.exporter: ${OTEL_LOG_LEVEL:OFF}
+    io.opentelemetry.sdk: ${OTEL_LOG_LEVEL:WARN}
 
 # Period deadline configuration
 period:

@@ -93,7 +93,7 @@ def main() -> int:
     # ---------------------------------------------------------------
     if conn_id:
         status, body = integrations.call("POST", f"/api/admin/integrations/servicenow/{conn_id}/sync",
-                                         expected_status=200,
+                                         expected_status=202,
                                          tag="trigger-servicenow-sync")
         if status not in (200, 202):
             integrations.missing_feature(f"POST /api/admin/integrations/servicenow/{conn_id}/sync",
@@ -111,7 +111,7 @@ def main() -> int:
     if conn_id:
         status, body = integrations.call("POST", f"/api/admin/integrations/servicenow/{conn_id}/schedules",
                                          body=schedule_payload,
-                                         expected_status=200,
+                                         expected_status=201,
                                          tag="schedule-servicenow-sync")
         if status not in (200, 201):
             integrations.missing_feature(f"POST /api/admin/integrations/servicenow/{conn_id}/schedules",
@@ -130,7 +130,7 @@ def main() -> int:
     if conn_id:
         status, body = integrations.call("POST", f"/api/admin/integrations/servicenow/{conn_id}/distributions",
                                          body=distribution_payload,
-                                         expected_status=200,
+                                         expected_status=201,
                                          tag="setup-report-distribution")
         if status not in (200, 201):
             integrations.missing_feature(f"POST /api/admin/integrations/servicenow/{conn_id}/distributions",

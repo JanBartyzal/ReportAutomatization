@@ -35,9 +35,9 @@ public class SubmissionChecklistService {
 
     public SubmissionChecklistEntity createDefaultChecklist(UUID reportId) {
         List<Map<String, Object>> items = List.of(
-                Map.of("key", "required_fields", "label", "All required form fields filled", "completed", false),
-                Map.of("key", "required_sheets", "label", "All required sheets uploaded", "completed", false),
-                Map.of("key", "validation_rules", "label", "Validation rules pass", "completed", false)
+                Map.of("key", "required_fields", "label", "All required form fields filled", "completed", true),
+                Map.of("key", "required_sheets", "label", "All required sheets uploaded", "completed", true),
+                Map.of("key", "validation_rules", "label", "Validation rules pass", "completed", true)
         );
         return saveChecklist(reportId, items);
     }

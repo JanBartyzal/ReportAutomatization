@@ -85,12 +85,13 @@ public class FormService {
         var version = new FormVersionEntity(form.getId(), 1, Map.of(), userId);
         version = formVersionRepository.save(version);
 
-        // Save fields if provided
+        // Save fields if provided — normalize field definitions
         List<FormFieldDefinition> fieldDefs = request.fields() != null ? request.fields() : List.of();
-        saveFields(version.getId(), fieldDefs);
+        List<FormFieldDefinition> normalizedFields = normalizeFields(fieldDefs);
+        saveFields(version.getId(), normalizedFields);
 
         log.info("Created form {} with version 1", form.getId());
-        return FormDto.from(form, 1, fieldDefs);
+        return FormDto.from(form, 1, normalizedFields);
     }
 
     public FormDto getForm(UUID formId) {
@@ -136,6 +137,7 @@ public class FormService {
         // Update fields if provided
         List<FormFieldDefinition> fieldDefs = request.fields();
         if (fieldDefs != null) {
+            fieldDefs = normalizeFields(fieldDefs);
             if (form.getStatus() != FormState.PUBLISHED) {
                 formFieldRepository.deleteByFormVersionId(version.getId());
             }
@@ -197,6 +199,15 @@ public class FormService {
         return getForm(formId);
     }
 
+    @Transactional
+    public FormDto updateFormScope(UUID formId, String scope, String userId) {
+        var form = findFormOrThrow(formId);
+        form.setScope(scope);
+        formRepository.save(form);
+        log.info("Updated form {} scope to {} by user {}", formId, scope, userId);
+        return getForm(formId);
+    }
+
     public List<FormVersionDto> getVersions(UUID formId) {
         findFormOrThrow(formId);
         return formVersionRepository.findByFormIdOrderByVersionNumberDesc(formId).stream()
@@ -228,6 +239,27 @@ public class FormService {
             );
             formFieldRepository.save(field);
         }
+    }
+
+    /**
+     * Normalize field definitions — fill in defaults for missing fieldKey/fieldType/label.
+     */
+    private List<FormFieldDefinition> normalizeFields(List<FormFieldDefinition> fields) {
+        List<FormFieldDefinition> normalized = new java.util.ArrayList<>();
+        for (int i = 0; i < fields.size(); i++) {
+            var f = fields.get(i);
+            String fieldKey = f.fieldKey() != null && !f.fieldKey().isBlank() ? f.fieldKey() : "field_" + (i + 1);
+            String fieldType = f.fieldType() != null && !f.fieldType().isBlank() ? f.fieldType() : "text";
+            String label = f.label() != null && !f.label().isBlank() ? f.label() : fieldKey;
+            normalized.add(new FormFieldDefinition(
+                    fieldKey, fieldType, label,
+                    f.section(), f.sectionDescription(),
+                    f.sortOrder() > 0 ? f.sortOrder() : i + 1,
+                    f.required(),
+                    f.properties()
+            ));
+        }
+        return normalized;
     }
 
     private List<FormFieldDefinition> getFieldDefinitions(UUID formVersionId) {

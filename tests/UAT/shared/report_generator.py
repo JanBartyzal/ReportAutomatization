@@ -28,29 +28,37 @@ def parse_log_file(filepath: str) -> dict:
         else:
             content = raw.decode("utf-8", errors="replace")
 
-        # Count [OK] and [FAIL] markers
+        # Count markers from log lines
         passed = len(re.findall(r"\[OK\]", content))
         failed = len(re.findall(r"\[FAIL\]", content))
-        missing_features = len(re.findall(r"\[MISSING_FEATURE\]", content))
+        skipped = len(re.findall(r"\[SKIP\]", content))
 
-        # Try to extract from summary block (more accurate)
-        m = re.search(r"PASSED:\s*(\d+)\s+FAILED:\s*(\d+)", content)
+        # Try to extract from summary block (more accurate — counters are
+        # authoritative because missing_feature() reclassifies FAIL→SKIP)
+        m = re.search(r"PASSED:\s*(\d+)\s+FAILED:\s*(\d+)\s+SKIPPED:\s*(\d+)", content)
         if m:
             passed = int(m.group(1))
             failed = int(m.group(2))
+            skipped = int(m.group(3))
+        else:
+            # Backward compat: old logs without SKIPPED field
+            m2 = re.search(r"PASSED:\s*(\d+)\s+FAILED:\s*(\d+)", content)
+            if m2:
+                passed = int(m2.group(1))
+                failed = int(m2.group(2))
 
     except Exception as exc:
         return {
             "step": step_name,
             "passed": 0,
             "failed": 0,
+            "skipped": 0,
             "total": 0,
             "pct": 0.0,
-            "missing": 0,
             "status": f"ERROR ({exc})",
         }
 
-    total = passed + failed
+    total = passed + failed + skipped
     pct = (passed / total * 100) if total > 0 else 0.0
 
     if failed == 0 and total > 0:
@@ -66,9 +74,9 @@ def parse_log_file(filepath: str) -> dict:
         "step": step_name,
         "passed": passed,
         "failed": failed,
+        "skipped": skipped,
         "total": total,
         "pct": pct,
-        "missing": missing_features,
         "status": status,
     }
 
@@ -83,10 +91,11 @@ def generate_report(logs_dir: str = LOGS_DIR) -> str:
     results = [parse_log_file(os.path.join(logs_dir, f)) for f in log_files]
 
     timestamp = datetime.datetime.now().isoformat(timespec="seconds")
-    total_passed = sum(r["passed"] for r in results)
-    total_failed = sum(r["failed"] for r in results)
-    total_all    = total_passed + total_failed
-    overall_pct  = (total_passed / total_all * 100) if total_all > 0 else 0.0
+    total_passed  = sum(r["passed"] for r in results)
+    total_failed  = sum(r["failed"] for r in results)
+    total_skipped = sum(r["skipped"] for r in results)
+    total_all     = total_passed + total_failed + total_skipped
+    overall_pct   = (total_passed / total_all * 100) if total_all > 0 else 0.0
 
     lines = [
         "# UAT Report — ReportAutomatization (RA)",
@@ -101,26 +110,27 @@ def generate_report(logs_dir: str = LOGS_DIR) -> str:
         f"| Total assertions | {total_all} |",
         f"| Passed | {total_passed} |",
         f"| Failed | {total_failed} |",
+        f"| Skipped (missing features) | {total_skipped} |",
         f"| Overall success rate | {overall_pct:.1f}% |",
         "",
         "## Step Results",
         "",
-        "| Step | Total | Passed | Failed | Success% | Missing Features | Status |",
-        "|------|-------|--------|--------|----------|-----------------|--------|",
+        "| Step | Total | Passed | Failed | Skipped | Success% | Status |",
+        "|------|-------|--------|--------|---------|----------|--------|",
     ]
 
     for r in results:
         pct_str = f"{r['pct']:.0f}%"
         status_badge = {
-            "PASS": "✓ PASS",
-            "FAIL": "✗ FAIL",
-            "PARTIAL": "~ PARTIAL",
-            "NO_TESTS": "- EMPTY",
+            "PASS": "PASS",
+            "FAIL": "FAIL",
+            "PARTIAL": "PARTIAL",
+            "NO_TESTS": "EMPTY",
         }.get(r["status"], r["status"])
 
         lines.append(
             f"| {r['step']} | {r['total']} | {r['passed']} | {r['failed']} "
-            f"| {pct_str} | {r['missing']} | {status_badge} |"
+            f"| {r['skipped']} | {pct_str} | {status_badge} |"
         )
 
     # Error files section

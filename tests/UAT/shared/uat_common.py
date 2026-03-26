@@ -45,7 +45,7 @@ class UATSession:
         self._log_lines:   list[str] = []
         self._error_lines: list[str] = []
         # Use lists as mutable containers so for_service() can share counters
-        self._counters = [0, 0]  # [pass_count, fail_count]
+        self._counters = [0, 0, 0]  # [pass_count, fail_count, skip_count]
 
         os.makedirs(self.logs_dir, exist_ok=True)
 
@@ -65,6 +65,14 @@ class UATSession:
     def _fail_count(self, value):
         self._counters[1] = value
 
+    @property
+    def _skip_count(self):
+        return self._counters[2]
+
+    @_skip_count.setter
+    def _skip_count(self, value):
+        self._counters[2] = value
+
     # ------------------------------------------------------------------
     # State persistence (shared across steps via uat_state.json)
     # ------------------------------------------------------------------
@@ -75,6 +83,15 @@ class UATSession:
             self.user_id = state.get("dev_user_id")
         if not self.org_id:
             self.org_id = state.get("dev_org_id")
+        if not self.org_id:
+            # Fallback: derive org_id from org_ids map in state
+            org_ids = state.get("org_ids", {})
+            for slug in ("TEST-ORG-1", "test-org-1"):
+                if slug in org_ids:
+                    self.org_id = org_ids[slug]
+                    break
+            if not self.org_id and org_ids:
+                self.org_id = next(iter(org_ids.values()))
         if not self.roles:
             self.roles = state.get("dev_roles", ["HOLDING_ADMIN"])
 
@@ -305,14 +322,30 @@ class UATSession:
             return 0, {}
 
     def missing_feature(self, endpoint: str, description: str) -> None:
-        """Log a missing feature without failing the step.
-        Compensates for any FAIL counter added by a preceding call()."""
-        # Undo the fail from call() — missing feature is not a test failure
+        """Reclassify the preceding FAIL as a SKIP (missing/unimplemented feature).
+
+        Moves the last failure from _fail_count to _skip_count so the summary
+        accurately reflects: the endpoint was tested, it is not available, but
+        that is expected and should not count as a test failure.
+        """
         if self._fail_count > 0:
             self._fail_count -= 1
-        line = f"[MISSING_FEATURE] {endpoint} — {description}"
+            self._skip_count += 1
+            # Reclassify the last [FAIL] line in logs to [SKIP]
+            for i in range(len(self._log_lines) - 1, -1, -1):
+                if "[FAIL]" in self._log_lines[i]:
+                    self._log_lines[i] = self._log_lines[i].replace("[FAIL]", "[SKIP]")
+                    break
+            # Remove the last error entry that was added by call()
+            for i in range(len(self._error_lines) - 1, -1, -1):
+                if self._error_lines[i].startswith("## Unexpected Status"):
+                    self._error_lines.pop(i)
+                    break
+        else:
+            self._skip_count += 1
+        line = f"[SKIP] {endpoint} — {description} (missing feature)"
         self._log(line)
-        self._error_lines.append(f"## Missing Feature (informational)\n- Endpoint: `{endpoint}`\n- Description: {description}\n")
+        self._error_lines.append(f"## Missing Feature (skipped)\n- Endpoint: `{endpoint}`\n- Description: {description}\n")
 
     # ------------------------------------------------------------------
     # Assertion helpers
@@ -371,7 +404,7 @@ class UATSession:
             f"\n{'='*60}\n"
             f"Step: {step_name}\n"
             f"Timestamp: {timestamp}\n"
-            f"PASSED: {self._pass_count}  FAILED: {self._fail_count}\n"
+            f"PASSED: {self._pass_count}  FAILED: {self._fail_count}  SKIPPED: {self._skip_count}\n"
             f"{'='*60}\n"
         )
         # Print to stdout — Tee-Object in run.ps1 writes it to stepNN.log

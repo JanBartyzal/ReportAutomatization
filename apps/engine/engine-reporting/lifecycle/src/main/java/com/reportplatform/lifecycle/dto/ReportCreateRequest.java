@@ -1,13 +1,14 @@
 package com.reportplatform.lifecycle.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
 
 public record ReportCreateRequest(
-        @NotBlank String orgId,
-        @NotNull UUID periodId,
-        @NotBlank String reportType,
+        @JsonProperty("org_id") @JsonAlias({"orgId", "org_id"}) String orgId,
+        @JsonProperty("period_id") @JsonAlias({"periodId", "period_id"}) UUID periodId,
+        @JsonProperty("report_type") @JsonAlias({"reportType", "report_type"}) String reportType,
         String scope
 ) {}

@@ -41,6 +41,7 @@ dependencies = [
     "opentelemetry-exporter-otlp>=1.23",
     "opentelemetry-instrumentation-fastapi>=0.44b0",
     "opentelemetry-instrumentation-grpc>=0.44b0",
+    "prometheus-client>=0.20",
     # Dapr
     "dapr>=1.13",
     "dapr-ext-grpc>=1.13",

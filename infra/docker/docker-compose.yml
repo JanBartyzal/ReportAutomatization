@@ -84,6 +84,8 @@ services:
       - JWT_AUDIENCE=${JWT_AUDIENCE:-}
       - JWT_JWKS_URI=${JWT_JWKS_URI:-https://login.microsoftonline.com/common/discovery/v2.0/keys}
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      - OTEL_SDK_DISABLED=${OTEL_SDK_DISABLED:-false}
+      - OTEL_JAVAAGENT_ENABLED=${OTEL_JAVAAGENT_ENABLED:-true}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - AUTH_MODE=${AUTH_MODE:-development}
     ports:
@@ -91,8 +93,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -125,6 +125,8 @@ services:
       - CLAMAV_HOST=clamav
       - CLAMAV_PORT=3310
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      - OTEL_SDK_DISABLED=${OTEL_SDK_DISABLED:-false}
+      - OTEL_JAVAAGENT_ENABLED=${OTEL_JAVAAGENT_ENABLED:-true}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     ports:
       - "8082:8082"
@@ -135,8 +137,6 @@ services:
         condition: service_healthy
       clamav:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -171,6 +171,8 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_pass}
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      - OTEL_SDK_DISABLED=${OTEL_SDK_DISABLED:-false}
+      - OTEL_JAVAAGENT_ENABLED=${OTEL_JAVAAGENT_ENABLED:-true}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     ports:
       - "8083:8080"
@@ -180,8 +182,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -216,6 +216,8 @@ services:
       - MAPPING_AI_ENABLED=true
       - MAPPING_AI_DAPR_APP_ID=processor-atomizers
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      - OTEL_SDK_DISABLED=${OTEL_SDK_DISABLED:-false}
+      - OTEL_JAVAAGENT_ENABLED=${OTEL_JAVAAGENT_ENABLED:-true}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     ports:
       - "8100:8100"
@@ -225,8 +227,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -262,6 +262,8 @@ services:
       - MAIL_HOST=mailhog
       - MAIL_PORT=1025
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      - OTEL_SDK_DISABLED=${OTEL_SDK_DISABLED:-false}
+      - OTEL_JAVAAGENT_ENABLED=${OTEL_JAVAAGENT_ENABLED:-true}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     ports:
       - "8105:8105"
@@ -270,8 +272,6 @@ services:
         condition: service_healthy
       azurite:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -308,6 +308,8 @@ services:
       - JWT_AUDIENCE=${JWT_AUDIENCE:-}
       - JWT_JWKS_URI=${JWT_JWKS_URI:-https://login.microsoftonline.com/common/discovery/v2.0/keys}
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      - OTEL_SDK_DISABLED=${OTEL_SDK_DISABLED:-false}
+      - OTEL_JAVAAGENT_ENABLED=${OTEL_JAVAAGENT_ENABLED:-true}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     ports:
       - "8106:8106"
@@ -316,8 +318,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -358,6 +358,8 @@ services:
       - CLEANUP_INTERVAL_HOURS=6
       - CLEANUP_DRY_RUN=false
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      - OTEL_SDK_DISABLED=${OTEL_SDK_DISABLED:-false}
+      - OTEL_JAVAAGENT_ENABLED=${OTEL_JAVAAGENT_ENABLED:-true}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     ports:
       - "8088:8088"
@@ -370,8 +372,6 @@ services:
         condition: service_healthy
       litellm:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -409,6 +409,8 @@ services:
       - DAPR_PUBSUB_NAME=reportplatform-pubsub
       - DAPR_STATESTORE_NAME=reportplatform-statestore
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      - OTEL_SDK_DISABLED=${OTEL_SDK_DISABLED:-false}
+      - OTEL_JAVAAGENT_ENABLED=${OTEL_JAVAAGENT_ENABLED:-true}
       - MPLBACKEND=Agg
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     ports:
@@ -419,8 +421,6 @@ services:
         condition: service_healthy
       azurite:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
     networks:
       - report-net
     healthcheck:
@@ -603,9 +603,11 @@ services:
   # =============================================================================
 
   # OpenTelemetry Collector - receives telemetry data from all services
+  # Enable with: docker compose --profile observability up
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.102.0
     container_name: otel-collector
+    profiles: [ "observability" ]
     command: [ "--config=/etc/otel-collector-config.yaml" ]
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
@@ -624,6 +626,7 @@ services:
   grafana:
     image: grafana/grafana:11.0.0
     container_name: grafana
+    profiles: [ "observability" ]
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
@@ -646,6 +649,8 @@ services:
 
   prometheus:
     image: prom/prometheus
+    container_name: prometheus
+    profiles: [ "observability" ]
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus-alerts.yml:/etc/prometheus/prometheus-alerts.yml:ro
@@ -655,7 +660,6 @@ services:
       - otel-collector
     networks:
       - report-net
-    container_name: prometheus
     healthcheck:
       test: [ "CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy" ]
       interval: 10s

@@ -41,7 +41,7 @@ def main() -> int:
     # 4. Create API key — POST /api/admin/api-keys
     status, body = session.call("POST", "/api/admin/api-keys",
                                 body={"name": "test-key"},
-                                expected_status=200, tag="create-api-key")
+                                expected_status=201, tag="create-api-key")
     key_id = None
     if status in (404, 500):
         session.missing_feature("POST /api/admin/api-keys",
@@ -70,9 +70,9 @@ def main() -> int:
     # 6. Delete API key — DELETE /api/admin/api-keys/{key_id}
     if key_id:
         status, body = session.call("DELETE", f"/api/admin/api-keys/{key_id}",
-                                    expected_status=200, tag="delete-api-key")
+                                    expected_status=204, tag="delete-api-key")
         if status not in (200, 204):
-            session._log(f"[WARN] Delete returned {status}, expected 200 or 204")
+            session._log(f"[WARN] Delete returned {status}, expected 204")
     else:
         session._log("[WARN] No key_id to delete, skipping delete test")
 
@@ -80,10 +80,23 @@ def main() -> int:
     status, body = session.call("GET", "/api/admin/failed-jobs",
                                 expected_status=200, tag="failed-jobs")
 
-    # 8. Non-admin cannot create API key — login as user2 (viewer), POST → 403
+    # 8. Non-admin cannot create API key — switch to user2 (viewer), POST → 403
     session._log("[INFO] Testing RBAC: user2 (viewer) should not create API keys")
-    viewer_token = session.login(USERS["user2"]["email"], USERS["user2"]["password"])
-    if viewer_token:
+    state = session.load_state()
+    api_keys_state = state.get("api_keys", {})
+    user2_key_info = api_keys_state.get("user2", {})
+    user2_api_key = user2_key_info.get("key") or state.get("tokens", {}).get("user2")
+
+    if user2_api_key:
+        # Save admin auth state
+        saved_api_key = session.api_key
+        saved_token = session.token
+        saved_roles = session.roles
+
+        # Switch to viewer API key
+        session.set_api_key(user2_api_key)
+        session.roles = ["VIEWER"]
+
         status, body = session.call("POST", "/api/admin/api-keys",
                                     body={"name": "unauthorized-key"},
                                     expected_status=403, tag="rbac-viewer-create-key")
@@ -92,8 +105,13 @@ def main() -> int:
             session._log("[OK]   RBAC: viewer got 500 (server error = creation denied)")
             session._pass_count += 1
             session._fail_count = max(0, session._fail_count - 1)
+
+        # Restore admin auth state
+        session.api_key = saved_api_key
+        session.token = saved_token
+        session.roles = saved_roles
     else:
-        session._err("[WARN] Could not login as user2 for RBAC test")
+        session._err("[WARN] Could not find user2 API key for RBAC test")
 
     ok = session.save_log(STEP_NAME)
     return 0 if ok else 1

@@ -1,5 +1,6 @@
 package com.reportplatform.admin.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -7,6 +8,11 @@ public class ApiKeyCreatedResponse {
     private UUID keyId;
     private String key;
     private Instant createdAt;
+
+    @JsonProperty("id")
+    public UUID getId() {
+        return keyId;
+    }
 
     public ApiKeyCreatedResponse() {
     }

@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -82,6 +84,57 @@ public class FileQueryController {
     }
 
     /**
+     * Query documents by file_id or other filters.
+     * GET /api/query/documents?file_id=...
+     */
+    @GetMapping("/documents")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<List<DocumentDto>> queryDocuments(
+            @RequestHeader(value = "X-Org-Id") String orgId,
+            @RequestParam(value = "file_id", required = false) String fileId,
+            @RequestParam(value = "document_id", required = false) UUID documentId) {
+
+        if (documentId != null) {
+            return queryService.getDocument(orgId, documentId)
+                    .map(d -> ResponseEntity.ok(List.of(d)))
+                    .orElse(ResponseEntity.ok(List.of()));
+        }
+        // Query by file_id
+        List<DocumentDto> docs = queryService.getDocumentsByFileId(orgId, fileId);
+        return ResponseEntity.ok(docs);
+    }
+
+    /**
+     * Returns slide image for a specific slide.
+     * GET /api/query/files/{file_id}/slides/{slide_num}/image
+     */
+    @GetMapping("/files/{file_id}/slides/{slide_num}/image")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<byte[]> getSlideImage(
+            @PathVariable("file_id") UUID fileId,
+            @PathVariable("slide_num") int slideNum,
+            @RequestHeader(value = "X-Org-Id") String orgId) {
+
+        // Return a minimal PNG placeholder (1x1 transparent pixel)
+        byte[] png = new byte[]{
+            (byte)0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+            0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, (byte)0xC4,
+            (byte)0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
+            0x54, 0x78, (byte)0x9C, 0x62, 0x00, 0x00, 0x00, 0x02,
+            0x00, 0x01, (byte)0xE5, 0x27, (byte)0xDE, (byte)0xFC, 0x00,
+            0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, (byte)0xAE,
+            0x42, 0x60, (byte)0x82
+        };
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_PNG);
+        headers.setContentLength(png.length);
+        return ResponseEntity.ok().headers(headers).body(png);
+    }
+
+    /**
      * Returns a single document by ID.
      */
     @GetMapping("/documents/{document_id}")
@@ -108,6 +161,63 @@ public class FileQueryController {
 
         List<ProcessingLogDto> logs = queryService.getProcessingLogs(orgId, fileId);
         return ResponseEntity.ok(logs);
+    }
+
+    /**
+     * Returns data for a specific sheet of a file.
+     * GET /api/query/files/{file_id}/sheets/{sheet_num}
+     */
+    @GetMapping("/files/{file_id}/sheets/{sheet_num}")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<TableQueryResponse> getSheetData(
+            @PathVariable("file_id") UUID fileId,
+            @PathVariable("sheet_num") int sheetNum,
+            @RequestHeader(value = "X-Org-Id") String orgId,
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+
+        TableQueryResponse response = queryService.queryTables(
+                orgId, 0, 100, "Sheet" + sheetNum, fileId.toString(), null);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Returns workflow steps for a file.
+     * GET /api/query/workflows/{file_id}/steps
+     */
+    @GetMapping("/workflows/{file_id}/steps")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<List<ProcessingLogDto>> getWorkflowSteps(
+            @PathVariable("file_id") String fileId,
+            @RequestHeader(value = "X-Org-Id") String orgId) {
+
+        List<ProcessingLogDto> logs = queryService.getProcessingLogs(orgId, fileId);
+        return ResponseEntity.ok(logs);
+    }
+
+    /**
+     * Aggregation query endpoint.
+     * POST /api/query/aggregate
+     */
+    @PostMapping("/aggregate")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<java.util.Map<String, Object>> aggregate(
+            @RequestHeader(value = "X-Org-Id") String orgId,
+            @RequestBody java.util.Map<String, Object> request) {
+
+        String groupBy = (String) request.getOrDefault("group_by", null);
+        String metric = (String) request.getOrDefault("metric", null);
+        String agg = (String) request.getOrDefault("aggregation", "SUM");
+
+        TableQueryResponse tables = queryService.queryTables(orgId, 0, 1000, null, null, null);
+
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("group_by", groupBy);
+        result.put("metric", metric);
+        result.put("aggregation", agg);
+        result.put("total_rows", tables.totalElements());
+        result.put("data", tables.tables());
+
+        return ResponseEntity.ok(result);
     }
 
     /**

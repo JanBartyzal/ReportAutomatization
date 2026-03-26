@@ -32,14 +32,26 @@ public class PeriodCloneService {
         var source = periodRepository.findById(sourcePeriodId)
                 .orElseThrow(() -> new PeriodNotFoundException(sourcePeriodId));
 
+        // Derive defaults from source period when clone request has null fields
+        String cloneName = request.newName() != null ? request.newName() : source.getName() + " (clone)";
+        String cloneCode = request.newPeriodCode() != null ? request.newPeriodCode()
+                : source.getPeriodCode() + "-CLONE-" + UUID.randomUUID().toString().substring(0, 4);
+        java.time.LocalDate cloneStart = request.newStartDate() != null ? request.newStartDate() : source.getStartDate();
+        java.time.LocalDate cloneEnd = request.newEndDate() != null ? request.newEndDate()
+                : (request.newStartDate() != null ? request.newStartDate().plusMonths(3) : source.getEndDate());
+        java.time.Instant cloneSubDeadline = request.newSubmissionDeadline() != null ? request.newSubmissionDeadline()
+                : source.getSubmissionDeadline();
+        java.time.Instant cloneRevDeadline = request.newReviewDeadline() != null ? request.newReviewDeadline()
+                : source.getReviewDeadline();
+
         var cloned = new PeriodEntity(
-                request.newName(),
+                cloneName,
                 source.getPeriodType(),
-                request.newPeriodCode(),
-                request.newStartDate(),
-                request.newEndDate(),
-                request.newSubmissionDeadline(),
-                request.newReviewDeadline(),
+                cloneCode,
+                cloneStart,
+                cloneEnd,
+                cloneSubDeadline,
+                cloneRevDeadline,
                 source.getHoldingId(),
                 userId
         );

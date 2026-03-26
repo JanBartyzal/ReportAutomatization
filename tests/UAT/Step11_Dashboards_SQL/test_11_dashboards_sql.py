@@ -206,8 +206,13 @@ def main() -> int:
     # ---------------------------------------------------------------
     # 7. Make dashboard public — PUT /api/dashboards/{id}
     # ---------------------------------------------------------------
+    # Restore admin1 auth fully (token + roles + org context)
     session.token = admin1_token
+    session.restore_auth_from_state()
     data_session.token = admin1_token
+    data_session.org_id = session.org_id
+    data_session.user_id = session.user_id
+    data_session.roles = session.roles
     if dashboard_id:
         status, body = data_session.call("PUT", f"/api/dashboards/{dashboard_id}",
                                     body={"is_public": True},
@@ -240,7 +245,11 @@ def main() -> int:
     #    Verify it returns data based on the widgets' queries (5 project rows).
     # ---------------------------------------------------------------
     session.token = admin1_token
+    session.restore_auth_from_state()
     data_session.token = admin1_token
+    data_session.org_id = session.org_id
+    data_session.user_id = session.user_id
+    data_session.roles = session.roles
     dashboard_data = None
 
     if dashboard_id:
