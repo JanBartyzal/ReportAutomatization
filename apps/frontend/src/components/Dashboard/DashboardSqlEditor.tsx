@@ -33,6 +33,7 @@ const useStyles = makeStyles({
         backgroundColor: tokens.colorNeutralBackground2,
         resize: 'vertical',
         outline: 'none',
+        color: tokens.colorNeutralForeground1,
         '&:focus': {
             borderColor: tokens.colorBrandStroke1,
         } as any,

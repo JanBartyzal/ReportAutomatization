@@ -52,6 +52,10 @@ public class ExcelTemplateService {
 
         var fields = formFieldRepository.findByFormVersionIdOrderBySortOrder(version.getId());
 
+        if (fields.isEmpty()) {
+            log.warn("Form {} version {} has no fields — generating empty template", formId, version.getVersionNumber());
+        }
+
         // Group fields by section
         var fieldsBySection = fields.stream()
                 .collect(Collectors.groupingBy(
@@ -103,10 +107,10 @@ public class ExcelTemplateService {
                                       XSSFDataFormat format) {
         DataValidationHelper dvHelper = sheet.getDataValidationHelper();
         CellRangeAddressList range = new CellRangeAddressList(1, 1000, colIdx, colIdx);
+        var props = field.getProperties() != null ? field.getProperties() : Map.of();
 
         switch (field.getFieldType()) {
             case "number" -> {
-                var props = field.getProperties();
                 if (props.containsKey("min") && props.containsKey("max")) {
                     var constraint = dvHelper.createNumericConstraint(
                             DataValidationConstraint.ValidationType.DECIMAL,
@@ -141,7 +145,6 @@ public class ExcelTemplateService {
                 sheet.setDefaultColumnStyle(colIdx, dateStyle);
             }
             case "dropdown" -> {
-                var props = field.getProperties();
                 if (props.containsKey("options")) {
                     var options = (List<String>) props.get("options");
                     var constraint = dvHelper.createExplicitListConstraint(

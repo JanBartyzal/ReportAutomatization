@@ -11,7 +11,20 @@ export interface PeriodListParams extends PaginationParams {
 }
 
 export async function listPeriods(params: PeriodListParams = {}): Promise<PaginatedResponse<Period>> {
-  const { data } = await apiClient.get<PaginatedResponse<Period>>('/periods', { params });
+  const { data } = await apiClient.get('/periods', { params });
+  // Backend returns Spring Page {content: [...], totalElements, ...}
+  // Normalize to our PaginatedResponse format
+  if (data && 'content' in data) {
+    return {
+      data: data.content ?? [],
+      pagination: {
+        page: data.number ?? 0,
+        page_size: data.size ?? 20,
+        total_items: data.totalElements ?? 0,
+        total_pages: data.totalPages ?? 0,
+      },
+    } as PaginatedResponse<Period>;
+  }
   return data;
 }
 

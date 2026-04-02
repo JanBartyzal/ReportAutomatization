@@ -1,14 +1,14 @@
 # UAT Errors - step05_Sinks_Persistence
 
-Timestamp: 2026-03-26T18:31:59
+Timestamp: 2026-04-02T13:58:57
 
 [FAIL] XLSX table has 5 records (got 1)
 ## Assertion Failed
 - Message: XLSX table has 5 records (got 1)
 
-[FAIL] XLSX contains all project names {'Item1', 'Item2', 'Item4', 'Item3', 'Item5'} (found set())
+[FAIL] XLSX contains all project names {'Item4', 'Item1', 'Item3', 'Item5', 'Item2'} (found set())
 ## Assertion Failed
-- Message: XLSX contains all project names {'Item1', 'Item2', 'Item4', 'Item3', 'Item5'} (found set())
+- Message: XLSX contains all project names {'Item4', 'Item1', 'Item3', 'Item5', 'Item2'} (found set())
 
 ## Missing Feature (skipped)
 - Endpoint: `GET /api/query/documents?file_id=...`

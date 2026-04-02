@@ -7,8 +7,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
 const TOKEN_SCOPES = ['openid', 'profile'];
 
 let msalInstance: PublicClientApplication | null = null;
-// Default to holding org — will be updated after /auth/me resolves
-let devOrgId: string | null = 'a0000000-0000-0000-0000-000000000010';
+// Default to test-org-1 — matches UAT test data uploads.
+// Will be updated after /auth/me resolves in non-dev environments.
+let devOrgId: string | null = 'a0000000-0000-0000-0000-000000000001';
 
 /** Set the MSAL instance for token acquisition. Call once during app initialization. */
 export function setMsalInstance(instance: PublicClientApplication): void {
@@ -34,7 +35,7 @@ apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) =>
     config.headers.Authorization = 'Bearer dev-bypass-token';
     // Headers required by backend services for auth context (normally set by nginx ForwardAuth)
     config.headers['X-User-Id'] = '6bbc3213-00ac-4d30-bf27-7477b207c515';
-    config.headers['X-Org-Id'] = devOrgId || 'a0000000-0000-0000-0000-000000000010';
+    config.headers['X-Org-Id'] = devOrgId || 'a0000000-0000-0000-0000-000000000001';
     config.headers['X-Roles'] = 'HOLDING_ADMIN';
     return config;
   }

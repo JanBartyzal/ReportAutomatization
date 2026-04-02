@@ -98,7 +98,9 @@ const templatesApi = {
      */
     list: async (config?: AxiosRequestConfig): Promise<Template[]> => {
         const response = await axios.get('/api/templates/pptx', config);
-        return response.data;
+        const data = response.data;
+        // Backend returns Spring Page {content: [...]} — extract the array
+        return Array.isArray(data) ? data : (data?.content ?? []);
     },
 
     /**

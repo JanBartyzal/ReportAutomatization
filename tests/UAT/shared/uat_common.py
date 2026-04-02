@@ -314,6 +314,13 @@ class UATSession:
             self._err(f"[FAIL] {msg}")
             self._error_lines.append(f"## Connection Error\n- Endpoint: `{method.upper()} {path}`\n- Error: {exc}\n")
             return 0, {}
+        except (requests.exceptions.ReadTimeout, requests.exceptions.Timeout) as exc:
+            # Timeout is expected for SSE long-polling endpoints
+            self._fail_count += 1
+            msg = f"Timeout: {exc}"
+            self._err(f"[FAIL] {msg}")
+            self._error_lines.append(f"## Timeout Error\n- Endpoint: `{method.upper()} {path}`\n- Error: {exc}\n")
+            return 0, {}
         except Exception as exc:
             self._fail_count += 1
             msg = f"Request exception: {exc}"

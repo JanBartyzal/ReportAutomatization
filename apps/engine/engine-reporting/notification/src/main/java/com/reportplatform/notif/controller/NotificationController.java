@@ -16,6 +16,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import org.springframework.scheduling.annotation.Scheduled;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -131,7 +133,7 @@ public class NotificationController {
         String userId = resolveUserId(headerUserId);
         log.info("SSE connection opened for user: {}", userId);
 
-        SseEmitter emitter = new SseEmitter(30_000L); // 30 second timeout for SSE
+        SseEmitter emitter = new SseEmitter(300_000L); // 5 minute timeout for SSE
 
         // Register emitter for this user
         userEmitters.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>()).add(emitter);
@@ -187,6 +189,25 @@ public class NotificationController {
         } catch (Exception e) {
             log.warn("Failed to unregister SSE emitter: {}", e.getMessage());
         }
+    }
+
+    /**
+     * Send heartbeat to all active SSE connections every 25 seconds
+     * to prevent proxy/load-balancer timeouts.
+     */
+    @Scheduled(fixedRate = 25_000)
+    public void sendHeartbeat() {
+        userEmitters.forEach((userId, emitters) -> {
+            List<SseEmitter> dead = new java.util.ArrayList<>();
+            for (SseEmitter emitter : emitters) {
+                try {
+                    emitter.send(SseEmitter.event().comment("heartbeat"));
+                } catch (IOException | IllegalStateException e) {
+                    dead.add(emitter);
+                }
+            }
+            dead.forEach(emitter -> removeEmitter(userId, emitter));
+        });
     }
 
     /**

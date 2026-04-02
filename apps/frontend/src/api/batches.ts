@@ -4,6 +4,7 @@ export interface Batch {
     id: string;
     name: string;
     period: string;
+    periodId?: string;
     description?: string;
     holdingId: string;
     status: 'OPEN' | 'COLLECTING' | 'CLOSED';
@@ -30,6 +31,7 @@ export async function listBatches(holdingId?: string): Promise<Batch[]> {
 export async function createBatch(batch: {
     name: string;
     period: string;
+    period_id?: string;
     description?: string;
     holding_id: string;
     created_by?: string;

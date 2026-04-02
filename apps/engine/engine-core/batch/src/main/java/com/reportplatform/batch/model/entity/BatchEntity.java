@@ -18,6 +18,9 @@ public class BatchEntity {
     @Column(nullable = false, length = 50)
     private String period;
 
+    @Column(name = "period_id")
+    private UUID periodId;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
@@ -62,6 +65,14 @@ public class BatchEntity {
 
     public void setPeriod(String period) {
         this.period = period;
+    }
+
+    public UUID getPeriodId() {
+        return periodId;
+    }
+
+    public void setPeriodId(UUID periodId) {
+        this.periodId = periodId;
     }
 
     public String getDescription() {

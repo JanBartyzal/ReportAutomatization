@@ -81,10 +81,21 @@ public class BatchController {
             BatchEntity batch = new BatchEntity();
             batch.setName((String) request.getOrDefault("name", "Unnamed Batch"));
 
-            // Accept period from multiple possible fields
+            // Accept period_id (UUID link to reporting period) and period (display label)
+            Object periodIdObj = request.get("period_id");
+            if (periodIdObj == null) periodIdObj = request.get("periodId");
+            if (periodIdObj != null) {
+                try {
+                    batch.setPeriodId(UUID.fromString(periodIdObj.toString()));
+                } catch (IllegalArgumentException e) {
+                    logger.warn("Invalid period_id format: {}", periodIdObj);
+                }
+            }
+
+            // Period display label — from request or fallback to batch name
             String period = (String) request.get("period");
-            if (period == null) period = (String) request.get("periodId");
-            if (period == null) period = batch.getName();
+            if (period == null || period.isBlank()) period = (String) request.get("periodName");
+            if (period == null || period.isBlank()) period = batch.getName();
             batch.setPeriod(period);
 
             batch.setDescription((String) request.get("description"));

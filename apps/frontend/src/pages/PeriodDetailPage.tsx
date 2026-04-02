@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     makeStyles,
     tokens,
@@ -18,15 +18,24 @@ import {
     TableCell,
     TableCellLayout,
     Divider,
+    Dialog,
+    DialogSurface,
+    DialogTitle,
+    DialogBody,
+    DialogContent,
+    DialogActions,
+    Input,
+    Spinner as FluentSpinner,
 } from '@fluentui/react-components';
 import {
     ArrowLeftRegular,
     CalendarMonthRegular,
     DocumentPdfRegular,
     TableRegular,
+    Edit24Regular,
 } from '@fluentui/react-icons';
 import { useParams, useNavigate } from 'react-router-dom';
-import { usePeriods } from '../hooks/usePeriods';
+import { usePeriods, useUpdatePeriod } from '../hooks/usePeriods';
 import { useReportMatrix } from '../hooks/useReports';
 import { getStatusColors, getStatusLabel } from '../theme/statusColors';
 
@@ -85,7 +94,17 @@ const useStyles = makeStyles({
         display: 'flex',
         justifyContent: 'center',
         padding: '100px',
-    }
+    },
+    editForm: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: tokens.spacingVerticalM,
+    },
+    field: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: tokens.spacingVerticalXS,
+    },
 });
 
 export const PeriodDetailPage: React.FC = () => {
@@ -95,8 +114,47 @@ export const PeriodDetailPage: React.FC = () => {
 
     const { data: periodsData, isLoading: isPeriodLoading } = usePeriods();
     const { data: matrix, isLoading: isMatrixLoading } = useReportMatrix();
+    const updatePeriod = useUpdatePeriod();
+
+    const [showEditDialog, setShowEditDialog] = useState(false);
+    const [editForm, setEditForm] = useState({
+        name: '',
+        start_date: '',
+        submission_deadline: '',
+        review_deadline: '',
+    });
 
     const period = periodsData?.data?.find((p: any) => p.id === periodId);
+
+    const openEditDialog = () => {
+        if (period) {
+            setEditForm({
+                name: period.name || '',
+                start_date: period.start_date ? period.start_date.split('T')[0] : '',
+                submission_deadline: period.submission_deadline ? period.submission_deadline.split('T')[0] : '',
+                review_deadline: period.review_deadline ? period.review_deadline.split('T')[0] : '',
+            });
+            setShowEditDialog(true);
+        }
+    };
+
+    const handleSaveEdit = async () => {
+        if (!periodId) return;
+        try {
+            await updatePeriod.mutateAsync({
+                periodId,
+                period: {
+                    name: editForm.name,
+                    start_date: editForm.start_date,
+                    submission_deadline: editForm.submission_deadline,
+                    review_deadline: editForm.review_deadline,
+                },
+            });
+            setShowEditDialog(false);
+        } catch (error) {
+            console.error('Failed to update period:', error);
+        }
+    };
 
     if (isPeriodLoading || isMatrixLoading) {
         return (
@@ -129,6 +187,7 @@ export const PeriodDetailPage: React.FC = () => {
                     <Caption1>Code: {period.period_code} | Type: {period.type}</Caption1>
                 </div>
                 <div style={{ display: 'flex', gap: tokens.spacingHorizontalS }}>
+                    <Button icon={<Edit24Regular />} onClick={openEditDialog}>Edit Period</Button>
                     <Button icon={<DocumentPdfRegular />}>PDF Export</Button>
                     <Button icon={<TableRegular />}>Excel Export</Button>
                 </div>
@@ -237,6 +296,60 @@ export const PeriodDetailPage: React.FC = () => {
                     </TableBody>
                 </Table>
             </Card>
+
+            <Dialog open={showEditDialog} onOpenChange={(_ev, data) => !data.open && setShowEditDialog(false)}>
+                <DialogSurface>
+                    <DialogBody>
+                        <DialogTitle>Edit Reporting Period</DialogTitle>
+                        <DialogContent>
+                            <div className={styles.editForm}>
+                                <div className={styles.field}>
+                                    <Body1>Period Name</Body1>
+                                    <Input
+                                        value={editForm.name}
+                                        onChange={(_ev, data) => setEditForm(f => ({ ...f, name: data.value }))}
+                                        placeholder="e.g., Q1 2024"
+                                    />
+                                </div>
+                                <div className={styles.field}>
+                                    <Body1>Start Date</Body1>
+                                    <Input
+                                        type="date"
+                                        value={editForm.start_date}
+                                        onChange={(_ev, data) => setEditForm(f => ({ ...f, start_date: data.value }))}
+                                    />
+                                </div>
+                                <div className={styles.field}>
+                                    <Body1>Submission Deadline</Body1>
+                                    <Input
+                                        type="date"
+                                        value={editForm.submission_deadline}
+                                        onChange={(_ev, data) => setEditForm(f => ({ ...f, submission_deadline: data.value }))}
+                                    />
+                                </div>
+                                <div className={styles.field}>
+                                    <Body1>Review Deadline</Body1>
+                                    <Input
+                                        type="date"
+                                        value={editForm.review_deadline}
+                                        onChange={(_ev, data) => setEditForm(f => ({ ...f, review_deadline: data.value }))}
+                                    />
+                                </div>
+                            </div>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button appearance="subtle" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+                            <Button
+                                appearance="primary"
+                                onClick={handleSaveEdit}
+                                disabled={updatePeriod.isPending}
+                            >
+                                {updatePeriod.isPending ? <FluentSpinner size="tiny" /> : 'Save Changes'}
+                            </Button>
+                        </DialogActions>
+                    </DialogBody>
+                </DialogSurface>
+            </Dialog>
         </div>
     );
 };

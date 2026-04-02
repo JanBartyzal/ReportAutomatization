@@ -11,6 +11,7 @@ import { getChartPalette } from '../../theme/chartColors';
 import { rechartsAxisProps, rechartsGridProps, rechartsTooltipStyle } from './rechartsTheme';
 import { ChartWrapper } from './ChartWrapper';
 import { AggregatedData } from '@reportplatform/types';
+import { getChartMapping } from './chartDataUtils';
 
 interface LineChartWidgetProps {
     data: AggregatedData;
@@ -19,8 +20,7 @@ interface LineChartWidgetProps {
 
 export const LineChartWidget: React.FC<LineChartWidgetProps> = ({ data }) => {
     const chartData = data.rows;
-    const xKey = data.columns[0];
-    const seriesKeys = data.columns.slice(1);
+    const { xKey, seriesKeys } = getChartMapping(data);
     const colors = [...getChartPalette()];
 
     return (

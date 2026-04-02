@@ -9,11 +9,11 @@ export function useMe() {
     queryKey: ['auth', 'me'],
     queryFn: async () => {
       const data = await getMe();
-      // In dev bypass mode, set the org_id from the first holding org
-      if (data?.organizations?.length) {
-        const holding = data.organizations.find((o: any) => o.organizationCode?.startsWith('HOLD'));
-        const orgId = holding?.organizationId || data.organizations[0].organizationId;
-        if (orgId) setDevOrgId(orgId);
+      // In dev bypass mode, update the X-Org-Id header for subsequent API calls
+      if (data?.active_org_id) {
+        setDevOrgId(data.active_org_id);
+      } else if (data?.organizations?.length) {
+        setDevOrgId(data.organizations[0].id);
       }
       return data;
     },

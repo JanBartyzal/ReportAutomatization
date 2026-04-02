@@ -7,6 +7,8 @@ import com.reportplatform.dash.model.dto.DashboardRequest;
 import com.reportplatform.dash.model.dto.DashboardResponse;
 import com.reportplatform.dash.model.dto.PeriodComparisonRequest;
 import com.reportplatform.dash.model.dto.PeriodComparisonResponse;
+import com.reportplatform.dash.model.dto.RawSqlRequest;
+import com.reportplatform.dash.model.dto.RawSqlResponse;
 import com.reportplatform.dash.service.AggregationService;
 import com.reportplatform.dash.service.DashboardExcelExportService;
 import com.reportplatform.dash.service.DashboardService;
@@ -150,6 +152,25 @@ public class DashboardController {
             @Valid @RequestBody PeriodComparisonRequest request) {
 
         var response = aggregationService.comparePeriods(orgId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Execute a raw SQL query against parsed_tables.
+     * Used for custom SQL-based widgets.
+     *
+     * <p>For chart widgets, use column aliases LabelX and LabelY:
+     * <pre>
+     * SELECT category AS LabelX, SUM(amount) AS LabelY FROM ...
+     * </pre>
+     */
+    @PostMapping("/sql/execute")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<RawSqlResponse> executeRawSql(
+            @RequestHeader("X-Org-Id") UUID orgId,
+            @Valid @RequestBody RawSqlRequest request) {
+
+        var response = aggregationService.executeRawSql(orgId, request.sql());
         return ResponseEntity.ok(response);
     }
 

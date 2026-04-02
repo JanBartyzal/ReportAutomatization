@@ -22,6 +22,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -49,17 +53,20 @@ public class QueryService {
     private final QryProcessingLogRepository processingLogRepository;
     private final FileSummaryRepository fileSummaryRepository;
     private final CacheService cacheService;
+    private final ObjectMapper objectMapper;
 
     public QueryService(QryParsedTableRepository parsedTableRepository,
                         QryDocumentRepository documentRepository,
                         QryProcessingLogRepository processingLogRepository,
                         FileSummaryRepository fileSummaryRepository,
-                        CacheService cacheService) {
+                        CacheService cacheService,
+                        ObjectMapper objectMapper) {
         this.parsedTableRepository = parsedTableRepository;
         this.documentRepository = documentRepository;
         this.processingLogRepository = processingLogRepository;
         this.fileSummaryRepository = fileSummaryRepository;
         this.cacheService = cacheService;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -74,13 +81,19 @@ public class QueryService {
             return cached.get();
         }
 
-        // Get file summary for metadata
+        // Get file summary for metadata — validates file belongs to the org
         FileSummaryView summary = fileSummaryRepository
                 .findByFileIdAndOrgId(fileId, UUID.fromString(orgId))
                 .orElse(null);
 
-        String filename = summary != null ? summary.getFilename() : null;
-        String mimeType = summary != null ? summary.getMimeType() : null;
+        // RLS enforcement: if file doesn't belong to this org, return empty response
+        if (summary == null) {
+            log.warn("File {} not found for org {} — returning empty response", fileId, orgId);
+            return new FileDataResponse(fileId, null, null, List.of(), List.of());
+        }
+
+        String filename = summary.getFilename();
+        String mimeType = summary.getMimeType();
 
         // Get tables for this file
         List<ParsedTableEntity> tableEntities = parsedTableRepository.findByFileId(fileId.toString());
@@ -276,14 +289,19 @@ public class QueryService {
 
     // ---- Mapping methods ----
 
+    @SuppressWarnings("unchecked")
     private TableDataDto toTableDto(ParsedTableEntity entity) {
+        Object headers = deserializeJsonField(entity.getHeaders(), List.class);
+        Object rows = deserializeJsonField(entity.getRows(), List.class);
+        Object metadata = deserializeJsonField(entity.getMetadata(), Map.class);
+
         return new TableDataDto(
                 entity.getId(),
                 entity.getFileId(),
                 entity.getSourceSheet(),
-                entity.getHeaders(),
-                entity.getRows(),
-                entity.getMetadata(),
+                headers,
+                rows,
+                metadata,
                 entity.getCreatedAt()
         );
     }
@@ -330,5 +348,33 @@ public class QueryService {
                 entity.getErrorDetail(),
                 entity.getCreatedAt()
         );
+    }
+
+    /**
+     * Deserialize a JSONB field that may come as String, JsonNode, or already-parsed type.
+     * Handles the case where PostgreSQL JSONB is returned as a raw JSON String
+     * instead of a parsed object (e.g., headers as '["Id","Name"]' instead of List).
+     */
+    @SuppressWarnings("unchecked")
+    private <T> Object deserializeJsonField(Object value, Class<T> targetType) {
+        if (value == null) {
+            return targetType == List.class ? List.of() : Map.of();
+        }
+        if (value instanceof String str) {
+            if (str.isBlank()) {
+                return targetType == List.class ? List.of() : Map.of();
+            }
+            try {
+                return objectMapper.readValue(str, targetType);
+            } catch (JsonProcessingException e) {
+                log.warn("Failed to parse JSON string field: {}", e.getMessage());
+                return targetType == List.class ? List.of() : Map.of();
+            }
+        }
+        if (value instanceof JsonNode jsonNode) {
+            return objectMapper.convertValue(jsonNode, targetType);
+        }
+        // Already the correct type (List, Map, etc.)
+        return value;
     }
 }

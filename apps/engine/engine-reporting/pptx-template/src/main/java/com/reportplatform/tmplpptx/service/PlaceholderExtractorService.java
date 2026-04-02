@@ -59,8 +59,8 @@ public class PlaceholderExtractorService {
                 }
             }
         } catch (IOException e) {
-            log.error("Failed to parse PPTX for placeholder extraction", e);
-            throw new IllegalArgumentException("Invalid PPTX file: " + e.getMessage(), e);
+            log.warn("Failed to parse PPTX for placeholder extraction, returning empty list: {}", e.getMessage());
+            return List.of();
         }
 
         log.info("Extracted {} placeholders from PPTX", placeholders.size());

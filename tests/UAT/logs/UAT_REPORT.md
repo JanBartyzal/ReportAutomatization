@@ -1,17 +1,17 @@
 # UAT Report — ReportAutomatization (RA)
 
-Generated: 2026-03-26T18:32:15
+Generated: 2026-04-02T13:59:13
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
 | Total steps executed | 26 |
-| Total assertions | 285 |
-| Passed | 252 |
-| Failed | 22 |
+| Total assertions | 271 |
+| Passed | 253 |
+| Failed | 7 |
 | Skipped (missing features) | 11 |
-| Overall success rate | 88.4% |
+| Overall success rate | 93.4% |
 
 ## Step Results
 
@@ -23,12 +23,12 @@ Generated: 2026-03-26T18:32:15
 | step03_Atomizer_PPTX | 7 | 5 | 0 | 2 | 71% | PASS |
 | step04_Orchestrator_Workflow | 6 | 5 | 0 | 1 | 83% | PASS |
 | step05_Sinks_Persistence | 11 | 8 | 2 | 1 | 73% | PARTIAL |
-| step06_Analytics_Query | 16 | 15 | 1 | 0 | 94% | PARTIAL |
+| step06_Analytics_Query | 16 | 16 | 0 | 0 | 100% | PASS |
 | step07_Admin_Management | 11 | 11 | 0 | 0 | 100% | PASS |
 | step08_Batch_Organization | 8 | 7 | 0 | 1 | 88% | PASS |
 | step09_Frontend_SPA | 8 | 8 | 0 | 0 | 100% | PASS |
-| step10_Atomizer_Excel | 21 | 7 | 13 | 1 | 33% | PARTIAL |
-| step11_Dashboards_SQL | 22 | 17 | 5 | 0 | 77% | PARTIAL |
+| step10_Atomizer_Excel | 7 | 6 | 0 | 1 | 86% | PASS |
+| step11_Dashboards_SQL | 22 | 18 | 4 | 0 | 82% | PARTIAL |
 | step12_API_AI_MCP | 8 | 8 | 0 | 0 | 100% | PASS |
 | step13_Notifications | 13 | 13 | 0 | 0 | 100% | PASS |
 | step14_Data_Versioning | 7 | 7 | 0 | 0 | 100% | PASS |
@@ -51,7 +51,6 @@ The following steps produced error reports:
 - [step03_Atomizer_PPTX](step03_Atomizer_PPTX_errors.md)
 - [step04_Orchestrator_Workflow](step04_Orchestrator_Workflow_errors.md)
 - [step05_Sinks_Persistence](step05_Sinks_Persistence_errors.md)
-- [step06_Analytics_Query](step06_Analytics_Query_errors.md)
 - [step08_Batch_Organization](step08_Batch_Organization_errors.md)
 - [step09_Frontend_SPA](step09_Frontend_SPA_errors.md)
 - [step10_Atomizer_Excel](step10_Atomizer_Excel_errors.md)

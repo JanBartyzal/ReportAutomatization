@@ -183,6 +183,7 @@ const HealthDashboardPage: React.FC = () => {
         queryKey: ['health-dashboard'],
         queryFn: getHealthDashboard,
         refetchInterval: 30000, // Refresh every 30 seconds
+        staleTime: 0, // Always refetch on invalidation (e.g. after service name change)
     });
 
     if (showSettings) {
@@ -198,7 +199,11 @@ const HealthDashboardPage: React.FC = () => {
                     <Button
                         appearance="subtle"
                         icon={<ChevronLeft24Regular />}
-                        onClick={() => setShowSettings(false)}
+                        onClick={() => {
+                            setShowSettings(false);
+                            // Force refetch after settings changes so updated names/configs appear immediately
+                            setTimeout(() => refetch(), 500);
+                        }}
                     >
                         Back to Dashboard
                     </Button>

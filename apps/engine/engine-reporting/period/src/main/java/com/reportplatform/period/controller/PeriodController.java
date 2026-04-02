@@ -91,7 +91,7 @@ public class PeriodController {
     public ResponseEntity<PeriodResponse> clonePeriod(
             @PathVariable UUID id,
             @Valid @RequestBody CloneRequest request,
-            @RequestHeader("X-User-Id") String userId) {
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
         var cloned = cloneService.clonePeriod(id, request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(PeriodResponse.from(cloned));
     }

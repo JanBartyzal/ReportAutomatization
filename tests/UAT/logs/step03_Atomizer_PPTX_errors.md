@@ -1,6 +1,6 @@
 # UAT Errors - step03_Atomizer_PPTX
 
-Timestamp: 2026-03-26T18:31:58
+Timestamp: 2026-04-02T13:58:56
 
 [FAIL] Structure response contains slides list
 ## Assertion Failed
@@ -11,5 +11,5 @@ Timestamp: 2026-03-26T18:31:58
 - Description: MetaTable reconstruction from text boxes/shapes not yet implemented
 
 ## Missing Feature (skipped)
-- Endpoint: `GET /api/query/files/8bf86294-a852-4c83-9afd-f835163d7479/slides/<n>/image`
+- Endpoint: `GET /api/query/files/c783b8f8-4f7f-436a-99c6-f9f2dc672f71/slides/<n>/image`
 - Description: Slide image endpoint does not exist in current API

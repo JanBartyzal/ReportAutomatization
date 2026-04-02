@@ -21,6 +21,7 @@ import {
     PieChartWidget, 
     HeatmapWidget 
 } from '../components/Charts';
+import { executeRawSql, type RawSqlResult } from '../api/dashboards';
 import { FileContentType, type WidgetConfig, type AggregatedData } from '@reportplatform/types';
 
 /**
@@ -98,12 +99,26 @@ export default function DashboardViewerPage() {
         for (let i = 0; i < dashboard.widgets.length; i++) {
             const widget = dashboard.widgets[i];
             try {
-                const result = await queryDashboard.mutateAsync({
-                    group_by: widget.config.group_by as string[] || [],
-                    order_by: widget.config.order_by as string,
-                    filters: widget.config.filters as Record<string, unknown>,
-                });
-                newData[i] = result;
+                if (widget.data_source === 'custom_sql') {
+                    const sql = widget.config.sql as string;
+                    if (!sql) {
+                        console.warn(`Widget ${i} has no SQL query defined`);
+                        continue;
+                    }
+                    const rawResult = await executeRawSql(sql);
+                    newData[i] = {
+                        columns: rawResult.columns,
+                        rows: rawResult.rows as Record<string, unknown>[],
+                        total_rows: rawResult.totalRows,
+                    };
+                } else {
+                    const result = await queryDashboard.mutateAsync({
+                        group_by: widget.config.group_by as string[] || [],
+                        order_by: widget.config.order_by as string,
+                        filters: widget.config.filters as Record<string, unknown>,
+                    });
+                    newData[i] = result;
+                }
             } catch (error) {
                 console.error(`Failed to fetch data for widget ${i}:`, error);
             }

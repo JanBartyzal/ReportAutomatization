@@ -23,6 +23,8 @@ import {
     Textarea,
 } from '@fluentui/react-components';
 import { Add24Regular, Delete24Regular, Attach24Regular, Dismiss24Regular } from '@fluentui/react-icons';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useOrganizations } from '../../hooks/useAdmin';
 import {
     useBatches,
@@ -32,6 +34,7 @@ import {
     useAddFileToBatch,
     useRemoveFileFromBatch,
 } from '../../hooks/useBatches';
+import { listPeriods } from '../../api/periods';
 import type { OrganizationAdmin } from '@reportplatform/types';
 
 const useStyles = makeStyles({
@@ -183,15 +186,23 @@ const BatchesPanel: React.FC = () => {
     const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null);
 
     const [newName, setNewName] = useState('');
-    const [newPeriod, setNewPeriod] = useState('');
+    const [newPeriodId, setNewPeriodId] = useState('');  // UUID or empty for standalone
     const [newDescription, setNewDescription] = useState('');
     const [newHoldingId, setNewHoldingId] = useState('');
+    const navigate = useNavigate();
 
     const styles = useStyles();
 
     const { data: batches, isLoading, error } = useBatches(filterHoldingId || undefined);
     const createBatch = useCreateBatch();
     const deleteBatch = useDeleteBatch();
+
+    // Fetch available periods for the dropdown
+    const { data: periodsData } = useQuery({
+        queryKey: ['periods-for-batch'],
+        queryFn: () => listPeriods({ page_size: 100 }),
+    });
+    const periods = periodsData?.data ?? [];
 
     const holdings = flattenHoldings(organizations || []);
 
@@ -204,17 +215,24 @@ const BatchesPanel: React.FC = () => {
     }
 
     const handleCreate = async () => {
-        if (!newName.trim() || !newPeriod.trim() || !newHoldingId) return;
+        if (!newName.trim() || !newHoldingId) return;
+
+        // Resolve period display name from selected period or use batch name
+        const selectedPeriod = periods.find((p) => p.id === newPeriodId);
+        const periodLabel = selectedPeriod
+            ? `${selectedPeriod.name} (${(selectedPeriod as any).periodCode ?? (selectedPeriod as any).period_code ?? ''})`
+            : newName;
 
         await createBatch.mutateAsync({
             name: newName,
-            period: newPeriod,
+            period: periodLabel,
+            period_id: newPeriodId || undefined,
             description: newDescription || undefined,
             holding_id: newHoldingId,
         });
 
         setNewName('');
-        setNewPeriod('');
+        setNewPeriodId('');
         setNewDescription('');
         setNewHoldingId('');
         setIsCreateOpen(false);
@@ -295,7 +313,20 @@ const BatchesPanel: React.FC = () => {
                                             {batch.name}
                                         </Button>
                                     </TableCell>
-                                    <TableCell>{batch.period}</TableCell>
+                                    <TableCell>
+                                        {batch.periodId ? (
+                                            <Button
+                                                appearance="subtle"
+                                                size="small"
+                                                onClick={() => navigate(`/periods/${batch.periodId}`)}
+                                                style={{ color: tokens.colorBrandForeground1 }}
+                                            >
+                                                {batch.period}
+                                            </Button>
+                                        ) : (
+                                            <span>{batch.period}</span>
+                                        )}
+                                    </TableCell>
                                     <TableCell>
                                         <Badge color={statusColor(batch.status)} appearance="filled" size="small">
                                             {batch.status}
@@ -344,12 +375,27 @@ const BatchesPanel: React.FC = () => {
                                     onChange={(_e: any, data: any) => setNewName(data.value)}
                                     placeholder="e.g. Q1-2026 OPEX Reports"
                                 />
-                                <Label required>Period</Label>
-                                <Input
-                                    value={newPeriod}
-                                    onChange={(_e: any, data: any) => setNewPeriod(data.value)}
-                                    placeholder="e.g. Q1-2026"
-                                />
+                                <Label>Reporting Period</Label>
+                                <select
+                                    value={newPeriodId}
+                                    onChange={(e) => setNewPeriodId(e.target.value)}
+                                    style={{
+                                        padding: '6px 8px',
+                                        borderRadius: '4px',
+                                        border: `1px solid ${tokens.colorNeutralStroke1}`,
+                                        backgroundColor: tokens.colorNeutralBackground1,
+                                        color: tokens.colorNeutralForeground1,
+                                        fontSize: '14px',
+                                        width: '100%',
+                                    }}
+                                >
+                                    <option value="">-- None (standalone batch) --</option>
+                                    {periods.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.name} ({(p as any).periodCode ?? (p as any).period_code ?? ''}) — {(p.status ?? (p as any).state ?? '').toUpperCase()}
+                                        </option>
+                                    ))}
+                                </select>
                                 <Label required>Holding Organization</Label>
                                 <select
                                     value={newHoldingId}
@@ -386,7 +432,7 @@ const BatchesPanel: React.FC = () => {
                             <Button
                                 appearance="primary"
                                 onClick={handleCreate}
-                                disabled={createBatch.isPending || !newName || !newPeriod || !newHoldingId}
+                                disabled={createBatch.isPending || !newName || !newHoldingId}
                             >
                                 {createBatch.isPending ? 'Creating...' : 'Create'}
                             </Button>

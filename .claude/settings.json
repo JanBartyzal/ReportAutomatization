@@ -170,7 +170,17 @@
       "Bash(ls i:/Codes/GCP/ReportAutomatization/infra/docker/docker-compose*.yml)",
       "Bash(grep -v \"^--$\")",
       "Bash(curl -s -X POST http://localhost:8105/api/periods -H \"Content-Type: application/json\" -H \"X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515\" -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" -H \"X-Roles: HOLDING_ADMIN\" -d '{\"\"name\"\":\"\"Test Period\"\",\"\"type\"\":\"\"QUARTERLY\"\",\"\"period_code\"\":\"\"TEST-Q1\"\"}')",
-      "Bash(curl -s -X POST http://localhost:8105/api/periods -H \"Content-Type: application/json\" -H \"X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515\" -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" -H \"X-Roles: HOLDING_ADMIN\" -d '{\"\"name\"\":\"\"Q1 2026\"\",\"\"type\"\":\"\"QUARTERLY\"\",\"\"period_code\"\":\"\"Q1-2026\"\",\"\"start_date\"\":\"\"2026-01-01\"\",\"\"submission_deadline\"\":\"\"2026-03-31\"\"}')"
+      "Bash(curl -s -X POST http://localhost:8105/api/periods -H \"Content-Type: application/json\" -H \"X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515\" -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" -H \"X-Roles: HOLDING_ADMIN\" -d '{\"\"name\"\":\"\"Q1 2026\"\",\"\"type\"\":\"\"QUARTERLY\"\",\"\"period_code\"\":\"\"Q1-2026\"\",\"\"start_date\"\":\"\"2026-01-01\"\",\"\"submission_deadline\"\":\"\"2026-03-31\"\"}')",
+      "Bash(grep -E \"\\\\.\\(java|ts\\)$\")",
+      "Bash(grep -E \"\\\\.\\(ts|py\\)$\")",
+      "Bash(grep -E \"\\\\.\\(java|kt\\)$\")",
+      "Bash(python tests/Step17_Report_Lifecycle/test_report_lifecycle.py)",
+      "Bash(python tests/Step20_Period_Dashboard/test_period_dashboard.py)",
+      "Bash(curl -s -H \"Authorization: Bearer dev-bypass-token\" -H \"X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515\" -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" http://localhost:8081/api/auth/me)",
+      "Bash(\"i:/apache-maven-3.9.6/bin/mvn.cmd\" -f apps/engine/pom.xml clean compile)",
+      "Bash(\"i:/apache-maven-3.9.6/bin/mvn.cmd\" -f apps/engine/engine-core/pom.xml clean compile)",
+      "Bash(\"i:/apache-maven-3.9.6/bin/mvn.cmd\" -f apps/engine/engine-data/pom.xml clean compile)",
+      "Bash(\"i:/apache-maven-3.9.6/bin/mvn.cmd\" -f apps/engine/engine-reporting/pom.xml clean compile)"
     ],
     "additionalDirectories": [
       "\\tmp"

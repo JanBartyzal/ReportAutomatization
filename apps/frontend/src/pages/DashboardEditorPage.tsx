@@ -16,10 +16,12 @@ import {
     Tab,
     TabList,
 } from '@fluentui/react-components';
-import { ArrowLeft24Regular, Save24Regular, Add24Regular, Delete24Regular, Share24Regular, Copy24Regular } from '@fluentui/react-icons';
+import { ArrowLeft24Regular, Save24Regular, Add24Regular, Delete24Regular, Share24Regular, Copy24Regular, QuestionCircle24Regular, ArrowDownload24Regular, ArrowUpload24Regular } from '@fluentui/react-icons';
 import { useDashboard, useCreateDashboard, useUpdateDashboard } from '../hooks/useDashboards';
 import LoadingSpinner from '../components/LoadingSpinner';
 import DashboardSqlEditor from '../components/Dashboard/DashboardSqlEditor';
+import SqlQueryHelperDialog from '../components/Dashboard/SqlQueryHelperDialog';
+import { WidgetExportDialog, WidgetImportDialog } from '../components/Dashboard/WidgetImportExportDialog';
 import type { DashboardConfig, WidgetConfig } from '@reportplatform/types';
 import { WidgetType } from '@reportplatform/types';
 
@@ -94,6 +96,7 @@ const DATA_SOURCES = [
     { value: 'opex_by_category', label: 'OPEX by Category' },
     { value: 'parsed_files', label: 'Parsed Files' },
     { value: 'processing_logs', label: 'Processing Logs' },
+    { value: 'custom_sql', label: 'Custom SQL Query' },
 ];
 
 const GROUP_BY_OPTIONS = [
@@ -119,6 +122,9 @@ export default function DashboardEditorPage() {
     const [isPublic, setIsPublic] = useState(existingDashboard?.is_public || false);
     const [widgets, setWidgets] = useState<WidgetConfig[]>(existingDashboard?.widgets || []);
     const [activeTab, setActiveTab] = useState<string>('basic');
+    const [showSqlHelper, setShowSqlHelper] = useState(false);
+    const [exportWidget, setExportWidget] = useState<WidgetConfig | null>(null);
+    const [showImportDialog, setShowImportDialog] = useState(false);
 
     if (!isNew && isLoading) {
         return <LoadingSpinner label="Loading dashboard..." />;
@@ -206,6 +212,10 @@ export default function DashboardEditorPage() {
             },
         ]);
         setActiveTab('widgets');
+    };
+
+    const handleWidgetImport = (widget: WidgetConfig) => {
+        setWidgets([...widgets, { ...widget }]);
     };
 
     return (
@@ -306,13 +316,22 @@ export default function DashboardEditorPage() {
                     <div className={styles.section}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Title3>Widgets</Title3>
-                            <Button
-                                appearance="primary"
-                                icon={<Add24Regular />}
-                                onClick={addWidget}
-                            >
-                                Add Widget
-                            </Button>
+                            <div style={{ display: 'flex', gap: tokens.spacingHorizontalS }}>
+                                <Button
+                                    appearance="primary"
+                                    icon={<Add24Regular />}
+                                    onClick={addWidget}
+                                >
+                                    Add Widget
+                                </Button>
+                                <Button
+                                    appearance="subtle"
+                                    icon={<ArrowUpload24Regular />}
+                                    onClick={() => setShowImportDialog(true)}
+                                >
+                                    Import Widget
+                                </Button>
+                            </div>
                         </div>
 
                         <div className={styles.widgetList}>
@@ -320,13 +339,24 @@ export default function DashboardEditorPage() {
                                 <Card key={index} className={styles.widgetCard}>
                                     <div className={styles.widgetHeader}>
                                         <Body1><strong>Widget {index + 1}</strong></Body1>
-                                        <Button
-                                            appearance="subtle"
-                                            icon={<Delete24Regular />}
-                                            onClick={() => removeWidget(index)}
-                                        >
-                                            Remove
-                                        </Button>
+                                        <div style={{ display: 'flex', gap: tokens.spacingHorizontalXS }}>
+                                            <Button
+                                                appearance="subtle"
+                                                icon={<ArrowDownload24Regular />}
+                                                onClick={() => setExportWidget(widget)}
+                                                size="small"
+                                            >
+                                                Export
+                                            </Button>
+                                            <Button
+                                                appearance="subtle"
+                                                icon={<Delete24Regular />}
+                                                onClick={() => removeWidget(index)}
+                                                size="small"
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
                                     </div>
 
                                     <div className={styles.widgetFields}>
@@ -370,23 +400,63 @@ export default function DashboardEditorPage() {
                                             </Dropdown>
                                         </div>
 
-                                        <div className={styles.field}>
-                                            <Body1>Group By</Body1>
-                                            <Dropdown
-                                                value={GROUP_BY_OPTIONS.find((g: any) => g.value === (widget.config as any)?.group_by?.[0])?.label || 'Select Grouping'}
-                                                onOptionSelect={(_ev: any, d: any) =>
-                                                    updateWidget(index, {
-                                                        config: { ...(widget.config as any), group_by: [d.optionValue as string] },
-                                                    })
-                                                }
-                                            >
-                                                {GROUP_BY_OPTIONS.map((option) => (
-                                                    <Option key={option.value} value={option.value}>
-                                                        {option.label}
-                                                    </Option>
-                                                ))}
-                                            </Dropdown>
-                                        </div>
+                                        {widget.data_source === 'custom_sql' && (
+                                            <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Body1>SQL Query</Body1>
+                                                    <Button
+                                                        appearance="subtle"
+                                                        icon={<QuestionCircle24Regular />}
+                                                        onClick={() => setShowSqlHelper(true)}
+                                                        size="small"
+                                                    >
+                                                        Help
+                                                    </Button>
+                                                </div>
+                                                <textarea
+                                                    style={{
+                                                        width: '100%',
+                                                        minHeight: '120px',
+                                                        padding: tokens.spacingHorizontalM,
+                                                        fontFamily: 'monospace',
+                                                        fontSize: tokens.fontSizeBase200,
+                                                        border: `1px solid ${tokens.colorNeutralStroke1}`,
+                                                        borderRadius: tokens.borderRadiusMedium,
+                                                        backgroundColor: tokens.colorNeutralBackground2,
+                                                        resize: 'vertical',
+                                                        outline: 'none',
+                                                        color: tokens.colorNeutralForeground1,
+                                                    }}
+                                                    value={(widget.config as any)?.sql || ''}
+                                                    onChange={(e) =>
+                                                        updateWidget(index, {
+                                                            config: { ...(widget.config as any), sql: e.target.value },
+                                                        })
+                                                    }
+                                                    placeholder="SELECT category AS LabelX, SUM(amount) AS LabelY FROM parsed_tables GROUP BY category"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {widget.data_source !== 'custom_sql' && (
+                                            <div className={styles.field}>
+                                                <Body1>Group By</Body1>
+                                                <Dropdown
+                                                    value={GROUP_BY_OPTIONS.find((g: any) => g.value === (widget.config as any)?.group_by?.[0])?.label || 'Select Grouping'}
+                                                    onOptionSelect={(_ev: any, d: any) =>
+                                                        updateWidget(index, {
+                                                            config: { ...(widget.config as any), group_by: [d.optionValue as string] },
+                                                        })
+                                                    }
+                                                >
+                                                    {GROUP_BY_OPTIONS.map((option) => (
+                                                        <Option key={option.value} value={option.value}>
+                                                            {option.label}
+                                                        </Option>
+                                                    ))}
+                                                </Dropdown>
+                                            </div>
+                                        )}
 
                                         <div className={styles.field}>
                                             <Body1>Width (1-12)</Body1>
@@ -441,6 +511,18 @@ export default function DashboardEditorPage() {
                     </div>
                 </div>
             )}
+
+            <SqlQueryHelperDialog open={showSqlHelper} onClose={() => setShowSqlHelper(false)} />
+            <WidgetExportDialog
+                open={exportWidget !== null}
+                onClose={() => setExportWidget(null)}
+                widget={exportWidget}
+            />
+            <WidgetImportDialog
+                open={showImportDialog}
+                onClose={() => setShowImportDialog(false)}
+                onImport={handleWidgetImport}
+            />
         </div>
     );
 }

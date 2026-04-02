@@ -10,6 +10,7 @@ import { getChartPalette } from '../../theme/chartColors';
 import { rechartsTooltipStyle } from './rechartsTheme';
 import { ChartWrapper } from './ChartWrapper';
 import { AggregatedData } from '@reportplatform/types';
+import { getPieMapping } from './chartDataUtils';
 
 interface PieChartWidgetProps {
     data: AggregatedData;
@@ -17,8 +18,7 @@ interface PieChartWidgetProps {
 }
 
 export const PieChartWidget: React.FC<PieChartWidgetProps> = ({ data }) => {
-    const nameKey = data.columns[0];
-    const valueKey = data.columns[1] || data.columns[0];
+    const { nameKey, valueKey } = getPieMapping(data);
     const colors = [...getChartPalette()];
 
     return (

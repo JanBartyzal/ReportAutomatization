@@ -388,8 +388,12 @@ def main() -> int:
     data_session.token = admin1_token
 
     if dashboard_id:
+        # DashboardDataRequest requires groupBy, aggregation, valueField
         sql_payload = {
-            "query": 'SELECT SUM("TotalCost") as total FROM xlsx_data'
+            "groupBy": ["Project Name"],
+            "aggregation": "SUM",
+            "valueField": "TotalCost",
+            "sourceType": "FILE"
         }
         status, body = data_session.call("POST", f"/api/dashboards/{dashboard_id}/data",
                                     body=sql_payload,

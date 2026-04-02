@@ -1,0 +1,1 @@
+# Web UAT Tests for ReportAutomatization

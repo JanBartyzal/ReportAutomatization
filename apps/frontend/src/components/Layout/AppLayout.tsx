@@ -29,6 +29,7 @@ import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { TopNav } from './TopNav';
 import { Sidebar, type NavSection } from './Sidebar';
 import { AppShell } from './AppShell';
+import { OrgSwitcher } from './OrgSwitcher';
 
 const useStyles = makeStyles({
   root: {
@@ -123,6 +124,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <main className={styles.main}>
         <TopNav>
           <GlobalSearchBar />
+          <OrgSwitcher />
           <NotificationCenter />
         </TopNav>
         <AppShell>{children}</AppShell>

@@ -6,26 +6,83 @@ import type {
   AggregatedData,
   PeriodComparisonRequest,
   ComparisonData,
+  WidgetConfig,
 } from '@reportplatform/types';
 
+interface DashboardRequest {
+  name: string;
+  description?: string;
+  config: { widgets: WidgetConfig[] };
+  chartType?: string;
+  is_public: boolean;
+}
+
+interface DashboardResponse {
+  id: string;
+  orgId: string;
+  createdBy: string;
+  name: string;
+  description?: string;
+  config: { widgets: WidgetConfig[] };
+  chartType?: string;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export async function listDashboards(): Promise<DashboardSummary[]> {
-  const { data } = await apiClient.get<DashboardSummary[]>('/dashboards');
-  return data;
+  const { data } = await apiClient.get('/dashboards');
+  return Array.isArray(data) ? data : (data?.dashboards ?? []);
 }
 
 export async function createDashboard(config: DashboardConfig): Promise<DashboardConfig> {
-  const { data } = await apiClient.post<DashboardConfig>('/dashboards', config);
-  return data;
+  const request: DashboardRequest = {
+    name: config.name,
+    description: config.description,
+    config: { widgets: config.widgets },
+    chartType: 'bar',
+    is_public: config.is_public,
+  };
+  const { data } = await apiClient.post<DashboardResponse>('/dashboards', request);
+  return {
+    id: data.id,
+    name: data.name,
+    description: data.description,
+    is_public: data.isPublic,
+    widgets: data.config?.widgets || [],
+    created_at: data.createdAt,
+  };
 }
 
 export async function getDashboard(dashboardId: string): Promise<DashboardConfig> {
-  const { data } = await apiClient.get<DashboardConfig>(`/dashboards/${dashboardId}`);
-  return data;
+  const { data } = await apiClient.get<DashboardResponse>(`/dashboards/${dashboardId}`);
+  return {
+    id: data.id,
+    name: data.name,
+    description: data.description,
+    is_public: data.isPublic,
+    widgets: data.config?.widgets || [],
+    created_at: data.createdAt,
+  };
 }
 
 export async function updateDashboard(dashboardId: string, config: DashboardConfig): Promise<DashboardConfig> {
-  const { data } = await apiClient.put<DashboardConfig>(`/dashboards/${dashboardId}`, config);
-  return data;
+  const request: DashboardRequest = {
+    name: config.name,
+    description: config.description,
+    config: { widgets: config.widgets },
+    chartType: 'bar',
+    is_public: config.is_public,
+  };
+  const { data } = await apiClient.put<DashboardResponse>(`/dashboards/${dashboardId}`, request);
+  return {
+    id: data.id,
+    name: data.name,
+    description: data.description,
+    is_public: data.isPublic,
+    widgets: data.config?.widgets || [],
+    created_at: data.createdAt,
+  };
 }
 
 export async function deleteDashboard(dashboardId: string): Promise<void> {
@@ -59,7 +116,13 @@ export async function updateDashboardSharing(
   return data;
 }
 
-export async function executeRawSql(sql: string): Promise<{ columns: string[]; rows: unknown[][] }> {
-  const { data } = await apiClient.post<{ columns: string[]; rows: unknown[][] }>('/dashboards/sql/execute', { sql });
+export interface RawSqlResult {
+  columns: string[];
+  rows: unknown[][];
+  totalRows: number;
+}
+
+export async function executeRawSql(sql: string): Promise<RawSqlResult> {
+  const { data } = await apiClient.post<RawSqlResult>('/dashboards/sql/execute', { sql });
   return data;
 }

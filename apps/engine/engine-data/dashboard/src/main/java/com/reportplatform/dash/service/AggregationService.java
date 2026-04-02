@@ -5,6 +5,7 @@ import com.reportplatform.dash.model.dto.DashboardDataResponse;
 import com.reportplatform.dash.model.dto.PeriodComparisonRequest;
 import com.reportplatform.dash.model.dto.PeriodComparisonResponse;
 import com.reportplatform.dash.model.dto.PeriodComparisonResponse.PeriodComparisonRow;
+import com.reportplatform.dash.model.dto.RawSqlResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -42,6 +44,13 @@ public class AggregationService {
      * Allowed aggregation functions (whitelist to prevent SQL injection).
      */
     private static final Set<String> ALLOWED_AGGREGATIONS = Set.of("SUM", "AVG", "COUNT", "MIN", "MAX");
+
+    private static final Pattern SQL_INJECTION_PATTERN = Pattern.compile(
+            ".*(DROP|DELETE|TRUNCATE|ALTER|CREATE|INSERT|UPDATE|GRANT|REVOKE|EXEC|EXECUTE).*",
+            Pattern.CASE_INSENSITIVE
+    );
+
+    private static final int MAX_ROWS = 1000;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
@@ -78,6 +87,69 @@ public class AggregationService {
         metadata.put("sourceType", request.sourceType() != null ? request.sourceType() : "ALL");
 
         return new DashboardDataResponse(results, metadata);
+    }
+
+    /**
+     * Execute a raw SQL query against parsed_tables.
+     * Only SELECT queries are allowed. Results are limited to MAX_ROWS.
+     *
+     * <p>For chart widgets, use column aliases LabelX and LabelY:
+     * <pre>
+     * SELECT category AS LabelX, SUM(amount) AS LabelY FROM parsed_tables ...
+     * </pre>
+     *
+     * @param orgId organization ID for RLS filtering
+     * @param sql   the SQL query to execute
+     * @return query results with columns and rows
+     */
+    public RawSqlResponse executeRawSql(UUID orgId, String sql) {
+        validateRawSql(sql);
+
+        var params = new MapSqlParameterSource();
+        params.addValue("orgId", orgId.toString());
+
+        String validatedSql = buildRawSql(sql, params);
+
+        log.debug("Executing raw SQL for org={}: {}", orgId, validatedSql);
+
+        List<Map<String, Object>> results = jdbcTemplate.queryForList(validatedSql, params);
+
+        if (results.isEmpty()) {
+            return new RawSqlResponse(List.of(), List.of(), 0);
+        }
+
+        List<String> columns = new ArrayList<>(results.get(0).keySet());
+        List<List<Object>> rows = results.stream()
+                .map(row -> columns.stream().map(row::get).toList())
+                .toList();
+
+        return new RawSqlResponse(columns, rows, rows.size());
+    }
+
+    private void validateRawSql(String sql) {
+        if (sql == null || sql.isBlank()) {
+            throw new IllegalArgumentException("SQL query cannot be blank");
+        }
+        String trimmed = sql.trim();
+        if (!trimmed.toUpperCase().startsWith("SELECT")) {
+            throw new IllegalArgumentException("Only SELECT queries are allowed");
+        }
+        if (SQL_INJECTION_PATTERN.matcher(sql).matches()) {
+            throw new IllegalArgumentException("SQL contains forbidden keywords");
+        }
+    }
+
+    private String buildRawSql(String sql, MapSqlParameterSource params) {
+        String normalized = sql.trim();
+        if (!normalized.toUpperCase().contains("LIMIT")) {
+            normalized = normalized + " LIMIT " + MAX_ROWS;
+        }
+        if (!normalized.toUpperCase().contains("WHERE") && !normalized.toUpperCase().contains("where")) {
+            return normalized.replaceFirst("(?i)FROM", "FROM parsed_tables WHERE org_id = :orgId AND ");
+        } else if (!normalized.toUpperCase().contains("org_id")) {
+            return normalized.replaceFirst("(?i)FROM", "FROM parsed_tables pt WHERE pt.org_id = :orgId AND ");
+        }
+        return normalized;
     }
 
     /**
