@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,8 +34,10 @@ public class FormExcelController {
 
     @GetMapping("/export/excel-template")
     @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
-    public ResponseEntity<byte[]> exportExcelTemplate(@PathVariable UUID formId) throws IOException {
-        byte[] template = excelTemplateService.generateTemplate(formId);
+    public ResponseEntity<byte[]> exportExcelTemplate(
+            @PathVariable UUID formId,
+            @RequestHeader(value = "X-Org-Id", required = false) String orgId) throws IOException {
+        byte[] template = excelTemplateService.generateTemplate(formId, orgId);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=form_template_" + formId + ".xlsx")

@@ -131,12 +131,13 @@ public class QueryService {
 
         String filename = summary != null ? summary.getFilename() : null;
 
-        // Get SLIDE_TEXT documents for this file
+        // Get SLIDE_TEXT_N documents for this file (stored as SLIDE_TEXT_0, SLIDE_TEXT_1, ...)
         List<DocumentEntity> slideDocuments = documentRepository
-                .findByFileIdAndDocumentType(fileId.toString(), "SLIDE_TEXT");
+                .findSlideDocumentsByFileId(fileId.toString());
 
         List<SlideDto> slides = slideDocuments.stream()
                 .map(this::toSlideDto)
+                .sorted(java.util.Comparator.comparingInt(SlideDto::slideIndex))
                 .toList();
 
         SlideDataResponse response = new SlideDataResponse(fileId, filename, slides);
@@ -321,13 +322,35 @@ public class QueryService {
     private SlideDto toSlideDto(DocumentEntity entity) {
         Object content = entity.getContent();
         if (content instanceof Map<?, ?> contentMap) {
-            int slideIndex = contentMap.containsKey("slideIndex")
-                    ? ((Number) contentMap.get("slideIndex")).intValue() : 0;
+            // Accept both camelCase (new) and snake_case (legacy) key names
+            int slideIndex = 0;
+            if (contentMap.containsKey("slideIndex")) {
+                slideIndex = ((Number) contentMap.get("slideIndex")).intValue();
+            } else if (contentMap.containsKey("slide_index")) {
+                slideIndex = ((Number) contentMap.get("slide_index")).intValue();
+            } else {
+                // Fall back to extracting index from document_type = "SLIDE_TEXT_N"
+                String docType = entity.getDocumentType();
+                if (docType != null && docType.startsWith("SLIDE_TEXT_")) {
+                    try {
+                        slideIndex = Integer.parseInt(docType.substring("SLIDE_TEXT_".length()));
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
+
             String title = contentMap.containsKey("title") ? (String) contentMap.get("title") : "";
             List<Object> texts = contentMap.containsKey("texts")
                     ? (List<Object>) contentMap.get("texts") : Collections.emptyList();
-            List<Object> tables = contentMap.containsKey("tables")
-                    ? (List<Object>) contentMap.get("tables") : Collections.emptyList();
+
+            // Tables: prefer content (new), fall back to metadata (legacy)
+            List<Object> tables = Collections.emptyList();
+            if (contentMap.containsKey("tables") && contentMap.get("tables") instanceof List<?> t) {
+                tables = (List<Object>) t;
+            } else if (entity.getMetadata() instanceof Map<?, ?> metaMap && metaMap.containsKey("tables")
+                    && metaMap.get("tables") instanceof List<?> mt) {
+                tables = (List<Object>) mt;
+            }
+
             String imageUrl = contentMap.containsKey("imageUrl") ? (String) contentMap.get("imageUrl") : null;
             String notes = contentMap.containsKey("notes") ? (String) contentMap.get("notes") : "";
 

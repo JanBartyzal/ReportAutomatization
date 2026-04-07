@@ -126,6 +126,16 @@ All task files moved to `docs/tasks/done/`:
 
 ---
 
+## UAT Bug Fixes (2026-04-07)
+
+> **Source:** UAT run 2026-04-07 — 90.8% pass rate. Fix before next UAT run.
+
+| File | Priority | Summary |
+|------|----------|---------|
+| [UAT_bugfix.md](UAT_bugfix.md) | CRITICAL→LOW | 10 failures + 12 skips — file upload 500, batch RLS, dashboards, SSE, schema mapping |
+
+---
+
 ## Active Phases (P7–P11)
 
 ### P7 – External Integrations & Data Optimization (~49 MD)

@@ -266,10 +266,15 @@ public class BatchController {
         if (orgId != null && !orgId.isBlank()) {
             try {
                 UUID.fromString(orgId);
-                entityManager.createNativeQuery("SET LOCAL app.current_org_id = '" + orgId + "'")
-                        .executeUpdate();
-                entityManager.flush();
-            } catch (IllegalArgumentException ignored) {}
+                // Use set_config with transaction-local flag (true = resets at transaction end).
+                // getSingleResult() works for non-DML statements; executeUpdate() would fail.
+                entityManager.createNativeQuery(
+                                "SELECT set_config('app.current_org_id', :orgId, true)")
+                        .setParameter("orgId", orgId)
+                        .getSingleResult();
+            } catch (IllegalArgumentException e) {
+                logger.warn("Invalid UUID for RLS context: {}", orgId);
+            }
         }
     }
 }

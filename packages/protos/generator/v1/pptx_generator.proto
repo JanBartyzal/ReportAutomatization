@@ -23,10 +23,27 @@ message GenerateReportRequest {
   repeated GeneratorChartData charts = 6;
 }
 
+enum TableAggregationType {
+  TABLE_AGGREGATION_TYPE_UNSPECIFIED = 0;
+  TABLE_AGGREGATION_TYPE_NONE = 1;
+  TABLE_AGGREGATION_TYPE_SUM = 2;
+  TABLE_AGGREGATION_TYPE_AVG = 3;
+  TABLE_AGGREGATION_TYPE_DETAIL = 4;
+}
+
+enum ChartAggregationType {
+  CHART_AGGREGATION_TYPE_UNSPECIFIED = 0;
+  CHART_AGGREGATION_TYPE_NONE = 1;
+  CHART_AGGREGATION_TYPE_SUM = 2;
+  CHART_AGGREGATION_TYPE_AVG = 3;
+  CHART_AGGREGATION_TYPE_CUMULATIVE = 4;
+}
+
 message GeneratorTableData {
   string placeholder_key = 1;  // "TABLE:table_name"
   repeated string headers = 2;
   repeated GeneratorTableRow rows = 3;
+  TableAggregationType aggregation = 4;
 }
 
 message GeneratorTableRow {
@@ -38,6 +55,7 @@ message GeneratorChartData {
   string chart_type = 2;       // "BAR", "LINE", "PIE"
   repeated string labels = 3;
   repeated ChartSeries series = 4;
+  ChartAggregationType aggregation = 5;
 }
 
 message ChartSeries {

@@ -5,6 +5,8 @@ import com.reportplatform.form.model.FormFieldEntity;
 import com.reportplatform.form.repository.FormFieldRepository;
 import com.reportplatform.form.repository.FormRepository;
 import com.reportplatform.form.repository.FormVersionRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.apache.poi.ss.usermodel.DataValidationHelper;
@@ -31,6 +33,9 @@ public class ExcelTemplateService {
 
     private static final Logger log = LoggerFactory.getLogger(ExcelTemplateService.class);
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     private final FormRepository formRepository;
     private final FormVersionRepository formVersionRepository;
     private final FormFieldRepository formFieldRepository;
@@ -43,7 +48,19 @@ public class ExcelTemplateService {
         this.formFieldRepository = formFieldRepository;
     }
 
-    public byte[] generateTemplate(UUID formId) throws IOException {
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public byte[] generateTemplate(UUID formId, String orgId) throws IOException {
+        if (orgId != null && !orgId.isBlank()) {
+            try {
+                java.util.UUID.fromString(orgId);
+                entityManager.createNativeQuery("SELECT set_config('app.current_org_id', :orgId, true)")
+                        .setParameter("orgId", orgId)
+                        .getSingleResult();
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid orgId for RLS context: {}", orgId);
+            }
+        }
+
         var form = formRepository.findById(formId)
                 .orElseThrow(() -> new FormNotFoundException(formId));
 

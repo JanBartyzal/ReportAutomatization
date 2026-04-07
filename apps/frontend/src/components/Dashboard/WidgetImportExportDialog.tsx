@@ -9,10 +9,6 @@ import {
     DialogContent,
     DialogActions,
     Body1,
-    Title3,
-    Text,
-    Input,
-    Spinner,
 } from '@fluentui/react-components';
 import { ArrowDownload24Regular, ArrowUpload24Regular, Copy24Regular, Checkmark24Regular } from '@fluentui/react-icons';
 import { useState } from 'react';
@@ -42,7 +38,7 @@ const useStyles = makeStyles({
         gap: tokens.spacingHorizontalS,
     },
     success: {
-        color: tokens.colorSuccessForeground1,
+        color: tokens.colorStatusSuccessForeground1,
         display: 'flex',
         alignItems: 'center',
         gap: tokens.spacingHorizontalXS,

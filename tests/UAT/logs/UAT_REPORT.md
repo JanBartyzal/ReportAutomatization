@@ -1,17 +1,17 @@
 # UAT Report — ReportAutomatization (RA)
 
-Generated: 2026-04-02T13:59:13
+Generated: 2026-04-07T14:13:24
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
 | Total steps executed | 26 |
-| Total assertions | 271 |
-| Passed | 253 |
+| Total assertions | 276 |
+| Passed | 259 |
 | Failed | 7 |
-| Skipped (missing features) | 11 |
-| Overall success rate | 93.4% |
+| Skipped (missing features) | 10 |
+| Overall success rate | 93.8% |
 
 ## Step Results
 
@@ -21,23 +21,23 @@ Generated: 2026-04-02T13:59:13
 | step01_Infrastructure_Auth | 13 | 13 | 0 | 0 | 100% | PASS |
 | step02_File_Upload | 12 | 12 | 0 | 0 | 100% | PASS |
 | step03_Atomizer_PPTX | 7 | 5 | 0 | 2 | 71% | PASS |
-| step04_Orchestrator_Workflow | 6 | 5 | 0 | 1 | 83% | PASS |
-| step05_Sinks_Persistence | 11 | 8 | 2 | 1 | 73% | PARTIAL |
-| step06_Analytics_Query | 16 | 16 | 0 | 0 | 100% | PASS |
+| step04_Orchestrator_Workflow | 6 | 4 | 0 | 2 | 67% | PASS |
+| step05_Sinks_Persistence | 9 | 8 | 0 | 1 | 89% | PASS |
+| step06_Analytics_Query | 16 | 15 | 1 | 0 | 94% | PARTIAL |
 | step07_Admin_Management | 11 | 11 | 0 | 0 | 100% | PASS |
-| step08_Batch_Organization | 8 | 7 | 0 | 1 | 88% | PASS |
+| step08_Batch_Organization | 7 | 6 | 0 | 1 | 86% | PASS |
 | step09_Frontend_SPA | 8 | 8 | 0 | 0 | 100% | PASS |
 | step10_Atomizer_Excel | 7 | 6 | 0 | 1 | 86% | PASS |
-| step11_Dashboards_SQL | 22 | 18 | 4 | 0 | 82% | PARTIAL |
+| step11_Dashboards_SQL | 22 | 19 | 3 | 0 | 86% | PARTIAL |
 | step12_API_AI_MCP | 8 | 8 | 0 | 0 | 100% | PASS |
 | step13_Notifications | 13 | 13 | 0 | 0 | 100% | PASS |
 | step14_Data_Versioning | 7 | 7 | 0 | 0 | 100% | PASS |
 | step15_Schema_Mapping | 9 | 8 | 0 | 1 | 89% | PASS |
 | step16_Audit_Compliance | 13 | 13 | 0 | 0 | 100% | PASS |
 | step17_Report_Lifecycle | 22 | 22 | 0 | 0 | 100% | PASS |
-| step18_PPTX_Generation | 4 | 3 | 0 | 1 | 75% | PASS |
+| step18_PPTX_Generation | 11 | 9 | 2 | 0 | 82% | PARTIAL |
 | step19_Form_Builder | 21 | 19 | 1 | 1 | 90% | PARTIAL |
-| step20_Period_Management | 13 | 12 | 0 | 1 | 92% | PASS |
+| step20_Period_Management | 14 | 14 | 0 | 0 | 100% | PASS |
 | step21_Local_Forms | 9 | 9 | 0 | 0 | 100% | PASS |
 | step22_Period_Comparison | 1 | 1 | 0 | 0 | 100% | PASS |
 | step23_ServiceNow_Integration | 7 | 7 | 0 | 0 | 100% | PASS |
@@ -51,15 +51,13 @@ The following steps produced error reports:
 - [step03_Atomizer_PPTX](step03_Atomizer_PPTX_errors.md)
 - [step04_Orchestrator_Workflow](step04_Orchestrator_Workflow_errors.md)
 - [step05_Sinks_Persistence](step05_Sinks_Persistence_errors.md)
+- [step06_Analytics_Query](step06_Analytics_Query_errors.md)
 - [step08_Batch_Organization](step08_Batch_Organization_errors.md)
-- [step09_Frontend_SPA](step09_Frontend_SPA_errors.md)
 - [step10_Atomizer_Excel](step10_Atomizer_Excel_errors.md)
 - [step11_Dashboards_SQL](step11_Dashboards_SQL_errors.md)
-- [step13_Notifications](step13_Notifications_errors.md)
 - [step15_Schema_Mapping](step15_Schema_Mapping_errors.md)
 - [step18_PPTX_Generation](step18_PPTX_Generation_errors.md)
 - [step19_Form_Builder](step19_Form_Builder_errors.md)
-- [step20_Period_Management](step20_Period_Management_errors.md)
 - [step24_Smart_Persistence](step24_Smart_Persistence_errors.md)
 
 ---

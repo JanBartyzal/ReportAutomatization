@@ -128,7 +128,22 @@
       "Bash(find i:CodesGCPReportAutomatization/infra -type f -name *.conf -o -name *.yaml -o -name *.yml)",
       "Bash(find i:CodesGCPReportAutomatization -type f \\\\\\(-name *nginx* -o -name *router* -o -name *.conf \\\\\\))",
       "Bash(find i:CodesGCPReportAutomatization/apps/engine/engine-data -name *.java -path */config/*)",
-      "Bash(\"i:/apache-maven-3.9.6/bin/mvn.cmd\" compile:*)"
+      "Bash(\"i:/apache-maven-3.9.6/bin/mvn.cmd\" compile:*)",
+      "Bash(ls -la /c/Docker/ReportAutomatization/*.json)",
+      "Bash(npm list:*)",
+      "Bash(sed -n '342,350p' \"c:/Docker/ReportAutomatization/infra/docker/docker-compose.yml\")",
+      "Bash(sed -n '391,399p' \"c:/Docker/ReportAutomatization/infra/docker/docker-compose.yml\")",
+      "Bash(sed -n '443,451p' \"c:/Docker/ReportAutomatization/infra/docker/docker-compose.yml\")",
+      "Read(//i/apache-maven-3.9.6/**)",
+      "Read(//c/Program Files/**)",
+      "Bash(where mvn:*)",
+      "Bash(python test_03_atomizer_pptx.py)",
+      "Bash(python test_04_orchestrator_workflow.py)",
+      "Bash(python test_05_sinks_persistence.py)",
+      "Bash(wait)",
+      "Bash(python test_11_dashboards_sql.py)",
+      "Bash(ls \"c:\\\\Docker\\\\ReportAutomatization\\\\tests\\\\UAT\\\\data\\\\\" 2>/dev/null || find c:/Docker/ReportAutomatization/tests/UAT -name \"*.xlsx\" 2>/dev/null | head -5)",
+      "Bash(xargs wc:*)"
     ]
   }
 }

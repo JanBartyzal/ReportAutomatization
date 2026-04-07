@@ -23,11 +23,12 @@ export function useFile(fileId: string, options?: { pollingInterval?: number }) 
   });
 }
 
-export function useFileContent(fileId: string) {
+export function useFileContent(fileId: string, mimeType?: string) {
   return useQuery<FileContent>({
-    queryKey: ['files', fileId, 'content'],
-    queryFn: () => getFileContent(fileId),
-    enabled: !!fileId,
+    queryKey: ['files', fileId, 'content', mimeType],
+    queryFn: () => getFileContent(fileId, mimeType),
+    // Wait until mimeType is resolved so we call the right endpoint
+    enabled: !!fileId && mimeType !== undefined,
   });
 }
 

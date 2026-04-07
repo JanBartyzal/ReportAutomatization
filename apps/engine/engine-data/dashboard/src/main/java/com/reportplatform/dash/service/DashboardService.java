@@ -7,6 +7,8 @@ import com.reportplatform.dash.model.dto.DashboardListResponse;
 import com.reportplatform.dash.model.dto.DashboardRequest;
 import com.reportplatform.dash.model.dto.DashboardResponse;
 import com.reportplatform.dash.repository.DashboardRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,9 @@ public class DashboardService {
 
     private static final Logger log = LoggerFactory.getLogger(DashboardService.class);
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     private final DashboardRepository dashboardRepository;
     private final ObjectMapper objectMapper;
 
@@ -29,11 +34,24 @@ public class DashboardService {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Sets the PostgreSQL session variable required by RLS policies on the dashboards table.
+     * Must be called within an active @Transactional context. The {@code true} flag makes
+     * it transaction-local so it auto-resets on commit/rollback.
+     */
+    private void setRlsContext(UUID orgId) {
+        if (orgId == null) return;
+        entityManager.createNativeQuery("SELECT set_config('app.current_org_id', :orgId, true)")
+                .setParameter("orgId", orgId.toString())
+                .getSingleResult();
+    }
+
     @Transactional(readOnly = true)
     public DashboardListResponse listDashboards(UUID orgId, UUID userId) {
         if (orgId == null) {
             return new DashboardListResponse(java.util.List.of());
         }
+        setRlsContext(orgId);
         var entities = dashboardRepository.findAccessibleDashboards(orgId, userId);
         var responses = entities.stream()
                 .map(this::toResponse)
@@ -43,6 +61,7 @@ public class DashboardService {
 
     @Transactional
     public DashboardResponse createDashboard(UUID orgId, UUID userId, DashboardRequest request) {
+        setRlsContext(orgId);
         var entity = new DashboardEntity();
         entity.setOrgId(orgId);
         entity.setCreatedBy(userId);
@@ -59,6 +78,7 @@ public class DashboardService {
 
     @Transactional(readOnly = true)
     public DashboardResponse getDashboard(UUID id, UUID orgId) {
+        setRlsContext(orgId);
         var entity = dashboardRepository.findByIdAndOrgId(id, orgId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Dashboard not found: " + id));
@@ -67,6 +87,7 @@ public class DashboardService {
 
     @Transactional
     public DashboardResponse updateDashboard(UUID id, UUID orgId, UUID userId, DashboardRequest request) {
+        setRlsContext(orgId);
         var entity = dashboardRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Dashboard not found: " + id));
@@ -86,6 +107,7 @@ public class DashboardService {
 
     @Transactional
     public void deleteDashboard(UUID id, UUID orgId) {
+        setRlsContext(orgId);
         var entity = dashboardRepository.findByIdAndOrgId(id, orgId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Dashboard not found: " + id));

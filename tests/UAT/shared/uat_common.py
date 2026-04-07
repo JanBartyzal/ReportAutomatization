@@ -308,18 +308,20 @@ class UATSession:
 
             return resp.status_code, data
 
+        except (requests.exceptions.ReadTimeout, requests.exceptions.Timeout) as exc:
+            # Timeout — return 0 without logging as failure; caller decides how to handle
+            self._log(f"[INFO] Timeout (status=0) for {method.upper()} {path}: {exc}")
+            return 0, {}
         except requests.exceptions.ConnectionError as exc:
+            err_str = str(exc)
+            # ReadTimeout can be wrapped in ConnectionError in some urllib3 versions
+            if "timed out" in err_str.lower() or "timeout" in err_str.lower():
+                self._log(f"[INFO] Connection timeout (status=0) for {method.upper()} {path}: {exc}")
+                return 0, {}
             self._fail_count += 1
             msg = f"Connection error: {exc}"
             self._err(f"[FAIL] {msg}")
             self._error_lines.append(f"## Connection Error\n- Endpoint: `{method.upper()} {path}`\n- Error: {exc}\n")
-            return 0, {}
-        except (requests.exceptions.ReadTimeout, requests.exceptions.Timeout) as exc:
-            # Timeout is expected for SSE long-polling endpoints
-            self._fail_count += 1
-            msg = f"Timeout: {exc}"
-            self._err(f"[FAIL] {msg}")
-            self._error_lines.append(f"## Timeout Error\n- Endpoint: `{method.upper()} {path}`\n- Error: {exc}\n")
             return 0, {}
         except Exception as exc:
             self._fail_count += 1

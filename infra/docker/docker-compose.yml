@@ -64,6 +64,7 @@ services:
     build:
       context: ../../
       dockerfile: apps/engine/engine-core/Dockerfile
+    image: reportautomatization/engine-core:latest
     container_name: engine-core
     environment:
       - SPRING_PROFILES_ACTIVE=docker
@@ -71,7 +72,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=engine_core_db
       - DB_USERNAME=engine_core_user
-      - DB_PASSWORD=${DB_PASSWORD:-engine_core_pass}
+      - DB_PASSWORD=${ENGINE_CORE_DB_PASS:-engine_core_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -108,6 +109,7 @@ services:
     build:
       context: ../../
       dockerfile: apps/engine/engine-ingestor/Dockerfile
+    image: reportautomatization/engine-ingestor:latest
     container_name: engine-ingestor
     environment:
       - SPRING_PROFILES_ACTIVE=docker
@@ -115,7 +117,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=engine_ingestor_db
       - DB_USERNAME=engine_ingestor_user
-      - DB_PASSWORD=${DB_PASSWORD:-engine_ingestor_pass}
+      - DB_PASSWORD=${ENGINE_INGESTOR_DB_PASS:-engine_ingestor_pass}
       - DAPR_HOST=dapr
       - DAPR_HTTP_PORT=3500
       - DAPR_GRPC_PORT=50001
@@ -152,6 +154,7 @@ services:
     build:
       context: ../../
       dockerfile: apps/engine/engine-orchestration/Dockerfile
+    image: reportautomatization/engine-orchestration:latest
     container_name: engine-orchestrator
     environment:
       - SPRING_PROFILES_ACTIVE=docker
@@ -159,7 +162,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=engine_orchestrator_db
       - DB_USERNAME=engine_orchestrator_user
-      - DB_PASSWORD=${DB_PASSWORD:-engine_orchestrator_pass}
+      - DB_PASSWORD=${ENGINE_ORCHESTRATOR_DB_PASS:-engine_orchestrator_pass}
       - GRPC_PORT=50051
       - HTTP_PORT=8080
       - DAPR_HOST=dapr
@@ -197,6 +200,7 @@ services:
     build:
       context: ../../
       dockerfile: apps/engine/engine-data/Dockerfile
+    image: reportautomatization/engine-data:latest
     container_name: engine-data
     environment:
       - SPRING_PROFILES_ACTIVE=docker
@@ -204,7 +208,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=engine_data_db
       - DB_USERNAME=engine_data_user
-      - DB_PASSWORD=${DB_PASSWORD:-engine_data_pass}
+      - DB_PASSWORD=${ENGINE_DATA_DB_PASS:-engine_data_pass}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_pass}
@@ -242,6 +246,7 @@ services:
     build:
       context: ../../
       dockerfile: apps/engine/engine-reporting/Dockerfile
+    image: reportautomatization/engine-reporting:latest
     container_name: engine-reporting
     environment:
       - SPRING_PROFILES_ACTIVE=docker
@@ -249,7 +254,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=engine_reporting_db
       - DB_USERNAME=engine_reporting_user
-      - DB_PASSWORD=${DB_PASSWORD:-engine_reporting_pass}
+      - DB_PASSWORD=${ENGINE_REPORTING_DB_PASS:-engine_reporting_pass}
       - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
       - AZURE_STORAGE_CONTAINER=templates
       - DAPR_HOST=dapr
@@ -287,6 +292,7 @@ services:
     build:
       context: ../../
       dockerfile: apps/engine/engine-integrations/Dockerfile
+    image: reportautomatization/engine-integrations:latest
     container_name: engine-integrations
     environment:
       - SPRING_PROFILES_ACTIVE=docker
@@ -294,7 +300,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=engine_integrations_db
       - DB_USERNAME=engine_integrations_user
-      - DB_PASSWORD=${DB_PASSWORD:-engine_integrations_pass}
+      - DB_PASSWORD=${ENGINE_INTEGRATIONS_DB_PASS:-engine_integrations_pass}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_pass}
@@ -337,6 +343,7 @@ services:
     build:
       context: ../..
       dockerfile: apps/processor/processor-atomizers/Dockerfile
+    image: reportautomatization/processor-atomizers:latest
     container_name: processor-atomizers
     environment:
       - PYTHONUNBUFFERED=1
@@ -386,6 +393,7 @@ services:
     build:
       context: ../..
       dockerfile: apps/processor/processor-generators/Dockerfile
+    image: reportautomatization/processor-generators:latest
     container_name: processor-generators
     environment:
       - PYTHONUNBUFFERED=1

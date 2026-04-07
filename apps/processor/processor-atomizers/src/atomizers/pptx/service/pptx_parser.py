@@ -2,10 +2,12 @@
 
 Extracts slide metadata, text blocks with positions, tables, and speaker notes.
 Handles edge cases: empty slides, merged cells, SmartArt, charts.
+Also extracts embedded Excel workbooks (OLE objects) stored inside slides.
 """
 
 from __future__ import annotations
 
+import io
 import logging
 import uuid
 from dataclasses import dataclass, field
@@ -13,6 +15,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any
 
+import openpyxl
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.util import Emu
@@ -157,6 +160,9 @@ class PptxParser:
                 # SmartArt is represented as a group shape
                 if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
                     has_images = True
+                # Embedded OLE object (e.g. Excel workbook)
+                if shape.shape_type == MSO_SHAPE_TYPE.EMBEDDED_OLE_OBJECT:
+                    has_tables = True
 
             has_notes = bool(
                 slide.has_notes_slide
@@ -190,6 +196,9 @@ class PptxParser:
     def extract_slide_content(self, prs: Presentation, slide_index: int) -> SlideContent:
         """Extract all content from a specific slide.
 
+        Includes native PPTX tables, text blocks, speaker notes, and any
+        tables from embedded Excel workbooks (OLE objects).
+
         Args:
             prs: An opened python-pptx Presentation.
             slide_index: Zero-based slide index.
@@ -207,6 +216,10 @@ class PptxParser:
         texts = self._extract_text_blocks(slide)
         tables = self._extract_tables(slide)
         notes = self._extract_notes(slide)
+
+        # Extract tables from embedded Excel workbooks (OLE objects)
+        embedded_tables = self._extract_embedded_excel_tables(slide, slide_index)
+        tables.extend(embedded_tables)
 
         return SlideContent(
             slide_index=slide_index,
@@ -328,3 +341,123 @@ class PptxParser:
             props["modified"] = core.modified.isoformat()
 
         return props
+
+    @staticmethod
+    def _extract_embedded_excel_tables(slide: Any, slide_index: int) -> list[TableDataParsed]:
+        """Extract tables from Excel workbooks embedded as OLE objects in the slide.
+
+        PowerPoint stores embedded Excel objects as relationships on the slide part.
+        Each OLE object with an Excel content type is opened with openpyxl and every
+        non-empty worksheet becomes a ``TableDataParsed`` entry.
+
+        Args:
+            slide: A python-pptx Slide object.
+            slide_index: Zero-based slide index (used for table_id generation).
+
+        Returns:
+            List of ``TableDataParsed`` extracted from all embedded workbooks.
+        """
+        tables: list[TableDataParsed] = []
+
+        for shape in slide.shapes:
+            if shape.shape_type != MSO_SHAPE_TYPE.EMBEDDED_OLE_OBJECT:
+                continue
+
+            try:
+                # Access the slide part's relationship for the OLE object
+                slide_part = slide._part
+                sp_elem = shape._element
+
+                # Find the oleObj XML element that holds the relationship ID
+                from pptx.oxml.ns import qn as pptx_qn
+                ole_elem = sp_elem.find(".//" + pptx_qn("p:oleObj"))
+                if ole_elem is None:
+                    continue
+
+                # Relationship ID is stored as an r:id attribute
+                r_ns = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+                r_id = ole_elem.get(f"{{{r_ns}}}id")
+                if not r_id:
+                    continue
+
+                ole_part = slide_part.related_part(r_id)
+                content_type = ole_part.content_type or ""
+
+                # Only process Excel workbooks
+                if "spreadsheet" not in content_type and "excel" not in content_type.lower():
+                    continue
+
+                excel_bytes = ole_part.blob
+                wb = openpyxl.load_workbook(io.BytesIO(excel_bytes), data_only=True, read_only=False)
+
+                for sheet_idx, sheet_name in enumerate(wb.sheetnames):
+                    ws = wb[sheet_name]
+                    sheet_tables = _extract_sheet_as_table(ws, sheet_name, slide_index, sheet_idx)
+                    tables.extend(sheet_tables)
+
+                wb.close()
+
+            except Exception as exc:
+                logger.warning(
+                    "Failed to extract embedded Excel from slide %d shape '%s': %s",
+                    slide_index,
+                    getattr(shape, "name", "?"),
+                    exc,
+                )
+
+        return tables
+
+
+# ---------------------------------------------------------------------------
+# Module-level helper for embedded sheet extraction
+# ---------------------------------------------------------------------------
+
+
+def _extract_sheet_as_table(
+    ws: Any,
+    sheet_name: str,
+    slide_index: int,
+    sheet_idx: int,
+) -> list[TableDataParsed]:
+    """Convert a single openpyxl worksheet into a TableDataParsed.
+
+    Returns an empty list if the sheet has no data rows.
+    """
+    max_row = ws.max_row or 0
+    max_col = ws.max_column or 0
+
+    if max_row < 2 or max_col == 0:
+        return []
+
+    def cell_str(value: Any) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, bool):
+            return str(value).upper()
+        if isinstance(value, float) and value == int(value):
+            return str(int(value))
+        return str(value)
+
+    headers: list[str] = [
+        cell_str(ws.cell(row=1, column=c).value)
+        for c in range(1, max_col + 1)
+    ]
+
+    rows: list[TableRowData] = []
+    for row_idx in range(2, max_row + 1):
+        cells = [cell_str(ws.cell(row=row_idx, column=c).value) for c in range(1, max_col + 1)]
+        if any(c.strip() for c in cells):
+            rows.append(TableRowData(cells=cells))
+
+    if not rows:
+        return []
+
+    table_id = f"embedded-excel-slide{slide_index}-sheet{sheet_idx}-{str(uuid.uuid4())[:8]}"
+    return [
+        TableDataParsed(
+            table_id=table_id,
+            headers=headers,
+            rows=rows,
+            confidence=1.0,
+        )
+    ]

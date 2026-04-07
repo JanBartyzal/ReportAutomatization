@@ -22,28 +22,28 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$ProjectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-if (-not $ProjectRoot) { $ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path) }
-Write-Host($ProjectRoot)
+$ScriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+$ProjectRoot = Split-Path -Parent $ScriptDir
+Write-Host "[INFO]  Project root: $ProjectRoot" -ForegroundColor DarkGray
 
 # ---------------------------------------------------------------------------
 # Service Definitions
 # ---------------------------------------------------------------------------
 $JavaServices = @(
-    @{ Name = "engine-core";          Context = "apps/engine/engine-core";          Dockerfile = "apps/engine/engine-core/Dockerfile" }
-    @{ Name = "engine-ingestor";      Context = "apps/engine/engine-ingestor";      Dockerfile = "apps/engine/engine-ingestor/Dockerfile" }
-    @{ Name = "engine-orchestrator";  Context = "apps/engine/engine-orchestrator";  Dockerfile = "apps/engine/engine-orchestrator/Dockerfile" }
-    @{ Name = "engine-data";          Context = "apps/engine/engine-data";          Dockerfile = "apps/engine/engine-data/Dockerfile" }
-    @{ Name = "engine-reporting";     Context = "apps/engine/engine-reporting";     Dockerfile = "apps/engine/engine-reporting/Dockerfile" }
-    @{ Name = "engine-integrations";  Context = "apps/engine/engine-integrations";  Dockerfile = "apps/engine/engine-integrations/Dockerfile" }
+    @{ Name = "engine-core";          Context = ".";  Dockerfile = "apps/engine/engine-core/Dockerfile" }
+    @{ Name = "engine-ingestor";      Context = ".";  Dockerfile = "apps/engine/engine-ingestor/Dockerfile" }
+    @{ Name = "engine-orchestration"; Context = ".";  Dockerfile = "apps/engine/engine-orchestration/Dockerfile" }
+    @{ Name = "engine-data";          Context = ".";  Dockerfile = "apps/engine/engine-data/Dockerfile" }
+    @{ Name = "engine-reporting";     Context = ".";  Dockerfile = "apps/engine/engine-reporting/Dockerfile" }
+    @{ Name = "engine-integrations";  Context = ".";  Dockerfile = "apps/engine/engine-integrations/Dockerfile" }
 )
 
 $PythonServices = @(
-    @{ Name = "processor-atomizers";  Context = "apps/processor/processor-atomizers";  Dockerfile = "apps/processor/processor-atomizers/Dockerfile" }
-    @{ Name = "processor-generators"; Context = "apps/processor/processor-generators"; Dockerfile = "apps/processor/processor-generators/Dockerfile" }
+    @{ Name = "processor-atomizers";  Context = ".";  Dockerfile = "apps/processor/processor-atomizers/Dockerfile" }
+    @{ Name = "processor-generators"; Context = ".";  Dockerfile = "apps/processor/processor-generators/Dockerfile" }
 )
 
-$FrontendService = @{ Name = "frontend"; Context = "apps/frontend"; Dockerfile = "apps/frontend/Dockerfile" }
+$FrontendService = @{ Name = "frontend"; Context = "."; Dockerfile = "apps/frontend/Dockerfile" }
 
 # ---------------------------------------------------------------------------
 # Pre-flight
@@ -105,7 +105,7 @@ foreach ($svc in $BuildTargets) {
     $dockerArgs = @("build", "-t", $Image, "-f", $DockerfilePath, $ContextPath)
     if ($NoCache) { $dockerArgs = @("build", "--no-cache", "-t", $Image, "-f", $DockerfilePath, $ContextPath) }
 
-    $result = & docker @dockerArgs 2>&1
+    & docker @dockerArgs
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[ERROR] $($svc.Name) build FAILED" -ForegroundColor Red
         $Failed += $svc.Name

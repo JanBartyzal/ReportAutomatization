@@ -14,9 +14,10 @@ import {
     TableBody,
     TableCell,
     Badge,
+    Spinner,
 } from '@fluentui/react-components';
 import { ArrowSyncRegular, ChevronLeft24Regular, ChevronRight24Regular, HistoryRegular } from '@fluentui/react-icons';
-import { useFile, useReprocessFile } from '../hooks/useFiles';
+import { useFile, useReprocessFile, useFileContent } from '../hooks/useFiles';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import { useNavigate } from 'react-router-dom';
@@ -50,10 +51,8 @@ const useStyles = makeStyles({
         backgroundColor: tokens.colorNeutralBackground2,
         borderRadius: tokens.borderRadiusMedium,
         minHeight: '400px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: tokens.colorNeutralForeground2,
+        padding: tokens.spacingHorizontalM,
+        overflowX: 'auto',
     },
     sidebar: {
         backgroundColor: tokens.colorNeutralBackground2,
@@ -74,6 +73,7 @@ const useStyles = makeStyles({
     navigation: {
         display: 'flex',
         justifyContent: 'center',
+        alignItems: 'center',
         gap: tokens.spacingHorizontalM,
         marginTop: tokens.spacingVerticalM,
     },
@@ -102,6 +102,13 @@ const useStyles = makeStyles({
     cell: {
         padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
     },
+    emptyState: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '200px',
+        color: tokens.colorNeutralForeground2,
+    },
 });
 
 export default function FileDetailPage() {
@@ -109,8 +116,9 @@ export default function FileDetailPage() {
     const navigate = useNavigate();
     const { fileId } = useParams<{ fileId: string }>();
     const { data: file, isLoading } = useFile(fileId || '', { pollingInterval: 5000 });
+    const { data: content, isLoading: isContentLoading } = useFileContent(fileId || '', file?.mime_type);
     const reprocess = useReprocessFile();
-    const [currentSlide, setCurrentSlide] = useState(1);
+    const [currentIndex, setCurrentIndex] = useState(1);
 
     if (isLoading) {
         return <LoadingSpinner label="Loading file details..." />;
@@ -120,7 +128,21 @@ export default function FileDetailPage() {
         return <Body1>File not found</Body1>;
     }
 
-    const totalSlides = 10; // Mocked for now, should come from file.metadata or slide API
+    const isExcel = file.mime_type?.includes('spreadsheetml') || file.mime_type?.includes('csv');
+    const isPptx = file.mime_type?.includes('presentationml');
+    const isPdf = file.mime_type?.includes('pdf');
+
+    // Determine total pages/sheets/slides from actual content metadata
+    const total = content?.metadata?.total_sheets
+        ?? content?.metadata?.total_pages
+        ?? (content?.slides?.length)
+        ?? 0;
+
+    const pageLabel = isExcel ? 'Sheet' : isPptx ? 'Slide' : isPdf ? 'Page' : 'Section';
+
+    // Current sheet/slide/page data
+    const currentSheet = isExcel && content?.sheets ? content.sheets[currentIndex - 1] : null;
+    const currentSlide = isPptx && content?.slides ? content.slides[currentIndex - 1] : null;
 
     return (
         <div className={styles.container}>
@@ -166,64 +188,134 @@ export default function FileDetailPage() {
             <div className={styles.content}>
                 <div>
                     <div className={styles.slideViewer}>
-                        {/* Slide image would go here: <img src={`${file.blob_url}/slide_${currentSlide}.png`} /> */}
-                        <div style={{ textAlign: 'center' }}>
-                            <Body1 style={{ display: 'block', marginBottom: tokens.spacingVerticalM }}>
-                                <strong>Slide {currentSlide} Preview</strong>
-                            </Body1>
-                            <Body1 italic>Slide content and text extraction would be displayed here.</Body1>
+                        {isContentLoading ? (
+                            <div className={styles.emptyState}>
+                                <Spinner label="Loading content..." />
+                            </div>
+                        ) : currentSheet ? (
+                            <div>
+                                <Title3 style={{ marginBottom: tokens.spacingVerticalS }}>
+                                    {currentSheet.sheet_name}
+                                </Title3>
+                                {currentSheet.headers.length > 0 ? (
+                                    <Table>
+                                        <TableHeader className={styles.tableHeader}>
+                                            <TableRow>
+                                                {currentSheet.headers.map((h, i) => (
+                                                    <TableHeaderCell key={i} className={styles.headerCell}>{h}</TableHeaderCell>
+                                                ))}
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {currentSheet.rows.slice(0, 100).map((row, ri) => (
+                                                <TableRow key={ri} className={`${styles.row} ${ri % 2 === 0 ? styles.rowEven : styles.rowOdd}`}>
+                                                    {currentSheet.headers.map((h, ci) => (
+                                                        <TableCell key={ci} className={styles.cell}>
+                                                            {String(row[h] ?? '')}
+                                                        </TableCell>
+                                                    ))}
+                                                </TableRow>
+                                            ))}
+                                            {currentSheet.row_count > 100 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={currentSheet.headers.length} className={styles.cell}>
+                                                        <Body1 italic>
+                                                            Showing 100 of {currentSheet.row_count} rows
+                                                        </Body1>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                ) : (
+                                    <div className={styles.emptyState}>
+                                        <Body1 italic>No data in this sheet.</Body1>
+                                    </div>
+                                )}
+                            </div>
+                        ) : currentSlide ? (
+                            <div>
+                                <Title3 style={{ marginBottom: tokens.spacingVerticalS }}>
+                                    Slide {currentSlide.slide_number}
+                                </Title3>
+                                {currentSlide.text && (
+                                    <Body1 style={{ whiteSpace: 'pre-wrap', display: 'block', marginBottom: tokens.spacingVerticalM }}>
+                                        {currentSlide.text}
+                                    </Body1>
+                                )}
+                                {currentSlide.tables.length > 0 && currentSlide.tables.map((tbl, ti) => (
+                                    <div key={ti} style={{ marginTop: tokens.spacingVerticalM }}>
+                                        <Table>
+                                            <TableHeader className={styles.tableHeader}>
+                                                <TableRow>
+                                                    {tbl.headers.map((h, i) => (
+                                                        <TableHeaderCell key={i} className={styles.headerCell}>{h}</TableHeaderCell>
+                                                    ))}
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {tbl.rows.map((row, ri) => (
+                                                    <TableRow key={ri} className={`${styles.row} ${ri % 2 === 0 ? styles.rowEven : styles.rowOdd}`}>
+                                                        {tbl.headers.map((h, ci) => (
+                                                            <TableCell key={ci} className={styles.cell}>
+                                                                {String(row[h] ?? '')}
+                                                            </TableCell>
+                                                        ))}
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                ))}
+                                {currentSlide.speaker_notes && (
+                                    <div style={{ marginTop: tokens.spacingVerticalL }}>
+                                        <Title3>Speaker Notes</Title3>
+                                        <div style={{
+                                            padding: tokens.spacingHorizontalM,
+                                            backgroundColor: tokens.colorNeutralBackground3,
+                                            borderRadius: tokens.borderRadiusMedium,
+                                            marginTop: tokens.spacingVerticalS
+                                        }}>
+                                            <Body1>{currentSlide.speaker_notes}</Body1>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className={styles.emptyState}>
+                                <Body1 italic>
+                                    {content
+                                        ? 'No content available for this file.'
+                                        : 'Content not yet processed. Try reprocessing the file.'}
+                                </Body1>
+                            </div>
+                        )}
+                    </div>
+
+                    {total > 1 && (
+                        <div className={styles.navigation}>
+                            <Button
+                                icon={<ChevronLeft24Regular />}
+                                disabled={currentIndex <= 1}
+                                onClick={() => setCurrentIndex(s => s - 1)}
+                            >
+                                Previous
+                            </Button>
+                            <Body1>{pageLabel} {currentIndex} of {total}</Body1>
+                            <Button
+                                icon={<ChevronRight24Regular />}
+                                disabled={currentIndex >= total}
+                                onClick={() => setCurrentIndex(s => s + 1)}
+                            >
+                                Next
+                            </Button>
                         </div>
-                    </div>
-
-                    <div className={styles.navigation}>
-                        <Button 
-                            icon={<ChevronLeft24Regular />} 
-                            disabled={currentSlide <= 1}
-                            onClick={() => setCurrentSlide(s => s - 1)}
-                        >
-                            Previous
-                        </Button>
-                        <Body1>Slide {currentSlide} of {totalSlides}</Body1>
-                        <Button 
-                            icon={<ChevronRight24Regular />}
-                            disabled={currentSlide >= totalSlides}
-                            onClick={() => setCurrentSlide(s => s + 1)}
-                        >
-                            Next
-                        </Button>
-                    </div>
-
-                    <div className={styles.tableSection}>
-                        <Title3>Speaker Notes</Title3>
-                        <div style={{ 
-                            padding: tokens.spacingHorizontalM, 
-                            backgroundColor: tokens.colorNeutralBackground3,
-                            borderRadius: tokens.borderRadiusMedium,
-                            marginTop: tokens.spacingVerticalS
-                        }}>
-                            <Body1>These are the speaker notes for slide {currentSlide}. They provide additional context for the presenter.</Body1>
+                    )}
+                    {total === 1 && (
+                        <div className={styles.navigation}>
+                            <Body1>{pageLabel} 1 of 1</Body1>
                         </div>
-                    </div>
-
-                    <div className={styles.tableSection}>
-                        <Title3>Extracted Tables</Title3>
-                        <Table>
-                            <TableHeader className={styles.tableHeader}>
-                                <TableRow>
-                                    <TableHeaderCell className={styles.headerCell}>Sheet/Table</TableHeaderCell>
-                                    <TableHeaderCell className={styles.headerCell}>Data Point</TableHeaderCell>
-                                    <TableHeaderCell className={styles.headerCell}>Value</TableHeaderCell>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                <TableRow className={`${styles.row} ${styles.rowEven}`}>
-                                    <TableCell colSpan={3} className={styles.cell}>
-                                        No tables extracted for slide {currentSlide}.
-                                    </TableCell>
-                                </TableRow>
-                            </TableBody>
-                        </Table>
-                    </div>
+                    )}
                 </div>
 
                 <aside className={styles.sidebar}>
@@ -248,6 +340,18 @@ export default function FileDetailPage() {
                         <Body1 className={styles.metadataLabel}><strong>File Type:</strong></Body1>
                         <Body1 className={styles.metadataValue}>{file.mime_type}</Body1>
                     </div>
+                    {total > 0 && (
+                        <div className={styles.metadataItem}>
+                            <Body1 className={styles.metadataLabel}><strong>{pageLabel}s:</strong></Body1>
+                            <Body1 className={styles.metadataValue}>{total}</Body1>
+                        </div>
+                    )}
+                    {content?.metadata?.total_rows != null && (
+                        <div className={styles.metadataItem}>
+                            <Body1 className={styles.metadataLabel}><strong>Total rows:</strong></Body1>
+                            <Body1 className={styles.metadataValue}>{content.metadata.total_rows}</Body1>
+                        </div>
+                    )}
 
                     <Title3 style={{ marginTop: tokens.spacingHorizontalL }}>Processing Log</Title3>
                     {file.workflow_status?.steps ? (

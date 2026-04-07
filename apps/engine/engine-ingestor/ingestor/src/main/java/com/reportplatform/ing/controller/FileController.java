@@ -3,7 +3,7 @@ package com.reportplatform.ing.controller;
 import com.reportplatform.ing.model.FileEntity;
 import com.reportplatform.ing.model.dto.FileDetailResponse;
 import com.reportplatform.ing.model.dto.FileListResponse;
-import com.reportplatform.ing.repository.FileRepository;
+import com.reportplatform.ing.service.FileService;
 import com.reportplatform.ing.service.OrchestratorTriggerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,12 +31,12 @@ public class FileController {
 
     private static final Logger log = LoggerFactory.getLogger(FileController.class);
 
-    private final FileRepository fileRepository;
+    private final FileService fileService;
     private final OrchestratorTriggerService orchestratorTriggerService;
 
-    public FileController(FileRepository fileRepository,
+    public FileController(FileService fileService,
                           OrchestratorTriggerService orchestratorTriggerService) {
-        this.fileRepository = fileRepository;
+        this.fileService = fileService;
         this.orchestratorTriggerService = orchestratorTriggerService;
     }
 
@@ -56,7 +56,7 @@ public class FileController {
 
         size = Math.min(size, 100);
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<FileEntity> filePage = fileRepository.findByOrgIdOrderByCreatedAtDesc(orgId, pageRequest);
+        Page<FileEntity> filePage = fileService.listFiles(orgId, pageRequest);
 
         var files = filePage.getContent().stream()
                 .map(this::toDetailResponse)
@@ -85,7 +85,7 @@ public class FileController {
             @PathVariable("file_id") UUID fileId,
             @RequestHeader(value = "X-Org-Id") UUID orgId) {
 
-        FileEntity entity = fileRepository.findByIdAndOrgId(fileId, orgId)
+        FileEntity entity = fileService.getFileByIdAndOrg(fileId, orgId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND,
                         "File not found: " + fileId));
 
@@ -100,7 +100,7 @@ public class FileController {
             @PathVariable("file_id") UUID fileId,
             @RequestHeader(value = "X-Org-Id") UUID orgId) {
 
-        FileEntity entity = fileRepository.findByIdAndOrgId(fileId, orgId)
+        FileEntity entity = fileService.getFileByIdAndOrg(fileId, orgId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND,
                         "File not found: " + fileId));
 

@@ -21,7 +21,7 @@ import {
     PieChartWidget, 
     HeatmapWidget 
 } from '../components/Charts';
-import { executeRawSql, type RawSqlResult } from '../api/dashboards';
+import { executeRawSql } from '../api/dashboards';
 import { FileContentType, type WidgetConfig, type AggregatedData } from '@reportplatform/types';
 
 /**
@@ -108,7 +108,7 @@ export default function DashboardViewerPage() {
                     const rawResult = await executeRawSql(sql);
                     newData[i] = {
                         columns: rawResult.columns,
-                        rows: rawResult.rows as Record<string, unknown>[],
+                        rows: rawResult.rows as unknown as Record<string, unknown>[],
                         total_rows: rawResult.totalRows,
                     };
                 } else {

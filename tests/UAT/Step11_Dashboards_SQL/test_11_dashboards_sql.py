@@ -89,7 +89,7 @@ def main() -> int:
                                      "Endpoint not implemented yet or auth headers not forwarded to engine-data")
 
     if status == 200 and isinstance(body, (list, dict)):
-        items = body if isinstance(body, list) else body.get("items", body.get("data", []))
+        items = body if isinstance(body, list) else body.get("dashboards", body.get("items", body.get("data", [])))
         if dashboard_id:
             found = any(
                 (d.get("id") == dashboard_id or d.get("dashboard_id") == dashboard_id)
@@ -196,7 +196,7 @@ def main() -> int:
             data_session.missing_feature("GET /api/dashboards (viewer/private)",
                                          "Auth headers not propagated for user2 token on engine-data")
         if status == 200 and isinstance(body, (list, dict)):
-            items = body if isinstance(body, list) else body.get("items", body.get("data", []))
+            items = body if isinstance(body, list) else body.get("dashboards", body.get("items", body.get("data", [])))
             not_found = not any(
                 (d.get("id") == dashboard_id or d.get("dashboard_id") == dashboard_id)
                 for d in items
@@ -233,7 +233,7 @@ def main() -> int:
             data_session.missing_feature("GET /api/dashboards (viewer/public)",
                                          "Auth headers not propagated for user2 token on engine-data")
         if status == 200 and isinstance(body, (list, dict)):
-            items = body if isinstance(body, list) else body.get("items", body.get("data", []))
+            items = body if isinstance(body, list) else body.get("dashboards", body.get("items", body.get("data", [])))
             found = any(
                 (d.get("id") == dashboard_id or d.get("dashboard_id") == dashboard_id)
                 for d in items

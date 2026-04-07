@@ -10,9 +10,8 @@ import {
     DialogActions,
     Body1,
     Title3,
-    Code32,
 } from '@fluentui/react-components';
-import { QuestionCircle24Regular, Code24Regular } from '@fluentui/react-icons';
+import { QuestionCircle24Regular } from '@fluentui/react-icons';
 
 const useStyles = makeStyles({
     content: {

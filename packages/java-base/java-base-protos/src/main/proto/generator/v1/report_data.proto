@@ -2,33 +2,30 @@ syntax = "proto3";
 package generator.v1;
 
 import "common/v1/common.proto";
-import "generator/v1/pptx_generator.proto";
+import "generator/v1/generator.proto";
 
 option java_package = "com.reportplatform.proto.generator.v1";
 option java_multiple_files = true;
 
 // Service for aggregating report data for PPTX generation
 service ReportDataService {
-  // Get aggregated data for a specific report (form responses + uploaded files)
   rpc GetReportData(GetReportDataRequest) returns (GetReportDataResponse);
-  
-  // Batch get data for multiple reports
   rpc GetBatchReportData(GetBatchReportDataRequest) returns (GetBatchReportDataResponse);
 }
 
 message GetReportDataRequest {
   string report_id = 1;
   common.v1.RequestContext context = 2;
-  string template_id = 3;  // Optional: to filter data based on template requirements
+  string template_id = 3;
 }
 
 message GetReportDataResponse {
   string report_id = 1;
-  map<string, string> text_placeholders = 2;  // Simple text replacements
+  map<string, string> text_placeholders = 2;
   repeated GeneratorTableData tables = 3;
   repeated GeneratorChartData charts = 4;
-  repeated string available_fields = 5;  // List of available data fields
-  int64 cached_at = 6;  // Timestamp when data was cached
+  repeated string available_fields = 5;
+  int64 cached_at = 6;
 }
 
 message GetBatchReportDataRequest {

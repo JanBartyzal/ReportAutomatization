@@ -227,6 +227,25 @@ public class AggregationService {
     }
 
     /**
+     * Get parsed_tables for an org as widget summaries.
+     * Returns rows and headers cast to text so they can be cleanly serialized
+     * without PGobject wrapping.
+     */
+    public List<Map<String, Object>> getTableSummaries(UUID orgId) {
+        var params = new MapSqlParameterSource();
+        params.addValue("orgId", orgId.toString());
+
+        String sql = "SELECT id::text, file_id::text, source_sheet, " +
+                     "headers::text AS headers_json, " +
+                     "rows::text AS rows_json, " +
+                     "jsonb_array_length(rows) AS row_count " +
+                     "FROM parsed_tables WHERE org_id = :orgId " +
+                     "ORDER BY created_at DESC LIMIT 50";
+
+        return jdbcTemplate.queryForList(sql, params);
+    }
+
+    /**
      * Build the dynamic aggregation SQL.
      *
      * <p>Strategy:

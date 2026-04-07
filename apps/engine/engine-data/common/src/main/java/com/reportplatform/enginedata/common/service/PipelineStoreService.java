@@ -278,27 +278,32 @@ public class PipelineStoreService {
     }
 
     private int persistSlideDocument(String fileId, String orgId, Map<String, Object> slideData) {
-        int slideIndex = slideData.containsKey("slide_index")
-                ? ((Number) slideData.get("slide_index")).intValue()
-                : 0;
-        String documentType = "SLIDE_TEXT";
+        // Accept both snake_case (from pipeline) and camelCase (legacy)
+        int slideIndex = 0;
+        if (slideData.containsKey("slide_index")) {
+            slideIndex = ((Number) slideData.get("slide_index")).intValue();
+        } else if (slideData.containsKey("slideIndex")) {
+            slideIndex = ((Number) slideData.get("slideIndex")).intValue();
+        }
 
-        // Build content JSON from slide data
+        // Build content JSON — use camelCase so QueryService.toSlideDto can read it
         Map<String, Object> content = new java.util.LinkedHashMap<>();
-        content.put("slide_index", slideIndex);
+        content.put("slideIndex", slideIndex);
         content.put("title", slideData.getOrDefault("title", ""));
         content.put("texts", slideData.getOrDefault("texts", List.of()));
         content.put("notes", slideData.getOrDefault("notes", ""));
-
-        // Tables from slides go into metadata
-        Map<String, Object> metadata = new java.util.LinkedHashMap<>();
+        // Tables belong in content so the query layer can serve them directly
         Object tables = slideData.get("tables");
+        content.put("tables", tables != null ? tables : List.of());
+
+        // Keep tables in metadata as well for backward compatibility
+        Map<String, Object> metadata = new java.util.LinkedHashMap<>();
         if (tables != null) {
             metadata.put("tables", tables);
         }
 
         // Use SLIDE_TEXT_<index> to avoid unique constraint conflict on (file_id, document_type)
-        String docTypeWithIndex = documentType + "_" + slideIndex;
+        String docTypeWithIndex = "SLIDE_TEXT_" + slideIndex;
 
         insertDocument(fileId, orgId, docTypeWithIndex, toJson(content), toJson(metadata));
         return 1;

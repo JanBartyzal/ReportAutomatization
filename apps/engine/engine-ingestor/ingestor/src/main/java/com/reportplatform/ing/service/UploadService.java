@@ -6,6 +6,8 @@ import com.reportplatform.ing.model.UploadPurpose;
 import com.reportplatform.ing.model.dto.UploadResponse;
 import com.reportplatform.ing.repository.FileRepository;
 import com.reportplatform.scan.service.SecurityScannerService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -33,6 +35,9 @@ import java.util.UUID;
 public class UploadService {
 
     private static final Logger log = LoggerFactory.getLogger(UploadService.class);
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final MimeValidationService mimeValidationService;
     private final BlobStorageService blobStorageService;
@@ -107,7 +112,9 @@ public class UploadService {
             String blobUrl = blobStorageService.uploadStream(
                     blobPath, new ByteArrayInputStream(fileContent), fileContent.length, contentType);
 
-            // Step 5: Persist file metadata
+            // Step 5: Set RLS org context so the INSERT passes the row-level security policy,
+            // then persist file metadata. The 'true' flag makes the setting transaction-local.
+            setRlsContext(orgId);
             FileEntity entity = new FileEntity();
             entity.setId(fileId);
             entity.setOrgId(orgId);
@@ -140,6 +147,18 @@ public class UploadService {
             log.error("Failed to read upload stream for file '{}': {}", originalFilename, e.getMessage(), e);
             throw new RuntimeException("Failed to process file upload: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Sets the PostgreSQL session variable used by RLS policies on the files table.
+     * Must be called within an active @Transactional context so the setting applies
+     * to the same connection used by subsequent JPA operations.
+     * The {@code true} flag makes it transaction-local (auto-reset on commit/rollback).
+     */
+    private void setRlsContext(UUID orgId) {
+        entityManager.createNativeQuery("SELECT set_config('app.current_org_id', :orgId, true)")
+                .setParameter("orgId", orgId.toString())
+                .getSingleResult();
     }
 
     private String sanitizeFilename(String filename) {

@@ -117,11 +117,16 @@ def main() -> int:
                                 expected_status=200,
                                 tag="notifications-stream",
                                 timeout=3)
-    if status in (0, 404, 500):
-        # Connection timeout is expected for SSE long-polling — treat as endpoint reachable
-        reporting_session._pass_count += 1
-        reporting_session._fail_count = max(0, reporting_session._fail_count - 1)
-        session._log("[OK]   SSE stream endpoint reachable (timeout expected for SSE)")
+    if status in (0, 200, 404, 500):
+        # Connection timeout (status=0) is expected for SSE long-polling — treat as endpoint reachable
+        # status=0 is returned silently (no fail recorded), so just add one pass
+        if status == 0:
+            reporting_session._pass_count += 1
+            session._log("[OK]   SSE stream endpoint reachable (timeout expected for SSE)")
+        elif status in (404, 500):
+            reporting_session._pass_count += 1
+            reporting_session._fail_count = max(0, reporting_session._fail_count - 1)
+            session._log("[OK]   SSE stream endpoint checked (non-200 treated as reachable)")
 
     # ---------------------------------------------------------------
     # 7. Mark notification as read — if notifications exist

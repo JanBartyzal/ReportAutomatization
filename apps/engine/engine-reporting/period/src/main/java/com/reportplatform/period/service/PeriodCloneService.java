@@ -34,8 +34,9 @@ public class PeriodCloneService {
 
         // Derive defaults from source period when clone request has null fields
         String cloneName = request.newName() != null ? request.newName() : source.getName() + " (clone)";
-        String cloneCode = request.newPeriodCode() != null ? request.newPeriodCode()
-                : source.getPeriodCode() + "-CLONE-" + UUID.randomUUID().toString().substring(0, 4);
+        // Always append a random suffix to ensure period_code uniqueness (column has UNIQUE constraint)
+        String baseCode = request.newPeriodCode() != null ? request.newPeriodCode() : source.getPeriodCode() + "-CLONE";
+        String cloneCode = baseCode + "-" + UUID.randomUUID().toString().substring(0, 4);
         java.time.LocalDate cloneStart = request.newStartDate() != null ? request.newStartDate() : source.getStartDate();
         java.time.LocalDate cloneEnd = request.newEndDate() != null ? request.newEndDate()
                 : (request.newStartDate() != null ? request.newStartDate().plusMonths(3) : source.getEndDate());

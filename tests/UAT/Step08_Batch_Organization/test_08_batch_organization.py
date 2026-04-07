@@ -79,11 +79,20 @@ def main() -> int:
             session.assert_field(body, "name", "Q1/2026", label="batch-detail-name")
 
     # 5. RLS: admin2 cannot see admin1's batches
+    # Use admin2's API key + org_id directly — dev bypass login always returns admin1's org,
+    # so we must use the actual API key to get admin2's separate org context.
     session._log("[INFO] Testing RLS: admin2 should not see admin1's batches")
-    admin2_token = session.login(USERS["admin2"]["email"], USERS["admin2"]["password"])
-    if admin2_token:
+    admin2_key = state.get("api_keys", {}).get("admin2", {}).get("key")
+    admin2_org_id = (state.get("org_ids", {}).get("test-org-2")
+                     or state.get("org_ids", {}).get("TEST-ORG-2"))
+    if admin2_key and admin2_org_id:
+        saved_token, saved_api_key, saved_org_id = session.token, session.api_key, session.org_id
+        session.api_key = admin2_key
+        session.token = None
+        session.org_id = admin2_org_id
         status, body = session.call("GET", "/api/batches",
                                     expected_status=200, tag="rls-admin2-list-batches")
+        session.token, session.api_key, session.org_id = saved_token, saved_api_key, saved_org_id
         if status in (404, 500):
             session.missing_feature("GET /api/batches (admin2 RLS)",
                                     "Batch listing endpoint not implemented yet")
@@ -96,7 +105,7 @@ def main() -> int:
             session.assert_true(not has_q1,
                                 "RLS: admin2 does NOT see admin1's batch 'Q1/2026'")
     else:
-        session._err("[WARN] Could not login as admin2 for RLS test")
+        session._err("[WARN] No admin2 API key or org_id in state — skipping RLS test")
 
     # 6. Assign file to batch — POST /api/batches/{batch_id}/files (engine-core 8081)
     # Re-login as admin1 for file assignment

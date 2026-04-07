@@ -58,7 +58,7 @@ public class PlaceholderExtractorService {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.warn("Failed to parse PPTX for placeholder extraction, returning empty list: {}", e.getMessage());
             return List.of();
         }

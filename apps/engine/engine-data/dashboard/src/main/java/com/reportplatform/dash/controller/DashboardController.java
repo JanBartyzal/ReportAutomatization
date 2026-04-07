@@ -1,5 +1,7 @@
 package com.reportplatform.dash.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reportplatform.dash.model.dto.DashboardDataRequest;
 import com.reportplatform.dash.model.dto.DashboardDataResponse;
 import com.reportplatform.dash.model.dto.DashboardListResponse;
@@ -13,6 +15,8 @@ import com.reportplatform.dash.service.AggregationService;
 import com.reportplatform.dash.service.DashboardExcelExportService;
 import com.reportplatform.dash.service.DashboardService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -29,22 +33,31 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/dashboards")
 public class DashboardController {
 
+    private static final Logger log = LoggerFactory.getLogger(DashboardController.class);
+
     private final DashboardService dashboardService;
     private final AggregationService aggregationService;
     private final DashboardExcelExportService excelExportService;
+    private final ObjectMapper objectMapper;
 
     public DashboardController(DashboardService dashboardService,
                                AggregationService aggregationService,
-                               DashboardExcelExportService excelExportService) {
+                               DashboardExcelExportService excelExportService,
+                               ObjectMapper objectMapper) {
         this.dashboardService = dashboardService;
         this.aggregationService = aggregationService;
         this.excelExportService = excelExportService;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -259,20 +272,40 @@ public class DashboardController {
 
     /**
      * Get dashboard data (widget results).
+     * Returns parsed table data for the org, each table as a widget entry with its rows.
      */
     @GetMapping("/{id}/data")
     @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
-    public ResponseEntity<java.util.Map<String, Object>> getDashboardData(
+    public ResponseEntity<Map<String, Object>> getDashboardData(
             @PathVariable UUID id,
             @RequestHeader(value = "X-Org-Id", required = false) String orgIdStr) {
 
         UUID orgId = parseUuidOrNull(orgIdStr);
         dashboardService.getDashboard(id, orgId);
 
-        return ResponseEntity.ok(java.util.Map.of(
-                "dashboard_id", id,
-                "widgets", java.util.List.of(),
-                "data", java.util.List.of()));
+        List<Map<String, Object>> tableSummaries = aggregationService.getTableSummaries(orgId);
+        List<Map<String, Object>> widgets = new ArrayList<>();
+        for (Map<String, Object> t : tableSummaries) {
+            Map<String, Object> widget = new LinkedHashMap<>(t);
+            String rowsJson = (String) t.get("rows_json");
+            List<?> rows = List.of();
+            if (rowsJson != null) {
+                try {
+                    rows = objectMapper.readValue(rowsJson, new TypeReference<List<?>>() {});
+                } catch (Exception e) {
+                    log.warn("Failed to parse rows_json for table {}: {}", t.get("id"), e.getMessage());
+                }
+            }
+            widget.put("rows", rows);
+            widget.remove("rows_json");
+            widgets.add(widget);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("dashboard_id", id);
+        result.put("widgets", widgets);
+        result.put("data", widgets);
+        return ResponseEntity.ok(result);
     }
 
     private static UUID parseUuidOrNull(String value) {

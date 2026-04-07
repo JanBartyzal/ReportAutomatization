@@ -7,7 +7,7 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'engine_core_user') THEN
-        CREATE ROLE engine_core_user WITH LOGIN PASSWORD 'postgres';
+        CREATE ROLE engine_core_user WITH LOGIN PASSWORD 'engine_core_pass';
     END IF;
 END
 $$;
@@ -59,7 +59,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'engine_data_user') THEN
-        CREATE ROLE engine_data_user WITH LOGIN PASSWORD 'postgres';
+        CREATE ROLE engine_data_user WITH LOGIN PASSWORD 'engine_data_pass';
     END IF;
 END
 $$;
@@ -109,7 +109,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'engine_reporting_user') THEN
-        CREATE ROLE engine_reporting_user WITH LOGIN PASSWORD 'postgres';
+        CREATE ROLE engine_reporting_user WITH LOGIN PASSWORD 'engine_reporting_pass';
     END IF;
 END
 $$;
@@ -159,7 +159,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'engine_ingestor_user') THEN
-        CREATE ROLE engine_ingestor_user WITH LOGIN PASSWORD 'postgres';
+        CREATE ROLE engine_ingestor_user WITH LOGIN PASSWORD 'engine_ingestor_pass';
     END IF;
 END
 $$;
@@ -209,7 +209,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'engine_orchestrator_user') THEN
-        CREATE ROLE engine_orchestrator_user WITH LOGIN PASSWORD 'postgres';
+        CREATE ROLE engine_orchestrator_user WITH LOGIN PASSWORD 'engine_orchestrator_pass';
     END IF;
 END
 $$;
@@ -259,7 +259,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'engine_integrations_user') THEN
-        CREATE ROLE engine_integrations_user WITH LOGIN PASSWORD 'postgres';
+        CREATE ROLE engine_integrations_user WITH LOGIN PASSWORD 'engine_integrations_pass';
     END IF;
 END
 $$;
