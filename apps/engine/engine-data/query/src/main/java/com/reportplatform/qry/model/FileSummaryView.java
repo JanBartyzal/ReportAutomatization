@@ -27,7 +27,7 @@ public class FileSummaryView {
     private UUID orgId;
 
     @Column(name = "user_id")
-    private UUID userId;
+    private String userId;
 
     @Column(name = "filename")
     private String filename;
@@ -75,7 +75,7 @@ public class FileSummaryView {
         return orgId;
     }
 
-    public UUID getUserId() {
+    public String getUserId() {
         return userId;
     }
 

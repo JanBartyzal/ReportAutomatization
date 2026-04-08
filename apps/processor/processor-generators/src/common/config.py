@@ -70,6 +70,7 @@ DB_PORT: int = _int_env("DB_PORT", 5432)
 DB_NAME: str = os.environ.get("DB_NAME", "reportplatform")
 DB_USER: str = os.environ.get("DB_USER", "ms_qry")
 DB_PASSWORD: str = os.environ.get("DB_PASSWORD", "ms_qry_pass")
+DB_SCHEMA: str = os.environ.get("DB_SCHEMA", "data")
 
 # ---------------------------------------------------------------------------
 # Azure Entra ID (OBO flow – MCP auth)

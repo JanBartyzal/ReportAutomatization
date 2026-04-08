@@ -20,6 +20,12 @@
             <artifactId>engine-data-common</artifactId>
         </dependency>
 
+        <!-- FS25: sink-tbl for correction/selection write services -->
+        <dependency>
+            <groupId>com.reportplatform</groupId>
+            <artifactId>engine-data-sink-tbl</artifactId>
+        </dependency>
+
         <!-- gRPC -->
         <dependency>
             <groupId>io.grpc</groupId>

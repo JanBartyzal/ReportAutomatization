@@ -12,7 +12,7 @@ spring:
   application:
     name: engine-ingestor
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:engine_ingestor}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:reportplatform}?currentSchema=${DB_SCHEMA:ingestor},rls,public
     username: ${DB_USERNAME:engine_ingestor_user}
     password: ${DB_PASSWORD:engine_ingestor_pass}
     hikari:
@@ -27,6 +27,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: ${DB_SCHEMA:ingestor}
         jdbc:
           batch_size: 25
         order_inserts: true
@@ -34,6 +35,8 @@ spring:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
+    default-schema: ${DB_SCHEMA:ingestor}
+    schemas: ${DB_SCHEMA:ingestor}
 
 azure:
   storage:

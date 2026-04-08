@@ -11,7 +11,7 @@ from typing import Any
 
 import asyncpg
 
-from src.common.config import DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER
+from src.common.config import DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_SCHEMA, DB_USER
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +25,17 @@ class DatabasePool:
     async def connect(self) -> None:
         """Initialize the connection pool."""
         dsn = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-        self._pool = await asyncpg.create_pool(dsn, min_size=2, max_size=10)
-        logger.info("Database pool created: %s@%s:%d/%s", DB_USER, DB_HOST, DB_PORT, DB_NAME)
+
+        async def _init_connection(conn: asyncpg.Connection) -> None:
+            await conn.execute(f"SET search_path TO {DB_SCHEMA}, rls, public")
+
+        self._pool = await asyncpg.create_pool(
+            dsn, min_size=2, max_size=10, init=_init_connection,
+        )
+        logger.info(
+            "Database pool created: %s@%s:%d/%s (schema=%s)",
+            DB_USER, DB_HOST, DB_PORT, DB_NAME, DB_SCHEMA,
+        )
 
     async def close(self) -> None:
         """Close the connection pool."""

@@ -17,6 +17,8 @@ import com.reportplatform.qry.repository.QryParsedTableRepository;
 import com.reportplatform.qry.repository.QryProcessingLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,10 @@ import java.util.UUID;
 /**
  * Core query service that reads from the database and caches results in Redis.
  * All methods are read-only transactional.
+ *
+ * <p>Each public method sets {@code app.current_org_id} via {@code SET LOCAL}
+ * inside its own {@code @Transactional} boundary so that PostgreSQL RLS
+ * policies can filter rows correctly.</p>
  */
 @Service
 public class QueryService {
@@ -55,6 +61,9 @@ public class QueryService {
     private final CacheService cacheService;
     private final ObjectMapper objectMapper;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     public QueryService(QryParsedTableRepository parsedTableRepository,
                         QryDocumentRepository documentRepository,
                         QryProcessingLogRepository processingLogRepository,
@@ -70,10 +79,25 @@ public class QueryService {
     }
 
     /**
+     * Sets the RLS context variable for the current transaction.
+     * Must be called inside a {@code @Transactional} method.
+     */
+    private void setRlsContext(String orgId) {
+        if (orgId != null && !orgId.isBlank()) {
+            // Validate UUID to prevent SQL injection
+            UUID.fromString(orgId);
+            entityManager.createNativeQuery("SET LOCAL app.current_org_id = '" + orgId + "'")
+                    .executeUpdate();
+        }
+    }
+
+    /**
      * Returns all parsed data (tables + documents) for a specific file.
      */
     @Transactional(readOnly = true)
     public FileDataResponse getFileData(String orgId, UUID fileId) {
+        setRlsContext(orgId);
+
         String cacheKey = cacheService.buildKey(orgId, ENTITY_FILE_DATA, fileId.toString());
         Optional<FileDataResponse> cached = cacheService.getCached(cacheKey, FileDataResponse.class);
         if (cached.isPresent()) {
@@ -118,6 +142,8 @@ public class QueryService {
      */
     @Transactional(readOnly = true)
     public SlideDataResponse getSlideData(String orgId, UUID fileId) {
+        setRlsContext(orgId);
+
         String cacheKey = cacheService.buildKey(orgId, ENTITY_SLIDES, fileId.toString());
         Optional<SlideDataResponse> cached = cacheService.getCached(cacheKey, SlideDataResponse.class);
         if (cached.isPresent()) {
@@ -162,6 +188,8 @@ public class QueryService {
     @Transactional(readOnly = true)
     public TableQueryResponse queryTables(String orgId, int page, int size,
                                           String sourceSheet, String fileId, String scope) {
+        setRlsContext(orgId);
+
         size = Math.min(size, 100);
         PageRequest pageRequest = PageRequest.of(page, size);
 
@@ -236,6 +264,8 @@ public class QueryService {
      */
     @Transactional(readOnly = true)
     public Optional<DocumentDto> getDocument(String orgId, UUID documentId) {
+        setRlsContext(orgId);
+
         String cacheKey = cacheService.buildKey(orgId, ENTITY_DOCUMENT, documentId.toString());
         Optional<DocumentDto> cached = cacheService.getCached(cacheKey, DocumentDto.class);
         if (cached.isPresent()) {
@@ -255,6 +285,8 @@ public class QueryService {
      */
     @Transactional(readOnly = true)
     public List<DocumentDto> getDocumentsByFileId(String orgId, String fileId) {
+        setRlsContext(orgId);
+
         if (fileId == null || fileId.isBlank()) {
             return List.of();
         }
@@ -268,6 +300,8 @@ public class QueryService {
      */
     @Transactional(readOnly = true)
     public List<ProcessingLogDto> getProcessingLogs(String orgId, String fileId) {
+        setRlsContext(orgId);
+
         String cacheKey = cacheService.buildKey(orgId, ENTITY_LOGS, fileId);
         Optional<List> cached = cacheService.getCached(cacheKey, List.class);
         if (cached.isPresent()) {
@@ -321,6 +355,14 @@ public class QueryService {
     @SuppressWarnings("unchecked")
     private SlideDto toSlideDto(DocumentEntity entity) {
         Object content = entity.getContent();
+        // JSONB may arrive as a raw JSON String depending on the JDBC driver
+        if (content instanceof String str && !str.isBlank()) {
+            try {
+                content = objectMapper.readValue(str, Map.class);
+            } catch (Exception e) {
+                log.warn("Failed to parse slide content JSON: {}", e.getMessage());
+            }
+        }
         if (content instanceof Map<?, ?> contentMap) {
             // Accept both camelCase (new) and snake_case (legacy) key names
             int slideIndex = 0;

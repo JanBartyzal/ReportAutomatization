@@ -156,6 +156,7 @@ public class PipelineStoreService {
         }
 
         log.info("STORE table: persisted {} table(s) for file [{}] org [{}]", storedCount, fileId, orgId);
+        refreshMaterializedViews();
         return storedCount;
     }
 
@@ -274,6 +275,7 @@ public class PipelineStoreService {
         }
 
         log.info("STORE doc: persisted {} document(s) for file [{}] org [{}]", storedCount, fileId, orgId);
+        refreshMaterializedViews();
         return storedCount;
     }
 
@@ -424,6 +426,19 @@ public class PipelineStoreService {
     // ---------------------------------------------------------------
     // HELPERS
     // ---------------------------------------------------------------
+
+    /**
+     * Refreshes materialized views so the query layer sees newly stored data.
+     * Calls the DB function which is SECURITY DEFINER and bypasses RLS.
+     */
+    private void refreshMaterializedViews() {
+        try {
+            entityManager.createNativeQuery("SELECT refresh_query_views()").getSingleResult();
+            log.debug("Materialized views refreshed after store");
+        } catch (Exception e) {
+            log.warn("Failed to refresh materialized views: {}", e.getMessage());
+        }
+    }
 
     private int deleteExistingTables(String fileId) {
         return entityManager.createNativeQuery("DELETE FROM parsed_tables WHERE file_id = :fileId")

@@ -46,6 +46,11 @@
                 <artifactId>engine-data-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.reportplatform</groupId>
+                <artifactId>engine-data-sink-tbl</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- Apache POI for Excel export -->
             <dependency>
                 <groupId>org.apache.poi</groupId>

@@ -38,6 +38,8 @@ import HealthDashboardPage from './pages/HealthDashboardPage';
 import IntegrationPage from './pages/IntegrationPage';
 import DistributionRulesPage from './pages/DistributionRulesPage';
 import PromotionPage from './pages/PromotionPage';
+import SinkBrowserPage from './pages/SinkBrowserPage';
+import SinkDetailPage from './pages/SinkDetailPage';
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -74,6 +76,8 @@ function AuthenticatedRoutes() {
                 <Route path="/templates/:templateId" element={<TemplateDetailPage />} />
                 <Route path="/batch-generation" element={<BatchGenerationPage />} />
                 <Route path="/generated-reports" element={<GeneratedReportsListPage />} />
+                <Route path="/sinks" element={<SinkBrowserPage />} />
+                <Route path="/sinks/:sinkId" element={<SinkDetailPage />} />
                 <Route path="/search" element={<SearchResultsPage />} />
                 <Route path="/local" element={<LocalDashboardPage />} />
                 <Route path="/comparison" element={<ComparisonPage />} />

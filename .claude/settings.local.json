@@ -143,7 +143,30 @@
       "Bash(wait)",
       "Bash(python test_11_dashboards_sql.py)",
       "Bash(ls \"c:\\\\Docker\\\\ReportAutomatization\\\\tests\\\\UAT\\\\data\\\\\" 2>/dev/null || find c:/Docker/ReportAutomatization/tests/UAT -name \"*.xlsx\" 2>/dev/null | head -5)",
-      "Bash(xargs wc:*)"
+      "Bash(xargs wc:*)",
+      "Bash(curl -sv http://localhost:8100/api/v1/query/files/ce99a6c1-d252-451e-b9fb-e79cf76a248e/data)",
+      "Bash(curl -s -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" -H \"X-User-Id: test\" http://localhost:8100/api/query/files/ce99a6c1-d252-451e-b9fb-e79cf76a248e/data)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'tables: {len\\(d[\\\\\"tables\\\\\"]\\)}, documents: {len\\(d[\\\\\"documents\\\\\"]\\)}, filename: {d[\\\\\"filename\\\\\"]}'\\)\")",
+      "Bash(curl -sv -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" -H \"X-User-Id: test\" http://localhost:8100/api/query/files/ce99a6c1-d252-451e-b9fb-e79cf76a248e/data)",
+      "Bash(curl -sv -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" -H \"X-User-Id: test\" -H \"X-User-Role: ADMIN\" http://localhost:8080/api/query/files/ce99a6c1-d252-451e-b9fb-e79cf76a248e/data)",
+      "Bash(curl -s -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" -H \"X-User-Id: test\" -H \"X-User-Role: ADMIN\" http://localhost/api/query/files/ce99a6c1-d252-451e-b9fb-e79cf76a248e/data)",
+      "Bash(cat /c/Docker/ReportAutomatization/infra/docker/init-scripts/*.sql)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); s=d['slides'][0]; print\\(f'title: {s[\\\\\"title\\\\\"]}, texts: {len\\(s[\\\\\"texts\\\\\"]\\)}, tables: {len\\(s[\\\\\"tables\\\\\"]\\)}'\\)\")",
+      "Bash(i:/apache-maven-3.9.6/bin/mvn.cmd compile:*)",
+      "Bash(npx --package typescript tsc --noEmit)",
+      "Bash(i:/apache-maven-3.9.6/bin/mvn.cmd -f apps/engine/engine-data/app/pom.xml compile)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(ls \"c:/Program Files/apache-maven\"*/bin/mvn*)",
+      "Bash(ls node_modules/.bin/tsc*)",
+      "Bash(npm ls:*)",
+      "Bash(mvn.cmd -f apps/engine/engine-data/app/pom.xml compile)",
+      "Bash(mvn.cmd -f apps/engine/engine-data/pom.xml compile)",
+      "Bash(npx --yes tsc@5 --noEmit)",
+      "Bash(mvn.cmd -f packages/java-base/pom.xml install -DskipTests)",
+      "Bash(npm install:*)",
+      "Bash(mvn.cmd -f packages/java-base/pom.xml install -DskipTests -pl '!java-base-protos')",
+      "Bash(mvn.cmd -f apps/engine/engine-data/pom.xml compile -DskipTests)",
+      "Bash(mvn.cmd -f apps/engine/engine-reporting/pom.xml compile -DskipTests)"
     ]
   }
 }

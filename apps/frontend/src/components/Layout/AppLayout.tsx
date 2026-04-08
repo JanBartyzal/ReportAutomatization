@@ -20,6 +20,7 @@ import {
   TableSimple24Regular,
   Notebook24Regular,
   People24Regular,
+  Database24Regular,
 } from '@fluentui/react-icons';
 import { useMe, useLogout } from '../../hooks/useAuth';
 import { useSSE } from '../../hooks/useNotifications';
@@ -55,6 +56,7 @@ const navSections: NavSection[] = [
       { to: '/forms', icon: <Form24Regular />, label: 'Forms' },
       { to: '/templates', icon: <Notebook24Regular />, label: 'Templates' },
       { to: '/dashboards', icon: <Grid24Regular />, label: 'Dashboards' },
+      { to: '/sinks', icon: <Database24Regular />, label: 'Sink Browser' },
       { to: '/matrix', icon: <TableSimple24Regular />, label: 'Matrix' },
     ],
   },

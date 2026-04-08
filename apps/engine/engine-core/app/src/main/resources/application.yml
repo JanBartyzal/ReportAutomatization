@@ -16,7 +16,7 @@ spring:
       enabled: true
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:engine_core_db}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:reportplatform}?currentSchema=${DB_SCHEMA:core},rls,public
     username: ${DB_USERNAME:engine_core_user}
     password: ${DB_PASSWORD:engine_core_pass}
     driver-class-name: org.postgresql.Driver
@@ -35,6 +35,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: ${DB_SCHEMA:core}
         format_sql: false
         jdbc:
           batch_size: 25
@@ -47,6 +48,8 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
     out-of-order: true
+    default-schema: ${DB_SCHEMA:core}
+    schemas: ${DB_SCHEMA:core}
 
 # Dapr configuration
 dapr:

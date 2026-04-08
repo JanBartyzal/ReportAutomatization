@@ -1,0 +1,109 @@
+syntax = "proto3";
+package sink.v1;
+
+import "common/v1/common.proto";
+
+option java_package = "com.reportplatform.proto.sink.v1";
+option java_multiple_files = true;
+
+// FS25: Sink Corrections & Selections gRPC service
+// Called from engine-orchestrator for write operations via Dapr gRPC.
+service SinkCorrectionService {
+  // Create a single correction on a parsed table
+  rpc CreateCorrection(CreateCorrectionRequest) returns (CreateCorrectionResponse);
+
+  // Create multiple corrections in bulk
+  rpc CreateBulkCorrections(CreateBulkCorrectionsRequest) returns (CreateBulkCorrectionsResponse);
+
+  // Delete a specific correction (revert to original)
+  rpc DeleteCorrection(DeleteCorrectionRequest) returns (DeleteCorrectionResponse);
+
+  // Upsert sink selection (select/deselect for report)
+  rpc UpsertSelection(UpsertSelectionRequest) returns (UpsertSelectionResponse);
+
+  // Get learning hints for extraction improvement
+  rpc GetLearningHints(GetLearningHintsRequest) returns (GetLearningHintsResponse);
+}
+
+// --- Correction Messages ---
+
+message CreateCorrectionRequest {
+  common.v1.RequestContext context = 1;
+  string parsed_table_id = 2;
+  string org_id = 3;
+  int32 row_index = 4;      // -1 = header correction (null sentinel)
+  int32 col_index = 5;     // -1 = not applicable (null sentinel)
+  string original_value = 6;
+  string corrected_value = 7;
+  string correction_type = 8;        // CELL_VALUE, HEADER_RENAME, ROW_DELETE, ROW_ADD, COLUMN_TYPE
+  string corrected_by = 9;
+  string error_category = 10; // MERGED_CELLS, WRONG_HEADER, MISSING_ROW, VALUE_FORMAT, SPLIT_TABLE
+  map<string, string> metadata = 11;
+}
+
+message CreateCorrectionResponse {
+  string correction_id = 1;
+  string corrected_at = 2;  // ISO 8601
+}
+
+message CreateBulkCorrectionsRequest {
+  common.v1.RequestContext context = 1;
+  repeated CreateCorrectionRequest corrections = 2;
+}
+
+message CreateBulkCorrectionsResponse {
+  int32 corrections_created = 1;
+  repeated string correction_ids = 2;
+}
+
+message DeleteCorrectionRequest {
+  common.v1.RequestContext context = 1;
+  string correction_id = 2;
+}
+
+message DeleteCorrectionResponse {
+  bool deleted = 1;
+}
+
+// --- Selection Messages ---
+
+message UpsertSelectionRequest {
+  common.v1.RequestContext context = 1;
+  string parsed_table_id = 2;
+  string org_id = 3;
+  string period_id = 4;
+  string report_type = 5;
+  bool selected = 6;
+  int32 priority = 7;
+  string selected_by = 8;
+  string note = 9;
+}
+
+message UpsertSelectionResponse {
+  string selection_id = 1;
+  bool selected = 2;
+  string selected_at = 3;  // ISO 8601
+}
+
+// --- Learning Hints Messages ---
+
+message GetLearningHintsRequest {
+  common.v1.RequestContext context = 1;
+  string source_type = 2;           // PPTX, EXCEL, PDF
+  string error_category = 3;
+  int32 max_hints = 4;              // limit number of hints returned
+}
+
+message GetLearningHintsResponse {
+  repeated LearningHint hints = 1;
+  int32 total_available = 2;
+}
+
+message LearningHint {
+  string source_type = 1;
+  string error_category = 2;
+  string original_snippet = 3;     // JSON
+  string corrected_snippet = 4;    // JSON
+  float confidence_score = 5;
+  int32 occurrence_count = 6;      // how many times this pattern was corrected
+}

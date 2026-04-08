@@ -130,9 +130,10 @@ class BlobStorageClient:
     async def download_bytes(self, container: str, blob_path: str) -> bytes:
         """Download a blob and return its contents as bytes.
 
-        Tries httpx first, falls back to Azure SDK for authenticated access.
+        Tries Azure SDK first (handles auth for both Azurite and production).
+        Falls back to httpx only when the SDK is unavailable or hits a
+        connection-level error — *not* when the blob simply doesn't exist.
         """
-        # Try Azure SDK first (handles auth properly for Azurite and prod)
         if self._connection_string:
             try:
                 from azure.storage.blob import BlobServiceClient
@@ -141,8 +142,15 @@ class BlobStorageClient:
                 data = blob_client.download_blob().readall()
                 logger.info("Downloaded blob via SDK: %s/%s (%d bytes)", container, blob_path, len(data))
                 return data
+            except ImportError:
+                logger.debug("azure-storage-blob not installed, falling back to httpx")
             except Exception as sdk_err:
-                logger.debug("Azure SDK download failed, trying httpx: %s", sdk_err)
+                # Re-raise application-level errors (not-found, auth, etc.)
+                # so they are not masked by the httpx fallback.
+                err_code = getattr(sdk_err, "error_code", None)
+                if err_code:
+                    raise
+                logger.warning("Azure SDK connection error, falling back to httpx: %s", sdk_err)
 
         # Fallback to httpx (for non-authenticated endpoints)
         client = await self._get_client()

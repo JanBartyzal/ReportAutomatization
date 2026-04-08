@@ -10,3 +10,4 @@ export * from './notifications';
 export * from './admin';
 export * from './integration';
 export * from './promotion';
+export * from './sinks';

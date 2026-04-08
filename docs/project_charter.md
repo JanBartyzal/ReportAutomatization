@@ -1,10 +1,10 @@
 # Project Charter: PPTX Analyzer & Automation Platform
 
-**Verze:** 5.1 – Extended REST API Surface (P8+)
-**Datum:** Březen 2026
+**Verze:** 5.2 – Sink Browser & Extraction Learning (FS25)
+**Datum:** Duben 2026
 **Architektura:** Event-Driven Microservices + Custom Orchestrator (engine-orchestrator)
 **Deployment Units:** 10 consolidated services (router, engine-core, engine-ingestor, engine-orchestrator, engine-data, engine-reporting, engine-integrations, processor-atomizers, processor-generators, frontend)
-**Feature Sets:** FS01–FS24 + FS99 (DevOps)
+**Feature Sets:** FS01–FS25 + FS99 (DevOps)
 **Docs Reference:** `docs/project_standards.md`, `docs/dod_criteria.md`
 
 > **Consolidation Note (P8):** Původních 29+ mikroslužeb bylo konsolidováno do 10 deployment units.
@@ -826,6 +826,163 @@ Priorita: STŘEDNÍ Pokrývající microservices: engine-core:admin, engine-data
 
 ---
 
+## FS25 – Sink Browser, Manual Corrections & Extraction Learning
+**Priorita: VYSOKÁ**  
+
+**Pokrývající microservices:** engine-data:sink-tbl, engine-data:query, engine-data:template, processor-atomizers (pptx, xls), frontend
+
+**Tech Stack:** Java 21 + Spring Boot (engine-data), Python + FastAPI (processor-atomizers), React (frontend)
+
+### Business kontext
+
+Při extrakci dat z PPTX prezentací (MetaTable logic) a částečně i z Excel souborů dochází k chybám – špatně rozpoznané hranice tabulek, chybné hlavičky, sloučené buňky nebo nesprávný datový typ. Uživatel dnes nemá možnost tyto chyby opravit, nemůže procházet jednotlivé datové části (sinky) nezávisle na zdrojovém souboru a nemůže určit, které sinky budou použity ve finálním reportu.
+
+FS25 zavádí **Sink Browser** – UI pro procházení, korekci a výběr extrahovaných datových částí – a **Extraction Learning Pipeline**, která zpětnou vazbu z manuálních oprav využívá k vylepšení budoucích extrakcí.
+
+### Datový model
+
+#### Tabulka `sink_corrections` (overlay oprav nad immutable `parsed_tables`)
+```sql
+sink_corrections (
+  id              UUID PK DEFAULT gen_random_uuid(),
+  parsed_table_id UUID NOT NULL REFERENCES parsed_tables(id),
+  org_id          UUID NOT NULL,
+  row_index       INT,              -- NULL = header correction
+  col_index       INT,
+  original_value  TEXT,
+  corrected_value TEXT,
+  correction_type VARCHAR NOT NULL,  -- CELL_VALUE, HEADER_RENAME, ROW_DELETE, ROW_ADD, COLUMN_TYPE
+  corrected_by    UUID NOT NULL,
+  corrected_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  metadata        JSONB
+)
+```
++ RLS policy na `org_id`
+
+#### Tabulka `sink_selections` (výběr sinků pro report/dashboard)
+```sql
+sink_selections (
+  id              UUID PK DEFAULT gen_random_uuid(),
+  parsed_table_id UUID NOT NULL REFERENCES parsed_tables(id),
+  org_id          UUID NOT NULL,
+  period_id       UUID,
+  report_type     VARCHAR,
+  selected        BOOLEAN DEFAULT true,
+  priority        INT DEFAULT 0,
+  selected_by     UUID,
+  selected_at     TIMESTAMPTZ DEFAULT now(),
+  note            TEXT,
+  UNIQUE (parsed_table_id, period_id, report_type)
+)
+```
++ RLS policy na `org_id`
+
+#### Tabulka `extraction_learning_log` (zpětná vazba pro AI learning)
+```sql
+extraction_learning_log (
+  id                UUID PK DEFAULT gen_random_uuid(),
+  file_id           UUID,
+  parsed_table_id   UUID REFERENCES parsed_tables(id),
+  org_id            UUID NOT NULL,
+  source_type       VARCHAR,       -- PPTX, EXCEL, PDF
+  slide_index       INT,
+  error_category    VARCHAR,       -- MERGED_CELLS, WRONG_HEADER, MISSING_ROW, VALUE_FORMAT, SPLIT_TABLE
+  original_snippet  JSONB,
+  corrected_snippet JSONB,
+  confidence_score  FLOAT,
+  created_at        TIMESTAMPTZ DEFAULT now(),
+  applied           BOOLEAN DEFAULT false
+)
+```
++ RLS policy na `org_id`
+
+### Požadavky
+
+#### Sink Browser (engine-data:query – REST endpointy pro frontend)
+- `GET /api/query/sinks` – Procházení všech sinků s filtrací (org, file, sheet, source_type, date range, scope). Stránkovaný výstup.
+- `GET /api/query/sinks/{parsed_table_id}` – Detail sinku s automaticky aplikovanými korekcemi (correction overlay).
+- `GET /api/query/sinks/{parsed_table_id}/corrections` – Historie všech oprav pro daný sink.
+- `GET /api/query/sinks/selections?period_id=X` – Seznam sinků vybraných pro danou periodu/report.
+- `GET /api/query/sinks/{parsed_table_id}/preview` – Náhled dat s aplikovanými korekcemi (read-only view pro dashboard/report).
+
+#### Manual Corrections (engine-data:sink-tbl – write operace, proxy přes query REST)
+- `POST /api/query/sinks/{parsed_table_id}/corrections` – Uložení opravy (buňka, hlavička, řádek). Originální `parsed_tables` zůstávají **immutable** – opravy se ukládají jako overlay v `sink_corrections`.
+- `POST /api/query/sinks/{parsed_table_id}/corrections/bulk` – Hromadné opravy (více buněk najednou).
+- `DELETE /api/query/sinks/{parsed_table_id}/corrections/{correction_id}` – Zrušení konkrétní opravy (revert na originál).
+- Při čtení dat se korekce aplikují on-the-fly přes query vrstvu.
+- Každá korekce je auditována (kdo, kdy, co, proč) – napojení na FS16.
+
+#### Sink Selection (výběr sinků pro report)
+- `PUT /api/query/sinks/{parsed_table_id}/selection` – Označení/odznačení sinku pro použití v reportu/dashboardu.
+- Uživatel může přidat poznámku proč je sink vybrán/vyloučen.
+- Priorita (pořadí) sinků pro případ více zdrojů stejných dat.
+- engine-data:dashboard (FS11) a processor-generators:pptx (FS18) musí respektovat `sink_selections` – pouze vybrané sinky s aplikovanými korekcemi se promítnou do výstupů.
+
+#### Extraction Learning Pipeline (engine-data:template + processor-atomizers)
+- Při uložení korekce se automaticky vytvoří záznam v `extraction_learning_log` s kategorizací typu chyby (`error_category`).
+- engine-data:template vystavuje nový gRPC endpoint `GetLearningHints(file_type, header_pattern)` – vrátí historické korekce pro podobné extrakce.
+- engine-orchestrator volá `GetLearningHints` **PŘED** uložením nově extrahovaných dat do sinku.
+- processor-atomizers:pptx a processor-atomizers:xls přijímají volitelný `learning_hints` parametr – hints obsahují vzory oprav pro podobné tabulky (např. "Pro tabulky s hlavičkou obsahující 'Náklady' na slidu typu X typicky dochází k chybě sloučených buněk → aplikuj korekci Z").
+- Confidence threshold v MetaTable logic se dynamicky upravuje na základě learning logu.
+- **UI feedback:** Vizuální indikátor u opravené buňky "Systém se z této opravy naučí" + dropdown pro kategorizaci typu chyby.
+
+### Frontend – Sink Browser UI
+
+- **Nová stránka `/sinks`** (nebo nový tab v existujícím FileViewer):
+  - **Sink List View:** Tabulka všech sinků s filtry (soubor, sheet, typ zdroje, datum, počet oprav). FluentUI DataGrid.
+  - **Sink Detail View:** Zobrazení dat s inline editací buněk. Kliknutí na buňku → editace hodnoty. Opravené buňky vizuálně odlišeny (highlight barva + ikona). Tooltip s historií oprav.
+  - **Selection Panel:** Checkbox u každého sinku + drag & drop pro řazení priority. Poznámka k výběru.
+  - **Correction Summary:** Přehled všech oprav s možností bulk revert.
+  - **Error Category Picker:** Při opravě uživatel volitelně kategorizuje typ chyby (MERGED_CELLS, WRONG_HEADER, MISSING_ROW, VALUE_FORMAT, SPLIT_TABLE).
+
+### Dopad na existující Feature Sets
+
+| FS | Dopad |
+|---|---|
+| **FS05 (Sinks)** | 3 nové tabulky + RLS policies, nové write operace v sink-tbl |
+| **FS06 (Query)** | Nové REST endpointy s correction overlay logikou |
+| **FS09 (Frontend)** | Nová stránka Sink Browser |
+| **FS11 (Dashboards)** | Dashboardy musí respektovat `sink_selections` a aplikovat korekce |
+| **FS15 (Schema Mapping)** | Rozšíření learning pipeline o correction feedback |
+| **FS18 (PPTX Generator)** | Generátor musí číst pouze selected sinky s applied corrections |
+
+### Acceptance kritéria
+
+- Uživatel může procházet všechny sinky nezávisle na zdrojovém souboru s filtrací a stránkováním.
+- Inline editace buňky v Sink Detail View uloží korekci bez modifikace originálního záznamu v `parsed_tables`.
+- Opravená buňka je vizuálně odlišena od originálních dat (highlight + ikona).
+- Uživatel může vybrat/odebrat sink pro report jedním kliknutím.
+- Dashboard a PPTX generátor zobrazují/používají pouze vybrané sinky s aplikovanými korekcemi.
+- Při importu nového souboru s podobnou strukturou systém aplikuje hints z `extraction_learning_log` a dosáhne měřitelně nižšího počtu chyb (metrika: počet manuálních oprav klesá v čase).
+- Historie oprav je plně auditovatelná (kdo, kdy, co změnil, jaký byl originál).
+- RLS zajišťuje, že uživatel vidí pouze sinky a korekce své organizace.
+
+### Nové DB tabulky
+
+| Tabulka | Účel | Effort |
+|---|---|---|
+| `sink_corrections` | Overlay oprav nad immutable parsed_tables | S |
+| `sink_selections` | Výběr sinků pro report/dashboard/výstup | S |
+| `extraction_learning_log` | Zpětná vazba pro AI learning z manuálních oprav | S |
+
+### Effort odhad
+
+| Komponenta | Effort |
+|---|---|
+| DB migrace (3 tabulky + RLS) | **S** |
+| Entity classes + repositories (sink-tbl) | **S** |
+| Correction service + gRPC endpoints (sink-tbl) | **M** |
+| Query endpoints s correction overlay (query) | **M** |
+| Selection service + endpoints | **S** |
+| Frontend – Sink List View | **M** |
+| Frontend – Sink Detail + inline editing | **L** |
+| Frontend – Selection panel | **S** |
+| Extraction learning log + template integration | **M** |
+| Atomizer hints integration | **M** |
+| **Celkem** | **L–XL** |
+
+---
+
 ### FS99 – DevOps & Observability
 **Priorita: VYSOKÁ**
 
@@ -845,15 +1002,15 @@ Priorita: STŘEDNÍ Pokrývající microservices: engine-core:admin, engine-data
 
 | # | Deployment Unit | Moduly | Popis / Odpovědnost | Feature Sets | Tech Stack |
 |---|---|---|---|---|---|
-| 1 | **frontend** | — | React SPA – upload, viewer, dashboardy, form filler, notifikace (WebSocket/SSE), MSAL auth | FS09, FS11 | React 18 + Vite + TS + FluentUI |
+| 1 | **frontend** | — | React SPA – upload, viewer, dashboardy, form filler, sink browser, notifikace (WebSocket/SSE), MSAL auth | FS09, FS11, FS25 | React 18 + Vite + TS + FluentUI |
 | 2 | **router** | — | Nginx API Gateway – Host-based routing, Azure Front Door (WAF + SSL), rate limiting, ForwardAuth | FS01 | Nginx (config) |
 | 3 | **engine-core** | auth, admin, batch, versioning, audit | Validace Entra ID tokenů, RBAC, KeyVault, API keys, holdingová hierarchie, verzování dat, diff tool, auditní logy, Failed Jobs UI | FS01, FS07, FS08, FS14, FS16 | Java 21 + Spring Boot |
 | 4 | **engine-ingestor** | ingestor, scanner | Streaming upload, MIME validace, ClamAV antivirová kontrola, sanitizace, Blob Storage, trigger engine-orchestrator | FS02 | Java 21 + Spring Boot + ClamAV |
 | 5 | **engine-orchestrator** | — | Workflow engine (Spring State Machine), Saga Pattern, Type-Safe Contracts, gRPC routing, Redis state, exponential backoff retry, DLQ | FS04 | Java 21 + Spring Boot |
-| 6 | **engine-data** | sink-tbl, sink-doc, sink-log, query, dashboard, search, template | Sinky pro strukturovaná data/dokumenty/logy, CQRS read model, Redis cache, BI dashboard agregace, full-text + vector search, Schema Mapping Registry | FS05, FS06, FS11, FS15 | Java 21 + Spring Boot |
+| 6 | **engine-data** | sink-tbl, sink-doc, sink-log, query, dashboard, search, template | Sinky pro strukturovaná data/dokumenty/logy, CQRS read model, Redis cache, BI dashboard agregace, full-text + vector search, Schema Mapping Registry, Sink Browser & Corrections | FS05, FS06, FS11, FS15, FS25 | Java 21 + Spring Boot |
 | 7 | **engine-reporting** | lifecycle, period, form, pptx-template, notification | Stavový automat reportů, správa period a deadlinů, dynamic form builder, PPTX šablony, in-app + e-mail notifikace | FS17, FS18, FS19, FS20, FS13 | Java 21 + Spring Boot |
 | 8 | **engine-integrations** | servicenow | ServiceNow API integrace, OAuth2, scheduled sync, report distribution | FS23 | Java 21 + Spring Boot |
-| 9 | **processor-atomizers** | pptx, xls, pdf, csv, ai, cleanup | Bezstavové extraktory dat z PPTX/Excel/PDF/CSV, LiteLLM AI gateway, cleanup worker | FS03, FS10, FS12 | Python + FastAPI |
+| 9 | **processor-atomizers** | pptx, xls, pdf, csv, ai, cleanup | Bezstavové extraktory dat z PPTX/Excel/PDF/CSV, LiteLLM AI gateway, cleanup worker, extraction learning hints | FS03, FS10, FS12, FS25 | Python + FastAPI |
 | 10 | **processor-generators** | pptx, xls, mcp | Generování PPTX/Excel reportů ze šablon, MCP Server pro AI agenty (OBO flow) | FS18, FS23, FS12 | Python + FastAPI |
 
 ### Effort legenda
@@ -881,6 +1038,7 @@ Priorita: STŘEDNÍ Pokrývající microservices: engine-core:admin, engine-data
 | **P5** | DevOps Maturity | Observability stack (Prometheus, Grafana, Loki, OTEL), CI/CD pipelines | FS99 | Production-ready: monitoring, tracing, automated 
 | **P6** | Advanced Period Mgmt (deadliny, eskalace, as-is srovnání) | | | Plná správa reportingových cyklů |pipelines |
 | **P7** | FS22 Advanced Comparison (placeholder) | | |  Granulární srovnání period |
+| **P8** | Sink Browser & Corrections | engine-data (sink-tbl, query, template), processor-atomizers, frontend | FS25 | Procházení sinků, manuální korekce, výběr dat pro report, extraction learning |
 
 
 
