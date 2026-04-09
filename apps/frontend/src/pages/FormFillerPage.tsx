@@ -151,8 +151,8 @@ export const FormFillerPage: React.FC = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
                 <div>
-                    <Title3>{form.name}</Title3>
-                    <Subtitle2 style={{ color: 'var(--colorNeutralForeground2)' }}>
+                    <Title3 block>{form.name}</Title3>
+                    <Subtitle2 block style={{ color: 'var(--colorNeutralForeground2)' }}>
                         {form.description}
                     </Subtitle2>
                 </div>

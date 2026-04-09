@@ -33,12 +33,306 @@
             "OrganizationSlug": "wizard-hub"
         }
     ],
+    "HealthServices": [
+        {
+            "ServiceId": "engine-core",
+            "DisplayName": "Engine Core (Auth/Admin)",
+            "HealthUrl": "http://engine-core:8081/actuator/health",
+            "Enabled": true,
+            "SortOrder": 1
+        },
+        {
+            "ServiceId": "router",
+            "DisplayName": "API Gateway (Nginx)",
+            "HealthUrl": "http://router:80/health",
+            "Enabled": true,
+            "SortOrder": 2
+        },
+        {
+            "ServiceId": "engine-ingestor",
+            "DisplayName": "Engine Ingestor",
+            "HealthUrl": "http://engine-ingestor:8082/actuator/health",
+            "Enabled": true,
+            "SortOrder": 3
+        },
+        {
+            "ServiceId": "engine-orchestrator",
+            "DisplayName": "Engine Orchestrator",
+            "HealthUrl": "http://engine-orchestrator:8080/actuator/health",
+            "Enabled": true,
+            "SortOrder": 4
+        },
+        {
+            "ServiceId": "engine-data",
+            "DisplayName": "Engine Data",
+            "HealthUrl": "http://engine-data:8100/actuator/health",
+            "Enabled": true,
+            "SortOrder": 5
+        },
+        {
+            "ServiceId": "engine-reporting",
+            "DisplayName": "Engine Reporting",
+            "HealthUrl": "http://engine-reporting:8105/actuator/health",
+            "Enabled": true,
+            "SortOrder": 6
+        },
+        {
+            "ServiceId": "engine-integrations",
+            "DisplayName": "Engine Integrations",
+            "HealthUrl": "http://engine-integrations:8106/actuator/health",
+            "Enabled": true,
+            "SortOrder": 7
+        },
+        {
+            "ServiceId": "processor-atomizers",
+            "DisplayName": "Processor Atomizers",
+            "HealthUrl": "http://processor-atomizers:8088/health",
+            "Enabled": true,
+            "SortOrder": 8
+        },
+        {
+            "ServiceId": "processor-generators",
+            "DisplayName": "Processor Generators",
+            "HealthUrl": "http://processor-generators:8111/health",
+            "Enabled": true,
+            "SortOrder": 9
+        }
+    ],
     "SlideMetadata": {
         "Directory": "../../tests/UAT/data",
         "Enabled": true
     },
     "DemoSeed": {
         "DataDirectory": "./DemoData",
-        "Enabled": true
+        "Enabled": false
+    },
+    "DashboardSeed": {
+        "Enabled": true,
+        "Dashboards": [
+            {
+                "Name": "OPEX Overview (Sample)",
+                "Description": "Sample dashboard with Custom SQL widgets showing OPEX data from parsed_tables. Use as a template for your own dashboards.",
+                "IsPublic": true,
+                "OrganizationSlug": "wizard-hub",
+                "Widgets": [
+                    {
+                        "type": "BAR_CHART",
+                        "title": "OPEX by Organisation",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "SELECT COALESCE(o.name, pt.org_id::text) AS LabelX, COUNT(pt.id) AS LabelY FROM data.parsed_tables pt LEFT JOIN core.organizations o ON o.id = pt.org_id GROUP BY 1 ORDER BY LabelY DESC LIMIT 20",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 6,
+                            "height": 350
+                        }
+                    },
+                    {
+                        "type": "PIE_CHART",
+                        "title": "OPEX by Category (Source Sheet)",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "SELECT COALESCE(pt.source_sheet, 'Unknown') AS LabelX, COUNT(*) AS LabelY FROM data.parsed_tables pt GROUP BY 1 ORDER BY LabelY DESC LIMIT 10",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 6,
+                            "height": 350
+                        }
+                    },
+                    {
+                        "type": "TABLE",
+                        "title": "Recent Parsed Tables",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "SELECT pt.id, pt.file_id, pt.source_sheet, jsonb_array_length(pt.headers) AS column_count, jsonb_array_length(pt.rows) AS row_count, pt.created_at FROM data.parsed_tables pt ORDER BY pt.created_at DESC LIMIT 20",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 12,
+                            "height": 400
+                        }
+                    },
+                    {
+                        "type": "BAR_CHART",
+                        "title": "Rows per File (Top 10)",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "SELECT pt.file_id::text AS LabelX, SUM(jsonb_array_length(pt.rows)) AS LabelY FROM data.parsed_tables pt GROUP BY pt.file_id ORDER BY LabelY DESC LIMIT 10",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 6,
+                            "height": 350
+                        }
+                    },
+                    {
+                        "type": "LINE_CHART",
+                        "title": "Ingestion Timeline (Daily)",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "SELECT TO_CHAR(pt.created_at, 'YYYY-MM-DD') AS LabelX, COUNT(*) AS LabelY FROM data.parsed_tables pt WHERE pt.created_at > NOW() - INTERVAL '30 days' GROUP BY 1 ORDER BY 1",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 6,
+                            "height": 350
+                        }
+                    }
+                ]
+            },
+            {
+                "Name": "Data Quality Monitor (Sample)",
+                "Description": "Sample dashboard monitoring data quality — empty tables, column statistics, corrections.",
+                "IsPublic": true,
+                "OrganizationSlug": "wizard-hub",
+                "Widgets": [
+                    {
+                        "type": "TABLE",
+                        "title": "Empty Tables (0 rows)",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "SELECT pt.id, pt.file_id, pt.source_sheet, pt.created_at FROM data.parsed_tables pt WHERE jsonb_array_length(pt.rows) = 0 ORDER BY pt.created_at DESC LIMIT 20",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 6,
+                            "height": 300
+                        }
+                    },
+                    {
+                        "type": "BAR_CHART",
+                        "title": "Column Count Distribution",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "SELECT jsonb_array_length(pt.headers)::text AS LabelX, COUNT(*) AS LabelY FROM data.parsed_tables pt GROUP BY 1 ORDER BY LabelX::int",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 6,
+                            "height": 300
+                        }
+                    },
+                    {
+                        "type": "TABLE",
+                        "title": "Recent Corrections",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "SELECT sc.parsed_table_id, sc.row_index, sc.col_index, sc.original_value, sc.corrected_value, sc.correction_type, sc.corrected_by, sc.corrected_at FROM data.sink_corrections sc ORDER BY sc.corrected_at DESC LIMIT 20",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 12,
+                            "height": 350
+                        }
+                    }
+                ]
+            },
+            {
+                "Name": "Test.xlsx — Project Budget Overview",
+                "Description": "Dashboard built from the latest upload of Test.xlsx (UAT). Shows project budgets, costs, and variances from sheet List1.",
+                "IsPublic": true,
+                "OrganizationSlug": "wizard-hub",
+                "Widgets": [
+                    {
+                        "type": "TABLE",
+                        "title": "Full Project Table (Latest Test.xlsx)",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "WITH latest AS (SELECT pt.headers, pt.rows FROM data.parsed_tables pt JOIN ingestor.files f ON f.id::text = pt.file_id WHERE f.filename = 'Test.xlsx' ORDER BY f.created_at DESC LIMIT 1) SELECT r.value->>0 AS \"Id\", r.value->>1 AS \"Project Name\", r.value->>2 AS \"Max project cost\", r.value->>3 AS \"Budget24\", r.value->>4 AS \"Budget 25\", r.value->>5 AS \"Budget 26\", r.value->>6 AS \"Cost24\", r.value->>7 AS \"Cost25\", r.value->>8 AS \"Cost26\", r.value->>9 AS \"TotalCost\", r.value->>10 AS \"ToalBudget\", r.value->>11 AS \"DiffCost\", r.value->>12 AS \"DiffBudget\" FROM latest l, jsonb_array_elements(l.rows) AS r(value)",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 12,
+                            "height": 350
+                        }
+                    },
+                    {
+                        "type": "BAR_CHART",
+                        "title": "Total Cost by Project",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "WITH latest AS (SELECT pt.rows FROM data.parsed_tables pt JOIN ingestor.files f ON f.id::text = pt.file_id WHERE f.filename = 'Test.xlsx' ORDER BY f.created_at DESC LIMIT 1) SELECT r.value->>1 AS LabelX, CAST(r.value->>9 AS NUMERIC) AS LabelY FROM latest l, jsonb_array_elements(l.rows) AS r(value) ORDER BY LabelY DESC",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 6,
+                            "height": 350
+                        }
+                    },
+                    {
+                        "type": "BAR_CHART",
+                        "title": "Budget vs Cost per Project",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "WITH latest AS (SELECT pt.rows FROM data.parsed_tables pt JOIN ingestor.files f ON f.id::text = pt.file_id WHERE f.filename = 'Test.xlsx' ORDER BY f.created_at DESC LIMIT 1) SELECT r.value->>1 AS LabelX, CAST(r.value->>10 AS NUMERIC) AS \"Budget\", CAST(r.value->>9 AS NUMERIC) AS \"Cost\" FROM latest l, jsonb_array_elements(l.rows) AS r(value) ORDER BY LabelX",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 6,
+                            "height": 350
+                        }
+                    },
+                    {
+                        "type": "PIE_CHART",
+                        "title": "Max Project Cost Share",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "WITH latest AS (SELECT pt.rows FROM data.parsed_tables pt JOIN ingestor.files f ON f.id::text = pt.file_id WHERE f.filename = 'Test.xlsx' ORDER BY f.created_at DESC LIMIT 1) SELECT r.value->>1 AS LabelX, CAST(r.value->>2 AS NUMERIC) AS LabelY FROM latest l, jsonb_array_elements(l.rows) AS r(value)",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 6,
+                            "height": 350
+                        }
+                    },
+                    {
+                        "type": "LINE_CHART",
+                        "title": "Cost Trend 2024-2026 (All Projects)",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "WITH latest AS (SELECT pt.rows FROM data.parsed_tables pt JOIN ingestor.files f ON f.id::text = pt.file_id WHERE f.filename = 'Test.xlsx' ORDER BY f.created_at DESC LIMIT 1), years AS (SELECT '2024' AS yr, 6 AS idx UNION ALL SELECT '2025', 7 UNION ALL SELECT '2026', 8) SELECT y.yr AS LabelX, SUM(CAST(r.value->>y.idx AS NUMERIC)) AS LabelY FROM latest l, jsonb_array_elements(l.rows) AS r(value), years y GROUP BY y.yr ORDER BY y.yr",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 6,
+                            "height": 350
+                        }
+                    }
+                ]
+            },
+            {
+                "Name": "DemoPage.pptx — Cost Optimization",
+                "Description": "Dashboard built from the latest upload of DemoPage.pptx (UAT). Shows cost optimization savings extracted from PPTX pseudo-tables.",
+                "IsPublic": true,
+                "OrganizationSlug": "wizard-hub",
+                "Widgets": [
+                    {
+                        "type": "TABLE",
+                        "title": "Cost Optimization Table (Latest DemoPage.pptx)",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "WITH latest AS (SELECT pt.headers, pt.rows, pt.source_sheet FROM data.parsed_tables pt JOIN ingestor.files f ON f.id::text = pt.file_id WHERE f.filename = 'DemoPage.pptx' ORDER BY jsonb_array_length(pt.rows) DESC, f.created_at DESC LIMIT 1) SELECT r.value->>0 AS \"Cost Category\", r.value->>1 AS \"Saving Initiatives\", r.value->>2 AS \"Net saving 2024 (M€)\", r.value->>3 AS \"Additional net saving (M€)\" FROM latest l, jsonb_array_elements(l.rows) AS r(value)",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 12,
+                            "height": 400
+                        }
+                    },
+                    {
+                        "type": "BAR_CHART",
+                        "title": "Net Savings by Cost Category",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "WITH latest AS (SELECT pt.rows FROM data.parsed_tables pt JOIN ingestor.files f ON f.id::text = pt.file_id WHERE f.filename = 'DemoPage.pptx' ORDER BY jsonb_array_length(pt.rows) DESC, f.created_at DESC LIMIT 1) SELECT r.value->>0 AS LabelX, CAST(NULLIF(r.value->>2, 'WIP') AS NUMERIC) AS LabelY FROM latest l, jsonb_array_elements(l.rows) AS r(value) WHERE r.value->>2 IS NOT NULL AND r.value->>2 != 'WIP' AND r.value->>2 != '' ORDER BY LabelY",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 6,
+                            "height": 350
+                        }
+                    },
+                    {
+                        "type": "TABLE",
+                        "title": "Totals Summary (DemoPage.pptx)",
+                        "data_source": "custom_sql",
+                        "config": {
+                            "sql": "SELECT pt.source_sheet AS \"Sheet\", jsonb_array_length(pt.headers) AS \"Columns\", jsonb_array_length(pt.rows) AS \"Rows\", pt.created_at AS \"Extracted At\" FROM data.parsed_tables pt JOIN ingestor.files f ON f.id::text = pt.file_id WHERE f.filename = 'DemoPage.pptx' ORDER BY f.created_at DESC",
+                            "group_by": [],
+                            "order_by": "value",
+                            "width": 6,
+                            "height": 350
+                        }
+                    }
+                ]
+            }
+        ]
     }
 }

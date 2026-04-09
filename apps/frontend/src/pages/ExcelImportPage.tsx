@@ -149,8 +149,8 @@ export const ExcelImportPage: React.FC = () => {
                 </Button>
             </div>
 
-            <Title3>Import Excel Data</Title3>
-            <Subtitle2 style={{ color: 'var(--colorNeutralForeground2)', marginBottom: '24px' }}>
+            <Title3 block>Import Excel Data</Title3>
+            <Subtitle2 block style={{ color: 'var(--colorNeutralForeground2)', marginBottom: '24px' }}>
                 Upload an Excel file and map columns to form fields
             </Subtitle2>
 
@@ -287,14 +287,14 @@ export const ExcelImportPage: React.FC = () => {
                         borderRadius: '8px',
                         marginBottom: '24px'
                     }}>
-                        <Title3>Imported Data Preview</Title3>
-                        <Body1>
+                        <Title3 block>Imported Data Preview</Title3>
+                        <Body1 block>
                             {mappings.filter(m => m.formField).length} columns will be mapped to form fields
                         </Body1>
                     </div>
 
                     <div style={{ marginBottom: '16px' }}>
-                        <Subtitle2>Mapping Summary</Subtitle2>
+                        <Subtitle2 block>Mapping Summary</Subtitle2>
                         <ul>
                             {mappings.filter(m => m.formField).map(m => (
                                 <li key={m.excelColumn}>

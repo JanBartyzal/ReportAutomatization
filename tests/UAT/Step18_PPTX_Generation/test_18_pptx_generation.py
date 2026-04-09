@@ -71,8 +71,8 @@ def main() -> int:
     if template_id:
         mappings = {
             "mappings": [
-                {"placeholder": "{{title}}", "source": "report.name"},
-                {"placeholder": "{{total}}", "source": "report.total_amount"}
+                {"placeholderKey": "{{title}}", "dataSourceType": "field", "dataSourceRef": "report.name"},
+                {"placeholderKey": "{{total}}", "dataSourceType": "field", "dataSourceRef": "report.total_amount"}
             ]
         }
         status, body = reporting_session.call("POST", f"/api/templates/pptx/{template_id}/mappings",
@@ -117,7 +117,7 @@ def main() -> int:
         if batch_report_ids:
             status, body = reporting_session.call("POST", "/api/templates/pptx/generate/batch",
                                         body={"template_id": template_id, "report_ids": batch_report_ids},
-                                        expected_status=200, tag="batch-generate-pptx")
+                                        expected_status=202, tag="batch-generate-pptx")
             # 10. If not implemented, use missing_feature()
             if status not in (200, 202):
                 session.missing_feature("POST /api/templates/pptx/generate/batch",

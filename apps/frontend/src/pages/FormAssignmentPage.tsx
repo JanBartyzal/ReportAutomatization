@@ -122,8 +122,8 @@ export const FormAssignmentPage: React.FC = () => {
                     >
                         Back to List
                     </Button>
-                    <Title3>Form Assignment: {form?.name}</Title3>
-                    <Subtitle2 style={{ color: tokens.colorNeutralForeground2 }}>
+                    <Title3 block>Form Assignment: {form?.name}</Title3>
+                    <Subtitle2 block style={{ color: tokens.colorNeutralForeground2 }}>
                         Select organizations that should fill out this form
                     </Subtitle2>
                 </div>

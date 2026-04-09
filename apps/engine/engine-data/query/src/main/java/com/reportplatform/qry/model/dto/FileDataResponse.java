@@ -8,6 +8,7 @@ public record FileDataResponse(
         String filename,
         String mimeType,
         List<TableDataDto> tables,
-        List<DocumentDto> documents
+        List<DocumentDto> documents,
+        List<SlideDto> slides
 ) {
 }

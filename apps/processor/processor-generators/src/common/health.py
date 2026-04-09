@@ -14,7 +14,7 @@ router = APIRouter(tags=["health"])
 @router.get("/health")
 async def health() -> JSONResponse:
     """Liveness probe."""
-    return JSONResponse({"status": "healthy", "service": SERVICE_NAME})
+    return JSONResponse({"status": "healthy", "service": SERVICE_NAME, "version": "0.1.0"})
 
 
 @router.get("/ready")

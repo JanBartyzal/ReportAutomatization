@@ -191,8 +191,8 @@ const HealthDashboardPage: React.FC = () => {
             <div className={styles.page}>
                 <div className={styles.headerRow}>
                     <div className={styles.header}>
-                        <Title3 className={styles.title}>Health Service Settings</Title3>
-                        <Body1 className={styles.subtitle}>
+                        <Title3 block className={styles.title}>Health Service Settings</Title3>
+                        <Body1 block className={styles.subtitle}>
                             Manage monitored services and their health check URLs
                         </Body1>
                     </div>
@@ -225,8 +225,8 @@ const HealthDashboardPage: React.FC = () => {
         return (
             <div className={styles.page}>
                 <div className={styles.header}>
-                    <Title3 className={styles.title}>Health Dashboard</Title3>
-                    <Body1 className={styles.subtitle}>Error loading health data</Body1>
+                    <Title3 block className={styles.title}>Health Dashboard</Title3>
+                    <Body1 block className={styles.subtitle}>Error loading health data</Body1>
                 </div>
             </div>
         );
@@ -236,8 +236,8 @@ const HealthDashboardPage: React.FC = () => {
         <div className={styles.page}>
             <div className={styles.headerRow}>
                 <div className={styles.header}>
-                    <Title3 className={styles.title}>Health Dashboard</Title3>
-                    <Body1 className={styles.subtitle}>
+                    <Title3 block className={styles.title}>Health Dashboard</Title3>
+                    <Body1 block className={styles.subtitle}>
                         System monitoring and service status • Last updated: {formatRelativeTime(data.lastUpdated)}
                     </Body1>
                 </div>
@@ -310,10 +310,10 @@ const HealthDashboardPage: React.FC = () => {
                                 }
                             />
                             <Divider />
-                            <div style={{ padding: tokens.spacingVerticalM }}>
-                                <Body1>Response time: {service.responseTime}ms</Body1>
-                                <Body1>Uptime: {service.uptime}%</Body1>
-                                <Body1>Version: {service.version}</Body1>
+                            <div style={{ padding: tokens.spacingVerticalM, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS }}>
+                                <Body1 block>Response time: {service.responseTime}ms</Body1>
+                                <Body1 block>Uptime: {service.uptime}%</Body1>
+                                <Body1 block>Version: {service.version}</Body1>
                             </div>
                         </Card>
                     ))}

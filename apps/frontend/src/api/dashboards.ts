@@ -32,7 +32,13 @@ interface DashboardResponse {
 
 export async function listDashboards(): Promise<DashboardSummary[]> {
   const { data } = await apiClient.get('/dashboards');
-  return Array.isArray(data) ? data : (data?.dashboards ?? []);
+  const raw: any[] = Array.isArray(data) ? data : (data?.dashboards ?? []);
+  return raw.map((d: any) => ({
+    id: d.id,
+    name: d.name,
+    is_public: d.isPublic ?? d.is_public ?? false,
+    created_at: d.createdAt ?? d.created_at ?? '',
+  }));
 }
 
 export async function createDashboard(config: DashboardConfig): Promise<DashboardConfig> {

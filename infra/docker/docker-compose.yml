@@ -355,7 +355,7 @@ services:
       - PYTHONUNBUFFERED=1
       - SERVICE_NAME=processor-atomizers
       - HTTP_PORT=8088
-      - GRPC_PORT=50090
+      - GRPC_PORT=50200
       - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
       - BLOB_STORAGE_URL=http://azurite:10000/devstoreaccount1
       - AZURE_STORAGE_CONTAINER=file-uploads
@@ -377,7 +377,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     ports:
       - "8088:8088"
-      - "50090:50090"
+      - "50200:50200"
     volumes:
       - tesseract_data:/usr/share/tesseract-ocr/5/tessdata
       - ../../tests/UAT/data:/app/data:ro
@@ -406,7 +406,7 @@ services:
       - PYTHONUNBUFFERED=1
       - SERVICE_NAME=processor-generators
       - HTTP_PORT=8111
-      - GRPC_PORT=50091
+      - GRPC_PORT=50201
       - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1}
       - BLOB_STORAGE_URL=http://azurite:10000/devstoreaccount1
       - TEMPLATES_CONTAINER=templates
@@ -432,7 +432,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     ports:
       - "8111:8111"
-      - "50091:50091"
+      - "50201:50201"
     depends_on:
       postgres:
         condition: service_healthy
@@ -503,6 +503,29 @@ services:
       retries: 10
     networks:
       - report-net
+
+  # pgAdmin - PostgreSQL Administration Tool
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@local.dev}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+      - PGADMIN_LISTEN_PORT=5050
+    ports:
+      - "5050:5050"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - report-net
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:5050/misc/ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Redis for caching, Dapr pubsub & state store
   redis:
@@ -694,4 +717,5 @@ volumes:
   clamav_data:
   tesseract_data:
   mailhog_data:
+  pgadmin_data:
   grafana_data:

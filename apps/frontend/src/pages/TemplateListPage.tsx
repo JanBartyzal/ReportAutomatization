@@ -263,8 +263,8 @@ export const TemplateListPage: React.FC = () => {
                 {/* Header */}
                 <div className={styles.header}>
                     <div>
-                        <Title3 style={{ color: reportBrand[90] }}>PPTX Templates</Title3>
-                        <Subtitle1>Manage PowerPoint report templates</Subtitle1>
+                        <Title3 block style={{ color: reportBrand[90] }}>PPTX Templates</Title3>
+                        <Subtitle1 block>Manage PowerPoint report templates</Subtitle1>
                     </div>
                     <Dialog open={isUploadDialogOpen} onOpenChange={(_, d) => setIsUploadDialogOpen(d.open)}>
                         <DialogTrigger disableButtonEnhancement>

@@ -206,7 +206,7 @@ export default function SearchResultsPage() {
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <Title2>Search Results</Title2>
+                <Title2 block>Search Results</Title2>
                 <div className={styles.searchInfo}>
                     <Search24Regular />
                     <Body1>"{query}"</Body1>

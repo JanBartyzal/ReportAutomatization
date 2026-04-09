@@ -1,6 +1,6 @@
 # UAT Errors - step05_Sinks_Persistence
 
-Timestamp: 2026-04-07T14:13:02
+Timestamp: 2026-04-09T13:01:46
 
 ## Missing Feature (skipped)
 - Endpoint: `GET /api/query/documents?file_id=...`

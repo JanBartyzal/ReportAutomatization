@@ -107,15 +107,15 @@ export function UnifiedTableView({ tables, title = 'Extracted Tables' }: Unified
     if (!tables || tables.length === 0) {
         return (
             <div className={styles.container}>
-                <Title3>{title}</Title3>
-                <Body1>No tables extracted from this file.</Body1>
+                <Title3 block>{title}</Title3>
+                <Body1 block>No tables extracted from this file.</Body1>
             </div>
         );
     }
 
     return (
         <div className={styles.container}>
-            <Title3>{title}</Title3>
+            <Title3 block>{title}</Title3>
             {tables.map((table: ExtractedTable, _index: number) => {
                 const sourceColors = getSourceTypeColor(table.source_type);
                 const hasData = table.headers.length > 0 && table.rows.length > 0;

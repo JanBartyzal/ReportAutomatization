@@ -259,8 +259,8 @@ const IntegrationPage: React.FC = () => {
     return (
         <div className="integration-page" style={{ padding: '24px' }}>
             <div className="page-header">
-                <Title2>Service-Now Integration</Title2>
-                <Body1>Manage Service-Now connections, sync schedules, and data retrieval</Body1>
+                <Title2 block>Service-Now Integration</Title2>
+                <Body1 block>Manage Service-Now connections, sync schedules, and data retrieval</Body1>
             </div>
 
             <Divider className="divider" style={{ margin: '16px 0' }} />

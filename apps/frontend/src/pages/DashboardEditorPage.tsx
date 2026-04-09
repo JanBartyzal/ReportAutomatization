@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Title2,
@@ -125,6 +125,16 @@ export default function DashboardEditorPage() {
     const [showSqlHelper, setShowSqlHelper] = useState(false);
     const [exportWidget, setExportWidget] = useState<WidgetConfig | null>(null);
     const [showImportDialog, setShowImportDialog] = useState(false);
+
+    // Sync local state when dashboard data loads (useState initializer only runs once)
+    useEffect(() => {
+        if (existingDashboard) {
+            setName(existingDashboard.name || '');
+            setDescription(existingDashboard.description || '');
+            setIsPublic(existingDashboard.is_public || false);
+            setWidgets(existingDashboard.widgets || []);
+        }
+    }, [existingDashboard]);
 
     if (!isNew && isLoading) {
         return <LoadingSpinner label="Loading dashboard..." />;
@@ -503,8 +513,8 @@ export default function DashboardEditorPage() {
             {activeTab === 'sql' && (
                 <div className={styles.form}>
                     <div className={styles.section}>
-                        <Title3>SQL Query Editor</Title3>
-                        <Body1 style={{ color: tokens.colorNeutralForeground2, marginBottom: '16px' }}>
+                        <Title3 block>SQL Query Editor</Title3>
+                        <Body1 block style={{ color: tokens.colorNeutralForeground2, marginBottom: '16px' }}>
                             Write custom SQL queries to create dynamic widgets. Use "Insert as Widget" to add results to your dashboard.
                         </Body1>
                         <DashboardSqlEditor onInsertQuery={handleSqlQueryInsert} />

@@ -96,12 +96,7 @@ public class HealthDashboardService {
                 JsonNode root = objectMapper.readTree(response.getBody());
                 String actuatorStatus = root.path("status").asText("UNKNOWN");
                 status = mapActuatorStatus(actuatorStatus);
-
-                JsonNode components = root.path("components");
-                if (components.has("moduleHealth")) {
-                    JsonNode details = components.path("moduleHealth").path("details");
-                    version = details.path("version").asText("unknown");
-                }
+                version = extractVersion(root);
             }
 
             return new ServiceHealthDTO(
@@ -128,9 +123,44 @@ public class HealthDashboardService {
         );
     }
 
+    /**
+     * Extracts version from health response, trying multiple paths:
+     * 1. Spring Boot actuator: components.moduleHealth.details.version
+     * 2. Python FastAPI: root.version
+     * 3. Any component with a "version" detail
+     */
+    private String extractVersion(JsonNode root) {
+        // 1) Spring Boot actuator — components.moduleHealth.details.version
+        JsonNode moduleVersion = root.path("components").path("moduleHealth").path("details").path("version");
+        if (!moduleVersion.isMissingNode() && !moduleVersion.asText("").isEmpty()) {
+            return moduleVersion.asText();
+        }
+
+        // 2) Direct "version" field (Python services, simple health endpoints)
+        JsonNode directVersion = root.path("version");
+        if (!directVersion.isMissingNode() && !directVersion.asText("").isEmpty()) {
+            return directVersion.asText();
+        }
+
+        // 3) Scan all actuator components for any "version" detail
+        JsonNode components = root.path("components");
+        if (components.isObject()) {
+            var fields = components.fields();
+            while (fields.hasNext()) {
+                var entry = fields.next();
+                JsonNode v = entry.getValue().path("details").path("version");
+                if (!v.isMissingNode() && !v.asText("").isEmpty()) {
+                    return v.asText();
+                }
+            }
+        }
+
+        return "unknown";
+    }
+
     private String mapActuatorStatus(String actuatorStatus) {
         return switch (actuatorStatus.toUpperCase()) {
-            case "UP" -> "healthy";
+            case "UP", "HEALTHY" -> "healthy";
             case "DOWN", "OUT_OF_SERVICE" -> "down";
             default -> "degraded";
         };

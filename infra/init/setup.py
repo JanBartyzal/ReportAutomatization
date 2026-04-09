@@ -38,7 +38,7 @@ class C:
 
 def log_step(order: int, name: str):
     print(f"\n{C.BOLD}[{order:>2}] {name}{C.END}")
-    print("─" * 60)
+    print("-" * 60)
 
 def log_ok(msg: str):
     print(f"  {C.OK}OK{C.END}  {msg}")
@@ -159,10 +159,42 @@ class BillingSeedConfig:
     invoices: list[InvoiceSeedConfig] = field(default_factory=list)
 
 @dataclass
+class HealthServiceConfig:
+    """Konfigurace pro health service registry záznam."""
+    service_id: str
+    display_name: str
+    health_url: str
+    enabled: bool = True
+    sort_order: int = 0
+
+@dataclass
 class SlideMetadataConfig:
     """Konfigurace pro seed slide metadata šablon (engine-data:template)."""
     directory: str = ""
     enabled: bool = False
+
+@dataclass
+class DashboardWidgetConfig:
+    """Widget definition for dashboard seed."""
+    type: str = "TABLE"
+    title: str = ""
+    data_source: str = "custom_sql"
+    config: dict = field(default_factory=dict)
+
+@dataclass
+class DashboardSeedEntry:
+    """Single dashboard to create."""
+    name: str = ""
+    description: str = ""
+    is_public: bool = True
+    organization_slug: str = ""
+    widgets: list[DashboardWidgetConfig] = field(default_factory=list)
+
+@dataclass
+class DashboardSeedConfig:
+    """Konfigurace pro seed ukázkových dashboardů."""
+    enabled: bool = False
+    dashboards: list[DashboardSeedEntry] = field(default_factory=list)
 
 @dataclass
 class DemoSeedConfig:
@@ -174,9 +206,11 @@ class InitConfig:
     admin: AdminConfig = field(default_factory=lambda: AdminConfig("admin@reportautomatization.com", ""))
     azure_accounts: list[AzureAccountConfig] = field(default_factory=list)
     identity_providers: list[IdentityProviderConfig] = field(default_factory=list)
+    health_services: list[HealthServiceConfig] = field(default_factory=list)
     slide_metadata: SlideMetadataConfig = field(default_factory=SlideMetadataConfig)
     demo_seed: DemoSeedConfig = field(default_factory=DemoSeedConfig)
     billing_seed: BillingSeedConfig = field(default_factory=BillingSeedConfig)
+    dashboard_seed: DashboardSeedConfig = field(default_factory=DashboardSeedConfig)
 
 
 def load_config(path: str) -> InitConfig:
@@ -226,6 +260,16 @@ def load_config(path: str) -> InitConfig:
             organization_slug=p.get("OrganizationSlug", ""),
         ))
 
+    health_services = []
+    for hs in raw.get("HealthServices", []):
+        health_services.append(HealthServiceConfig(
+            service_id=hs["ServiceId"],
+            display_name=hs["DisplayName"],
+            health_url=_expand_env(hs["HealthUrl"]),
+            enabled=hs.get("Enabled", True),
+            sort_order=hs.get("SortOrder", 0),
+        ))
+
     slide_meta_raw = raw.get("SlideMetadata", {})
     slide_metadata = SlideMetadataConfig(
         directory=slide_meta_raw.get("Directory", ""),
@@ -272,13 +316,38 @@ def load_config(path: str) -> InitConfig:
         invoices=billing_invoices,
     )
 
+    dash_raw = raw.get("DashboardSeed", {})
+    dash_entries = []
+    for d in dash_raw.get("Dashboards", []):
+        widgets = []
+        for w in d.get("Widgets", []):
+            widgets.append(DashboardWidgetConfig(
+                type=w.get("type", "TABLE"),
+                title=w.get("title", ""),
+                data_source=w.get("data_source", "custom_sql"),
+                config=w.get("config", {}),
+            ))
+        dash_entries.append(DashboardSeedEntry(
+            name=d.get("Name", ""),
+            description=d.get("Description", ""),
+            is_public=d.get("IsPublic", True),
+            organization_slug=d.get("OrganizationSlug", ""),
+            widgets=widgets,
+        ))
+    dashboard_seed = DashboardSeedConfig(
+        enabled=dash_raw.get("Enabled", False),
+        dashboards=dash_entries,
+    )
+
     return InitConfig(
         admin=admin,
         azure_accounts=azure_accounts,
         identity_providers=identity_providers,
+        health_services=health_services,
         slide_metadata=slide_metadata,
         demo_seed=demo_seed,
         billing_seed=billing_seed,
+        dashboard_seed=dashboard_seed,
     )
 
 
@@ -296,12 +365,14 @@ def _expand_env(value: str) -> str:
 class InitRunner:
     """Spouští jednotlivé init kroky přes REST API."""
 
-    def __init__(self, api: ApiClient, config: InitConfig, config_dir: str = ""):
+    def __init__(self, api: ApiClient, config: InitConfig, config_dir: str = "",
+                 data_api: "ApiClient | None" = None):
         self.api = api
+        self.data_api = data_api or api
         self.config = config
         self._config_dir = config_dir
         self.admin_token: Optional[str] = None
-        # org slug → org id (z API responses)
+        # org slug -> org id (z API responses)
         self.org_ids: dict[str, str] = {}
         self.results: list[tuple[str, bool, str]] = []
 
@@ -310,8 +381,10 @@ class InitRunner:
             ("health",    "Health Check",                self.step_health_check),
             ("superadmin", "Verify Admin Access",         self.step_register_superadmin),
             ("orgs",      "Load Organizations",           self.step_create_organizations),
+            ("health_svc","Seed Health Services",          self.step_seed_health_services),
             ("metadata",  "Seed Slide Metadata",          self.step_seed_slide_metadata),
             ("demo",      "Upload Demo Plans",            self.step_upload_demo_plans),
+            ("dashboards","Seed Sample Dashboards",        self.step_seed_dashboards),
             ("billing",   "Seed Billing Invoices",        self.step_seed_billing),
         ]
 
@@ -446,10 +519,82 @@ class InitRunner:
         self._fetch_org_id("")  # load all orgs
         if self.org_ids:
             for code, oid in self.org_ids.items():
-                log_info(f"Organizace '{code}' → ID: {oid}")
+                log_info(f"Organizace '{code}' -> ID: {oid}")
             return True, f"Načteno {len(self.org_ids)} organizací"
 
         return False, "Žádné organizace nalezeny v DB"
+
+    # ── Step: Seed Health Services ──────────────────────────────────────────
+
+    def step_seed_health_services(self) -> tuple[bool, str]:
+        """Seeduje health service registry přes REST API.
+
+        API: GET /api/admin/health/services — seznam existujících
+             POST /api/admin/health/services — vytvoření nového
+             PUT /api/admin/health/services/{id} — aktualizace existujícího
+        """
+        services = self.config.health_services
+        if not services:
+            return True, "HealthServices prázdný — přeskočeno"
+
+        if not self.admin_token:
+            return False, "Nemám admin token"
+
+        self.api.set_token(self.admin_token)
+
+        # Načíst existující služby z DB
+        existing: dict[str, dict] = {}
+        try:
+            r = self.api.get("/api/admin/health/services")
+            if r.status_code == 200:
+                for svc in r.json():
+                    existing[svc["serviceId"]] = svc
+        except Exception as e:
+            log_warn(f"Nelze načíst existující health services: {e}")
+
+        created = 0
+        updated = 0
+        errors = 0
+
+        for hs in services:
+            payload = {
+                "serviceId": hs.service_id,
+                "displayName": hs.display_name,
+                "healthUrl": hs.health_url,
+                "enabled": hs.enabled,
+                "sortOrder": hs.sort_order,
+            }
+
+            try:
+                if hs.service_id in existing:
+                    # Aktualizovat existující záznam
+                    svc_id = existing[hs.service_id]["id"]
+                    r = self.api.put(f"/api/admin/health/services/{svc_id}", payload)
+                    if r.status_code == 200:
+                        log_info(f"'{hs.display_name}' aktualizován -> {hs.health_url}")
+                        updated += 1
+                    else:
+                        log_warn(f"'{hs.display_name}' update selhal: HTTP {r.status_code} — {_err(r)}")
+                        errors += 1
+                else:
+                    # Vytvořit nový záznam
+                    r = self.api.post("/api/admin/health/services", payload)
+                    if r.status_code == 201:
+                        log_info(f"'{hs.display_name}' vytvořen -> {hs.health_url}")
+                        created += 1
+                    elif r.status_code == 409:
+                        log_info(f"'{hs.display_name}' už existuje")
+                    else:
+                        log_warn(f"'{hs.display_name}' vytvoření selhalo: HTTP {r.status_code} — {_err(r)}")
+                        errors += 1
+            except Exception as e:
+                log_warn(f"'{hs.display_name}' chyba: {e}")
+                errors += 1
+
+        msg = f"Health services: {created} vytvořeno, {updated} aktualizováno"
+        if errors:
+            msg += f", {errors} chyb"
+        return errors == 0, msg
 
     # ── Step: Seed Slide Metadata ──────────────────────────────────────────
 
@@ -480,7 +625,10 @@ class InitRunner:
         if not json_files:
             return True, f"Žádné JSON soubory v {meta_dir}"
 
-        self.api.set_token(self.admin_token)
+        # Slide metadata endpoint je na engine-data, ne engine-core
+        data_api = self.data_api
+        data_api.set_token(self.admin_token)
+        log_info(f"Používám engine-data API: {data_api.base_url}")
 
         uploaded = 0
         skipped = 0
@@ -495,7 +643,7 @@ class InitRunner:
                 schema_version = metadata.get("schema_version", "unknown")
 
                 # POST /api/query/templates/slide-metadata — vytvoří nebo aktualizuje šablonu
-                r = self.api.post("/api/query/templates/slide-metadata", {
+                r = data_api.post("/api/query/templates/slide-metadata", {
                     "name": template_name,
                     "schema_version": schema_version,
                     "definition": metadata,
@@ -504,13 +652,13 @@ class InitRunner:
                 if r.status_code in (200, 201):
                     data = r.json()
                     template_id = data.get("id") or data.get("template_id") or "?"
-                    log_info(f"Metadata '{template_name}' ({json_file.name}) → ID: {template_id}")
+                    log_info(f"Metadata '{template_name}' ({json_file.name}) -> ID: {template_id}")
                     uploaded += 1
                 elif r.status_code == 409:
                     log_info(f"Metadata '{template_name}' ({json_file.name}) už existuje")
 
                     # Zkusit PUT pro update existující šablony
-                    r2 = self.api.put(f"/api/query/templates/slide-metadata/by-name/{template_name}", {
+                    r2 = data_api.put(f"/api/query/templates/slide-metadata/by-name/{template_name}", {
                         "schema_version": schema_version,
                         "definition": metadata,
                     })
@@ -562,7 +710,7 @@ class InitRunner:
 
         self.api.set_token(self.admin_token)
 
-        # SuperAdmin nemá org v JWT → potřebujeme X-Tenant-Id header
+        # SuperAdmin nemá org v JWT -> potřebujeme X-Tenant-Id header
         # Použijeme první dostupnou org (nebo "1" jako platform org fallback)
         default_org_id = next(iter(self.org_ids.values()), "1")
 
@@ -600,6 +748,109 @@ class InitRunner:
                 errors += 1
 
         msg = f"Nahráno {uploaded}/{len(json_files)} plánů"
+        if skipped:
+            msg += f", {skipped} přeskočeno"
+        if errors:
+            msg += f", {errors} chyb"
+        return errors == 0, msg
+
+    # ── Step: Seed Sample Dashboards ─────────────────────────────────────
+
+    def step_seed_dashboards(self) -> tuple[bool, str]:
+        """Seeduje ukázkové dashboardy s Custom SQL widgety přes REST API.
+
+        API: POST /api/dashboards (engine-data)
+        Headers: X-Org-Id, X-User-Id
+        """
+        dash_cfg = self.config.dashboard_seed
+        if not dash_cfg.enabled:
+            return True, "DashboardSeed vypnutý (Enabled: false)"
+
+        if not dash_cfg.dashboards:
+            return True, "Žádné dashboardy k seedování"
+
+        if not self.admin_token:
+            return False, "Nemám admin token"
+
+        data_api = self.data_api
+        data_api.set_token(self.admin_token)
+
+        created = 0
+        skipped = 0
+        errors = 0
+
+        for dash in dash_cfg.dashboards:
+            # Resolve org_id from slug
+            org_id = self.org_ids.get(dash.organization_slug, "")
+            if not org_id and dash.organization_slug:
+                self._fetch_org_id(dash.organization_slug)
+                org_id = self.org_ids.get(dash.organization_slug, "")
+            if not org_id:
+                # Use first available org as fallback
+                org_id = next(iter(self.org_ids.values()), "")
+            if not org_id:
+                log_warn(f"Dashboard '{dash.name}' — žádná organizace dostupná")
+                errors += 1
+                continue
+
+            # Check if dashboard with this name already exists
+            data_api.session.headers["X-Org-Id"] = str(org_id)
+            data_api.session.headers["X-User-Id"] = str(org_id)  # use org_id as user_id for seed
+            data_api.session.headers["X-Roles"] = "ADMIN"
+
+            try:
+                r = data_api.get("/api/dashboards")
+                if r.status_code == 200:
+                    existing = r.json()
+                    existing_list = existing if isinstance(existing, list) else existing.get("dashboards", [])
+                    if any(d.get("name") == dash.name for d in existing_list):
+                        log_info(f"Dashboard '{dash.name}' už existuje — přeskočen")
+                        skipped += 1
+                        continue
+            except Exception:
+                pass  # proceed with creation attempt
+
+            # Build widget configs
+            widgets = []
+            for w in dash.widgets:
+                widgets.append({
+                    "type": w.type,
+                    "title": w.title,
+                    "data_source": w.data_source,
+                    "config": w.config,
+                })
+
+            payload = {
+                "name": dash.name,
+                "description": dash.description,
+                "config": {"widgets": widgets},
+                "chartType": "bar",
+                "is_public": dash.is_public,
+            }
+
+            try:
+                r = data_api.post("/api/dashboards", payload)
+                if r.status_code in (200, 201):
+                    data = r.json()
+                    dash_id = data.get("id", "?")
+                    log_info(f"Dashboard '{dash.name}' vytvořen -> ID: {dash_id} "
+                             f"({len(widgets)} widgetů, public={dash.is_public})")
+                    created += 1
+                elif r.status_code == 409:
+                    log_info(f"Dashboard '{dash.name}' už existuje (409)")
+                    skipped += 1
+                else:
+                    log_warn(f"Dashboard '{dash.name}' selhal: HTTP {r.status_code} — {_err(r)}")
+                    errors += 1
+            except Exception as e:
+                log_warn(f"Dashboard '{dash.name}' chyba: {e}")
+                errors += 1
+            finally:
+                data_api.session.headers.pop("X-Org-Id", None)
+                data_api.session.headers.pop("X-User-Id", None)
+                data_api.session.headers.pop("X-Roles", None)
+
+        msg = f"Vytvořeno {created}/{len(dash_cfg.dashboards)} dashboardů"
         if skipped:
             msg += f", {skipped} přeskočeno"
         if errors:
@@ -775,6 +1026,11 @@ def main():
         help="URL API (default: $RA_API_URL nebo http://localhost:8081 — direct to engine-core)",
     )
     parser.add_argument(
+        "--data-api-url",
+        default=os.environ.get("RA_DATA_API_URL", "http://localhost:8100"),
+        help="URL engine-data API pro slide metadata (default: $RA_DATA_API_URL nebo http://localhost:8100)",
+    )
+    parser.add_argument(
         "--wait", "-w",
         type=int, default=30,
         help="Timeout čekání na API v sekundách (default: 30)",
@@ -805,14 +1061,19 @@ def main():
 
     config = load_config(config_path)
 
+    # API klienti
+    api = ApiClient(args.api_url)
+    data_api = ApiClient(args.data_api_url) if args.data_api_url != args.api_url else None
+
     print(f"{C.DIM}Config: {config_path}{C.END}")
     print(f"{C.DIM}Admin:  {config.admin.email}{C.END}")
     print(f"{C.DIM}Azure accounts: {len(config.azure_accounts)}{C.END}")
     print(f"{C.DIM}Identity providers: {len(config.identity_providers)}{C.END}")
+    if data_api:
+        print(f"{C.DIM}Data API: {args.data_api_url}{C.END}")
+    print(f"{C.DIM}Health services: {len(config.health_services)}{C.END}")
     print(f"{C.DIM}Demo seed: {'ON' if config.demo_seed.enabled else 'OFF'} ({config.demo_seed.data_directory}){C.END}")
-
-    # API klient
-    api = ApiClient(args.api_url)
+    print(f"{C.DIM}Dashboard seed: {'ON' if config.dashboard_seed.enabled else 'OFF'} ({len(config.dashboard_seed.dashboards)} dashboards){C.END}")
 
     # Počkat na API
     if not args.no_wait:
@@ -821,7 +1082,8 @@ def main():
             sys.exit(1)
 
     # Spustit init
-    runner = InitRunner(api, config, config_dir=str(Path(config_path).parent))
+    runner = InitRunner(api, config, config_dir=str(Path(config_path).parent),
+                        data_api=data_api)
     runner.run_all(
         skip_steps=set(args.skip_step),
         only_step=args.only_step,

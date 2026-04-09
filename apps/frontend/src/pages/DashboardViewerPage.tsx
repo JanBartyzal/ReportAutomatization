@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Title2,
     Title3,
@@ -78,21 +78,10 @@ export default function DashboardViewerPage() {
     const queryDashboard = useDashboardQuery(dashboardId || '');
     const [widgetData, setWidgetData] = useState<Record<number, AggregatedData>>({});
     const [showPeriodComparison, setShowPeriodComparison] = useState(false);
-
-    if (isLoading) {
-        return <LoadingSpinner label="Loading dashboard..." />;
-    }
-
-    if (!dashboard) {
-        return (
-            <div className={styles.container}>
-                <Body1>Dashboard not found</Body1>
-            </div>
-        );
-    }
+    const loadedRef = useRef(false);
 
     const handleRefresh = async () => {
-        if (!dashboardId) return;
+        if (!dashboardId || !dashboard?.widgets?.length) return;
 
         const newData: Record<number, AggregatedData> = {};
 
@@ -106,9 +95,17 @@ export default function DashboardViewerPage() {
                         continue;
                     }
                     const rawResult = await executeRawSql(sql);
+                    // Transform rows from arrays to keyed objects using column names
+                    const mappedRows = rawResult.rows.map((row: unknown[]) => {
+                        const obj: Record<string, unknown> = {};
+                        rawResult.columns.forEach((col, idx) => {
+                            obj[col] = row[idx];
+                        });
+                        return obj;
+                    });
                     newData[i] = {
                         columns: rawResult.columns,
-                        rows: rawResult.rows as unknown as Record<string, unknown>[],
+                        rows: mappedRows,
                         total_rows: rawResult.totalRows,
                     };
                 } else {
@@ -126,6 +123,26 @@ export default function DashboardViewerPage() {
 
         setWidgetData(newData);
     };
+
+    // Auto-load widget data once when dashboard loads
+    useEffect(() => {
+        if (dashboard?.widgets?.length && !loadedRef.current) {
+            loadedRef.current = true;
+            handleRefresh();
+        }
+    }, [dashboard]);
+
+    if (isLoading) {
+        return <LoadingSpinner label="Loading dashboard..." />;
+    }
+
+    if (!dashboard) {
+        return (
+            <div className={styles.container}>
+                <Body1>Dashboard not found</Body1>
+            </div>
+        );
+    }
 
     const renderWidgetContent = (widget: WidgetConfig, index: number) => {
         const data = widgetData[index];
@@ -231,8 +248,8 @@ export default function DashboardViewerPage() {
 
             {dashboard.widgets.length === 0 && (
                 <div className={styles.noData}>
-                    <Title3>No widgets configured</Title3>
-                    <Body1>Edit this dashboard to add widgets.</Body1>
+                    <Title3 block>No widgets configured</Title3>
+                    <Body1 block>Edit this dashboard to add widgets.</Body1>
                     <Button
                         appearance="primary"
                         onClick={() => navigate(`/dashboards/${dashboardId}/edit`)}

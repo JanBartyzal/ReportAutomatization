@@ -336,8 +336,8 @@ export const FormEditorPage: React.FC = () => {
             ) : (
                 <div style={{ maxWidth: '800px', margin: '0 auto' }}>
                     <Card style={{ padding: '24px' }}>
-                        <Title3>{formState.name}</Title3>
-                        <Body1 style={{ color: tokens.colorNeutralForeground3 }}>{formState.description}</Body1>
+                        <Title3 block>{formState.name}</Title3>
+                        <Body1 block style={{ color: tokens.colorNeutralForeground3 }}>{formState.description}</Body1>
                         <Divider style={{ margin: '20px 0' }} />
                         {formState.fields.map(field => (
                             <Field 

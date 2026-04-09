@@ -110,8 +110,8 @@ export default function DashboardListPage() {
 
             {dashboardList.length === 0 ? (
                 <div className={styles.emptyState}>
-                    <Title3>No dashboards yet</Title3>
-                    <Body1>Create your first dashboard to start visualizing data.</Body1>
+                    <Title3 block>No dashboards yet</Title3>
+                    <Body1 block>Create your first dashboard to start visualizing data.</Body1>
                     <Button
                         appearance="primary"
                         icon={<Add24Regular />}

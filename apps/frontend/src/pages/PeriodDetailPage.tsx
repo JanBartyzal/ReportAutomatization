@@ -183,8 +183,8 @@ export const PeriodDetailPage: React.FC = () => {
 
             <div className={styles.header}>
                 <div>
-                    <Title3>{period.name}</Title3>
-                    <Caption1>Code: {period.period_code} | Type: {period.type}</Caption1>
+                    <Title3 block>{period.name}</Title3>
+                    <Caption1 block>Code: {period.period_code} | Type: {period.type}</Caption1>
                 </div>
                 <div style={{ display: 'flex', gap: tokens.spacingHorizontalS }}>
                     <Button icon={<Edit24Regular />} onClick={openEditDialog}>Edit Period</Button>
@@ -242,7 +242,7 @@ export const PeriodDetailPage: React.FC = () => {
                 </div>
             </Card>
 
-            <Title3>Organization Status Matrix</Title3>
+            <Title3 block>Organization Status Matrix</Title3>
             <Body2 block>Submission status for all organizations in this period.</Body2>
 
             <Card className={styles.matrixContainer}>

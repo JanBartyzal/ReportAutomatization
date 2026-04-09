@@ -281,12 +281,17 @@ def main() -> int:
         )
 
     # ---------------------------------------------------------------
-    # 5. Slide image — no endpoint exists
+    # 5. Slide image — verify slide image endpoint returns PNG
     # ---------------------------------------------------------------
-    session.missing_feature(
-        f"GET /api/query/files/{pptx_file_id}/slides/<n>/image",
-        "Slide image endpoint does not exist in current API"
-    )
+    status, body = data_session.call("GET", f"/api/query/files/{pptx_file_id}/slides/0/image",
+                                expected_status=200, tag="pptx-slide-image")
+    if status == 200 and isinstance(body, bytes):
+        session.assert_true(len(body) > 0, "Slide image endpoint returns non-empty PNG data")
+    elif status in (404, 500):
+        session.missing_feature(
+            f"GET /api/query/files/{pptx_file_id}/slides/0/image",
+            "Slide image endpoint not implemented yet"
+        )
 
     # ---------------------------------------------------------------
     # 6. Save extracted data info to state

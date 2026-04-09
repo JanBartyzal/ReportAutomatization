@@ -71,9 +71,9 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 # REST (MCP + health) and gRPC
-EXPOSE 8111 50091
+EXPOSE 8111 50201
 
-ENV GRPC_PORT=50091 \
+ENV GRPC_PORT=50201 \
     HTTP_PORT=8111 \
     SERVICE_NAME=processor-generators \
     DAPR_APP_ID=processor-generators \

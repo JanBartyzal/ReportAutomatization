@@ -18,10 +18,12 @@ import {
     CalendarLtr24Regular,
     Folder24Regular,
     DocumentCheckmark24Regular,
+    DataPie24Regular,
 } from '@fluentui/react-icons';
 import { CountdownWidget } from '../components/Lifecycle/CountdownWidget';
 import { listPeriods } from '../api/periods';
 import { listFiles } from '../api/files';
+import { listDashboards } from '../api/dashboards';
 
 const useStyles = makeStyles({
     container: {
@@ -81,6 +83,19 @@ const useStyles = makeStyles({
         backgroundColor: tokens.colorNeutralBackground2,
         borderRadius: tokens.borderRadiusMedium,
     },
+    dashboardGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: tokens.spacingHorizontalM,
+    },
+    dashboardCard: {
+        cursor: 'pointer',
+        padding: tokens.spacingHorizontalM,
+        transition: 'box-shadow 0.2s ease-in-out',
+        '&:hover': {
+            boxShadow: tokens.shadow4,
+        },
+    },
 });
 
 export default function DashboardPage() {
@@ -100,6 +115,15 @@ export default function DashboardPage() {
         queryFn: () => listFiles({ page_size: 1 }),
         refetchInterval: 60_000,
     });
+
+    // Fetch public dashboards
+    const { data: dashboardsData, isLoading: dashboardsLoading } = useQuery({
+        queryKey: ['dashboard-public-list'],
+        queryFn: () => listDashboards(),
+        refetchInterval: 60_000,
+    });
+
+    const publicDashboards = (dashboardsData ?? []).filter((d) => d.is_public);
 
     const periods = periodsData?.data ?? [];
     const openPeriods = periods.filter(
@@ -188,6 +212,57 @@ export default function DashboardPage() {
                                 deadline={(period as any).submissionDeadline ?? (period as any).submission_deadline ?? (period as any).endDate ?? (period as any).end_date}
                                 status={(period.status ?? (period as any).state ?? '').toUpperCase()}
                             />
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Public Dashboards */}
+            <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                    <Title3>Public Dashboards</Title3>
+                    <Button
+                        appearance="subtle"
+                        icon={<DataPie24Regular />}
+                        onClick={() => navigate('/dashboards')}
+                    >
+                        View All
+                    </Button>
+                </div>
+
+                {dashboardsLoading ? (
+                    <Spinner label="Loading dashboards..." />
+                ) : publicDashboards.length === 0 ? (
+                    <div className={styles.emptyState}>
+                        <DataPie24Regular style={{ fontSize: '48px', color: tokens.colorNeutralForeground4 }} />
+                        <Title3 style={{ marginTop: '12px' }}>No public dashboards</Title3>
+                        <Body1 style={{ color: tokens.colorNeutralForeground3 }}>
+                            Create a dashboard and set it to Public to show it here for all users.
+                        </Body1>
+                        <Button
+                            appearance="primary"
+                            style={{ marginTop: '16px' }}
+                            onClick={() => navigate('/dashboards/new')}
+                        >
+                            Create Dashboard
+                        </Button>
+                    </div>
+                ) : (
+                    <div className={styles.dashboardGrid}>
+                        {publicDashboards.map((dashboard) => (
+                            <Card
+                                key={dashboard.id}
+                                className={styles.dashboardCard}
+                                onClick={() => navigate(`/dashboards/${dashboard.id}`)}
+                            >
+                                <CardHeader
+                                    image={<DataPie24Regular className={styles.statIcon} />}
+                                    header={<Body2><strong>{dashboard.name}</strong></Body2>}
+                                />
+                                <Body1 style={{ color: tokens.colorNeutralForeground3, marginTop: tokens.spacingVerticalXS }}>
+                                    {dashboard.created_at ? new Date(dashboard.created_at).toLocaleDateString() : ''}
+                                </Body1>
+                            </Card>
                         ))}
                     </div>
                 )}

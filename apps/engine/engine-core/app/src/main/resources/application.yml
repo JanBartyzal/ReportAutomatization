@@ -93,7 +93,7 @@ management:
         include: health,info,metrics,prometheus,loggers
   endpoint:
     health:
-      show-details: when_authorized
+      show-details: always
       probes:
         enabled: true
   health:

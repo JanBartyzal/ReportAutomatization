@@ -116,10 +116,14 @@ def main() -> int:
         session._log("[WARN] No submission_id, skipping validation test")
 
     # 9. Export Excel template — GET /api/forms/{form_id}/export/excel-template
-    # Switch back to admin1 for admin operations
+    # Switch back to admin1 for admin operations (propagate full auth context)
     token = session.login(USERS["admin1"]["email"], USERS["admin1"]["password"])
     if token:
+        session.restore_auth_from_state()
         reporting_session.token = token
+        reporting_session.org_id = session.org_id
+        reporting_session.user_id = session.user_id
+        reporting_session.roles = session.roles
 
     status, body = reporting_session.call("GET", f"/api/forms/{form_id}/export/excel-template",
                                 expected_status=200, tag="export-excel-template")

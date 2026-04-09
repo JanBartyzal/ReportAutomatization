@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     temp_container: str = "temp"
 
     # -- Server ports --
-    grpc_port: int = 50090
+    grpc_port: int = 50200
     http_port: int = 8088
 
     # -- Logging & Observability --

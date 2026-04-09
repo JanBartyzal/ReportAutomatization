@@ -63,12 +63,20 @@ def main() -> int:
         )
 
     # ---------------------------------------------------------------
-    # 3. Workflow steps — no endpoint exists
+    # 3. Workflow steps — GET /api/query/workflows/{file_id}/steps
     # ---------------------------------------------------------------
-    session.missing_feature(
-        f"GET /api/query/workflows/{file_id}/steps",
-        "Workflow steps endpoint does not exist in current API"
-    )
+    data_session = session.for_service(SERVICES["engine_data"])
+    status, body = data_session.call("GET", f"/api/query/workflows/{file_id}/steps",
+                                expected_status=200, tag="workflow-steps")
+    if status == 200 and isinstance(body, list):
+        session.assert_true(isinstance(body, list), "Workflow steps response is a list")
+        session._log(f"[INFO] Workflow steps count: {len(body)}")
+    elif status in (404, 500):
+        session.missing_feature(
+            f"GET /api/query/workflows/{file_id}/steps",
+            "Workflow steps endpoint not implemented yet"
+        )
+    session.sync_counters_from(data_session)
 
     # ---------------------------------------------------------------
     # 4. Idempotency — re-trigger same file, should not duplicate

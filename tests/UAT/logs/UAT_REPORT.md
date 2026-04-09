@@ -1,17 +1,17 @@
 # UAT Report — ReportAutomatization (RA)
 
-Generated: 2026-04-07T14:13:24
+Generated: 2026-04-09T13:02:08
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
 | Total steps executed | 26 |
-| Total assertions | 276 |
-| Passed | 259 |
-| Failed | 7 |
-| Skipped (missing features) | 10 |
-| Overall success rate | 93.8% |
+| Total assertions | 295 |
+| Passed | 281 |
+| Failed | 6 |
+| Skipped (missing features) | 8 |
+| Overall success rate | 95.3% |
 
 ## Step Results
 
@@ -21,14 +21,14 @@ Generated: 2026-04-07T14:13:24
 | step01_Infrastructure_Auth | 13 | 13 | 0 | 0 | 100% | PASS |
 | step02_File_Upload | 12 | 12 | 0 | 0 | 100% | PASS |
 | step03_Atomizer_PPTX | 7 | 5 | 0 | 2 | 71% | PASS |
-| step04_Orchestrator_Workflow | 6 | 4 | 0 | 2 | 67% | PASS |
-| step05_Sinks_Persistence | 9 | 8 | 0 | 1 | 89% | PASS |
-| step06_Analytics_Query | 16 | 15 | 1 | 0 | 94% | PARTIAL |
+| step04_Orchestrator_Workflow | 6 | 5 | 0 | 1 | 83% | PASS |
+| step05_Sinks_Persistence | 10 | 9 | 0 | 1 | 90% | PASS |
+| step06_Analytics_Query | 15 | 15 | 0 | 0 | 100% | PASS |
 | step07_Admin_Management | 11 | 11 | 0 | 0 | 100% | PASS |
-| step08_Batch_Organization | 7 | 6 | 0 | 1 | 86% | PASS |
+| step08_Batch_Organization | 12 | 11 | 1 | 0 | 92% | PARTIAL |
 | step09_Frontend_SPA | 8 | 8 | 0 | 0 | 100% | PASS |
-| step10_Atomizer_Excel | 7 | 6 | 0 | 1 | 86% | PASS |
-| step11_Dashboards_SQL | 22 | 19 | 3 | 0 | 86% | PARTIAL |
+| step10_Atomizer_Excel | 21 | 19 | 1 | 1 | 90% | PARTIAL |
+| step11_Dashboards_SQL | 22 | 21 | 1 | 0 | 95% | PARTIAL |
 | step12_API_AI_MCP | 8 | 8 | 0 | 0 | 100% | PASS |
 | step13_Notifications | 13 | 13 | 0 | 0 | 100% | PASS |
 | step14_Data_Versioning | 7 | 7 | 0 | 0 | 100% | PASS |
@@ -51,7 +51,6 @@ The following steps produced error reports:
 - [step03_Atomizer_PPTX](step03_Atomizer_PPTX_errors.md)
 - [step04_Orchestrator_Workflow](step04_Orchestrator_Workflow_errors.md)
 - [step05_Sinks_Persistence](step05_Sinks_Persistence_errors.md)
-- [step06_Analytics_Query](step06_Analytics_Query_errors.md)
 - [step08_Batch_Organization](step08_Batch_Organization_errors.md)
 - [step10_Atomizer_Excel](step10_Atomizer_Excel_errors.md)
 - [step11_Dashboards_SQL](step11_Dashboards_SQL_errors.md)

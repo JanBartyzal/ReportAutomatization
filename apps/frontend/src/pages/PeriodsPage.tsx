@@ -138,8 +138,8 @@ export const PeriodsPage: React.FC = () => {
         <div className={styles.container}>
             <div className={styles.header}>
                 <div>
-                    <Title3>Reporting Periods</Title3>
-                    <Caption1>Manage reporting periods and track completion across organizations.</Caption1>
+                    <Title3 block>Reporting Periods</Title3>
+                    <Caption1 block>Manage reporting periods and track completion across organizations.</Caption1>
                 </div>
                 <Button
                     appearance="primary"

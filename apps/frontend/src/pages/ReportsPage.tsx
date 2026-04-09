@@ -19,20 +19,30 @@ import {
     Caption1,
     makeStyles,
     tokens,
+    Dialog,
+    DialogSurface,
+    DialogTitle,
+    DialogBody,
+    DialogContent,
+    DialogActions,
+    DialogTrigger,
+    Label,
 } from '@fluentui/react-components';
 import {
     CheckmarkRegular,
     DismissRegular,
     EyeRegular,
     FilterRegular,
+    AddRegular,
 } from '@fluentui/react-icons';
 import { useNavigate } from 'react-router-dom';
-import { 
-    useReports, 
-    useSubmitReport, 
-    useApproveReport, 
-    useBulkApprove, 
-    useBulkReject 
+import {
+    useReports,
+    useCreateReport,
+    useSubmitReport,
+    useApproveReport,
+    useBulkApprove,
+    useBulkReject
 } from '../hooks/useReports';
 import { usePeriods } from '../hooks/usePeriods';
 import { useOrganizations } from '../hooks/useAdmin';
@@ -97,6 +107,10 @@ export const ReportsPage: React.FC = () => {
     const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
     const [rejectingReportId, setRejectingReportId] = useState<string | null>(null);
     const [rejectComment, setRejectComment] = useState('');
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const [newReportOrg, setNewReportOrg] = useState('');
+    const [newReportPeriod, setNewReportPeriod] = useState('');
+    const [newReportType, setNewReportType] = useState('OPEX');
 
     const { data: reportsData, isLoading: reportsLoading } = useReports({ 
         status: statusFilter || undefined,
@@ -107,6 +121,7 @@ export const ReportsPage: React.FC = () => {
     const { data: orgsData } = useOrganizations();
     const { data: periodsData } = usePeriods();
 
+    const createMutation = useCreateReport();
     const submitMutation = useSubmitReport();
     const approveMutation = useApproveReport();
     const bulkApproveMutation = useBulkApprove();
@@ -126,6 +141,22 @@ export const ReportsPage: React.FC = () => {
         } else {
             setSelectedReports([]);
         }
+    };
+
+    const handleCreate = () => {
+        if (!newReportOrg || !newReportPeriod) return;
+        createMutation.mutate(
+            { org_id: newReportOrg, period_id: newReportPeriod, report_type: newReportType },
+            {
+                onSuccess: (report) => {
+                    setCreateDialogOpen(false);
+                    setNewReportOrg('');
+                    setNewReportPeriod('');
+                    setNewReportType('OPEX');
+                    navigate(`/reports/${report.id}`);
+                },
+            }
+        );
     };
 
     const handleSubmit = (reportId: string) => submitMutation.mutate(reportId);
@@ -183,6 +214,15 @@ export const ReportsPage: React.FC = () => {
             <PageHeader
                 title="Reports"
                 subtitle="Manage and track all reports across organizations and periods."
+                actions={
+                    <Button
+                        appearance="primary"
+                        icon={<AddRegular />}
+                        onClick={() => setCreateDialogOpen(true)}
+                    >
+                        New Report
+                    </Button>
+                }
             />
 
             {/* Toolbar */}
@@ -359,6 +399,68 @@ export const ReportsPage: React.FC = () => {
                 onCommentChange={setRejectComment}
                 count={rejectingReportId ? 1 : selectedReports.length}
             />
+
+            {/* Create Report Dialog */}
+            <Dialog open={createDialogOpen} onOpenChange={(_ev, data) => setCreateDialogOpen(data.open)}>
+                <DialogSurface>
+                    <DialogBody>
+                        <DialogTitle>Create New Report</DialogTitle>
+                        <DialogContent style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM, paddingTop: tokens.spacingVerticalM }}>
+                            <div>
+                                <Label required>Organization</Label>
+                                <Dropdown
+                                    placeholder="Select organization"
+                                    value={organizations.find(o => o.id === newReportOrg)?.name}
+                                    onOptionSelect={(_ev, data) => setNewReportOrg(data.optionValue as string)}
+                                    style={{ width: '100%' }}
+                                >
+                                    {organizations.map(org => (
+                                        <Option key={org.id} value={org.id}>{org.name}</Option>
+                                    ))}
+                                </Dropdown>
+                            </div>
+                            <div>
+                                <Label required>Reporting Period</Label>
+                                <Dropdown
+                                    placeholder="Select period"
+                                    value={periods.find(p => p.id === newReportPeriod)?.name}
+                                    onOptionSelect={(_ev, data) => setNewReportPeriod(data.optionValue as string)}
+                                    style={{ width: '100%' }}
+                                >
+                                    {periods.map(p => (
+                                        <Option key={p.id} value={p.id}>{p.name}</Option>
+                                    ))}
+                                </Dropdown>
+                            </div>
+                            <div>
+                                <Label required>Report Type</Label>
+                                <Dropdown
+                                    value={newReportType}
+                                    onOptionSelect={(_ev, data) => setNewReportType(data.optionValue as string)}
+                                    style={{ width: '100%' }}
+                                >
+                                    <Option value="OPEX">OPEX Report</Option>
+                                    <Option value="CAPEX">CAPEX Report</Option>
+                                    <Option value="FINANCIAL">Financial Report</Option>
+                                    <Option value="GENERAL">General Report</Option>
+                                </Dropdown>
+                            </div>
+                        </DialogContent>
+                        <DialogActions>
+                            <DialogTrigger disableButtonEnhancement>
+                                <Button appearance="secondary">Cancel</Button>
+                            </DialogTrigger>
+                            <Button
+                                appearance="primary"
+                                onClick={handleCreate}
+                                disabled={!newReportOrg || !newReportPeriod || createMutation.isPending}
+                            >
+                                {createMutation.isPending ? 'Creating...' : 'Create Report'}
+                            </Button>
+                        </DialogActions>
+                    </DialogBody>
+                </DialogSurface>
+            </Dialog>
         </div>
     );
 };

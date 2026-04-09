@@ -187,7 +187,7 @@ export const TemplateDetailPage: React.FC = () => {
                                 {template.scope}
                             </Badge>
                         </div>
-                        <Subtitle1 className={styles.subtitleMuted}>
+                        <Subtitle1 block className={styles.subtitleMuted}>
                             ID: {template.id} • Created {new Date(template.createdAt).toLocaleDateString()}
                         </Subtitle1>
                     </div>
@@ -238,8 +238,8 @@ export const TemplateDetailPage: React.FC = () => {
                 {selectedTab === 'preview' && (
                     <Card className={styles.previewCenter}>
                         <DocumentPdf24Regular style={{ fontSize: '64px', color: reportBrand[90], marginBottom: '16px' }} />
-                        <Title3>PPTX Template Preview</Title3>
-                        <Body1 className={styles.previewBody}>
+                        <Title3 block>PPTX Template Preview</Title3>
+                        <Body1 block className={styles.previewBody}>
                             Visual preview of template slides with extracted placeholders.
                         </Body1>
                         <div className={styles.slideGrid}>

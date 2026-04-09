@@ -178,8 +178,8 @@ const PromotionPage: React.FC = () => {
     return (
         <div className="promotion-page" style={{ padding: '24px' }}>
             <div className="page-header">
-                <Title2>Smart Persistence Promotion</Title2>
-                <Body1>Manage schema mapping promotions and dedicated table creation</Body1>
+                <Title2 block>Smart Persistence Promotion</Title2>
+                <Body1 block>Manage schema mapping promotions and dedicated table creation</Body1>
             </div>
 
             <Divider className="divider" style={{ margin: '16px 0' }} />
@@ -224,11 +224,11 @@ const PromotionPage: React.FC = () => {
 
                     {selectedCandidate && (
                         <div className="candidate-detail-panel" style={{ marginTop: '32px', border: '1px solid #edebe9', padding: '16px', borderRadius: '4px' }}>
-                            <Title3>Proposal Details: {selectedCandidate.mapping_name}</Title3>
+                            <Title3 block>Proposal Details: {selectedCandidate.mapping_name}</Title3>
 
                             {selectedCandidate.status === 'migration_in_progress' && migrationProgress && (
                                 <div className="migration-progress" style={{ margin: '16px 0' }}>
-                                    <Body1>Migration Progress</Body1>
+                                    <Body1 block>Migration Progress</Body1>
                                     <ProgressBar
                                         value={migrationProgress.migrated_records}
                                         max={migrationProgress.total_records}

@@ -2,7 +2,7 @@
 
 Starts both:
 - FastAPI app on HTTP_PORT (8111) for MCP REST endpoints and health checks
-- gRPC server on GRPC_PORT (50091) for PptxGeneratorService and ExcelGeneratorService
+- gRPC server on GRPC_PORT (50201) for PptxGeneratorService and ExcelGeneratorService
 
 Dapr app-id: processor-generators
 """

@@ -113,7 +113,7 @@ public class QueryService {
         // RLS enforcement: if file doesn't belong to this org, return empty response
         if (summary == null) {
             log.warn("File {} not found for org {} — returning empty response", fileId, orgId);
-            return new FileDataResponse(fileId, null, null, List.of(), List.of());
+            return new FileDataResponse(fileId, null, null, List.of(), List.of(), List.of());
         }
 
         String filename = summary.getFilename();
@@ -131,7 +131,14 @@ public class QueryService {
                 .map(this::toDocumentDto)
                 .toList();
 
-        FileDataResponse response = new FileDataResponse(fileId, filename, mimeType, tables, documents);
+        // Build slides from SLIDE_TEXT_N documents (for PPTX files)
+        List<SlideDto> slides = docEntities.stream()
+                .filter(d -> d.getDocumentType() != null && d.getDocumentType().startsWith("SLIDE_TEXT_"))
+                .map(this::toSlideDto)
+                .sorted(java.util.Comparator.comparingInt(SlideDto::slideIndex))
+                .toList();
+
+        FileDataResponse response = new FileDataResponse(fileId, filename, mimeType, tables, documents, slides);
         cacheService.putCache(cacheKey, response);
         return response;
     }
@@ -330,6 +337,11 @@ public class QueryService {
         Object rows = deserializeJsonField(entity.getRows(), List.class);
         Object metadata = deserializeJsonField(entity.getMetadata(), Map.class);
 
+        // Convert numeric strings in rows to actual Number types
+        if (rows instanceof List<?> rowList) {
+            rows = rowList.stream().map(this::coerceRowNumerics).toList();
+        }
+
         return new TableDataDto(
                 entity.getId(),
                 entity.getFileId(),
@@ -339,6 +351,45 @@ public class QueryService {
                 metadata,
                 entity.getCreatedAt()
         );
+    }
+
+    /**
+     * Converts numeric string values in a row (List or Map) to actual Number types.
+     */
+    @SuppressWarnings("unchecked")
+    private Object coerceRowNumerics(Object row) {
+        if (row instanceof List<?> cells) {
+            return cells.stream().map(this::tryParseNumeric).toList();
+        }
+        if (row instanceof Map<?, ?> cellMap) {
+            var converted = new java.util.LinkedHashMap<String, Object>();
+            ((Map<String, Object>) cellMap).forEach((k, v) -> converted.put(k, tryParseNumeric(v)));
+            return converted;
+        }
+        return row;
+    }
+
+    /**
+     * Attempts to parse a string value as a number (int or double).
+     * Returns the original value if parsing fails.
+     */
+    private Object tryParseNumeric(Object value) {
+        if (!(value instanceof String str) || str.isEmpty()) {
+            return value;
+        }
+        try {
+            long l = Long.parseLong(str);
+            if (l >= Integer.MIN_VALUE && l <= Integer.MAX_VALUE) {
+                return (int) l;
+            }
+            return l;
+        } catch (NumberFormatException e1) {
+            try {
+                return Double.parseDouble(str);
+            } catch (NumberFormatException e2) {
+                return value;
+            }
+        }
     }
 
     private DocumentDto toDocumentDto(DocumentEntity entity) {

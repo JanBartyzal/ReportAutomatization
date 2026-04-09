@@ -79,10 +79,10 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 # HTTP (FastAPI) and gRPC ports
-EXPOSE 8088 50090
+EXPOSE 8088 50200
 
 ENV HTTP_PORT=8088 \
-    GRPC_PORT=50090 \
+    GRPC_PORT=50200 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app/generated
 

@@ -114,7 +114,7 @@ def main() -> int:
     if batch_id and file_id:
         status, body = session.call("POST", f"/api/batches/{batch_id}/files",
                                     body={"file_id": file_id},
-                                    expected_status=200, tag="assign-file-to-batch")
+                                    expected_status=201, tag="assign-file-to-batch")
         if status in (404, 500):
             session.missing_feature(f"POST /api/batches/{batch_id}/files",
                                     "File-to-batch assignment not implemented yet")

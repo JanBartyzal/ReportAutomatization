@@ -112,8 +112,8 @@ export default function SqlQueryHelperDialog({ open, onClose }: SqlQueryHelperDi
                     <DialogContent>
                         <div className={styles.content}>
                             <div className={styles.section}>
-                                <Title3>Axis Naming Convention</Title3>
-                                <Body1>
+                                <Title3 block>Axis Naming Convention</Title3>
+                                <Body1 block>
                                     For chart widgets, use specific column aliases to define axis mapping:
                                 </Body1>
                                 <table className={styles.axisTable}>
@@ -144,8 +144,8 @@ export default function SqlQueryHelperDialog({ open, onClose }: SqlQueryHelperDi
                             </div>
 
                             <div className={styles.section}>
-                                <Title3>Bar Chart Example</Title3>
-                                <Body1>
+                                <Title3 block>Bar Chart Example</Title3>
+                                <Body1 block>
                                     Use <span className={styles.highlight}>LabelX</span> for categories and{' '}
                                     <span className={styles.highlight}>LabelY</span> for aggregated values:
                                 </Body1>
@@ -153,8 +153,8 @@ export default function SqlQueryHelperDialog({ open, onClose }: SqlQueryHelperDi
                             </div>
 
                             <div className={styles.section}>
-                                <Title3>Line Chart Example</Title3>
-                                <Body1>
+                                <Title3 block>Line Chart Example</Title3>
+                                <Body1 block>
                                     Similar to bar chart - <span className={styles.highlight}>LabelX</span> for time/sequence
                                     and <span className={styles.highlight}>LabelY</span> for values:
                                 </Body1>
@@ -162,8 +162,8 @@ export default function SqlQueryHelperDialog({ open, onClose }: SqlQueryHelperDi
                             </div>
 
                             <div className={styles.section}>
-                                <Title3>Pie Chart Example</Title3>
-                                <Body1>
+                                <Title3 block>Pie Chart Example</Title3>
+                                <Body1 block>
                                     Use <span className={styles.highlight}>LabelX</span> for segment names and{' '}
                                     <span className={styles.highlight}>LabelY</span> for values:
                                 </Body1>
@@ -171,8 +171,8 @@ export default function SqlQueryHelperDialog({ open, onClose }: SqlQueryHelperDi
                             </div>
 
                             <div className={styles.section}>
-                                <Title3>Table Widget</Title3>
-                                <Body1>
+                                <Title3 block>Table Widget</Title3>
+                                <Body1 block>
                                     Tables display all columns returned by your query. No special aliases needed:
                                 </Body1>
                                 <div className={styles.codeBlock}>{EXAMPLE_TABLE}</div>

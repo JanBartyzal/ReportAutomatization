@@ -178,7 +178,9 @@ def main() -> int:
                 sheets = []
                 for t in tables:
                     if isinstance(t, dict):
-                        sn = t.get("sheetName") or t.get("sheet_name") or t.get("name")
+                        sn = (t.get("sheetName") or t.get("sheet_name")
+                              or t.get("sourceSheet") or t.get("source_sheet")
+                              or t.get("name"))
                         if sn and sn not in sheets:
                             sheets.append(sn)
 
@@ -344,12 +346,26 @@ def main() -> int:
         )
 
     # ------------------------------------------------------------------
-    # 7. Invalid sheet index — graceful error handling
+    # 7. Per-sheet endpoint — test valid sheet and invalid sheet index
     # ------------------------------------------------------------------
     if xlsx_file_id:
-        session._log("[INFO] Per-sheet endpoint does not exist — marking as missing feature")
-        session.missing_feature(f"GET /api/query/files/{xlsx_file_id}/sheets/9999",
-                                "Per-sheet endpoint does not exist in current API")
+        # 7a. Valid sheet index (sheet 0)
+        status, body = data_session.call("GET", f"/api/query/files/{xlsx_file_id}/sheets/0",
+                                    expected_status=200, tag="per-sheet-valid")
+        if status == 200 and isinstance(body, dict):
+            sheet_tables = body.get("tables", [])
+            session._log(f"[INFO] Per-sheet endpoint returned {len(sheet_tables)} tables for sheet 0")
+        elif status in (404, 500):
+            session.missing_feature(f"GET /api/query/files/{xlsx_file_id}/sheets/0",
+                                    "Per-sheet endpoint not implemented yet")
+
+        # 7b. Invalid sheet index (9999) — should return empty or error gracefully
+        status, body = data_session.call("GET", f"/api/query/files/{xlsx_file_id}/sheets/9999",
+                                    expected_status=200, tag="per-sheet-invalid")
+        if status == 200 and isinstance(body, dict):
+            empty_tables = body.get("tables", [])
+            session.assert_true(len(empty_tables) == 0,
+                                f"Invalid sheet index returns 0 tables (got {len(empty_tables)})")
 
     # ------------------------------------------------------------------
     # Done

@@ -46,7 +46,7 @@ public class AggregationService {
     private static final Set<String> ALLOWED_AGGREGATIONS = Set.of("SUM", "AVG", "COUNT", "MIN", "MAX");
 
     private static final Pattern SQL_INJECTION_PATTERN = Pattern.compile(
-            ".*(DROP|DELETE|TRUNCATE|ALTER|CREATE|INSERT|UPDATE|GRANT|REVOKE|EXEC|EXECUTE).*",
+            ".*\\b(DROP|DELETE|TRUNCATE|ALTER|CREATE|INSERT|UPDATE|GRANT|REVOKE)\\b.*",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -105,14 +105,17 @@ public class AggregationService {
     public RawSqlResponse executeRawSql(UUID orgId, String sql) {
         validateRawSql(sql);
 
-        var params = new MapSqlParameterSource();
-        params.addValue("orgId", orgId.toString());
+        // Set RLS context so PostgreSQL row-level security policies filter by org
+        if (orgId != null) {
+            jdbcTemplate.getJdbcTemplate().execute(
+                    "SELECT set_config('app.current_org_id', '" + orgId + "', true)");
+        }
 
-        String validatedSql = buildRawSql(sql, params);
+        String validatedSql = buildRawSql(sql);
 
         log.debug("Executing raw SQL for org={}: {}", orgId, validatedSql);
 
-        List<Map<String, Object>> results = jdbcTemplate.queryForList(validatedSql, params);
+        List<Map<String, Object>> results = jdbcTemplate.queryForList(validatedSql, new MapSqlParameterSource());
 
         if (results.isEmpty()) {
             return new RawSqlResponse(List.of(), List.of(), 0);
@@ -131,7 +134,8 @@ public class AggregationService {
             throw new IllegalArgumentException("SQL query cannot be blank");
         }
         String trimmed = sql.trim();
-        if (!trimmed.toUpperCase().startsWith("SELECT")) {
+        String upper = trimmed.toUpperCase();
+        if (!upper.startsWith("SELECT") && !upper.startsWith("WITH")) {
             throw new IllegalArgumentException("Only SELECT queries are allowed");
         }
         if (SQL_INJECTION_PATTERN.matcher(sql).matches()) {
@@ -139,16 +143,12 @@ public class AggregationService {
         }
     }
 
-    private String buildRawSql(String sql, MapSqlParameterSource params) {
+    private String buildRawSql(String sql) {
         String normalized = sql.trim();
         if (!normalized.toUpperCase().contains("LIMIT")) {
             normalized = normalized + " LIMIT " + MAX_ROWS;
         }
-        if (!normalized.toUpperCase().contains("WHERE") && !normalized.toUpperCase().contains("where")) {
-            return normalized.replaceFirst("(?i)FROM", "FROM parsed_tables WHERE org_id = :orgId AND ");
-        } else if (!normalized.toUpperCase().contains("org_id")) {
-            return normalized.replaceFirst("(?i)FROM", "FROM parsed_tables pt WHERE pt.org_id = :orgId AND ");
-        }
+        // Org filtering is handled by PostgreSQL RLS policies via set_config('app.current_org_id')
         return normalized;
     }
 

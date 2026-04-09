@@ -2,7 +2,7 @@
 
 **Dapr App ID:** `processor-generators`
 **Tech:** Python 3.11 / FastAPI
-**Port:** 8111 (HTTP), 50091 (gRPC)
+**Port:** 8111 (HTTP), 50201 (gRPC)
 
 ## Purpose
 
@@ -53,7 +53,7 @@ sequenceDiagram
 server:
   port: 8111
 grpc:
-  port: 50091
+  port: 50201
 dapr:
   app-id: processor-generators
 generation:
@@ -70,7 +70,7 @@ python -m uvicorn src.main:app --reload
 
 # Docker
 docker build -f apps/processor/processor-generators/Dockerfile -t processor-generators .
-docker run -p 8111:8111 -p 50091:50091 processor-generators
+docker run -p 8111:8111 -p 50201:50201 processor-generators
 ```
 
 ## Dependencies

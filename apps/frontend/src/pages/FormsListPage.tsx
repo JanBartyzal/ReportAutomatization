@@ -79,8 +79,8 @@ export const FormsListPage: React.FC = () => {
         <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <div>
-                    <Title3>Forms</Title3>
-                    <Subtitle2 style={{ color: 'var(--colorNeutralForeground2)' }}>
+                    <Title3 block>Forms</Title3>
+                    <Subtitle2 block style={{ color: 'var(--colorNeutralForeground2)' }}>
                         Create and manage data collection forms
                     </Subtitle2>
                 </div>

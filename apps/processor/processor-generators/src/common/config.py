@@ -26,7 +26,7 @@ SERVICE_NAME: str = os.environ.get("SERVICE_NAME", "processor-generators")
 # ---------------------------------------------------------------------------
 # Ports
 # ---------------------------------------------------------------------------
-GRPC_PORT: int = _int_env("GRPC_PORT", 50091)
+GRPC_PORT: int = _int_env("GRPC_PORT", 50201)
 HTTP_PORT: int = _int_env("HTTP_PORT", 8111)
 
 # ---------------------------------------------------------------------------

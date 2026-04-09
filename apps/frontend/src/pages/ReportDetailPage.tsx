@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     makeStyles,
     tokens,
@@ -18,6 +18,8 @@ import {
     DismissRegular,
     HistoryRegular,
     InfoRegular,
+    DocumentPdfRegular,
+    ArrowDownloadRegular,
     OrganizationRegular,
     CalendarLtrRegular,
 } from '@fluentui/react-icons';
@@ -28,6 +30,7 @@ import { Timeline } from '../components/Lifecycle/Timeline';
 import { RejectionDialog } from '../components/Lifecycle/RejectionDialog';
 // @ts-ignore
 import { ReportStatus } from '@reportplatform/types';
+import generationApi from '../api/generation';
 
 const useStyles = makeStyles({
     container: {
@@ -98,6 +101,8 @@ export const ReportDetailPage: React.FC = () => {
     const navigate = useNavigate();
     const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
     const [rejectionComment, setRejectionComment] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [generationStatus, setGenerationStatus] = useState<string | null>(null);
 
     const { data: report, isLoading: isReportLoading } = useReport(reportId!);
     const { data: history, isLoading: isHistoryLoading } = useReportHistory(reportId!);
@@ -126,6 +131,49 @@ export const ReportDetailPage: React.FC = () => {
             });
         }
     };
+
+    const handleGenerate = useCallback(async () => {
+        if (!reportId) return;
+        setIsGenerating(true);
+        setGenerationStatus('PENDING');
+        try {
+            const result = await generationApi.generate({ reportId });
+            setGenerationStatus(result.status);
+            // Poll for completion
+            const poll = setInterval(async () => {
+                try {
+                    const status = await generationApi.getStatus(reportId, result.jobId);
+                    setGenerationStatus(status.status);
+                    if (status.status === 'COMPLETED' || status.status === 'FAILED') {
+                        clearInterval(poll);
+                        setIsGenerating(false);
+                    }
+                } catch {
+                    clearInterval(poll);
+                    setIsGenerating(false);
+                    setGenerationStatus('FAILED');
+                }
+            }, 2000);
+        } catch {
+            setIsGenerating(false);
+            setGenerationStatus('FAILED');
+        }
+    }, [reportId]);
+
+    const handleDownload = useCallback(async () => {
+        if (!reportId) return;
+        try {
+            const blob = await generationApi.download(reportId);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `report_${reportId}.pptx`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Download failed:', err);
+        }
+    }, [reportId]);
 
     if (isReportLoading) {
         return (
@@ -157,7 +205,7 @@ export const ReportDetailPage: React.FC = () => {
 
             <div className={styles.header}>
                 <div>
-                    <Title3>{report.report_type} Report</Title3>
+                    <Title3 block>{report.report_type} Report</Title3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, marginTop: tokens.spacingHorizontalXS }}>
                         <StatusBadge status={report.status} />
                         <Caption1>ID: {report.id}</Caption1>
@@ -185,20 +233,42 @@ export const ReportDetailPage: React.FC = () => {
                     )}
                     {canReview && (
                         <>
-                            <Button 
-                                appearance="primary" 
-                                icon={<CheckmarkRegular />} 
+                            <Button
+                                appearance="primary"
+                                icon={<CheckmarkRegular />}
                                 onClick={handleApprove}
                             >
                                 Approve
                             </Button>
-                            <Button 
-                                appearance="secondary" 
-                                icon={<DismissRegular />} 
+                            <Button
+                                appearance="secondary"
+                                icon={<DismissRegular />}
                                 onClick={() => setIsRejectionDialogOpen(true)}
                             >
                                 Reject
                             </Button>
+                        </>
+                    )}
+                    {/* @ts-ignore */}
+                    {report.status === 'APPROVED' && (
+                        <>
+                            <Button
+                                appearance="primary"
+                                icon={<DocumentPdfRegular />}
+                                onClick={handleGenerate}
+                                disabled={isGenerating}
+                            >
+                                {isGenerating ? `Generating (${generationStatus})...` : 'Generate PPTX'}
+                            </Button>
+                            {generationStatus === 'COMPLETED' && (
+                                <Button
+                                    appearance="secondary"
+                                    icon={<ArrowDownloadRegular />}
+                                    onClick={handleDownload}
+                                >
+                                    Download PPTX
+                                </Button>
+                            )}
                         </>
                     )}
                 </div>

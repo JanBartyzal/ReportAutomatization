@@ -105,7 +105,7 @@ export const MatrixDashboard: React.FC = () => {
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <Title3>Reporting Matrix</Title3>
+                <Title3 block>Reporting Matrix</Title3>
                 <Body1 block>High-level overview of report submission status across organizations and periods.</Body1>
             </div>
 

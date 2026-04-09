@@ -301,8 +301,8 @@ export const BatchGenerationPage: React.FC = () => {
     return (
         <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
             <div className={styles.header}>
-                <Title3>Batch Report Generation</Title3>
-                <Body2 className={styles.headerSubtitle}>
+                <Title3 block>Batch Report Generation</Title3>
+                <Body2 block className={styles.headerSubtitle}>
                     Generate PowerPoint reports for multiple approved reports at once.
                 </Body2>
             </div>

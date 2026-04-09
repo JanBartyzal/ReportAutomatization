@@ -161,8 +161,8 @@ export const GeneratedReportsListPage: React.FC = () => {
         <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
             <div className={styles.pageHeader}>
                 <div>
-                    <Title3>Generated Reports</Title3>
-                    <Body2 className={styles.subtitle}>
+                    <Title3 block>Generated Reports</Title3>
+                    <Body2 block className={styles.subtitle}>
                         View and manage all generated PowerPoint reports.
                     </Body2>
                 </div>

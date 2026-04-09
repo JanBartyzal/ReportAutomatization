@@ -174,7 +174,7 @@ function PdfViewer({ pages }: { pages: PdfPage[] }) {
     return (
         <div className={styles.container}>
             <div className={styles.contentArea}>
-                <Title3>Page {page.page_number}</Title3>
+                <Title3 block>Page {page.page_number}</Title3>
 
                 {page.is_ocr && page.ocr_confidence !== undefined && (
                     <div style={{ marginTop: tokens.spacingVerticalS, marginBottom: tokens.spacingVerticalS }}>
@@ -288,19 +288,19 @@ function PptxViewer({ slides }: { slides: any[] }) {
     return (
         <div className={styles.container}>
             <div className={styles.contentArea}>
-                <Title3>Slide {slide.slide_number}</Title3>
-                
+                <Title3 block>Slide {slide.slide_number}</Title3>
+
                 {slide.text ? (
                     <div className={styles.textContent}>
                         {slide.text}
                     </div>
                 ) : (
-                    <Body1>No text on this slide.</Body1>
+                    <Body1 block>No text on this slide.</Body1>
                 )}
 
                 {slide.speaker_notes && (
                     <div style={{ marginTop: tokens.spacingVerticalL }}>
-                        <Title3>Speaker Notes</Title3>
+                        <Title3 block>Speaker Notes</Title3>
                         <div style={{ 
                             padding: tokens.spacingHorizontalM, 
                             backgroundColor: tokens.colorNeutralBackground3,

@@ -106,12 +106,13 @@ public class ExcelTemplateService {
         for (int i = 0; i < fields.size(); i++) {
             var field = fields.get(i);
 
-            // Header
+            // Header — use label if present, fallback to fieldKey
             var headerCell = headerRow.createCell(i);
-            headerCell.setCellValue(field.getLabel());
+            String label = field.getLabel() != null ? field.getLabel() : field.getFieldKey();
+            headerCell.setCellValue(label);
 
             // Set column width
-            sheet.setColumnWidth(i, Math.max(field.getLabel().length() * 256, 4000));
+            sheet.setColumnWidth(i, Math.max(label != null ? label.length() * 256 : 4000, 4000));
 
             // Apply data validation based on field type
             applyDataValidation(workbook, sheet, field, i, format);

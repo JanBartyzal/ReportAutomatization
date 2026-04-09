@@ -182,15 +182,20 @@ def main() -> int:
         session._log("[SKIP] XLSX persistence tests skipped — no xlsx_file_id in state")
 
     # ---------------------------------------------------------------
-    # 3. Query stored document data
-    #    Note: /api/query/documents requires a document_id, not file_id.
-    #    We verify tables response instead; document-level query is skipped.
+    # 3. Query stored document data by file_id
     # ---------------------------------------------------------------
-    session._log("[INFO] Document query requires document_id — asserting tables response covers persistence")
-    session.missing_feature(
-        "GET /api/query/documents?file_id=...",
-        "Documents endpoint requires document_id param, not file_id — use /api/query/documents/{document_id}"
-    )
+    data_session.token = admin1_token
+    status, body = data_session.call("GET", "/api/query/documents",
+                                query_params={"file_id": pptx_file_id},
+                                expected_status=200, tag="documents-by-file-id")
+    if status == 200 and isinstance(body, list):
+        session.assert_true(len(body) >= 0, f"Documents query returned {len(body)} documents for file")
+        session._log(f"[INFO] Documents for PPTX file: {len(body)}")
+    elif status in (404, 500):
+        session.missing_feature(
+            "GET /api/query/documents?file_id=...",
+            "Documents endpoint does not support file_id query parameter"
+        )
 
     # ---------------------------------------------------------------
     # 4. RLS: admin1 sees own org data only

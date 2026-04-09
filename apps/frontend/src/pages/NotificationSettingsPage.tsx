@@ -116,8 +116,8 @@ export default function NotificationSettingsPage() {
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <Title2>Notification Settings</Title2>
-                <Body1 style={{ color: tokens.colorNeutralForeground2, marginTop: '8px' }}>
+                <Title2 block>Notification Settings</Title2>
+                <Body1 block style={{ color: tokens.colorNeutralForeground2, marginTop: '8px' }}>
                     Configure how you receive notifications
                 </Body1>
             </div>
@@ -155,8 +155,8 @@ export default function NotificationSettingsPage() {
             </div>
 
             <div className={styles.section}>
-                <Title3>Notification Types</Title3>
-                <Body1 style={{ color: tokens.colorNeutralForeground2, marginBottom: '16px' }}>
+                <Title3 block>Notification Types</Title3>
+                <Body1 block style={{ color: tokens.colorNeutralForeground2, marginBottom: '16px' }}>
                     Enable or disable specific notification types
                 </Body1>
 

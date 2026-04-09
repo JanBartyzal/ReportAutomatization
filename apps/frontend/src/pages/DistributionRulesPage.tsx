@@ -193,8 +193,8 @@ const DistributionRulesPage: React.FC = () => {
     return (
         <div className="distribution-page" style={{ padding: '24px' }}>
             <div className="page-header">
-                <Title2>Report Distribution</Title2>
-                <Body1>Configure automated report delivery to email recipients after sync</Body1>
+                <Title2 block>Report Distribution</Title2>
+                <Body1 block>Configure automated report delivery to email recipients after sync</Body1>
             </div>
 
             <Divider className="divider" style={{ margin: '16px 0' }} />

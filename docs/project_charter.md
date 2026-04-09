@@ -4,7 +4,7 @@
 **Datum:** Duben 2026
 **Architektura:** Event-Driven Microservices + Custom Orchestrator (engine-orchestrator)
 **Deployment Units:** 10 consolidated services (router, engine-core, engine-ingestor, engine-orchestrator, engine-data, engine-reporting, engine-integrations, processor-atomizers, processor-generators, frontend)
-**Feature Sets:** FS01–FS25 + FS99 (DevOps)
+**Feature Sets:** FS01–FS26 + FS99 (DevOps)
 **Docs Reference:** `docs/project_standards.md`, `docs/dod_criteria.md`
 
 > **Consolidation Note (P8):** Původních 29+ mikroslužeb bylo konsolidováno do 10 deployment units.
@@ -983,6 +983,30 @@ extraction_learning_log (
 
 ---
 
+### FS26 – Report Generation UI & Export
+
+**Priorita: VYSOKÁ**
+
+**Pokryvajici microservices:** frontend, engine-reporting (lifecycle, pptx-template), processor-generators (pptx, xls)
+
+Kompletni UI workflow pro tvorbu reportu, generovani PPTX ze sablon a export dat:
+
+- **Create Report dialog:** Tlacitko "New Report" na /reports strance s vyberem organizace, periody a typu reportu (OPEX, CAPEX, Financial, General). Vytvori report ve stavu DRAFT.
+- **Generate PPTX z reportu:** Po schvaleni reportu (status APPROVED) se na detailu reportu zobrazi tlacitko "Generate PPTX", ktere spusti asynchronni generovani. Frontend poluje stav jobu a po dokonceni nabidne "Download PPTX".
+- **Univerzalni sablony:** PPTX sablony s placeholdery (`{{variable}}`, `{{TABLE:name}}`, `{{CHART:name}}`) se nahraji jednou pres /templates. Pri generovani se data meni podle batche/periody — sablona zustava stejna.
+- **Batch generovani:** Hromadne generovani PPTX pro vice schvalenych reportu najednou (/batch-generation).
+- **Excel export (planovano):** REST endpoint na engine-reporting, ktery zavola processor-generators Excel renderer. UI tlacitko "Export Excel" na /reports.
+- **PDF export (planovano):** Konverze PPTX → PDF pres LibreOffice headless nebo dedickovany PDF renderer.
+
+**Datovy tok:**
+```
+Report (APPROVED) → Template (PPTX s placeholdery) → processor-generators
+                                                         ↓
+                                                  Vyplneny PPTX/Excel
+                                                         ↓
+                                                  Download pres frontend
+```
+
 ### FS99 – DevOps & Observability
 **Priorita: VYSOKÁ**
 
@@ -1008,7 +1032,7 @@ extraction_learning_log (
 | 4 | **engine-ingestor** | ingestor, scanner | Streaming upload, MIME validace, ClamAV antivirová kontrola, sanitizace, Blob Storage, trigger engine-orchestrator | FS02 | Java 21 + Spring Boot + ClamAV |
 | 5 | **engine-orchestrator** | — | Workflow engine (Spring State Machine), Saga Pattern, Type-Safe Contracts, gRPC routing, Redis state, exponential backoff retry, DLQ | FS04 | Java 21 + Spring Boot |
 | 6 | **engine-data** | sink-tbl, sink-doc, sink-log, query, dashboard, search, template | Sinky pro strukturovaná data/dokumenty/logy, CQRS read model, Redis cache, BI dashboard agregace, full-text + vector search, Schema Mapping Registry, Sink Browser & Corrections | FS05, FS06, FS11, FS15, FS25 | Java 21 + Spring Boot |
-| 7 | **engine-reporting** | lifecycle, period, form, pptx-template, notification | Stavový automat reportů, správa period a deadlinů, dynamic form builder, PPTX šablony, in-app + e-mail notifikace | FS17, FS18, FS19, FS20, FS13 | Java 21 + Spring Boot |
+| 7 | **engine-reporting** | lifecycle, period, form, pptx-template, notification | Stavový automat reportů, správa period a deadlinů, dynamic form builder, PPTX šablony, in-app + e-mail notifikace | FS17, FS18, FS19, FS20, FS13, FS26 | Java 21 + Spring Boot |
 | 8 | **engine-integrations** | servicenow | ServiceNow API integrace, OAuth2, scheduled sync, report distribution | FS23 | Java 21 + Spring Boot |
 | 9 | **processor-atomizers** | pptx, xls, pdf, csv, ai, cleanup | Bezstavové extraktory dat z PPTX/Excel/PDF/CSV, LiteLLM AI gateway, cleanup worker, extraction learning hints | FS03, FS10, FS12, FS25 | Python + FastAPI |
 | 10 | **processor-generators** | pptx, xls, mcp | Generování PPTX/Excel reportů ze šablon, MCP Server pro AI agenty (OBO flow) | FS18, FS23, FS12 | Python + FastAPI |

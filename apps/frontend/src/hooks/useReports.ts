@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  listReports, getReport, submitReport, reviewReport,
+  listReports, getReport, createReport, submitReport, reviewReport,
   approveReport, rejectReport, getReportHistory,
   bulkApprove, bulkReject, getReportMatrix,
   type ReportListParams,
@@ -33,6 +33,14 @@ export function useReportMatrix() {
   return useQuery({
     queryKey: ['reports', 'matrix'],
     queryFn: getReportMatrix,
+  });
+}
+
+export function useCreateReport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { org_id: string; period_id: string; report_type: string }) => createReport(body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['reports'] }),
   });
 }
 

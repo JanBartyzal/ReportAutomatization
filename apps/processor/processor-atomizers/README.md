@@ -2,7 +2,7 @@
 
 **Dapr App ID:** `processor-atomizers`
 **Tech:** Python 3.11 / FastAPI
-**Port:** 8088 (HTTP), 50090 (gRPC)
+**Port:** 8088 (HTTP), 50200 (gRPC)
 
 ## Purpose
 
@@ -50,7 +50,7 @@ flowchart TD
 server:
   port: 8088
 grpc:
-  port: 50090
+  port: 50200
 dapr:
   app-id: processor-atomizers
 ```
@@ -65,7 +65,7 @@ python -m uvicorn src.main:app --reload
 
 # Docker
 docker build -f apps/processor/processor-atomizers/Dockerfile -t processor-atomizers .
-docker run -p 8088:8088 -p 50090:50090 processor-atomizers
+docker run -p 8088:8088 -p 50200:50200 processor-atomizers
 ```
 
 ## Dependencies

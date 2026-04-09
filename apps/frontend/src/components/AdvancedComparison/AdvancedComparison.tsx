@@ -255,10 +255,10 @@ export function AdvancedComparison({ onClose, embedded = false }: AdvancedCompar
         return (
             <div className={styles.emptyState}>
                 <ChartMultiple24Regular style={{ fontSize: '48px', color: '#ccc' }} />
-                <Title1 style={{ marginTop: tokens.spacingHorizontalM }}>
+                <Title1 block style={{ marginTop: tokens.spacingHorizontalM }}>
                     Advanced Comparison
                 </Title1>
-                <Body1 style={{ color: tokens.colorNeutralForeground2, marginTop: tokens.spacingVerticalS }}>
+                <Body1 block style={{ color: tokens.colorNeutralForeground2, marginTop: tokens.spacingVerticalS }}>
                     This feature is not enabled. Contact your administrator to enable it.
                 </Body1>
             </div>
@@ -284,8 +284,8 @@ export function AdvancedComparison({ onClose, embedded = false }: AdvancedCompar
             {!embedded && (
                 <div className={styles.header}>
                     <div className={styles.headerLeft}>
-                        <Title3>Advanced Comparison</Title3>
-                        <Body2 style={{ color: tokens.colorNeutralForeground2 }}>
+                        <Title3 block>Advanced Comparison</Title3>
+                        <Body2 block style={{ color: tokens.colorNeutralForeground2 }}>
                             Compare metrics across organizations and time periods
                         </Body2>
                     </div>
