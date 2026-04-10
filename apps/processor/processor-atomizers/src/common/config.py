@@ -57,7 +57,7 @@ class Settings(BaseSettings):
     # -- AI-specific --
     litellm_base_url: str = "http://localhost:4000"
     litellm_api_key: str = "sk-local-dev-key"
-    model_semantic: str = "gpt-4o"
+    model_semantic: str = "gemma"
     model_embedding: str = "text-embedding-3-small"
     max_concurrent_per_org: int = 5
     default_monthly_token_quota: int = 1_000_000

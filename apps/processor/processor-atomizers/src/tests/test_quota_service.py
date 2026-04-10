@@ -53,7 +53,7 @@ async def test_record_usage_increments_counter(
         org_id="org-1",
         user_id="user-1",
         tokens_used=100,
-        model="gpt-4o",
+        model="gemma",
     )
 
     assert status.tokens_used_month == 600

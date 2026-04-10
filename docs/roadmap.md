@@ -122,6 +122,16 @@ frontend | frontend (rozšíření) | Frontend – Generator UI | React | 15 | 4
 
 Phase5 - onboarding
 
+Phase 5b – Live Excel Export & External Sync
+Goal: Automatic update of external Excel files (SharePoint / network drive) when data is imported into RA Tool.
+
+Unit ID | Function ID | Name | Tech Stack | MD | MD (AI) | Savings
+--------|---------|------|----------|----|---------|--------
+engine-integrations | engine-integrations:excel-sync | Excel Sync Service | Java 21 + Spring Boot | 20 | 10 | 10
+processor-generators | processor-generators:xls (rozšíření) | Partial Sheet Update | Python + FastAPI (openpyxl) | 10 | 5 | 5
+engine-orchestrator | engine-orchestrator (rozšíření) | PubSub event data-imported | Java 21 + Spring Boot | 3 | 2 | 1
+frontend | frontend (rozšíření) | Frontend – Export Flow UI | React | 15 | 8 | 7
+
 Phase 6 – Local scope & advanced analytics
 Goal: Platform for internal reporting of subsidiaries; advanced period comparison.
 
@@ -167,5 +177,6 @@ frontend | frontend (rozšíření) | Frontend – Local Scope UI | React | TBD 
 | 26 | engine-reporting | **engine-reporting:lifecycle** | Report Lifecycle Service | Správa stavového automatu reportů, submission checklist, rejection flow, hromadné akce | FS17 | Java 21 + Spring Boot | **L** |
 | 27 | engine-reporting | **engine-reporting:pptx-template** | PPTX Template Manager | Nahrávání, verzování a správa PPTX šablon; extrakce placeholderů; mapování na datové zdroje | FS18 | Java 21 + Spring Boot | **L** |
 | 28 | processor | **processor-generators:pptx** | PPTX Generator | Renderování PPTX ze zdrojových dat + šablony; placeholder substituce; grafy; batch generování | FS18 | Python + FastAPI (python-pptx, matplotlib) | **L** |
+| 29 | engine-integrations | **engine-integrations:excel-sync** | Excel Sync Service | Konfigurace Export Flows, trigger při importu dat, SharePoint connector (Graph API), local/network path writer | FS27 | Java 21 + Spring Boot | **L** |
 | 29 | engine-reporting | **engine-reporting:form** | Form Builder & Data Collection | Definice formulářů, správa verzí, sběr dat, validace, Excel import, napojení na engine-reporting:lifecycle | FS19 | Java 21 + Spring Boot | **XL** |
 | 30 | engine-reporting | **engine-reporting:period** | Reporting Period Manager | Správa period a deadlinů, automatické uzavírání, completion tracking, eskalace, historické srovnání | FS20 | Java 21 + Spring Boot | **M** |

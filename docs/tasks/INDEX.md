@@ -39,7 +39,8 @@ Each phase is divided into waves by complexity and target AI agent:
 | **P9** | Frontend Style Unification | ~13 | ~36 | TODO | Unified design system, JSON-configurable theme |
 | **P10** | Technical Audit & Quality Gate | ~5 | ~20 | W1 DONE | Full charter compliance verification |
 | **P11** | Audit Remediation | ~20 | ~57 | TODO | Fix all CRITICAL/HIGH gaps from P10 audit |
-| | | **TOTAL** | **~703 MD** | | |
+| **P12** | Live Excel Export & External Sync | ~14 | ~35 | TODO | FS27: Auto-update external Excel files on data import |
+| | | **TOTAL** | **~738 MD** | | |
 
 ---
 
@@ -208,7 +209,7 @@ All task files moved to `docs/tasks/done/`:
 | W2 | [P10_W2_remediation.md](P10_W2_remediation.md) | Mixed | ~55 MD |
 
 **Audit Scope:**
-- FS01–FS24 feature completeness (every acceptance criterion checked)
+- FS01–FS27 feature completeness (every acceptance criterion checked)
 - NFR compliance (performance, security, scalability, observability)
 - DoD compliance per service (linting, docs, tests, coverage)
 - Communication contract audit (proto/API consistency, Dapr routing)
@@ -243,6 +244,30 @@ All task files moved to `docs/tasks/done/`:
 - Schema mapping editor UI + TypeScript type alignment
 - Legacy Dapr config cleanup + TOPICS.md update
 
+### P12 – Live Excel Export & External Sync (~35 MD)
+
+> **Feature Set:** FS27 – Auto-update external Excel files (SharePoint / network drive) when data is imported into RA Tool.
+
+| Wave | File | Agent | Effort |
+|---|---|---|---|
+| W1 | [P12_W1_excel_sync_core.md](P12_W1_excel_sync_core.md) | Opus | ~18 MD |
+| W2 | [P12_W2_excel_sync_config.md](P12_W2_excel_sync_config.md) | Sonnet | ~6 MD |
+| W3 | [P12_W3_excel_sync_infra.md](P12_W3_excel_sync_infra.md) | Haiku/Gemini | ~3 MD |
+| W4 | [P12_W4_excel_sync_frontend.md](P12_W4_excel_sync_frontend.md) | Flash/MiniMax | ~8 MD |
+
+**New Module:** engine-integrations:excel-sync (Java), processor-generators:xls UpdateSheet extension (Python)
+**Extensions:** engine-orchestrator (PubSub event `data-imported`), engine-data:query (SQL execution)
+**UAT Tests:** Step26_Excel_Sync (included in W1, task P12-W1-007)
+
+**Key Deliverables:**
+- Export Flow CRUD with SQL query builder, target configuration (SharePoint / local path)
+- Event-driven trigger: auto-export on data import (Dapr PubSub)
+- Partial sheet update: only target sheet overwritten, other sheets preserved (charts, formulas, pivots)
+- SharePoint connector (Microsoft Graph API, OAuth2 app-only)
+- Local/network path writer with security whitelist
+- Frontend: Export Flows page, create/edit dialog, execution history
+- UAT test coverage: 8 test groups (CRUD, auth, RLS, execution, sheet preservation, concurrency)
+
 ---
 
 ## Dependency Graph
@@ -264,6 +289,7 @@ P0 (API Contracts)
                           └─► P9 (Frontend Style Unification)
                                └─► P10 (Technical Audit)
                                     └─► P11 (Audit Remediation)
+                                         └─► P12 (Live Excel Export & Sync)
 ```
 
 ---

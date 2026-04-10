@@ -1,10 +1,10 @@
 # Project Charter: PPTX Analyzer & Automation Platform
 
-**Verze:** 5.2 – Sink Browser & Extraction Learning (FS25)
+**Verze:** 5.3 – Live Excel Export & External Sync (FS27)
 **Datum:** Duben 2026
 **Architektura:** Event-Driven Microservices + Custom Orchestrator (engine-orchestrator)
 **Deployment Units:** 10 consolidated services (router, engine-core, engine-ingestor, engine-orchestrator, engine-data, engine-reporting, engine-integrations, processor-atomizers, processor-generators, frontend)
-**Feature Sets:** FS01–FS26 + FS99 (DevOps)
+**Feature Sets:** FS01–FS27 + FS99 (DevOps)
 **Docs Reference:** `docs/project_standards.md`, `docs/dod_criteria.md`
 
 > **Consolidation Note (P8):** Původních 29+ mikroslužeb bylo konsolidováno do 10 deployment units.
@@ -1007,6 +1007,174 @@ Report (APPROVED) → Template (PPTX s placeholdery) → processor-generators
                                                   Download pres frontend
 ```
 
+## FS27 – Live Excel Export & External Sync
+**Priorita: VYSOKÁ**
+
+**Pokrývající microservices:** engine-integrations:excel-sync, engine-data:query, processor-generators:xls, frontend
+
+**Tech Stack:** Java 21 + Spring Boot (engine-integrations), Python + FastAPI (processor-generators:xls), React (frontend)
+
+### Business kontext
+
+Holdingový controlling dnes udržuje řadu Excel souborů (na SharePointu, sdílených discích nebo lokálně), do kterých manuálně přepisuje data z různých zdrojů. Tyto soubory obsahují manuálně vytvořené souhrny, grafy a pivotní tabulky, které slouží jako podklad pro management reporting. Ruční aktualizace datových listů je časově náročná a náchylná k chybám.
+
+FS27 zavádí **Live Excel Export** – mechanismus, který automaticky aktualizuje definovaný list v cílovém Excel souboru při každém nahrání nových dat do RA Toolu. Uživatel nakonfiguruje "Excel Export Flow" podobně jako dashboard (FS11) – definuje SQL dotaz do DB, cílový soubor a cílový sheet. Ostatní listy v souboru (manuální souhrny, grafy, pivotní tabulky) zůstávají nedotčeny.
+
+### Klíčové funkce
+
+- **Export Flow Definition:** Uživatel (Admin/Editor) vytváří Export Flow přes UI. Konfigurace zahrnuje:
+  - **SQL dotaz** (nebo UI builder jako v FS11) – definuje, jaká data se exportují.
+  - **Cílový soubor** – cesta na síťovém/lokálním disku NEBO SharePoint URL.
+  - **Cílový sheet** – název listu v Excelu, který bude přepsán novými daty. Ostatní listy zůstávají beze změny.
+  - **Pojmenování souboru** – buď uživatelem definované fixní jméno, nebo automatické odvození z Batch Name (pattern: `{batch_name}_export.xlsx`).
+  - **Trigger typ** – automatický (při každém importu dat do RA Toolu) nebo manuální (tlačítko "Export Now").
+
+- **Partial Sheet Update (processor-generators:xls):** Rozšíření existujícího Excel generátoru o schopnost:
+  - Otevřít existující Excel soubor (ne vytvářet nový).
+  - Přepsat obsah **pouze definovaného listu** (clear + write).
+  - Zachovat všechny ostatní listy včetně formátování, grafů, vzorců a pivotních tabulek.
+  - Pokud cílový sheet neexistuje, vytvořit ho.
+
+- **Storage Connectors (engine-integrations:excel-sync):**
+  - **SharePoint connector:** Microsoft Graph API (`/drives/{drive-id}/items/{item-id}/content`) pro čtení a zápis Excel souborů na SharePoint Online. OAuth2 app-only credentials uložené v KeyVault.
+  - **Local/Network path:** Přímý zápis na lokální nebo síťový disk (UNC path `\\server\share\file.xlsx`). Vyžaduje, aby kontejner měl namountovaný volume.
+  - Konfigurace konektoru je součástí Export Flow Definition.
+
+- **Trigger mechanismus:**
+  - engine-orchestrator publikuje event `data-imported` (Dapr PubSub) po úspěšném zpracování a uložení dat.
+  - engine-integrations:excel-sync odebírá tento event, filtruje podle org_id/batch_id a spouští příslušné Export Flows.
+  - Podporuje i manuální trigger přes REST endpoint (frontend tlačítko "Export Now").
+
+- **Frontend UI:**
+  - Nová stránka `/export-flows` (nebo tab v existujícím Dashboards).
+  - **List View:** Přehled nakonfigurovaných Export Flows s posledním stavem (success/fail/pending), časem posledního exportu.
+  - **Create/Edit dialog:** Formulář pro definici Export Flow (SQL query editor, cílový soubor, sheet name, trigger typ, pojmenování).
+  - **Export History:** Log všech provedených exportů s výsledkem a případnou chybovou hláškou.
+  - **Manual Export:** Tlačítko "Export Now" pro okamžité spuštění.
+
+### Datový tok
+
+```
+Data Import (engine-orchestrator)
+       ↓ Dapr PubSub: "data-imported"
+engine-integrations:excel-sync
+       ↓ SQL query přes engine-data:query (Dapr gRPC)
+       ↓ Data result (JSON)
+processor-generators:xls (Dapr gRPC)
+       ↓ Partial sheet update → updated Excel binary
+engine-integrations:excel-sync
+       ↓ Write to target (SharePoint API / network path)
+       ↓ Status event → frontend notification
+```
+
+### DB schéma
+
+#### Tabulka `export_flow_definitions`
+```sql
+export_flow_definitions (
+  id                UUID PK DEFAULT gen_random_uuid(),
+  org_id            UUID NOT NULL,
+  name              VARCHAR(255) NOT NULL,
+  description       TEXT,
+  sql_query         TEXT NOT NULL,
+  target_type       VARCHAR(20) NOT NULL,   -- 'SHAREPOINT' | 'LOCAL_PATH'
+  target_path       TEXT NOT NULL,           -- SharePoint URL nebo UNC/local path
+  target_sheet      VARCHAR(255) NOT NULL,   -- název cílového listu
+  file_naming       VARCHAR(20) DEFAULT 'CUSTOM', -- 'CUSTOM' | 'BATCH_NAME'
+  custom_file_name  VARCHAR(255),
+  trigger_type      VARCHAR(20) DEFAULT 'AUTO',   -- 'AUTO' | 'MANUAL'
+  trigger_filter    JSONB,                   -- filtr: batch_id, org_id, source_type
+  sharepoint_config JSONB,                   -- tenant_id, drive_id, client_id (secret v KeyVault)
+  is_active         BOOLEAN DEFAULT true,
+  created_by        UUID NOT NULL,
+  created_at        TIMESTAMPTZ DEFAULT now(),
+  updated_at        TIMESTAMPTZ DEFAULT now()
+)
+```
++ RLS policy na `org_id`
+
+#### Tabulka `export_flow_executions`
+```sql
+export_flow_executions (
+  id                UUID PK DEFAULT gen_random_uuid(),
+  flow_id           UUID REFERENCES export_flow_definitions(id),
+  org_id            UUID NOT NULL,
+  trigger_source    VARCHAR(20),   -- 'AUTO' | 'MANUAL'
+  trigger_event_id  UUID,          -- reference na source event (batch_id)
+  status            VARCHAR(20),   -- 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED'
+  rows_exported     INT,
+  target_path_used  TEXT,
+  error_message     TEXT,
+  started_at        TIMESTAMPTZ DEFAULT now(),
+  completed_at      TIMESTAMPTZ
+)
+```
++ RLS policy na `org_id`
+
+### Požadavky
+
+#### Export Flow Management (engine-integrations:excel-sync – REST endpointy pro frontend)
+- `GET /api/export-flows` – Seznam Export Flows pro aktuální organizaci. Stránkovaný výstup.
+- `GET /api/export-flows/{id}` – Detail Export Flow včetně posledního stavu exekuce.
+- `POST /api/export-flows` – Vytvoření nového Export Flow.
+- `PUT /api/export-flows/{id}` – Úprava existujícího Export Flow.
+- `DELETE /api/export-flows/{id}` – Smazání Export Flow (soft delete – deaktivace).
+- `POST /api/export-flows/{id}/execute` – Manuální spuštění Export Flow.
+- `GET /api/export-flows/{id}/executions` – Historie exekucí daného flow.
+- `POST /api/export-flows/{id}/test` – Dry-run: provede SQL dotaz a vrátí preview dat bez zápisu do souboru.
+
+#### Partial Sheet Update (processor-generators:xls – rozšíření)
+- Nový gRPC endpoint `UpdateSheet(ExcelBinary, SheetName, Data)` – přijme binární obsah existujícího Excel souboru, název sheetu a data (JSON rows), přepíše obsah daného sheetu a vrátí aktualizovaný Excel binary.
+- Pokud sheet neexistuje, vytvoří nový.
+- Zachová všechny ostatní sheety, formátování, grafy a vzorce.
+
+### Dopad na existující Feature Sets
+
+| FS | Dopad |
+|---|---|
+| **FS04 (Orchestrator)** | Nový PubSub event `data-imported` po úspěšném uložení dat |
+| **FS06 (Query)** | Exekuce SQL dotazů z Export Flow definic (existující funkcionalita) |
+| **FS11 (Dashboards)** | Sdílený SQL query builder UI komponent |
+| **FS13 (Notifications)** | Notifikace o úspěchu/selhání exportu |
+| **FS23 (Integrations)** | Rozšíření engine-integrations o nový modul excel-sync |
+
+### Acceptance kritéria
+
+- Admin/Editor může vytvořit Export Flow s SQL dotazem, cílovým souborem a sheet name.
+- Při automatickém triggeru (nahrání dat) se cílový Excel soubor aktualizuje do 60 s.
+- V cílovém Excelu je přepsán **pouze definovaný list** – ostatní listy zůstávají 100% beze změny (včetně grafů, vzorců, formátování).
+- Uživatel může zvolit pojmenování souboru: fixní jméno nebo automatické z Batch Name.
+- SharePoint connector se autentizuje přes OAuth2 (app-only) s credentials v KeyVault.
+- Local/Network path zápis funguje přes namountovaný Docker volume.
+- Manuální export (tlačítko "Export Now") provede okamžitý export.
+- Historie exportů je dostupná v UI s detaily (čas, počet řádků, status, chyba).
+- Dry-run mode vrátí preview dat bez skutečného zápisu.
+- RLS zajišťuje, že uživatel vidí pouze Export Flows své organizace.
+- Selhání exportu nevyvolá chybu v hlavním processing pipeline (fire-and-forget s logováním).
+
+### Nové DB tabulky
+
+| Tabulka | Účel | Effort |
+|---|---|---|
+| `export_flow_definitions` | Konfigurace Export Flows (SQL, target, trigger) | S |
+| `export_flow_executions` | Historie a stav provedených exportů | S |
+
+### Effort odhad
+
+| Komponenta | Effort |
+|---|---|
+| DB migrace (2 tabulky + RLS) | **S** |
+| engine-integrations:excel-sync (flow management, triggers) | **L** |
+| SharePoint connector (Microsoft Graph API, OAuth2) | **M** |
+| Local/Network path writer | **S** |
+| processor-generators:xls – partial sheet update | **M** |
+| Frontend – Export Flow List & Create/Edit UI | **M** |
+| Frontend – Execution History & Manual Export | **S** |
+| engine-orchestrator – PubSub event `data-imported` | **S** |
+| **Celkem** | **L** |
+
+---
+
 ### FS99 – DevOps & Observability
 **Priorita: VYSOKÁ**
 
@@ -1033,9 +1201,9 @@ Report (APPROVED) → Template (PPTX s placeholdery) → processor-generators
 | 5 | **engine-orchestrator** | — | Workflow engine (Spring State Machine), Saga Pattern, Type-Safe Contracts, gRPC routing, Redis state, exponential backoff retry, DLQ | FS04 | Java 21 + Spring Boot |
 | 6 | **engine-data** | sink-tbl, sink-doc, sink-log, query, dashboard, search, template | Sinky pro strukturovaná data/dokumenty/logy, CQRS read model, Redis cache, BI dashboard agregace, full-text + vector search, Schema Mapping Registry, Sink Browser & Corrections | FS05, FS06, FS11, FS15, FS25 | Java 21 + Spring Boot |
 | 7 | **engine-reporting** | lifecycle, period, form, pptx-template, notification | Stavový automat reportů, správa period a deadlinů, dynamic form builder, PPTX šablony, in-app + e-mail notifikace | FS17, FS18, FS19, FS20, FS13, FS26 | Java 21 + Spring Boot |
-| 8 | **engine-integrations** | servicenow | ServiceNow API integrace, OAuth2, scheduled sync, report distribution | FS23 | Java 21 + Spring Boot |
+| 8 | **engine-integrations** | servicenow, excel-sync | ServiceNow API integrace, OAuth2, scheduled sync, report distribution, Live Excel Export & External Sync (SharePoint / local path) | FS23, FS27 | Java 21 + Spring Boot |
 | 9 | **processor-atomizers** | pptx, xls, pdf, csv, ai, cleanup | Bezstavové extraktory dat z PPTX/Excel/PDF/CSV, LiteLLM AI gateway, cleanup worker, extraction learning hints | FS03, FS10, FS12, FS25 | Python + FastAPI |
-| 10 | **processor-generators** | pptx, xls, mcp | Generování PPTX/Excel reportů ze šablon, MCP Server pro AI agenty (OBO flow) | FS18, FS23, FS12 | Python + FastAPI |
+| 10 | **processor-generators** | pptx, xls, mcp | Generování PPTX/Excel reportů ze šablon, partial sheet update pro Live Excel Export, MCP Server pro AI agenty (OBO flow) | FS18, FS23, FS12, FS27 | Python + FastAPI |
 
 ### Effort legenda
 
@@ -1063,6 +1231,7 @@ Report (APPROVED) → Template (PPTX s placeholdery) → processor-generators
 | **P6** | Advanced Period Mgmt (deadliny, eskalace, as-is srovnání) | | | Plná správa reportingových cyklů |pipelines |
 | **P7** | FS22 Advanced Comparison (placeholder) | | |  Granulární srovnání period |
 | **P8** | Sink Browser & Corrections | engine-data (sink-tbl, query, template), processor-atomizers, frontend | FS25 | Procházení sinků, manuální korekce, výběr dat pro report, extraction learning |
+| **P9** | Live Excel Export & External Sync | engine-integrations:excel-sync, processor-generators:xls, engine-data:query, frontend | FS27 | Automatická aktualizace externích Excel souborů (SharePoint / síťový disk) při importu dat |
 
 
 

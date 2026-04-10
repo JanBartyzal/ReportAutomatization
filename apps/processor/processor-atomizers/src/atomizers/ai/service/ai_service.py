@@ -62,7 +62,7 @@ class AiService:
         prompt_service: PromptService | None = None,
         quota_service: QuotaService | None = None,
         rate_limiter: RateLimiter | None = None,
-        model_semantic: str = "gpt-4o",
+        model_semantic: str = "gemma",
         model_embedding: str = "text-embedding-3-small",
     ) -> None:
         self._llm = llm_client or LiteLLMClient()

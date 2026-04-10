@@ -1,8 +1,15 @@
 # LiteLLM Proxy Configuration
-# Routes LLM requests to Azure OpenAI deployments
+# Routes LLM requests to local Ollama (default) + Azure OpenAI (fallback)
 
 model_list:
-  - model_name: gpt-4o
+  # Default model — local Ollama gemma4:e4b
+  - model_name: gemma
+    litellm_params:
+      model: ollama/gemma4:e4b
+      api_base: ${OLLAMA_API_BASE:-http://host.docker.internal:11434}
+
+  # Azure OpenAI fallback (optional)
+  - model_name: azure-gpt-4o
     litellm_params:
       model: azure/gpt-4o
       api_base: ${AZURE_OPENAI_ENDPOINT:-https://your-endpoint.openai.azure.com}
