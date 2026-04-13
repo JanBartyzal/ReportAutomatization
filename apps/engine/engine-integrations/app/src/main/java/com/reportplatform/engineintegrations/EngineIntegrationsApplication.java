@@ -10,13 +10,15 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(
     scanBasePackages = {
         "com.reportplatform.engineintegrations",
-        "com.reportplatform.snow"
+        "com.reportplatform.snow",
+        "com.reportplatform.excelsync"
     },
     nameGenerator = FullyQualifiedAnnotationBeanNameGenerator.class
 )
 @EnableJpaRepositories(basePackages = {
     "com.reportplatform.engineintegrations",
-    "com.reportplatform.snow"
+    "com.reportplatform.snow",
+    "com.reportplatform.excelsync"
 })
 @EntityScan(basePackages = "com.reportplatform")
 @EnableScheduling

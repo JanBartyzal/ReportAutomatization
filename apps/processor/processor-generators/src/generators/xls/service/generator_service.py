@@ -28,6 +28,7 @@ from generator.v1 import generator_pb2 as excel_generator_pb2, generator_pb2_grp
 from src.common.blob_client import GenXlsBlobClient
 from src.generators.xls.models.context import extract_context_from_grpc
 from src.generators.xls.service.excel_renderer import ChartInput, ChartSeriesInput, ExcelRenderer, RenderResult, TableInput
+from src.generators.xls.service.sheet_updater import SheetUpdater
 
 if TYPE_CHECKING:
     pass
@@ -40,6 +41,7 @@ class ExcelGeneratorServiceImpl(excel_generator_pb2_grpc.ExcelGeneratorServiceSe
 
     def __init__(self) -> None:
         self._renderer = ExcelRenderer()
+        self._sheet_updater = SheetUpdater()
 
     async def GenerateReport(
         self,
@@ -132,6 +134,81 @@ class ExcelGeneratorServiceImpl(excel_generator_pb2_grpc.ExcelGeneratorServiceSe
             successful=successful,
             failed=failed,
         )
+
+    async def UpdateSheet(
+        self,
+        request: excel_generator_pb2.UpdateSheetRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> excel_generator_pb2.UpdateSheetResponse:
+        """Update a single sheet in an existing Excel workbook."""
+        req_ctx = extract_context_from_grpc(context)
+        logger.info(
+            "[%s] UpdateSheet sheet_name=%s rows=%d",
+            req_ctx.correlation_id,
+            request.sheet_name,
+            len(request.data_rows),
+        )
+
+        try:
+            # Convert proto data rows to Python lists
+            headers = list(request.headers)
+            data_rows: list[list] = []
+            for row in request.data_rows:
+                row_data: list = []
+                for cell in row.cells:
+                    value_field = cell.WhichOneof("value")
+                    if value_field == "string_value":
+                        row_data.append(cell.string_value)
+                    elif value_field == "number_value":
+                        row_data.append(cell.number_value)
+                    elif value_field == "bool_value":
+                        row_data.append(cell.bool_value)
+                    elif value_field == "date_value":
+                        row_data.append(cell.date_value)
+                    else:
+                        row_data.append(None)
+                data_rows.append(row_data)
+
+            # Convert formatting
+            formatting = {}
+            if request.HasField("formatting"):
+                formatting = {
+                    "auto_filter": request.formatting.auto_filter,
+                    "freeze_header": request.formatting.freeze_header,
+                    "auto_column_width": request.formatting.auto_column_width,
+                }
+
+            # Get excel binary (empty bytes means create new)
+            excel_binary = request.excel_binary if request.excel_binary else None
+
+            # Perform the sheet update
+            result = self._sheet_updater.update_sheet(
+                excel_binary=excel_binary,
+                sheet_name=request.sheet_name,
+                headers=headers,
+                data_rows=data_rows,
+                formatting=formatting,
+            )
+
+            return excel_generator_pb2.UpdateSheetResponse(
+                updated_excel=result.xlsx_bytes,
+                rows_written=result.rows_written,
+                sheet_name=result.sheet_name,
+            )
+        except Exception as exc:
+            logger.error(
+                "[%s] UpdateSheet failed for sheet=%s: %s",
+                req_ctx.correlation_id,
+                request.sheet_name,
+                exc,
+                exc_info=True,
+            )
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Sheet update failed: {exc}")
+            return excel_generator_pb2.UpdateSheetResponse(
+                sheet_name=request.sheet_name,
+                rows_written=0,
+            )
 
     async def _generate_single(
         self,

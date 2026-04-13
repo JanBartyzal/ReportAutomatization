@@ -49,7 +49,7 @@
 
         <!-- Database -->
         <flyway.version>10.21.0</flyway.version>
-        <postgresql.version>42.7.4</postgresql.version>
+        <postgresql.version>42.7.10</postgresql.version>
 
         <!-- Security -->
         <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>

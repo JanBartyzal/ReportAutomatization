@@ -323,8 +323,14 @@ services:
       - OTEL_SDK_DISABLED=${OTEL_SDK_DISABLED:-false}
       - OTEL_JAVAAGENT_ENABLED=${OTEL_JAVAAGENT_ENABLED:-true}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # Excel Sync module configuration (FS27)
+      - EXCEL_SYNC_ENABLED=${EXCEL_SYNC_ENABLED:-true}
+      - EXCEL_SYNC_THREAD_POOL_SIZE=${EXCEL_SYNC_THREAD_POOL_SIZE:-4}
+      - EXCEL_SYNC_ALLOWED_PATHS=${EXCEL_SYNC_ALLOWED_PATHS:-/mnt/exports}
     ports:
       - "8106:8106"
+    volumes:
+      - ${EXCEL_EXPORT_HOST_PATH:-./data/exports}:/mnt/exports
     depends_on:
       postgres:
         condition: service_healthy
@@ -430,6 +436,7 @@ services:
       - OTEL_JAVAAGENT_ENABLED=${OTEL_JAVAAGENT_ENABLED:-true}
       - MPLBACKEND=Agg
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - EXCEL_MAX_SIZE_MB=${EXCEL_MAX_SIZE_MB:-50}
     ports:
       - "8111:8111"
       - "50201:50201"

@@ -16,6 +16,7 @@
 | pptx.generation_completed | ms-orch | engine-reporting/notif | PPTX generation done |
 | snow.sync.completed | engine-integrations | engine-reporting/notif | ServiceNow sync done |
 | snow.sync.failed | engine-integrations | engine-reporting/notif | ServiceNow sync failed |
+| data-imported | engine-orchestrator | engine-integrations/excel-sync | Trigger Excel export flow after data import |
 | promotion.candidate.detected | engine-core/admin | engine-reporting/notif | Smart persistence candidate |
 | document-embedding | engine-data/sink-doc | (async processor) | Trigger embedding generation |
 

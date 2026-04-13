@@ -10,15 +10,15 @@ export const FEATURE_FLAGS = {
     ENABLE_LOCAL_SCOPE: 'ENABLE_LOCAL_SCOPE',
     ENABLE_ADVANCED_COMPARISON: 'ENABLE_ADVANCED_COMPARISON',
     ENABLE_MULTI_ORG_COMPARISON: 'ENABLE_MULTI_ORG_COMPARISON',
+    ENABLE_EXPORT_FLOWS: 'ENABLE_EXPORT_FLOWS',
 } as const;
-
-// Feature flag configuration
 
 // Default feature flag values (can be overridden by environment or API)
 const DEFAULT_FLAGS: Record<string, boolean> = {
     [FEATURE_FLAGS.ENABLE_LOCAL_SCOPE]: import.meta.env.VITE_ENABLE_LOCAL_SCOPE === 'true',
     [FEATURE_FLAGS.ENABLE_ADVANCED_COMPARISON]: import.meta.env.VITE_ENABLE_ADVANCED_COMPARISON === 'true',
     [FEATURE_FLAGS.ENABLE_MULTI_ORG_COMPARISON]: import.meta.env.VITE_ENABLE_MULTI_ORG_COMPARISON === 'true',
+    [FEATURE_FLAGS.ENABLE_EXPORT_FLOWS]: import.meta.env.VITE_EXPORT_FLOWS_ENABLED !== 'false',
 };
 
 // Get initial flag state
@@ -118,4 +118,12 @@ export function useAdvancedComparison(): boolean {
 export function useMultiOrgComparison(): boolean {
     const { isEnabled } = useFeatureFlags();
     return isEnabled(FEATURE_FLAGS.ENABLE_MULTI_ORG_COMPARISON);
+}
+
+/**
+ * Hook to check if Export Flows (FS27) feature is enabled
+ */
+export function useExportFlowsEnabled(): boolean {
+    const { isEnabled } = useFeatureFlags();
+    return isEnabled(FEATURE_FLAGS.ENABLE_EXPORT_FLOWS);
 }

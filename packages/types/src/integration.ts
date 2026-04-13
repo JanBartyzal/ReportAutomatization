@@ -133,3 +133,106 @@ export interface ServiceNowTableData {
     total_count: number;
     has_more: boolean;
 }
+
+// =============================================================================
+// Excel Sync – Export Flow Types (FS27)
+// Aligned with com.reportplatform.excelsync.model.dto (camelCase JSON)
+// =============================================================================
+
+/** Target type for export flow destination */
+export type TargetType = 'SHAREPOINT' | 'LOCAL_PATH';
+
+/** File naming strategy for exported workbooks */
+export type FileNaming = 'CUSTOM' | 'BATCH_NAME';
+
+/** When the export flow is triggered */
+export type TriggerType = 'AUTO' | 'MANUAL';
+
+/** Execution status of a single export run */
+export type ExecutionStatus = 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED';
+
+/** SharePoint connection config (serialised as JSON string inside ExportFlowDefinition) */
+export interface SharePointConfig {
+    siteUrl: string;
+    library: string;
+    folderPath?: string;
+    clientId?: string;
+    tenantId?: string;
+}
+
+/** Export flow execution record — ExportFlowExecutionDTO */
+export interface ExportFlowExecution {
+    id: string;
+    flowId: string;
+    triggerSource?: string;
+    triggerEventId?: string;
+    status: ExecutionStatus;
+    rowsExported?: number;
+    targetPathUsed?: string;
+    errorMessage?: string;
+    startedAt?: string;
+    completedAt?: string;
+}
+
+/** Export flow definition — ExportFlowDTO (includes computed lastExecution) */
+export interface ExportFlowDefinition {
+    id: string;
+    name: string;
+    description?: string;
+    sqlQuery: string;
+    targetType: TargetType;
+    targetPath: string;
+    targetSheet: string;
+    fileNaming: FileNaming;
+    customFileName?: string;
+    triggerType: TriggerType;
+    triggerFilter?: string;
+    /** sharepointConfig is stored as a JSON string in the backend */
+    sharepointConfig?: string;
+    active: boolean;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+    /** Most recent execution, populated by the list/get endpoints */
+    lastExecution?: ExportFlowExecution;
+}
+
+/** Request body to create an export flow — CreateExportFlowRequest */
+export interface ExportFlowCreateRequest {
+    name: string;
+    description?: string;
+    sqlQuery: string;
+    targetType: TargetType;
+    targetPath: string;
+    targetSheet: string;
+    fileNaming?: FileNaming;
+    customFileName?: string;
+    triggerType?: TriggerType;
+    triggerFilter?: string;
+    sharepointConfig?: string;
+}
+
+/** Request body to update an export flow — UpdateExportFlowRequest */
+export interface ExportFlowUpdateRequest {
+    name?: string;
+    description?: string;
+    sqlQuery?: string;
+    targetType?: TargetType;
+    targetPath?: string;
+    targetSheet?: string;
+    fileNaming?: FileNaming;
+    customFileName?: string;
+    triggerType?: TriggerType;
+    triggerFilter?: string;
+    sharepointConfig?: string;
+    active?: boolean;
+}
+
+/** Response from the test/preview endpoint — ExportFlowTestResult */
+export interface ExportFlowTestResponse {
+    headers: string[];
+    rows: Record<string, unknown>[];
+    totalRows: number;
+    truncated: boolean;
+    error?: string;
+}

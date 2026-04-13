@@ -13,6 +13,7 @@ CONSOLIDATED_JAVA_SERVICES = [
     ("engine-data",          ["redis"]),
     ("engine-reporting",     ["azurite"]),
     ("engine-orchestrator",  ["redis"]),
+    # engine-integrations mounts the export volume for excel-sync (FS27)
     ("engine-integrations",  ["redis"]),
 ]
 
@@ -32,3 +33,15 @@ for svc, extra_deps in CONSOLIDATED_JAVA_SERVICES:
 for svc, extra_deps in STANDALONE_JAVA_SERVICES:
     deps = ["postgres"] + extra_deps
     dc_resource(svc, labels=["core-java"], resource_deps=deps)
+
+# ---------------------------------------------------------------------------
+# excel-sync (FS27): hot-reload & export volume sync
+# ---------------------------------------------------------------------------
+# Sync local export directory into the container so files written by the service
+# are immediately visible on the host during development.
+local_resource(
+    "excel-sync:export-dir",
+    cmd = "mkdir -p ../data/exports",
+    labels = ["core-java"],
+    resource_deps = ["engine-integrations"],
+)

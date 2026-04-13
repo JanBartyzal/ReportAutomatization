@@ -1,0 +1,15 @@
+{
+  "error": {
+    "code": "itemNotFound",
+    "message": "The resource could not be found.",
+    "innerError": {
+      "code": "itemNotFound",
+      "date": "2026-04-13T09:00:00",
+      "request-id": "req-id-notfound-001",
+      "client-request-id": "client-req-notfound-001"
+    }
+  },
+  "_wiremock": {
+    "http_status": 404
+  }
+}

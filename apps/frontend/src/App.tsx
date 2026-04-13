@@ -41,6 +41,7 @@ import PromotionPage from './pages/PromotionPage';
 import SinkBrowserPage from './pages/SinkBrowserPage';
 import SinkDetailPage from './pages/SinkDetailPage';
 import AdminPage from './pages/AdminPage';
+import ExportFlowsPage from './pages/ExportFlowsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function AuthenticatedRoutes() {
@@ -109,6 +110,11 @@ function AuthenticatedRoutes() {
                 <Route path="/admin/manage" element={
                     <AdminGuard>
                         <AdminPage />
+                    </AdminGuard>
+                } />
+                <Route path="/admin/export-flows" element={
+                    <AdminGuard>
+                        <ExportFlowsPage />
                     </AdminGuard>
                 } />
                 <Route path="*" element={<NotFoundPage />} />

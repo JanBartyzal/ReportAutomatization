@@ -217,7 +217,24 @@
       "Bash(curl -s -X POST http://localhost:8100/api/dashboards/sql/execute -H 'Content-Type: application/json' -H 'X-Org-Id: a0000000-0000-0000-0000-000000000001' -H 'X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515' -H 'X-Roles: HOLDING_ADMIN' -H 'Authorization: Bearer dev-bypass-token' -d '{\"sql\":\"SELECT pt.id, pt.source_sheet, jsonb_array_length\\(pt.rows\\) AS row_count FROM data.parsed_tables pt ORDER BY pt.created_at DESC LIMIT 3\"}')",
       "Bash(curl -s -X POST http://localhost:8100/api/dashboards/sql/execute -H 'Content-Type: application/json' -H 'X-Org-Id: a0000000-0000-0000-0000-000000000001' -H 'X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515' -H 'X-Roles: HOLDING_ADMIN' -H 'Authorization: Bearer dev-bypass-token' -d '{\"sql\":\"SELECT pt.source_sheet, jsonb_array_length\\(pt.rows\\) AS row_count FROM data.parsed_tables pt ORDER BY pt.created_at DESC LIMIT 3\"}')",
       "Bash(curl -s -X POST http://localhost:8100/api/dashboards/sql/execute -H 'Content-Type: application/json' -H 'X-Org-Id: a0000000-0000-0000-0000-000000000001' -H 'X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515' -H 'X-Roles: HOLDING_ADMIN' -H 'Authorization: Bearer dev-bypass-token' -d '{\"sql\":\"WITH latest AS \\(SELECT pt.headers, pt.rows FROM data.parsed_tables pt JOIN ingestor.files f ON f.id::text = pt.file_id WHERE f.filename = '\\\\''Test.xlsx'\\\\'' ORDER BY f.created_at DESC LIMIT 1\\) SELECT r.value->>1 AS LabelX, CAST\\(r.value->>9 AS NUMERIC\\) AS LabelY FROM latest l, jsonb_array_elements\\(l.rows\\) AS r\\(value\\) ORDER BY LabelY DESC\"}')",
-      "Bash(grep -E \"\\\\.\\(java|ts|tsx\\)$\")"
+      "Bash(grep -E \"\\\\.\\(java|ts|tsx\\)$\")",
+      "Bash(python -m grpc_tools.protoc --version)",
+      "Bash(where protoc:*)",
+      "Bash(python -m grpc_tools.protoc -I packages/java-base/java-base-protos/src/main/proto --python_out=packages --grpc_python_out=packages generator/v1/generator.proto)",
+      "Bash(python -c ':*)",
+      "Bash(mvn clean:*)",
+      "Bash(mvn install:*)",
+      "Bash(javac --version)",
+      "Bash(javac -d /dev/null -sourcepath apps/engine/engine-orchestration/src/main/java apps/engine/engine-orchestration/src/main/java/com/reportplatform/orch/service/WorkflowService.java)",
+      "Bash(wc -l /c/Docker/ReportAutomatization/apps/engine/engine-integrations/app/src/main/resources/db/migration/*.sql)",
+      "Bash(python3 -c \"import openpyxl; print\\('openpyxl available'\\)\")",
+      "Bash(python -c \"import openpyxl; print\\('openpyxl available'\\)\")",
+      "Bash(python3 -)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('status',{}\\), indent=2\\)\\)\")",
+      "Bash(grep -l \"Drawer\" \"c:/Docker/ReportAutomatization/apps/frontend/node_modules/@fluentui/react-components/dist/\"*.d.ts)",
+      "Bash(dir \"c:/Docker/ReportAutomatization/apps/frontend/node_modules/@fluentui\" /b)",
+      "Bash(findstr /i drawer)",
+      "Bash(node -e \"const d = require\\('@fluentui/react-components'\\); console.log\\(Object.keys\\(d\\).filter\\(k => k.startsWith\\('Drawer'\\)\\)\\)\")"
     ]
   }
 }

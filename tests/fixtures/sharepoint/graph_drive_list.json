@@ -1,0 +1,23 @@
+{
+  "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#drives",
+  "value": [
+    {
+      "id": "drive-id-001",
+      "driveType": "documentLibrary",
+      "name": "Documents",
+      "webUrl": "https://contoso.sharepoint.com/sites/reports/Documents",
+      "quota": {
+        "used": 1073741824,
+        "remaining": 26843545600,
+        "total": 27917287424,
+        "state": "normal"
+      },
+      "owner": {
+        "user": {
+          "displayName": "Reports Site Admin",
+          "id": "user-id-001"
+        }
+      }
+    }
+  ]
+}

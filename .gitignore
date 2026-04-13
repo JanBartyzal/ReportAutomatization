@@ -149,6 +149,10 @@ owebui-data/*
 # Proto generated code
 packages/protos/gen/
 
+# Excel Sync – generated export files (keep directory, ignore workbooks)
+data/exports/*.xlsx
+data/exports/*.xls
+
 # Node packages
 packages/types/node_modules/
 packages/types/dist/

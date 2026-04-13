@@ -13,6 +13,9 @@ service ExcelGeneratorService {
 
   // Batch generate multiple Excel reports
   rpc BatchGenerateExcel(BatchGenerateExcelRequest) returns (BatchGenerateExcelResponse);
+
+  // Update a single sheet in an existing Excel workbook (preserves all other sheets)
+  rpc UpdateSheet(UpdateSheetRequest) returns (UpdateSheetResponse);
 }
 
 message GenerateExcelRequest {
@@ -70,4 +73,41 @@ message BatchGenerateExcelResponse {
   repeated GenerateExcelResponse results = 1;
   int32 successful = 2;
   int32 failed = 3;
+}
+
+// =============================================================================
+// Sheet Update Messages (partial update preserving other sheets)
+// =============================================================================
+
+message UpdateSheetRequest {
+  bytes excel_binary = 1;               // existing Excel file content (empty = create new)
+  string sheet_name = 2;                // target sheet to overwrite
+  repeated UpdateSheetRow data_rows = 3; // rows to write
+  repeated string headers = 4;          // column headers
+  SheetFormatting formatting = 5;       // optional formatting config
+}
+
+message UpdateSheetRow {
+  repeated CellValue cells = 1;
+}
+
+message CellValue {
+  oneof value {
+    string string_value = 1;
+    double number_value = 2;
+    bool bool_value = 3;
+    string date_value = 4;              // ISO 8601 format
+  }
+}
+
+message SheetFormatting {
+  bool auto_filter = 1;                 // apply auto-filter on headers
+  bool freeze_header = 2;               // freeze first row
+  bool auto_column_width = 3;           // auto-fit column widths
+}
+
+message UpdateSheetResponse {
+  bytes updated_excel = 1;              // updated Excel binary
+  int32 rows_written = 2;
+  string sheet_name = 3;
 }

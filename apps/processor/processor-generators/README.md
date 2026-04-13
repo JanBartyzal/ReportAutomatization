@@ -42,6 +42,35 @@ sequenceDiagram
 ### ExcelGeneratorService
 - `GenerateExcel` - Generate Excel report
 - `BatchGenerateExcel` - Generate multiple Excel reports
+- `UpdateSheet` - Partial sheet update: overwrite one named sheet in an existing workbook while preserving all other sheets, formatting, charts and pivot tables
+
+#### UpdateSheet – Input/Output
+
+```
+UpdateSheetRequest {
+  excel_binary  bytes          // Existing .xlsx bytes; empty → create new workbook
+  sheet_name    string         // Target sheet to overwrite or create
+  data_rows     UpdateSheetRow // Typed cell values (string/number/bool/date)
+  headers       string[]       // Column header labels for row 1
+  formatting    SheetFormatting {
+    auto_filter        bool    // Excel auto-filter on header row
+    freeze_header      bool    // Freeze first row
+    auto_column_width  bool    // Auto-fit column widths
+  }
+}
+
+UpdateSheetResponse {
+  updated_excel  bytes   // Updated .xlsx binary (all other sheets preserved)
+  rows_written   int32
+  sheet_name     string
+}
+```
+
+**Sheet preservation guarantees:**
+- All sheets not named `sheet_name` are untouched (content, formatting, charts, pivot tables).
+- If `sheet_name` does not exist it is created; existing content is fully replaced.
+- Maximum input file size is controlled via `EXCEL_MAX_SIZE_MB` env variable (default 50 MB).
+- Maximum rows per sheet: 1,048,576 (Excel limit).
 
 ### MCP Server
 - REST endpoints for AI-assisted queries

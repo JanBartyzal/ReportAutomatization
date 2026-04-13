@@ -29,7 +29,11 @@
     "IN_REVIEW": { "bg": "#E0F2FE", "text": "#0369A1" },
     "APPROVED": { "bg": "#DFF6DD", "text": "#107C10" },
     "REJECTED": { "bg": "#FDE7E9", "text": "#D13438" },
-    "OVERDUE": { "bg": "#FDEBE2", "text": "#D83B01" }
+    "OVERDUE": { "bg": "#FDEBE2", "text": "#D83B01" },
+    "PENDING": { "bg": "#F3F2F1", "text": "#616161" },
+    "RUNNING": { "bg": "#E0F2FE", "text": "#0369A1" },
+    "SUCCESS": { "bg": "#DFF6DD", "text": "#107C10" },
+    "FAILED": { "bg": "#FDE7E9", "text": "#D13438" }
   },
   "chart": [
     "#C4314B", "#107C10", "#0078D4", "#D83B01",

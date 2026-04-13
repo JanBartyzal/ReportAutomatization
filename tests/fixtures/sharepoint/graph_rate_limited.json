@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "TooManyRequests",
+    "message": "Application has been throttled. Please retry after the delay indicated in the Retry-After header.",
+    "innerError": {
+      "code": "throttled",
+      "date": "2026-04-13T09:00:00",
+      "request-id": "req-id-throttle-001",
+      "client-request-id": "client-req-throttle-001"
+    }
+  },
+  "_wiremock": {
+    "http_status": 429,
+    "headers": {
+      "Retry-After": "30",
+      "x-ms-ags-diagnostic": "throttled"
+    }
+  }
+}

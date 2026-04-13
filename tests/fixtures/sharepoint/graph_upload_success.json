@@ -1,0 +1,17 @@
+{
+  "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#drives('drive-id-001')/items/$entity",
+  "id": "file-item-id-002",
+  "name": "opex_report_2026_Q1.xlsx",
+  "size": 131072,
+  "eTag": "\"etagvalue1,1\"",
+  "cTag": "\"ctagvalue1:1\"",
+  "file": {
+    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "hashes": {
+      "quickXorHash": "def456uvw=="
+    }
+  },
+  "webUrl": "https://contoso.sharepoint.com/sites/reports/Documents/Exports/2026/opex_report_2026_Q1.xlsx",
+  "lastModifiedDateTime": "2026-04-13T09:00:00Z",
+  "@microsoft.graph.downloadUrl": "https://contoso.sharepoint.com/sites/reports/_layouts/15/download.aspx?UniqueId=abc123"
+}

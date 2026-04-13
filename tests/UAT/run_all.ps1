@@ -52,7 +52,8 @@ $steps = @(
     @{ Num = "22"; Name = "Period_Comparison"; Dir = "Step22_Period_Comparison"; Script = "test_22_period_comparison.py"; Log = "step22_Period_Comparison" },
     @{ Num = "23"; Name = "ServiceNow_Integration"; Dir = "Step23_ServiceNow_Integration"; Script = "test_23_servicenow_integration.py"; Log = "step23_ServiceNow_Integration" },
     @{ Num = "24"; Name = "Smart_Persistence"; Dir = "Step24_Smart_Persistence"; Script = "test_24_smart_persistence.py"; Log = "step24_Smart_Persistence" },
-    @{ Num = "25"; Name = "DevOps_Observability"; Dir = "Step25_DevOps_Observability"; Script = "test_25_devops_observability.py"; Log = "step25_DevOps_Observability" }
+    @{ Num = "25"; Name = "DevOps_Observability"; Dir = "Step25_DevOps_Observability"; Script = "test_25_devops_observability.py"; Log = "step25_DevOps_Observability" },
+    @{ Num = "26"; Name = "Excel_Sync"; Dir = "Step26_Excel_Sync"; Script = "test_26_excel_sync.py"; Log = "step26_Excel_Sync" }
 )
 
 $results = @()

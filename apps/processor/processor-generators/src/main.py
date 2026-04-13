@@ -20,6 +20,7 @@ from src.common.grpc_server import create_and_start_grpc_server
 from src.common.health import router as health_router
 from src.common.logging_config import setup_logging
 from src.common.tracing import setup_tracing
+from src.generators.xls.router import router as xls_router
 from src.mcp.db.connection import DatabasePool
 from src.mcp.mcp_server import create_mcp_app
 
@@ -56,6 +57,9 @@ def create_app() -> FastAPI:
 
     # Health check routes
     app.include_router(health_router)
+
+    # Excel HTTP endpoints (UpdateSheet, etc.)
+    app.include_router(xls_router)
 
     # Mount the MCP server
     mcp_app = create_mcp_app(db_pool)

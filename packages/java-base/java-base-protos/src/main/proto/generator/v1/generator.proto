@@ -131,9 +131,12 @@ message PptxBatchGenerateResponse {
 service ExcelGeneratorService {
   // Generate a single Excel report
   rpc GenerateReport(ExcelGenerateReportRequest) returns (ExcelGenerateReportResponse);
-  
+
   // Batch generate multiple Excel reports
   rpc BatchGenerate(ExcelBatchGenerateRequest) returns (ExcelBatchGenerateResponse);
+
+  // Update a single sheet in an existing Excel workbook (preserves all other sheets)
+  rpc UpdateSheet(UpdateSheetRequest) returns (UpdateSheetResponse);
 }
 
 // Request to generate a single Excel report
@@ -171,4 +174,46 @@ message ExcelBatchGenerateResponse {
   repeated ExcelGenerateReportResponse results = 1;
   int32 successful = 2;
   int32 failed = 3;
+}
+
+// =============================================================================
+// Excel Sheet Update Messages (partial update preserving other sheets)
+// =============================================================================
+
+// Request to update a single sheet in an existing Excel workbook
+message UpdateSheetRequest {
+  bytes excel_binary = 1;               // existing Excel file content (empty = create new)
+  string sheet_name = 2;                // target sheet to overwrite
+  repeated UpdateSheetRow data_rows = 3; // rows to write
+  repeated string headers = 4;          // column headers
+  SheetFormatting formatting = 5;       // optional formatting config
+}
+
+// A single row for sheet update
+message UpdateSheetRow {
+  repeated CellValue cells = 1;
+}
+
+// A cell value with type information
+message CellValue {
+  oneof value {
+    string string_value = 1;
+    double number_value = 2;
+    bool bool_value = 3;
+    string date_value = 4;              // ISO 8601 format
+  }
+}
+
+// Formatting options for the updated sheet
+message SheetFormatting {
+  bool auto_filter = 1;                 // apply auto-filter on headers
+  bool freeze_header = 2;               // freeze first row
+  bool auto_column_width = 3;           // auto-fit column widths
+}
+
+// Response from updating a sheet
+message UpdateSheetResponse {
+  bytes updated_excel = 1;              // updated Excel binary
+  int32 rows_written = 2;
+  string sheet_name = 3;
 }

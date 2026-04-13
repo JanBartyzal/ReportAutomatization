@@ -21,6 +21,7 @@
     <modules>
         <module>common</module>
         <module>servicenow</module>
+        <module>excel-sync</module>
         <module>app</module>
     </modules>
 
@@ -40,6 +41,11 @@
             <dependency>
                 <groupId>com.reportplatform</groupId>
                 <artifactId>engine-integrations-servicenow</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.reportplatform</groupId>
+                <artifactId>engine-integrations-excel-sync</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

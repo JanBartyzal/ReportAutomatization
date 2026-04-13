@@ -22,10 +22,10 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from packages.common.v1 import common_pb2 as common_dot_v1_dot_common__pb2
+from common.v1 import common_pb2 as common_dot_v1_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1cgenerator/v1/generator.proto\x12\x0cgenerator.v1\x1a\x16\x63ommon/v1/common.proto\"[\n\tTableData\x12\x17\n\x0fplaceholder_key\x18\x01 \x01(\t\x12\x0f\n\x07headers\x18\x02 \x03(\t\x12$\n\x04rows\x18\x03 \x03(\x0b\x32\x16.generator.v1.TableRow\"\x19\n\x08TableRow\x12\r\n\x05\x63\x65lls\x18\x01 \x03(\t\"s\n\tChartData\x12\x17\n\x0fplaceholder_key\x18\x01 \x01(\t\x12\x12\n\nchart_type\x18\x02 \x01(\t\x12\x0e\n\x06labels\x18\x03 \x03(\t\x12)\n\x06series\x18\x04 \x03(\x0b\x32\x19.generator.v1.ChartSeries\"+\n\x0b\x43hartSeries\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06values\x18\x02 \x03(\x01\"\xd4\x02\n\x19PptxGenerateReportRequest\x12*\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x19.common.v1.RequestContext\x12\x13\n\x0btemplate_id\x18\x02 \x01(\t\x12\x11\n\treport_id\x18\x03 \x01(\t\x12X\n\x11text_placeholders\x18\x04 \x03(\x0b\x32=.generator.v1.PptxGenerateReportRequest.TextPlaceholdersEntry\x12\'\n\x06tables\x18\x05 \x03(\x0b\x32\x17.generator.v1.TableData\x12\'\n\x06\x63harts\x18\x06 \x03(\x0b\x32\x17.generator.v1.ChartData\x1a\x37\n\x15TextPlaceholdersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xbb\x01\n\x1aPptxGenerateReportResponse\x12\x11\n\treport_id\x18\x01 \x01(\t\x12\x30\n\x0egenerated_file\x18\x02 \x01(\x0b\x32\x18.common.v1.BlobReference\x12\x1c\n\x14missing_placeholders\x18\x03 \x03(\t\x12\x14\n\x0cgenerated_at\x18\x04 \x01(\t\x12\r\n\x05\x65rror\x18\x05 \x01(\t\x12\x15\n\rerror_message\x18\x06 \x01(\t\"\xd3\x02\n\x18PptxBatchGenerateRequest\x12*\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x19.common.v1.RequestContext\x12\x13\n\x0btemplate_id\x18\x02 \x01(\t\x12\x12\n\nreport_ids\x18\x03 \x03(\t\x12W\n\x11text_placeholders\x18\x04 \x03(\x0b\x32<.generator.v1.PptxBatchGenerateRequest.TextPlaceholdersEntry\x12\'\n\x06tables\x18\x05 \x03(\x0b\x32\x17.generator.v1.TableData\x12\'\n\x06\x63harts\x18\x06 \x03(\x0b\x32\x17.generator.v1.ChartData\x1a\x37\n\x15TextPlaceholdersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"z\n\x19PptxBatchGenerateResponse\x12\x39\n\x07results\x18\x01 \x03(\x0b\x32(.generator.v1.PptxGenerateReportResponse\x12\x12\n\nsuccessful\x18\x02 \x01(\x05\x12\x0e\n\x06\x66\x61iled\x18\x03 \x01(\x05\"\xd6\x02\n\x1a\x45xcelGenerateReportRequest\x12*\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x19.common.v1.RequestContext\x12\x13\n\x0btemplate_id\x18\x02 \x01(\t\x12\x11\n\treport_id\x18\x03 \x01(\t\x12Y\n\x11text_placeholders\x18\x04 \x03(\x0b\x32>.generator.v1.ExcelGenerateReportRequest.TextPlaceholdersEntry\x12\'\n\x06tables\x18\x05 \x03(\x0b\x32\x17.generator.v1.TableData\x12\'\n\x06\x63harts\x18\x06 \x03(\x0b\x32\x17.generator.v1.ChartData\x1a\x37\n\x15TextPlaceholdersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xbc\x01\n\x1b\x45xcelGenerateReportResponse\x12\x11\n\treport_id\x18\x01 \x01(\t\x12\x30\n\x0egenerated_file\x18\x02 \x01(\x0b\x32\x18.common.v1.BlobReference\x12\x1c\n\x14missing_placeholders\x18\x03 \x03(\t\x12\x14\n\x0cgenerated_at\x18\x04 \x01(\t\x12\r\n\x05\x65rror\x18\x05 \x01(\t\x12\x15\n\rerror_message\x18\x06 \x01(\t\"\xd5\x02\n\x19\x45xcelBatchGenerateRequest\x12*\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x19.common.v1.RequestContext\x12\x13\n\x0btemplate_id\x18\x02 \x01(\t\x12\x12\n\nreport_ids\x18\x03 \x03(\t\x12X\n\x11text_placeholders\x18\x04 \x03(\x0b\x32=.generator.v1.ExcelBatchGenerateRequest.TextPlaceholdersEntry\x12\'\n\x06tables\x18\x05 \x03(\x0b\x32\x17.generator.v1.TableData\x12\'\n\x06\x63harts\x18\x06 \x03(\x0b\x32\x17.generator.v1.ChartData\x1a\x37\n\x15TextPlaceholdersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"|\n\x1a\x45xcelBatchGenerateResponse\x12:\n\x07results\x18\x01 \x03(\x0b\x32).generator.v1.ExcelGenerateReportResponse\x12\x12\n\nsuccessful\x18\x02 \x01(\x05\x12\x0e\n\x06\x66\x61iled\x18\x03 \x01(\x05\x32\xdd\x01\n\x14PptxGeneratorService\x12\x63\n\x0eGenerateReport\x12\'.generator.v1.PptxGenerateReportRequest\x1a(.generator.v1.PptxGenerateReportResponse\x12`\n\rBatchGenerate\x12&.generator.v1.PptxBatchGenerateRequest\x1a\'.generator.v1.PptxBatchGenerateResponse2\xe2\x01\n\x15\x45xcelGeneratorService\x12\x65\n\x0eGenerateReport\x12(.generator.v1.ExcelGenerateReportRequest\x1a).generator.v1.ExcelGenerateReportResponse\x12\x62\n\rBatchGenerate\x12\'.generator.v1.ExcelBatchGenerateRequest\x1a(.generator.v1.ExcelBatchGenerateResponseB)\n%com.reportplatform.proto.generator.v1P\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1cgenerator/v1/generator.proto\x12\x0cgenerator.v1\x1a\x16\x63ommon/v1/common.proto\"[\n\tTableData\x12\x17\n\x0fplaceholder_key\x18\x01 \x01(\t\x12\x0f\n\x07headers\x18\x02 \x03(\t\x12$\n\x04rows\x18\x03 \x03(\x0b\x32\x16.generator.v1.TableRow\"\x19\n\x08TableRow\x12\r\n\x05\x63\x65lls\x18\x01 \x03(\t\"\xa6\x01\n\x12GeneratorTableData\x12\x17\n\x0fplaceholder_key\x18\x01 \x01(\t\x12\x0f\n\x07headers\x18\x02 \x03(\t\x12-\n\x04rows\x18\x03 \x03(\x0b\x32\x1f.generator.v1.GeneratorTableRow\x12\x37\n\x0b\x61ggregation\x18\x04 \x01(\x0e\x32\".generator.v1.TableAggregationType\"\"\n\x11GeneratorTableRow\x12\r\n\x05\x63\x65lls\x18\x01 \x03(\t\"s\n\tChartData\x12\x17\n\x0fplaceholder_key\x18\x01 \x01(\t\x12\x12\n\nchart_type\x18\x02 \x01(\t\x12\x0e\n\x06labels\x18\x03 \x03(\t\x12)\n\x06series\x18\x04 \x03(\x0b\x32\x19.generator.v1.ChartSeries\"\xb5\x01\n\x12GeneratorChartData\x12\x17\n\x0fplaceholder_key\x18\x01 \x01(\t\x12\x12\n\nchart_type\x18\x02 \x01(\t\x12\x0e\n\x06labels\x18\x03 \x03(\t\x12)\n\x06series\x18\x04 \x03(\x0b\x32\x19.generator.v1.ChartSeries\x12\x37\n\x0b\x61ggregation\x18\x05 \x01(\x0e\x32\".generator.v1.ChartAggregationType\"+\n\x0b\x43hartSeries\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06values\x18\x02 \x03(\x01\"\xd4\x02\n\x19PptxGenerateReportRequest\x12*\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x19.common.v1.RequestContext\x12\x13\n\x0btemplate_id\x18\x02 \x01(\t\x12\x11\n\treport_id\x18\x03 \x01(\t\x12X\n\x11text_placeholders\x18\x04 \x03(\x0b\x32=.generator.v1.PptxGenerateReportRequest.TextPlaceholdersEntry\x12\'\n\x06tables\x18\x05 \x03(\x0b\x32\x17.generator.v1.TableData\x12\'\n\x06\x63harts\x18\x06 \x03(\x0b\x32\x17.generator.v1.ChartData\x1a\x37\n\x15TextPlaceholdersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xbb\x01\n\x1aPptxGenerateReportResponse\x12\x11\n\treport_id\x18\x01 \x01(\t\x12\x30\n\x0egenerated_file\x18\x02 \x01(\x0b\x32\x18.common.v1.BlobReference\x12\x1c\n\x14missing_placeholders\x18\x03 \x03(\t\x12\x14\n\x0cgenerated_at\x18\x04 \x01(\t\x12\r\n\x05\x65rror\x18\x05 \x01(\t\x12\x15\n\rerror_message\x18\x06 \x01(\t\"\xd3\x02\n\x18PptxBatchGenerateRequest\x12*\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x19.common.v1.RequestContext\x12\x13\n\x0btemplate_id\x18\x02 \x01(\t\x12\x12\n\nreport_ids\x18\x03 \x03(\t\x12W\n\x11text_placeholders\x18\x04 \x03(\x0b\x32<.generator.v1.PptxBatchGenerateRequest.TextPlaceholdersEntry\x12\'\n\x06tables\x18\x05 \x03(\x0b\x32\x17.generator.v1.TableData\x12\'\n\x06\x63harts\x18\x06 \x03(\x0b\x32\x17.generator.v1.ChartData\x1a\x37\n\x15TextPlaceholdersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"z\n\x19PptxBatchGenerateResponse\x12\x39\n\x07results\x18\x01 \x03(\x0b\x32(.generator.v1.PptxGenerateReportResponse\x12\x12\n\nsuccessful\x18\x02 \x01(\x05\x12\x0e\n\x06\x66\x61iled\x18\x03 \x01(\x05\"\xd6\x02\n\x1a\x45xcelGenerateReportRequest\x12*\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x19.common.v1.RequestContext\x12\x13\n\x0btemplate_id\x18\x02 \x01(\t\x12\x11\n\treport_id\x18\x03 \x01(\t\x12Y\n\x11text_placeholders\x18\x04 \x03(\x0b\x32>.generator.v1.ExcelGenerateReportRequest.TextPlaceholdersEntry\x12\'\n\x06tables\x18\x05 \x03(\x0b\x32\x17.generator.v1.TableData\x12\'\n\x06\x63harts\x18\x06 \x03(\x0b\x32\x17.generator.v1.ChartData\x1a\x37\n\x15TextPlaceholdersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xbc\x01\n\x1b\x45xcelGenerateReportResponse\x12\x11\n\treport_id\x18\x01 \x01(\t\x12\x30\n\x0egenerated_file\x18\x02 \x01(\x0b\x32\x18.common.v1.BlobReference\x12\x1c\n\x14missing_placeholders\x18\x03 \x03(\t\x12\x14\n\x0cgenerated_at\x18\x04 \x01(\t\x12\r\n\x05\x65rror\x18\x05 \x01(\t\x12\x15\n\rerror_message\x18\x06 \x01(\t\"\xd5\x02\n\x19\x45xcelBatchGenerateRequest\x12*\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x19.common.v1.RequestContext\x12\x13\n\x0btemplate_id\x18\x02 \x01(\t\x12\x12\n\nreport_ids\x18\x03 \x03(\t\x12X\n\x11text_placeholders\x18\x04 \x03(\x0b\x32=.generator.v1.ExcelBatchGenerateRequest.TextPlaceholdersEntry\x12\'\n\x06tables\x18\x05 \x03(\x0b\x32\x17.generator.v1.TableData\x12\'\n\x06\x63harts\x18\x06 \x03(\x0b\x32\x17.generator.v1.ChartData\x1a\x37\n\x15TextPlaceholdersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"|\n\x1a\x45xcelBatchGenerateResponse\x12:\n\x07results\x18\x01 \x03(\x0b\x32).generator.v1.ExcelGenerateReportResponse\x12\x12\n\nsuccessful\x18\x02 \x01(\x05\x12\x0e\n\x06\x66\x61iled\x18\x03 \x01(\x05\"\xb3\x01\n\x12UpdateSheetRequest\x12\x14\n\x0c\x65xcel_binary\x18\x01 \x01(\x0c\x12\x12\n\nsheet_name\x18\x02 \x01(\t\x12/\n\tdata_rows\x18\x03 \x03(\x0b\x32\x1c.generator.v1.UpdateSheetRow\x12\x0f\n\x07headers\x18\x04 \x03(\t\x12\x31\n\nformatting\x18\x05 \x01(\x0b\x32\x1d.generator.v1.SheetFormatting\"8\n\x0eUpdateSheetRow\x12&\n\x05\x63\x65lls\x18\x01 \x03(\x0b\x32\x17.generator.v1.CellValue\"p\n\tCellValue\x12\x16\n\x0cstring_value\x18\x01 \x01(\tH\x00\x12\x16\n\x0cnumber_value\x18\x02 \x01(\x01H\x00\x12\x14\n\nbool_value\x18\x03 \x01(\x08H\x00\x12\x14\n\ndate_value\x18\x04 \x01(\tH\x00\x42\x07\n\x05value\"X\n\x0fSheetFormatting\x12\x13\n\x0b\x61uto_filter\x18\x01 \x01(\x08\x12\x15\n\rfreeze_header\x18\x02 \x01(\x08\x12\x19\n\x11\x61uto_column_width\x18\x03 \x01(\x08\"V\n\x13UpdateSheetResponse\x12\x15\n\rupdated_excel\x18\x01 \x01(\x0c\x12\x14\n\x0crows_written\x18\x02 \x01(\x05\x12\x12\n\nsheet_name\x18\x03 \x01(\t*\xc2\x01\n\x14TableAggregationType\x12&\n\"TABLE_AGGREGATION_TYPE_UNSPECIFIED\x10\x00\x12\x1f\n\x1bTABLE_AGGREGATION_TYPE_NONE\x10\x01\x12\x1e\n\x1aTABLE_AGGREGATION_TYPE_SUM\x10\x02\x12\x1e\n\x1aTABLE_AGGREGATION_TYPE_AVG\x10\x03\x12!\n\x1dTABLE_AGGREGATION_TYPE_DETAIL\x10\x04*\xc6\x01\n\x14\x43hartAggregationType\x12&\n\"CHART_AGGREGATION_TYPE_UNSPECIFIED\x10\x00\x12\x1f\n\x1b\x43HART_AGGREGATION_TYPE_NONE\x10\x01\x12\x1e\n\x1a\x43HART_AGGREGATION_TYPE_SUM\x10\x02\x12\x1e\n\x1a\x43HART_AGGREGATION_TYPE_AVG\x10\x03\x12%\n!CHART_AGGREGATION_TYPE_CUMULATIVE\x10\x04\x32\xdd\x01\n\x14PptxGeneratorService\x12\x63\n\x0eGenerateReport\x12\'.generator.v1.PptxGenerateReportRequest\x1a(.generator.v1.PptxGenerateReportResponse\x12`\n\rBatchGenerate\x12&.generator.v1.PptxBatchGenerateRequest\x1a\'.generator.v1.PptxBatchGenerateResponse2\xb6\x02\n\x15\x45xcelGeneratorService\x12\x65\n\x0eGenerateReport\x12(.generator.v1.ExcelGenerateReportRequest\x1a).generator.v1.ExcelGenerateReportResponse\x12\x62\n\rBatchGenerate\x12\'.generator.v1.ExcelBatchGenerateRequest\x1a(.generator.v1.ExcelBatchGenerateResponse\x12R\n\x0bUpdateSheet\x12 .generator.v1.UpdateSheetRequest\x1a!.generator.v1.UpdateSheetResponseB)\n%com.reportplatform.proto.generator.v1P\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -41,40 +41,60 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_EXCELGENERATEREPORTREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_options = b'8\001'
   _globals['_EXCELBATCHGENERATEREQUEST_TEXTPLACEHOLDERSENTRY']._loaded_options = None
   _globals['_EXCELBATCHGENERATEREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_options = b'8\001'
+  _globals['_TABLEAGGREGATIONTYPE']._serialized_start=3279
+  _globals['_TABLEAGGREGATIONTYPE']._serialized_end=3473
+  _globals['_CHARTAGGREGATIONTYPE']._serialized_start=3476
+  _globals['_CHARTAGGREGATIONTYPE']._serialized_end=3674
   _globals['_TABLEDATA']._serialized_start=70
   _globals['_TABLEDATA']._serialized_end=161
   _globals['_TABLEROW']._serialized_start=163
   _globals['_TABLEROW']._serialized_end=188
-  _globals['_CHARTDATA']._serialized_start=190
-  _globals['_CHARTDATA']._serialized_end=305
-  _globals['_CHARTSERIES']._serialized_start=307
-  _globals['_CHARTSERIES']._serialized_end=350
-  _globals['_PPTXGENERATEREPORTREQUEST']._serialized_start=353
-  _globals['_PPTXGENERATEREPORTREQUEST']._serialized_end=693
-  _globals['_PPTXGENERATEREPORTREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_start=638
-  _globals['_PPTXGENERATEREPORTREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_end=693
-  _globals['_PPTXGENERATEREPORTRESPONSE']._serialized_start=696
-  _globals['_PPTXGENERATEREPORTRESPONSE']._serialized_end=883
-  _globals['_PPTXBATCHGENERATEREQUEST']._serialized_start=886
-  _globals['_PPTXBATCHGENERATEREQUEST']._serialized_end=1225
-  _globals['_PPTXBATCHGENERATEREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_start=638
-  _globals['_PPTXBATCHGENERATEREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_end=693
-  _globals['_PPTXBATCHGENERATERESPONSE']._serialized_start=1227
-  _globals['_PPTXBATCHGENERATERESPONSE']._serialized_end=1349
-  _globals['_EXCELGENERATEREPORTREQUEST']._serialized_start=1352
-  _globals['_EXCELGENERATEREPORTREQUEST']._serialized_end=1694
-  _globals['_EXCELGENERATEREPORTREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_start=638
-  _globals['_EXCELGENERATEREPORTREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_end=693
-  _globals['_EXCELGENERATEREPORTRESPONSE']._serialized_start=1697
-  _globals['_EXCELGENERATEREPORTRESPONSE']._serialized_end=1885
-  _globals['_EXCELBATCHGENERATEREQUEST']._serialized_start=1888
-  _globals['_EXCELBATCHGENERATEREQUEST']._serialized_end=2229
-  _globals['_EXCELBATCHGENERATEREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_start=638
-  _globals['_EXCELBATCHGENERATEREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_end=693
-  _globals['_EXCELBATCHGENERATERESPONSE']._serialized_start=2231
-  _globals['_EXCELBATCHGENERATERESPONSE']._serialized_end=2355
-  _globals['_PPTXGENERATORSERVICE']._serialized_start=2358
-  _globals['_PPTXGENERATORSERVICE']._serialized_end=2579
-  _globals['_EXCELGENERATORSERVICE']._serialized_start=2582
-  _globals['_EXCELGENERATORSERVICE']._serialized_end=2808
+  _globals['_GENERATORTABLEDATA']._serialized_start=191
+  _globals['_GENERATORTABLEDATA']._serialized_end=357
+  _globals['_GENERATORTABLEROW']._serialized_start=359
+  _globals['_GENERATORTABLEROW']._serialized_end=393
+  _globals['_CHARTDATA']._serialized_start=395
+  _globals['_CHARTDATA']._serialized_end=510
+  _globals['_GENERATORCHARTDATA']._serialized_start=513
+  _globals['_GENERATORCHARTDATA']._serialized_end=694
+  _globals['_CHARTSERIES']._serialized_start=696
+  _globals['_CHARTSERIES']._serialized_end=739
+  _globals['_PPTXGENERATEREPORTREQUEST']._serialized_start=742
+  _globals['_PPTXGENERATEREPORTREQUEST']._serialized_end=1082
+  _globals['_PPTXGENERATEREPORTREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_start=1027
+  _globals['_PPTXGENERATEREPORTREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_end=1082
+  _globals['_PPTXGENERATEREPORTRESPONSE']._serialized_start=1085
+  _globals['_PPTXGENERATEREPORTRESPONSE']._serialized_end=1272
+  _globals['_PPTXBATCHGENERATEREQUEST']._serialized_start=1275
+  _globals['_PPTXBATCHGENERATEREQUEST']._serialized_end=1614
+  _globals['_PPTXBATCHGENERATEREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_start=1027
+  _globals['_PPTXBATCHGENERATEREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_end=1082
+  _globals['_PPTXBATCHGENERATERESPONSE']._serialized_start=1616
+  _globals['_PPTXBATCHGENERATERESPONSE']._serialized_end=1738
+  _globals['_EXCELGENERATEREPORTREQUEST']._serialized_start=1741
+  _globals['_EXCELGENERATEREPORTREQUEST']._serialized_end=2083
+  _globals['_EXCELGENERATEREPORTREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_start=1027
+  _globals['_EXCELGENERATEREPORTREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_end=1082
+  _globals['_EXCELGENERATEREPORTRESPONSE']._serialized_start=2086
+  _globals['_EXCELGENERATEREPORTRESPONSE']._serialized_end=2274
+  _globals['_EXCELBATCHGENERATEREQUEST']._serialized_start=2277
+  _globals['_EXCELBATCHGENERATEREQUEST']._serialized_end=2618
+  _globals['_EXCELBATCHGENERATEREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_start=1027
+  _globals['_EXCELBATCHGENERATEREQUEST_TEXTPLACEHOLDERSENTRY']._serialized_end=1082
+  _globals['_EXCELBATCHGENERATERESPONSE']._serialized_start=2620
+  _globals['_EXCELBATCHGENERATERESPONSE']._serialized_end=2744
+  _globals['_UPDATESHEETREQUEST']._serialized_start=2747
+  _globals['_UPDATESHEETREQUEST']._serialized_end=2926
+  _globals['_UPDATESHEETROW']._serialized_start=2928
+  _globals['_UPDATESHEETROW']._serialized_end=2984
+  _globals['_CELLVALUE']._serialized_start=2986
+  _globals['_CELLVALUE']._serialized_end=3098
+  _globals['_SHEETFORMATTING']._serialized_start=3100
+  _globals['_SHEETFORMATTING']._serialized_end=3188
+  _globals['_UPDATESHEETRESPONSE']._serialized_start=3190
+  _globals['_UPDATESHEETRESPONSE']._serialized_end=3276
+  _globals['_PPTXGENERATORSERVICE']._serialized_start=3677
+  _globals['_PPTXGENERATORSERVICE']._serialized_end=3898
+  _globals['_EXCELGENERATORSERVICE']._serialized_start=3901
+  _globals['_EXCELGENERATORSERVICE']._serialized_end=4211
 # @@protoc_insertion_point(module_scope)

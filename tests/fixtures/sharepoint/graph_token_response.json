@@ -1,0 +1,7 @@
+{
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "ext_expires_in": 3600,
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Rfa2lkIn0.eyJhdWQiOiJodHRwczovL2dyYXBoLm1pY3Jvc29mdC5jb20iLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC90ZXN0LXRlbmFudC8iLCJzdWIiOiJ0ZXN0LXN1YmplY3QiLCJleHAiOjk5OTk5OTk5OTksIm5iZiI6MTcwMDAwMDAwMH0.signature",
+  "token_endpoint": "https://login.microsoftonline.com/test-tenant-id/oauth2/v2.0/token"
+}

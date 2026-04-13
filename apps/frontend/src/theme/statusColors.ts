@@ -12,6 +12,11 @@ export const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   APPROVED: themeConfig.status.APPROVED,
   REJECTED: themeConfig.status.REJECTED,
   OVERDUE: themeConfig.status.OVERDUE,
+  // Export flow execution statuses (FS27)
+  PENDING: themeConfig.status.PENDING,
+  RUNNING: themeConfig.status.RUNNING,
+  SUCCESS: themeConfig.status.SUCCESS,
+  FAILED: themeConfig.status.FAILED,
 };
 
 export type ReportStatusKey = keyof typeof STATUS_COLORS;
@@ -35,6 +40,10 @@ export const STATUS_LABELS: Record<string, string> = {
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
   OVERDUE: 'Overdue',
+  PENDING: 'Pending',
+  RUNNING: 'Running',
+  SUCCESS: 'Success',
+  FAILED: 'Failed',
 };
 
 /**

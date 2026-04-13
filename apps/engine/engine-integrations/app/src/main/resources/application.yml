@@ -84,6 +84,21 @@ jwt:
   audience: ${JWT_AUDIENCE:}
   jwks-uri: ${JWT_JWKS_URI:https://login.microsoftonline.com/common/discovery/v2.0/keys}
 
+# Excel Sync configuration
+excel-sync:
+  enabled: ${EXCEL_SYNC_ENABLED:true}
+  thread-pool-size: ${EXCEL_SYNC_THREAD_POOL_SIZE:4}
+  allowed-paths: ${EXCEL_SYNC_ALLOWED_PATHS:/mnt/exports}
+  container-path-prefix: ${EXCEL_SYNC_CONTAINER_PATH_PREFIX:/mnt/exports/}
+  lock-ttl-ms: ${EXCEL_SYNC_LOCK_TTL:300000}
+  lock-retry-count: ${EXCEL_SYNC_LOCK_RETRY_COUNT:3}
+  lock-retry-interval-ms: ${EXCEL_SYNC_LOCK_RETRY_INTERVAL:5000}
+  max-file-size-mb: ${EXCEL_SYNC_MAX_FILE_SIZE_MB:50}
+
+# SharePoint configuration
+sharepoint:
+  token-cache-ttl-seconds: ${SHAREPOINT_TOKEN_CACHE_TTL:3300}
+
 # Service-Now configuration
 servicenow:
   connect-timeout-ms: ${SNOW_CONNECT_TIMEOUT:10000}
@@ -119,6 +134,7 @@ logging:
     com.reportplatform: ${LOG_LEVEL:INFO}
     com.reportplatform.engineintegrations: ${LOG_LEVEL_INTEGRATIONS:INFO}
     com.reportplatform.snow: ${LOG_LEVEL_SNOW:INFO}
+    com.reportplatform.excelsync: ${LOG_LEVEL_EXCEL_SYNC:INFO}
     org.springframework.security: WARN
     io.dapr: INFO
     io.opentelemetry.exporter: ${OTEL_LOG_LEVEL:OFF}

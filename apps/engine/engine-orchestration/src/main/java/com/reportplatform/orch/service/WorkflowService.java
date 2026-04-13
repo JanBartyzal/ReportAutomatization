@@ -115,6 +115,7 @@ public class WorkflowService {
                 history.markCompleted(WorkflowState.COMPLETED.name());
                 history.setStepsJson(serializeSteps(steps.stream().map(SagaOrchestrator.SagaStep::name).toList()));
                 workflowHistoryRepository.save(history);
+                publishDataImportedEvent(workflowId, fileId, fileType, orgId);
                 log.info("Workflow [{}] completed successfully", workflowId);
             }
             case SagaOrchestrator.SagaResult.Failure failure -> {
@@ -394,6 +395,34 @@ public class WorkflowService {
                 jobId, failedJob.getFileId(), failedJob.getRetryCount());
 
         return startWorkflow(failedJob.getFileId(), "UNKNOWN", failedJob.getOrgId(), null);
+    }
+
+    /**
+     * Publishes a {@code data-imported} event via Dapr PubSub after successful workflow completion.
+     * Fire-and-forget: failures are logged but never block the workflow.
+     */
+    private void publishDataImportedEvent(String workflowId, String fileId, String fileType, String orgId) {
+        try {
+            var event = new java.util.HashMap<String, Object>();
+            event.put("eventType", "data-imported");
+            event.put("batchId", workflowId);
+            event.put("orgId", orgId);
+            event.put("fileId", fileId);
+            event.put("fileName", "");
+            event.put("sourceType", fileType);
+            event.put("processedAt", java.time.Instant.now().toString());
+            event.put("tablesStored", 0);
+            event.put("correlationId", workflowId);
+
+            daprClient.publishEvent(
+                    "reportplatform-pubsub",
+                    "data-imported",
+                    event).block();
+            log.info("Published data-imported event for workflow [{}]", workflowId);
+        } catch (Exception e) {
+            log.error("Failed to publish data-imported event for workflow [{}]: {}",
+                    workflowId, e.getMessage(), e);
+        }
     }
 
     private List<SagaOrchestrator.SagaStep> buildPipelineSteps(

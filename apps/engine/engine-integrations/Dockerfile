@@ -22,6 +22,7 @@ RUN cd packages/java-base && mvn install -DskipTests -B \
 COPY apps/engine/engine-integrations/pom.xml apps/engine/engine-integrations/pom.xml
 COPY apps/engine/engine-integrations/common/pom.xml apps/engine/engine-integrations/common/pom.xml
 COPY apps/engine/engine-integrations/servicenow/pom.xml apps/engine/engine-integrations/servicenow/pom.xml
+COPY apps/engine/engine-integrations/excel-sync/pom.xml apps/engine/engine-integrations/excel-sync/pom.xml
 COPY apps/engine/engine-integrations/app/pom.xml apps/engine/engine-integrations/app/pom.xml
 
 # Download dependencies (cached layer)
@@ -30,6 +31,7 @@ RUN cd apps/engine/engine-integrations && mvn dependency:go-offline -B -pl app -
 # Copy source code
 COPY apps/engine/engine-integrations/common/src apps/engine/engine-integrations/common/src
 COPY apps/engine/engine-integrations/servicenow/src apps/engine/engine-integrations/servicenow/src
+COPY apps/engine/engine-integrations/excel-sync/src apps/engine/engine-integrations/excel-sync/src
 COPY apps/engine/engine-integrations/app/src apps/engine/engine-integrations/app/src
 
 # Build the application

@@ -5,7 +5,7 @@ import warnings
 
 from generator.v1 import generator_pb2 as generator_dot_v1_dot_generator__pb2
 
-GRPC_GENERATED_VERSION = '1.78.0'
+GRPC_GENERATED_VERSION = '1.80.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -181,6 +181,11 @@ class ExcelGeneratorServiceStub(object):
                 request_serializer=generator_dot_v1_dot_generator__pb2.ExcelBatchGenerateRequest.SerializeToString,
                 response_deserializer=generator_dot_v1_dot_generator__pb2.ExcelBatchGenerateResponse.FromString,
                 _registered_method=True)
+        self.UpdateSheet = channel.unary_unary(
+                '/generator.v1.ExcelGeneratorService/UpdateSheet',
+                request_serializer=generator_dot_v1_dot_generator__pb2.UpdateSheetRequest.SerializeToString,
+                response_deserializer=generator_dot_v1_dot_generator__pb2.UpdateSheetResponse.FromString,
+                _registered_method=True)
 
 
 class ExcelGeneratorServiceServicer(object):
@@ -205,6 +210,13 @@ class ExcelGeneratorServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def UpdateSheet(self, request, context):
+        """Update a single sheet in an existing Excel workbook (preserves all other sheets)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ExcelGeneratorServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -217,6 +229,11 @@ def add_ExcelGeneratorServiceServicer_to_server(servicer, server):
                     servicer.BatchGenerate,
                     request_deserializer=generator_dot_v1_dot_generator__pb2.ExcelBatchGenerateRequest.FromString,
                     response_serializer=generator_dot_v1_dot_generator__pb2.ExcelBatchGenerateResponse.SerializeToString,
+            ),
+            'UpdateSheet': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdateSheet,
+                    request_deserializer=generator_dot_v1_dot_generator__pb2.UpdateSheetRequest.FromString,
+                    response_serializer=generator_dot_v1_dot_generator__pb2.UpdateSheetResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -278,6 +295,33 @@ class ExcelGeneratorService(object):
             '/generator.v1.ExcelGeneratorService/BatchGenerate',
             generator_dot_v1_dot_generator__pb2.ExcelBatchGenerateRequest.SerializeToString,
             generator_dot_v1_dot_generator__pb2.ExcelBatchGenerateResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpdateSheet(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/generator.v1.ExcelGeneratorService/UpdateSheet',
+            generator_dot_v1_dot_generator__pb2.UpdateSheetRequest.SerializeToString,
+            generator_dot_v1_dot_generator__pb2.UpdateSheetResponse.FromString,
             options,
             channel_credentials,
             insecure,
