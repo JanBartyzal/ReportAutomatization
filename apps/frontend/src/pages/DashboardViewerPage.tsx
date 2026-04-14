@@ -15,11 +15,12 @@ import { useDashboard, useDashboardQuery } from '../hooks/useDashboards';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { UnifiedTableView } from '../components/UnifiedTableView/UnifiedTableView';
 import { PeriodComparison } from '../components/PeriodComparison/PeriodComparison';
-import { 
-    BarChartWidget, 
-    LineChartWidget, 
-    PieChartWidget, 
-    HeatmapWidget 
+import {
+    BarChartWidget,
+    StackedBarChartWidget,
+    LineChartWidget,
+    PieChartWidget,
+    HeatmapWidget
 } from '../components/Charts';
 import { executeRawSql } from '../api/dashboards';
 import { FileContentType, type WidgetConfig, type AggregatedData } from '@reportplatform/types';
@@ -47,11 +48,11 @@ const useStyles = makeStyles({
     },
     grid: {
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
+        gridTemplateColumns: 'repeat(12, 1fr)',
         gap: tokens.spacingHorizontalM,
     },
     widget: {
-        minHeight: '300px',
+        minHeight: '200px',
     },
     widgetContent: {
         padding: tokens.spacingHorizontalM,
@@ -181,6 +182,8 @@ export default function DashboardViewerPage() {
                 );
             case 'BAR_CHART':
                 return <BarChartWidget data={data} />;
+            case 'STACKED_BAR_CHART':
+                return <StackedBarChartWidget data={data} />;
             case 'LINE_CHART':
                 return <LineChartWidget data={data} />;
             case 'PIE_CHART':
@@ -236,14 +239,25 @@ export default function DashboardViewerPage() {
             )}
 
             <div className={styles.grid}>
-                {dashboard.widgets.map((widget: WidgetConfig, index: number) => (
-                    <Card key={index} className={styles.widget}>
-                        <CardHeader header={<Title3>{widget.title}</Title3>} />
-                        <div className={styles.widgetContent}>
-                            {renderWidgetContent(widget, index)}
-                        </div>
-                    </Card>
-                ))}
+                {dashboard.widgets.map((widget: WidgetConfig, index: number) => {
+                    const colSpan = Math.min(Math.max((widget.config?.width as number) || 6, 1), 12);
+                    const height = (widget.config?.height as number) || 300;
+                    return (
+                        <Card
+                            key={index}
+                            className={styles.widget}
+                            style={{
+                                gridColumn: `span ${colSpan}`,
+                                minHeight: `${height}px`,
+                            }}
+                        >
+                            <CardHeader header={<Title3>{widget.title}</Title3>} />
+                            <div className={styles.widgetContent}>
+                                {renderWidgetContent(widget, index)}
+                            </div>
+                        </Card>
+                    );
+                })}
             </div>
 
             {dashboard.widgets.length === 0 && (

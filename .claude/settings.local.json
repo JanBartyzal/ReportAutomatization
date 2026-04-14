@@ -234,7 +234,11 @@
       "Bash(grep -l \"Drawer\" \"c:/Docker/ReportAutomatization/apps/frontend/node_modules/@fluentui/react-components/dist/\"*.d.ts)",
       "Bash(dir \"c:/Docker/ReportAutomatization/apps/frontend/node_modules/@fluentui\" /b)",
       "Bash(findstr /i drawer)",
-      "Bash(node -e \"const d = require\\('@fluentui/react-components'\\); console.log\\(Object.keys\\(d\\).filter\\(k => k.startsWith\\('Drawer'\\)\\)\\)\")"
+      "Bash(node -e \"const d = require\\('@fluentui/react-components'\\); console.log\\(Object.keys\\(d\\).filter\\(k => k.startsWith\\('Drawer'\\)\\)\\)\")",
+      "Bash(wc -l /c/Docker/ReportAutomatization/apps/frontend/src/pages/*.tsx)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(ls /c/Docker/ReportAutomatization/apps/frontend/node_modules/.bin/tsc*)",
+      "Bash(ls /c/Docker/ReportAutomatization/node_modules/.bin/tsc*)"
     ]
   }
 }

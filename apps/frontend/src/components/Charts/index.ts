@@ -1,5 +1,6 @@
 export * from './ChartWrapper';
 export * from './BarChartWidget';
+export * from './StackedBarChartWidget';
 export * from './LineChartWidget';
 export * from './PieChartWidget';
 export * from './HeatmapWidget';

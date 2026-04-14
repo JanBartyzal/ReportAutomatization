@@ -19,6 +19,7 @@ import {
 import { ArrowLeft24Regular, Save24Regular, Add24Regular, Delete24Regular, Share24Regular, Copy24Regular, QuestionCircle24Regular, ArrowDownload24Regular, ArrowUpload24Regular } from '@fluentui/react-icons';
 import { useDashboard, useCreateDashboard, useUpdateDashboard } from '../hooks/useDashboards';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useToast } from '../components/NotificationCenter/ToastContainer';
 import DashboardSqlEditor from '../components/Dashboard/DashboardSqlEditor';
 import SqlQueryHelperDialog from '../components/Dashboard/SqlQueryHelperDialog';
 import { WidgetExportDialog, WidgetImportDialog } from '../components/Dashboard/WidgetImportExportDialog';
@@ -73,6 +74,11 @@ const useStyles = makeStyles({
         flexDirection: 'column',
         gap: tokens.spacingVerticalXS,
     },
+    headerActions: {
+        marginLeft: 'auto',
+        display: 'flex',
+        gap: tokens.spacingHorizontalS,
+    },
     actions: {
         display: 'flex',
         gap: tokens.spacingHorizontalM,
@@ -81,11 +87,20 @@ const useStyles = makeStyles({
     tabList: {
         marginBottom: tokens.spacingHorizontalL,
     },
+    sizePresetsRow: {
+        gridColumn: '1 / -1',
+    },
+    sizePresetsButtons: {
+        display: 'flex',
+        gap: tokens.spacingHorizontalS,
+        flexWrap: 'wrap' as const,
+    },
 });
 
 const WIDGET_TYPES: { value: WidgetType; label: string }[] = [
     { value: WidgetType.TABLE, label: 'Table' },
     { value: WidgetType.BAR_CHART, label: 'Bar Chart' },
+    { value: WidgetType.STACKED_BAR_CHART, label: 'Stacked Bar Chart' },
     { value: WidgetType.LINE_CHART, label: 'Line Chart' },
     { value: WidgetType.PIE_CHART, label: 'Pie Chart' },
     { value: WidgetType.HEATMAP, label: 'Heatmap' },
@@ -125,6 +140,7 @@ export default function DashboardEditorPage() {
     const [showSqlHelper, setShowSqlHelper] = useState(false);
     const [exportWidget, setExportWidget] = useState<WidgetConfig | null>(null);
     const [showImportDialog, setShowImportDialog] = useState(false);
+    const toast = useToast();
 
     // Sync local state when dashboard data loads (useState initializer only runs once)
     useEffect(() => {
@@ -151,13 +167,16 @@ export default function DashboardEditorPage() {
         try {
             if (isNew) {
                 const result = await createDashboard.mutateAsync(config);
+                toast('success', 'Dashboard created', `"${name}" was created successfully.`);
                 navigate(`/dashboards/${result.id}`);
             } else {
                 await updateDashboard.mutateAsync({ dashboardId: dashboardId!, config });
+                toast('success', 'Dashboard saved', `"${name}" was saved successfully.`);
                 navigate(`/dashboards/${dashboardId}`);
             }
         } catch (error) {
             console.error('Failed to save dashboard:', error);
+            toast('error', 'Save failed', 'Could not save the dashboard. Please try again.');
         }
     };
 
@@ -239,25 +258,36 @@ export default function DashboardEditorPage() {
                     Back
                 </Button>
                 <Title2>{isNew ? 'New Dashboard' : 'Edit Dashboard'}</Title2>
-                {!isNew && (
-                    <>
-                        <Button
-                            appearance="subtle"
-                            icon={<Share24Regular />}
-                            onClick={handleShare}
-                            style={{ marginLeft: 'auto' }}
-                        >
-                            Share
-                        </Button>
-                        <Button
-                            appearance="subtle"
-                            icon={<Copy24Regular />}
-                            onClick={handleClone}
-                        >
-                            Clone
-                        </Button>
-                    </>
-                )}
+                <div className={styles.headerActions}>
+                    {!isNew && (
+                        <>
+                            <Button
+                                appearance="subtle"
+                                icon={<Share24Regular />}
+                                onClick={handleShare}
+                            >
+                                Share
+                            </Button>
+                            <Button
+                                appearance="subtle"
+                                icon={<Copy24Regular />}
+                                onClick={handleClone}
+                            >
+                                Clone
+                            </Button>
+                        </>
+                    )}
+                    <Button
+                        appearance="primary"
+                        icon={<Save24Regular />}
+                        onClick={handleSave}
+                        disabled={!name || createDashboard.isPending || updateDashboard.isPending}
+                    >
+                        {createDashboard.isPending || updateDashboard.isPending
+                            ? 'Saving...'
+                            : isNew ? 'Create Dashboard' : 'Save Changes'}
+                    </Button>
+                </div>
             </div>
 
             <TabList
@@ -303,14 +333,6 @@ export default function DashboardEditorPage() {
                     </div>
 
                     <div className={styles.actions}>
-                        <Button
-                            appearance="primary"
-                            icon={<Save24Regular />}
-                            onClick={handleSave}
-                            disabled={!name || createDashboard.isPending || updateDashboard.isPending}
-                        >
-                            {isNew ? 'Create Dashboard' : 'Save Changes'}
-                        </Button>
                         <Button
                             appearance="subtle"
                             onClick={() => navigate('/dashboards')}
@@ -468,8 +490,34 @@ export default function DashboardEditorPage() {
                                             </div>
                                         )}
 
+                                        <div className={`${styles.field} ${styles.sizePresetsRow}`}>
+                                            <Body1><strong>Size Presets</strong></Body1>
+                                            <div className={styles.sizePresetsButtons}>
+                                                <Button size="small" appearance={(widget.config as any)?.width === 4 ? 'primary' : 'secondary'}
+                                                    onClick={() => updateWidget(index, { config: { ...(widget.config as any), width: 4, height: 300 } })}>
+                                                    1/3 Width
+                                                </Button>
+                                                <Button size="small" appearance={(widget.config as any)?.width === 6 ? 'primary' : 'secondary'}
+                                                    onClick={() => updateWidget(index, { config: { ...(widget.config as any), width: 6, height: 300 } })}>
+                                                    Half
+                                                </Button>
+                                                <Button size="small" appearance={(widget.config as any)?.width === 12 && ((widget.config as any)?.height || 300) <= 400 ? 'primary' : 'secondary'}
+                                                    onClick={() => updateWidget(index, { config: { ...(widget.config as any), width: 12, height: 400 } })}>
+                                                    Full Width
+                                                </Button>
+                                                <Button size="small" appearance={(widget.config as any)?.width === 12 && ((widget.config as any)?.height || 300) >= 600 ? 'primary' : 'secondary'}
+                                                    onClick={() => updateWidget(index, { config: { ...(widget.config as any), width: 12, height: 700 } })}>
+                                                    Full Width Large
+                                                </Button>
+                                                <Button size="small" appearance={(widget.config as any)?.width === 12 && ((widget.config as any)?.height || 300) >= 900 ? 'primary' : 'secondary'}
+                                                    onClick={() => updateWidget(index, { config: { ...(widget.config as any), width: 12, height: 1000 } })}>
+                                                    Presentation
+                                                </Button>
+                                            </div>
+                                        </div>
+
                                         <div className={styles.field}>
-                                            <Body1>Width (1-12)</Body1>
+                                            <Body1>Width (1-12 columns)</Body1>
                                             <SpinButton
                                                 value={(widget.config as any)?.width || 6}
                                                 min={1}
@@ -487,7 +535,7 @@ export default function DashboardEditorPage() {
                                             <SpinButton
                                                 value={(widget.config as any)?.height || 300}
                                                 min={100}
-                                                max={800}
+                                                max={1200}
                                                 step={50}
                                                 onChange={(_ev: any, data: any) =>
                                                     updateWidget(index, {

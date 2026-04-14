@@ -50,6 +50,7 @@ import { StatusBadge } from '../components/shared/StatusBadge';
 import { PageHeader } from '../components/shared/PageHeader';
 import { ReportStatus } from '@reportplatform/types';
 import RejectionDialog from '../components/Lifecycle/RejectionDialog';
+import { useToast } from '../components/NotificationCenter/ToastContainer';
 
 const useStyles = makeStyles({
     container: {
@@ -80,6 +81,12 @@ const useStyles = makeStyles({
     },
     filterGap: {
         marginLeft: tokens.spacingHorizontalS,
+    },
+    warningBanner: {
+        padding: tokens.spacingHorizontalM,
+        backgroundColor: tokens.colorStatusWarningBackground1,
+        border: `1px solid ${tokens.colorStatusWarningBorder1}`,
+        borderRadius: tokens.borderRadiusMedium,
     },
 });
 
@@ -121,6 +128,7 @@ export const ReportsPage: React.FC = () => {
     const { data: orgsData } = useOrganizations();
     const { data: periodsData } = usePeriods();
 
+    const toast = useToast();
     const createMutation = useCreateReport();
     const submitMutation = useSubmitReport();
     const approveMutation = useApproveReport();
@@ -153,7 +161,11 @@ export const ReportsPage: React.FC = () => {
                     setNewReportOrg('');
                     setNewReportPeriod('');
                     setNewReportType('OPEX');
+                    toast('success', 'Report created', `${newReportType} report was created successfully.`);
                     navigate(`/reports/${report.id}`);
+                },
+                onError: () => {
+                    toast('error', 'Failed to create report', 'Please try again or check that the organization and period are valid.');
                 },
             }
         );
@@ -406,6 +418,17 @@ export const ReportsPage: React.FC = () => {
                     <DialogBody>
                         <DialogTitle>Create New Report</DialogTitle>
                         <DialogContent style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM, paddingTop: tokens.spacingVerticalM }}>
+                            {(organizations.length === 0 || periods.length === 0) && (
+                                <div className={styles.warningBanner}>
+                                    <Body1>
+                                        {organizations.length === 0 && periods.length === 0
+                                            ? 'No organizations or periods configured. Please set them up in Admin first.'
+                                            : organizations.length === 0
+                                                ? 'No organizations configured. Please create one in Admin \u2192 Manage first.'
+                                                : 'No reporting periods configured. Please create one in Admin \u2192 Manage first.'}
+                                    </Body1>
+                                </div>
+                            )}
                             <div>
                                 <Label required>Organization</Label>
                                 <Dropdown

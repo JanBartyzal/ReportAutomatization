@@ -10,12 +10,13 @@ import {
     RadioGroup,
     Radio,
     Label,
-    Select,
+    Dropdown,
     Option,
 } from '@fluentui/react-components';
 import { ArrowUpload24Regular } from '@fluentui/react-icons';
 import { useUpload } from '../hooks/useFiles';
 import { useBatches, useAddFileToBatch } from '../hooks/useBatches';
+import { useToast } from '../components/NotificationCenter/ToastContainer';
 
 const useStyles = makeStyles({
     container: {
@@ -71,6 +72,7 @@ export default function UploadPage() {
     const uploadMutation = useUpload();
     const addFileToBatch = useAddFileToBatch();
     const { data: batches } = useBatches();
+    const toast = useToast();
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [selectedPurpose, setSelectedPurpose] = useState<string>('PARSE');
     const [selectedBatchId, setSelectedBatchId] = useState<string>('');
@@ -96,18 +98,23 @@ export default function UploadPage() {
                             batchId: selectedBatchId,
                             fileId: result.file_id,
                         });
+                        toast('success', 'File uploaded', `"${file.name}" was uploaded and assigned to batch.`);
                     } catch (batchError) {
                         console.error('Failed to assign file to batch:', batchError);
+                        toast('warning', 'File uploaded, batch assignment failed', `"${file.name}" was uploaded but could not be assigned to the batch.`);
                     }
+                } else {
+                    toast('success', 'File uploaded', `"${file.name}" was uploaded successfully.`);
                 }
 
                 navigate('/files');
             } catch (error) {
                 console.error('Upload failed:', error);
                 setUploadProgress(null);
+                toast('error', 'Upload failed', `Could not upload "${file.name}". Please try again.`);
             }
         }
-    }, [uploadMutation, selectedPurpose, selectedBatchId, addFileToBatch, navigate]);
+    }, [uploadMutation, selectedPurpose, selectedBatchId, addFileToBatch, navigate, toast]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
@@ -145,17 +152,22 @@ export default function UploadPage() {
                 <Label style={{ display: 'block', marginBottom: tokens.spacingVerticalS }}>
                     Assign to Batch (optional)
                 </Label>
-                <Select
-                    value={selectedBatchId}
-                    onChange={(_: any, data: any) => setSelectedBatchId(data.value)}
+                <Dropdown
+                    placeholder="Select a batch..."
+                    value={(() => {
+                        if (!selectedBatchId) return '— No batch —';
+                        const batch = (batches || []).find((b: any) => b.id === selectedBatchId);
+                        return batch ? `${batch.name} (${batch.period})` : selectedBatchId;
+                    })()}
+                    onOptionSelect={(_: any, data: any) => setSelectedBatchId(data.optionValue ?? '')}
                 >
                     <Option value="">— No batch —</Option>
                     {(batches || []).map((batch: any) => (
-                        <Option key={batch.id} value={batch.id} text={`${batch.name} (${batch.period}) — ${batch.status}`}>
+                        <Option key={batch.id} value={batch.id}>
                             {batch.name} ({batch.period}) — {batch.status}
                         </Option>
                     ))}
-                </Select>
+                </Dropdown>
             </div>
 
             <div
