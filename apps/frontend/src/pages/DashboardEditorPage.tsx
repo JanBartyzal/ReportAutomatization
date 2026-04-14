@@ -126,7 +126,7 @@ export default function DashboardEditorPage() {
     const styles = useStyles();
     const { dashboardId } = useParams<{ dashboardId: string }>();
     const navigate = useNavigate();
-    const isNew = dashboardId === 'new';
+    const isNew = !dashboardId;
 
     const { data: existingDashboard, isLoading } = useDashboard(dashboardId || '');
     const createDashboard = useCreateDashboard();
@@ -174,9 +174,15 @@ export default function DashboardEditorPage() {
                 toast('success', 'Dashboard saved', `"${name}" was saved successfully.`);
                 navigate(`/dashboards/${dashboardId}`);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to save dashboard:', error);
-            toast('error', 'Save failed', 'Could not save the dashboard. Please try again.');
+            const detail = error?.response?.data?.detail
+                || error?.response?.data?.message
+                || error?.response?.data?.errors?.join(', ')
+                || error?.message
+                || 'Unknown error';
+            const status = error?.response?.status;
+            toast('error', 'Save failed', `${status ? `[${status}] ` : ''}${detail}`);
         }
     };
 

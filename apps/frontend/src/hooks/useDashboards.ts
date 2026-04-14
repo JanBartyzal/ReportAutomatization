@@ -31,7 +31,7 @@ export function useDashboard(dashboardId: string) {
     return useQuery<DashboardConfig>({
         queryKey: ['dashboards', dashboardId],
         queryFn: () => getDashboard(dashboardId),
-        enabled: !!dashboardId && dashboardId !== 'new',
+        enabled: !!dashboardId,
     });
 }
 

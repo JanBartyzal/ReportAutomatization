@@ -3,7 +3,7 @@
  * FS27 – Live Excel Export & External Sync
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     DataGrid,
     DataGridHeader,
@@ -129,8 +129,8 @@ function ExpandableRow({ item, columnCount }: ExpandableRowProps) {
     return (
         <>
             <DataGridRow<ExportFlowExecution> key={item.id}>
-                {({ renderCell, column }) => {
-                    if (column.columnId === 'expand') {
+                {({ renderCell, columnId }) => {
+                    if (columnId === 'expand') {
                         return (
                             <DataGridCell style={{ width: '32px', paddingRight: 0 }}>
                                 {hasError ? (
@@ -151,9 +151,9 @@ function ExpandableRow({ item, columnCount }: ExpandableRowProps) {
             </DataGridRow>
             {expanded && hasError && (
                 <DataGridRow<ExportFlowExecution> key={`${item.id}-err`}>
-                    {({ column }) => {
-                        if (column.columnId === 'expand') return <DataGridCell />;
-                        if (column.columnId === 'status') {
+                    {({ columnId }) => {
+                        if (columnId === 'expand') return <DataGridCell />;
+                        if (columnId === 'status') {
                             return (
                                 <DataGridCell colSpan={columnCount - 1}>
                                     <div className={styles.errorRow}>

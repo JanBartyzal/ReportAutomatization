@@ -10,7 +10,7 @@
  *   5. Trigger       – MANUAL / AUTO + optional triggerFilter JSON
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogSurface,

@@ -163,7 +163,7 @@ export default function UploadPage() {
                 >
                     <Option value="">— No batch —</Option>
                     {(batches || []).map((batch: any) => (
-                        <Option key={batch.id} value={batch.id}>
+                        <Option key={batch.id} value={batch.id} text={`${batch.name} (${batch.period}) — ${batch.status}`}>
                             {batch.name} ({batch.period}) — {batch.status}
                         </Option>
                     ))}

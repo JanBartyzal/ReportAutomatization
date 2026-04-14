@@ -238,7 +238,25 @@
       "Bash(wc -l /c/Docker/ReportAutomatization/apps/frontend/src/pages/*.tsx)",
       "Bash(./node_modules/.bin/tsc --noEmit)",
       "Bash(ls /c/Docker/ReportAutomatization/apps/frontend/node_modules/.bin/tsc*)",
-      "Bash(ls /c/Docker/ReportAutomatization/node_modules/.bin/tsc*)"
+      "Bash(ls /c/Docker/ReportAutomatization/node_modules/.bin/tsc*)",
+      "Bash(ls node_modules/typescript/bin/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/api/dashboards -H \"Authorization: Bearer dev-bypass-token\" -H \"X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515\" -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" -H \"X-Roles: HOLDING_ADMIN\")",
+      "Bash(curl -s -w \"\\\\n%{http_code}\" http://localhost/api/dashboards -H \"Authorization: Bearer dev-bypass-token\" -H \"X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515\" -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" -H \"X-Roles: HOLDING_ADMIN\")",
+      "Bash(curl -sv http://localhost/api/dashboards -H \"Authorization: Bearer dev-bypass-token\" -H \"X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515\" -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" -H \"X-Roles: HOLDING_ADMIN\")",
+      "Bash(curl -sv http://localhost:8081/api/auth/verify -H \"Authorization: Bearer dev-bypass-token\")",
+      "Bash(curl -sv http://localhost:8100/api/dashboards -H \"Authorization: Bearer dev-bypass-token\" -H \"X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515\" -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" -H \"X-Roles: HOLDING_ADMIN\")",
+      "Bash(curl -s -w \"\\\\nHTTP_STATUS: %{http_code}\" http://localhost/api/dashboards/ -H \"Authorization: Bearer dev-bypass-token\")",
+      "Bash(curl -sv http://localhost/api/dashboards/ -H \"Authorization: Bearer dev-bypass-token\")",
+      "Bash(curl -s -w \"\\\\nHTTP: %{http_code}\" http://localhost:8100/api/dashboards -H \"X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515\" -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" -H \"X-Roles: HOLDING_ADMIN,HOLDING_ADMIN\")",
+      "Bash(curl -s -w \"\\\\nHTTP: %{http_code}\" http://localhost:8100/api/dashboards/ -H \"X-User-Id: 6bbc3213-00ac-4d30-bf27-7477b207c515\" -H \"X-Org-Id: a0000000-0000-0000-0000-000000000001\" -H \"X-Roles: HOLDING_ADMIN\")",
+      "Bash(\"i:/apache-maven-3.9.6/bin/mvn.cmd\" -f apps/engine/engine-data/pom.xml clean compile -q)",
+      "Bash(\"I:\\\\\\\\apache-maven-3.9.6\\\\\\\\bin\\\\\\\\mvn.cmd\" -f \"c:\\\\\\\\Docker\\\\\\\\ReportAutomatization\\\\\\\\apps\\\\\\\\engine\\\\\\\\engine-data\\\\\\\\pom.xml\" clean compile -q)",
+      "Bash(ls \"/c/Program Files/\"*maven*/bin/mvn*)",
+      "Bash(ls /c/Docker/ReportAutomatization/docker-compose*.yml /c/Docker/ReportAutomatization/infra/docker/docker-compose*.yml)",
+      "Bash(curl -s -w \"\\\\nHTTP: %{http_code}\" http://localhost/api/dashboards/ -H \"Authorization: Bearer dev-bypass-token\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8100/actuator/health)",
+      "Bash(curl -s -w \"\\\\nHTTP: %{http_code}\" -X POST http://localhost/api/dashboards/ -H \"Authorization: Bearer dev-bypass-token\" -H \"Content-Type: application/json\" -d '{\"name\":\"Test Save\",\"description\":\"test\",\"config\":{\"widgets\":[]},\"chartType\":\"bar\",\"is_public\":false}')",
+      "Bash(curl -s -X DELETE http://localhost/api/dashboards/48f39c3b-ade9-444f-8f5f-786e5f73cb79 -H \"Authorization: Bearer dev-bypass-token\" -w \"\\\\nHTTP: %{http_code}\")"
     ]
   }
 }
