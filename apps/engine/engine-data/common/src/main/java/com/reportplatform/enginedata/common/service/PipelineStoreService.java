@@ -180,6 +180,7 @@ public class PipelineStoreService {
         }
         String metadataJson = toJson(metadata);
 
+        String effectiveSheet = sheetName != null ? sheetName : "Sheet1";
         UUID id = UUID.randomUUID();
         entityManager.createNativeQuery(
                         "INSERT INTO parsed_tables (id, file_id, org_id, source_sheet, headers, rows, metadata, created_at) " +
@@ -191,13 +192,130 @@ public class PipelineStoreService {
                 .setParameter("id", id)
                 .setParameter("fileId", fileId)
                 .setParameter("orgId", orgId)
-                .setParameter("sourceSheet", sheetName != null ? sheetName : "Sheet1")
+                .setParameter("sourceSheet", effectiveSheet)
                 .setParameter("headers", headersJson)
                 .setParameter("rows", rowsJson)
                 .setParameter("metadata", metadataJson)
                 .executeUpdate();
 
+        // Resolve actual id (ON CONFLICT may have kept the existing row's id)
+        Object idResult = entityManager.createNativeQuery(
+                        "SELECT id FROM parsed_tables WHERE file_id = :fileId AND source_sheet = :sourceSheet")
+                .setParameter("fileId", fileId)
+                .setParameter("sourceSheet", effectiveSheet)
+                .getSingleResult();
+
+        if (idResult != null) {
+            UUID tableId = UUID.fromString(idResult.toString());
+            propagateSemiAutoCorrections(tableId, orgId, effectiveSheet);
+        }
+
         return 1;
+    }
+
+    /**
+     * After storing a new/updated parsed table, look for manual corrections that were
+     * previously applied to other tables in the same org+sheet. If the new table still
+     * has the same original (wrong) value at the same position, automatically apply the
+     * correction and mark it as SEMI_AUTOMATIC — without any AI involvement.
+     */
+    private void propagateSemiAutoCorrections(UUID tableId, String orgId, String sourceSheet) {
+        try {
+            // --- Cell-value and column-type corrections ---
+            int cellCount = entityManager.createNativeQuery(
+                            "INSERT INTO sink_corrections " +
+                            "    (id, parsed_table_id, org_id, row_index, col_index, original_value, corrected_value, " +
+                            "     correction_type, corrected_by, corrected_at, metadata) " +
+                            "SELECT " +
+                            "    gen_random_uuid(), " +
+                            "    CAST(:tableId AS uuid), " +
+                            "    :orgId, " +
+                            "    prev.row_index, " +
+                            "    prev.col_index, " +
+                            "    prev.original_value, " +
+                            "    prev.corrected_value, " +
+                            "    prev.correction_type, " +
+                            "    'SEMI_AUTOMATIC', " +
+                            "    NOW(), " +
+                            "    '{\"source\":\"semi_automatic\"}'::jsonb " +
+                            "FROM ( " +
+                            "    SELECT DISTINCT ON (sc.row_index, sc.col_index) " +
+                            "        sc.row_index, sc.col_index, sc.original_value, sc.corrected_value, sc.correction_type " +
+                            "    FROM sink_corrections sc " +
+                            "    JOIN parsed_tables pt ON sc.parsed_table_id = pt.id " +
+                            "    WHERE pt.org_id = :orgId " +
+                            "      AND pt.source_sheet = :sourceSheet " +
+                            "      AND pt.id != CAST(:tableId AS uuid) " +
+                            "      AND sc.corrected_by != 'SEMI_AUTOMATIC' " +
+                            "      AND sc.correction_type IN ('CELL_VALUE', 'COLUMN_TYPE') " +
+                            "      AND sc.row_index IS NOT NULL " +
+                            "      AND sc.col_index IS NOT NULL " +
+                            "    ORDER BY sc.row_index, sc.col_index, sc.corrected_at DESC " +
+                            ") prev " +
+                            "JOIN parsed_tables new_pt ON new_pt.id = CAST(:tableId AS uuid) " +
+                            "WHERE (new_pt.rows -> prev.row_index ->> prev.col_index) = prev.original_value " +
+                            "  AND NOT EXISTS ( " +
+                            "      SELECT 1 FROM sink_corrections ex " +
+                            "      WHERE ex.parsed_table_id = CAST(:tableId AS uuid) " +
+                            "        AND ex.row_index = prev.row_index " +
+                            "        AND ex.col_index = prev.col_index " +
+                            "  )")
+                    .setParameter("tableId", tableId.toString())
+                    .setParameter("orgId", orgId)
+                    .setParameter("sourceSheet", sourceSheet)
+                    .executeUpdate();
+
+            // --- Header-rename corrections ---
+            int headerCount = entityManager.createNativeQuery(
+                            "INSERT INTO sink_corrections " +
+                            "    (id, parsed_table_id, org_id, row_index, col_index, original_value, corrected_value, " +
+                            "     correction_type, corrected_by, corrected_at, metadata) " +
+                            "SELECT " +
+                            "    gen_random_uuid(), " +
+                            "    CAST(:tableId AS uuid), " +
+                            "    :orgId, " +
+                            "    NULL, " +
+                            "    prev.col_index, " +
+                            "    prev.original_value, " +
+                            "    prev.corrected_value, " +
+                            "    'HEADER_RENAME', " +
+                            "    'SEMI_AUTOMATIC', " +
+                            "    NOW(), " +
+                            "    '{\"source\":\"semi_automatic\"}'::jsonb " +
+                            "FROM ( " +
+                            "    SELECT DISTINCT ON (sc.col_index) " +
+                            "        sc.col_index, sc.original_value, sc.corrected_value " +
+                            "    FROM sink_corrections sc " +
+                            "    JOIN parsed_tables pt ON sc.parsed_table_id = pt.id " +
+                            "    WHERE pt.org_id = :orgId " +
+                            "      AND pt.source_sheet = :sourceSheet " +
+                            "      AND pt.id != CAST(:tableId AS uuid) " +
+                            "      AND sc.corrected_by != 'SEMI_AUTOMATIC' " +
+                            "      AND sc.correction_type = 'HEADER_RENAME' " +
+                            "      AND sc.col_index IS NOT NULL " +
+                            "    ORDER BY sc.col_index, sc.corrected_at DESC " +
+                            ") prev " +
+                            "JOIN parsed_tables new_pt ON new_pt.id = CAST(:tableId AS uuid) " +
+                            "WHERE (new_pt.headers ->> prev.col_index) = prev.original_value " +
+                            "  AND NOT EXISTS ( " +
+                            "      SELECT 1 FROM sink_corrections ex " +
+                            "      WHERE ex.parsed_table_id = CAST(:tableId AS uuid) " +
+                            "        AND ex.col_index = prev.col_index " +
+                            "        AND ex.row_index IS NULL " +
+                            "  )")
+                    .setParameter("tableId", tableId.toString())
+                    .setParameter("orgId", orgId)
+                    .setParameter("sourceSheet", sourceSheet)
+                    .executeUpdate();
+
+            if (cellCount + headerCount > 0) {
+                log.info("Semi-auto corrections propagated for table [{}] org [{}] sheet [{}]: {} cell, {} header",
+                        tableId, orgId, sourceSheet, cellCount, headerCount);
+            }
+        } catch (Exception e) {
+            // Propagation is best-effort — never fail the main store operation
+            log.warn("Semi-auto correction propagation failed for table [{}]: {}", tableId, e.getMessage());
+        }
     }
 
     // ---------------------------------------------------------------

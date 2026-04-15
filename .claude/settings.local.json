@@ -256,7 +256,9 @@
       "Bash(curl -s -w \"\\\\nHTTP: %{http_code}\" http://localhost/api/dashboards/ -H \"Authorization: Bearer dev-bypass-token\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8100/actuator/health)",
       "Bash(curl -s -w \"\\\\nHTTP: %{http_code}\" -X POST http://localhost/api/dashboards/ -H \"Authorization: Bearer dev-bypass-token\" -H \"Content-Type: application/json\" -d '{\"name\":\"Test Save\",\"description\":\"test\",\"config\":{\"widgets\":[]},\"chartType\":\"bar\",\"is_public\":false}')",
-      "Bash(curl -s -X DELETE http://localhost/api/dashboards/48f39c3b-ade9-444f-8f5f-786e5f73cb79 -H \"Authorization: Bearer dev-bypass-token\" -w \"\\\\nHTTP: %{http_code}\")"
+      "Bash(curl -s -X DELETE http://localhost/api/dashboards/48f39c3b-ade9-444f-8f5f-786e5f73cb79 -H \"Authorization: Bearer dev-bypass-token\" -w \"\\\\nHTTP: %{http_code}\")",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(grep -r \"server.port\\\\|server:\\\\|port:\" c:/Docker/ReportAutomatization/docker-compose*.yml)"
     ]
   }
 }

@@ -20,8 +20,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Query service for Sink Browser (FS25).
@@ -61,29 +64,38 @@ public class SinkQueryService {
 
     /**
      * List all sinks with summary info, paginated.
+     * @param search searches source_sheet name (case-insensitive contains)
      */
     @Transactional(readOnly = true)
     public SinkListResponse listSinks(String orgId, int page, int size,
-                                       String fileId, String sourceSheet) {
+                                       String fileId, String search) {
         setRlsContext(orgId);
 
         PageRequest pageRequest = PageRequest.of(page, size);
         Page<ParsedTableEntity> tablePage;
 
-        if (fileId != null && sourceSheet != null) {
+        if (fileId != null && search != null) {
             tablePage = parsedTableRepository.findByOrgIdAndFileIdAndSourceSheetContainingIgnoreCaseOrderByCreatedAtDesc(
-                    orgId, fileId, sourceSheet, pageRequest);
+                    orgId, fileId, search, pageRequest);
         } else if (fileId != null) {
             tablePage = parsedTableRepository.findByOrgIdAndFileIdOrderByCreatedAtDesc(orgId, fileId, pageRequest);
-        } else if (sourceSheet != null) {
+        } else if (search != null) {
             tablePage = parsedTableRepository.findByOrgIdAndSourceSheetContainingIgnoreCaseOrderByCreatedAtDesc(
-                    orgId, sourceSheet, pageRequest);
+                    orgId, search, pageRequest);
         } else {
             tablePage = parsedTableRepository.findByOrgIdOrderByCreatedAtDesc(orgId, pageRequest);
         }
 
+        // Bulk-fetch real filenames from ingestor.files (cross-schema, single query)
+        List<String> rawFileIds = tablePage.getContent().stream()
+                .map(ParsedTableEntity::getFileId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<String, String> filenameMap = fetchFilenames(rawFileIds);
+
         List<SinkListItemDto> items = tablePage.getContent().stream()
-                .map(this::toListItem)
+                .map(t -> toListItem(t, filenameMap))
                 .toList();
 
         UUID nextCursor = tablePage.hasNext() && !items.isEmpty()
@@ -185,6 +197,39 @@ public class SinkQueryService {
                 table.getCreatedAt());
     }
 
+    // --- Filename lookup ---
+
+    /**
+     * Fetches human-readable filenames from the ingestor schema.
+     * {@code ingestor.files.id::text} matches {@code parsed_tables.file_id} directly.
+     * Falls back to a truncated file ID when the file is not found.
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, String> fetchFilenames(List<String> fileIds) {
+        Map<String, String> result = new HashMap<>();
+        if (fileIds.isEmpty()) return result;
+
+        // Pass as a comma-separated string; string_to_array avoids dynamic SQL
+        String csv = String.join(",", fileIds);
+        try {
+            List<Object[]> rows = entityManager.createNativeQuery(
+                            "SELECT f.id::text, f.filename " +
+                            "FROM ingestor.files f " +
+                            "WHERE f.id::text = ANY(string_to_array(:csv, ','))")
+                    .setParameter("csv", csv)
+                    .getResultList();
+
+            for (Object[] row : rows) {
+                if (row[0] != null && row[1] != null) {
+                    result.put(row[0].toString(), row[1].toString());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not fetch filenames from ingestor.files: {}", e.getMessage());
+        }
+        return result;
+    }
+
     // --- Correction overlay logic ---
 
     private Object applyHeaderCorrections(Object headers, List<SinkCorrectionEntity> corrections) {
@@ -270,15 +315,20 @@ public class SinkQueryService {
 
     // --- Mapping helpers ---
 
-    private SinkListItemDto toListItem(ParsedTableEntity table) {
+    private SinkListItemDto toListItem(ParsedTableEntity table, Map<String, String> filenameMap) {
         int rowCount = countRows(table.getRows());
         int colCount = countColumns(table.getHeaders());
         long corrCount = correctionRepository.countByParsedTableId(table.getId());
         boolean hasSel = selectionRepository.existsByParsedTableId(table.getId());
 
+        String rawId = table.getFileId();
+        String filename = filenameMap.getOrDefault(rawId,
+                rawId.length() > 8 ? rawId.substring(0, 8) + "…" : rawId);
+
         return new SinkListItemDto(
                 table.getId(),
                 table.getFileId(),
+                filename,
                 table.getSourceSheet(),
                 rowCount,
                 colCount,

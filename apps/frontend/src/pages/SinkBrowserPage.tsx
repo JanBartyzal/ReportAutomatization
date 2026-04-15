@@ -10,7 +10,7 @@ import {
   createTableColumn,
   TableCellLayout,
 } from '@fluentui/react-components';
-import { Search24Regular } from '@fluentui/react-icons';
+import { Search24Regular, DocumentRegular } from '@fluentui/react-icons';
 import { useSinks } from '../hooks/useSinks';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { DataTable } from '../components/shared/DataTable';
@@ -26,9 +26,37 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalM,
     marginBottom: tokens.spacingVerticalL,
     flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  filterGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalXS,
+  },
+  filterLabel: {
+    fontSize: tokens.fontSizeBase200,
+    color: tokens.colorNeutralForeground3,
+    fontWeight: tokens.fontWeightSemibold,
   },
   correctionBadge: {
     cursor: 'default',
+  },
+  filenameCell: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalXS,
+    color: tokens.colorNeutralForeground3,
+    fontSize: tokens.fontSizeBase200,
+  },
+  pagination: {
+    marginTop: tokens.spacingVerticalM,
+    display: 'flex',
+    gap: tokens.spacingHorizontalM,
+    alignItems: 'center',
+    color: tokens.colorNeutralForeground3,
+  },
+  dimText: {
+    color: tokens.colorNeutralForeground4,
   },
 });
 
@@ -43,7 +71,7 @@ export default function SinkBrowserPage() {
   const columns: TableColumnDefinition<SinkListItem>[] = [
     createTableColumn<SinkListItem>({
       columnId: 'sourceSheet',
-      renderHeaderCell: () => 'Source / Sheet',
+      renderHeaderCell: () => 'Sheet / Name',
       renderCell: (item) => (
         <TableCellLayout>
           <Button
@@ -57,11 +85,14 @@ export default function SinkBrowserPage() {
       ),
     }),
     createTableColumn<SinkListItem>({
-      columnId: 'fileId',
-      renderHeaderCell: () => 'File ID',
+      columnId: 'filename',
+      renderHeaderCell: () => 'File (Batch)',
       renderCell: (item) => (
-        <TableCellLayout truncate>
-          {item.fileId.substring(0, 8)}...
+        <TableCellLayout>
+          <span className={styles.filenameCell}>
+            <DocumentRegular fontSize={14} />
+            {item.filename}
+          </span>
         </TableCellLayout>
       ),
     }),
@@ -70,7 +101,7 @@ export default function SinkBrowserPage() {
       renderHeaderCell: () => 'Size',
       renderCell: (item) => (
         <TableCellLayout>
-          {item.rowCount} rows × {item.columnCount} cols
+          {item.rowCount} × {item.columnCount}
         </TableCellLayout>
       ),
     }),
@@ -84,7 +115,7 @@ export default function SinkBrowserPage() {
               {item.correctionCount}
             </Badge>
           ) : (
-            <span>—</span>
+            <span className={styles.dimText}>—</span>
           )}
         </TableCellLayout>
       ),
@@ -97,7 +128,7 @@ export default function SinkBrowserPage() {
           {item.hasSelections ? (
             <Badge appearance="filled" color="success">Yes</Badge>
           ) : (
-            <span>—</span>
+            <span className={styles.dimText}>—</span>
           )}
         </TableCellLayout>
       ),
@@ -120,16 +151,44 @@ export default function SinkBrowserPage() {
       <PageHeader title="Sink Browser" />
 
       <div className={styles.filters}>
-        <Input
-          placeholder="Filter by file ID..."
-          contentBefore={<Search24Regular />}
-          onChange={(_, d) => setFilters((f) => ({ ...f, file_id: d.value || undefined, page: 0 }))}
-        />
-        <Input
-          placeholder="Filter by sheet name..."
-          contentBefore={<Search24Regular />}
-          onChange={(_, d) => setFilters((f) => ({ ...f, source_sheet: d.value || undefined, page: 0 }))}
-        />
+        {/* Search by sheet name */}
+        <div className={styles.filterGroup}>
+          <span className={styles.filterLabel}>Search by name</span>
+          <Input
+            placeholder="Sheet name..."
+            contentBefore={<Search24Regular />}
+            style={{ minWidth: 220 }}
+            value={(filters.search as string) ?? ''}
+            onChange={(_, d) =>
+              setFilters((f) => ({ ...f, search: d.value || undefined, page: 0 }))
+            }
+          />
+        </div>
+
+        {/* Filter by batch (file) */}
+        <div className={styles.filterGroup}>
+          <span className={styles.filterLabel}>Batch (File ID)</span>
+          <Input
+            placeholder="Paste file ID..."
+            style={{ minWidth: 220 }}
+            value={(filters.file_id as string) ?? ''}
+            onChange={(_, d) =>
+              setFilters((f) => ({ ...f, file_id: d.value || undefined, page: 0 }))
+            }
+          />
+        </div>
+
+        {/* Clear filters */}
+        {(filters.search || filters.file_id) && (
+          <Button
+            appearance="subtle"
+            size="small"
+            style={{ alignSelf: 'flex-end', marginBottom: 2 }}
+            onClick={() => setFilters({ page: 0, size: 20 })}
+          >
+            Clear filters
+          </Button>
+        )}
       </div>
 
       <DataTable
@@ -139,8 +198,26 @@ export default function SinkBrowserPage() {
       />
 
       {data && (
-        <div style={{ marginTop: tokens.spacingVerticalM, color: tokens.colorNeutralForeground3 }}>
-          Page {data.page + 1} of {data.totalPages} ({data.totalElements} total sinks)
+        <div className={styles.pagination}>
+          <Button
+            size="small"
+            appearance="subtle"
+            disabled={!filters.page || filters.page === 0}
+            onClick={() => setFilters((f) => ({ ...f, page: Math.max(0, (f.page ?? 0) - 1) }))}
+          >
+            ← Prev
+          </Button>
+          <span>
+            Page {(filters.page ?? 0) + 1} of {data.totalPages} &nbsp;·&nbsp; {data.totalElements} sinks
+          </span>
+          <Button
+            size="small"
+            appearance="subtle"
+            disabled={(filters.page ?? 0) + 1 >= data.totalPages}
+            onClick={() => setFilters((f) => ({ ...f, page: (f.page ?? 0) + 1 }))}
+          >
+            Next →
+          </Button>
         </div>
       )}
     </div>

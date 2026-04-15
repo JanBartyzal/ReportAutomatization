@@ -46,9 +46,12 @@ public class SinkBrowserController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size,
             @RequestParam(value = "file_id", required = false) String fileId,
-            @RequestParam(value = "source_sheet", required = false) String sourceSheet) {
+            @RequestParam(value = "source_sheet", required = false) String sourceSheet,
+            @RequestParam(value = "search", required = false) String search) {
 
-        SinkListResponse response = sinkQueryService.listSinks(orgId, page, size, fileId, sourceSheet);
+        // `search` takes priority over the legacy `source_sheet` param
+        String effectiveSearch = search != null ? search : sourceSheet;
+        SinkListResponse response = sinkQueryService.listSinks(orgId, page, size, fileId, effectiveSearch);
         return ResponseEntity.ok(response);
     }
 

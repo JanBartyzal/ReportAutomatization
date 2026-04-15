@@ -106,6 +106,17 @@ const useStyles = makeStyles({
     padding: tokens.spacingVerticalS,
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
   },
+  originalValue: {
+    textDecoration: 'line-through',
+    marginLeft: '4px',
+  },
+  correctionMeta: {
+    marginLeft: '8px',
+    color: tokens.colorNeutralForeground3,
+  },
+  semiAutoBadge: {
+    marginLeft: '4px',
+  },
 });
 
 const ERROR_CATEGORIES: ErrorCategory[] = [
@@ -324,12 +335,25 @@ export default function SinkDetailPage() {
             <div key={c.id} className={styles.correctionItem}>
               <div>
                 <Badge appearance="outline" size="small">{c.correctionType}</Badge>
+                {c.correctedBy === 'SEMI_AUTOMATIC' && (
+                  <Badge
+                    appearance="filled"
+                    color="informative"
+                    size="small"
+                    className={styles.semiAutoBadge}
+                    title="Applied automatically based on a previous manual correction for the same sheet"
+                  >
+                    semi-automatic
+                  </Badge>
+                )}
                 {' '}Row {c.rowIndex ?? '—'}, Col {c.colIndex ?? '—'}:
-                <span style={{ textDecoration: 'line-through', marginLeft: 4 }}>{c.originalValue}</span>
+                <span className={styles.originalValue}>{c.originalValue}</span>
                 {' → '}
                 <strong>{c.correctedValue}</strong>
-                <span style={{ marginLeft: 8, color: tokens.colorNeutralForeground3 }}>
-                  by {c.correctedBy} at {new Date(c.correctedAt).toLocaleString()}
+                <span className={styles.correctionMeta}>
+                  {c.correctedBy === 'SEMI_AUTOMATIC' ? 'auto-applied' : `by ${c.correctedBy}`}
+                  {' at '}
+                  {new Date(c.correctedAt).toLocaleString()}
                 </span>
               </div>
               <Dialog>

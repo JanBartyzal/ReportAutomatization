@@ -12,6 +12,7 @@ export type ErrorCategory = 'MERGED_CELLS' | 'WRONG_HEADER' | 'MISSING_ROW' | 'V
 export interface SinkListItem {
   id: string;
   fileId: string;
+  filename: string;
   sourceSheet: string;
   rowCount: number;
   columnCount: number;
@@ -106,4 +107,5 @@ export interface SinkListFilters {
   size?: number;
   file_id?: string;
   source_sheet?: string;
+  search?: string;
 }

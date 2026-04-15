@@ -7,6 +7,7 @@ const ENGINE_CORE = process.env.VITE_ENGINE_CORE_URL || 'http://localhost:8081';
 const ENGINE_INGESTOR = process.env.VITE_ENGINE_INGESTOR_URL || 'http://localhost:8082';
 const ENGINE_DATA = process.env.VITE_ENGINE_DATA_URL || 'http://localhost:8100';
 const ENGINE_REPORTING = process.env.VITE_ENGINE_REPORTING_URL || 'http://localhost:8105';
+const ENGINE_EXCEL_SYNC = process.env.VITE_ENGINE_EXCEL_SYNC_URL || 'http://localhost:8106';
 
 export default defineConfig({
     plugins: [react()],
@@ -36,6 +37,9 @@ export default defineConfig({
             '/api/dashboards': { target: ENGINE_DATA, changeOrigin: true },
             '/api/search': { target: ENGINE_DATA, changeOrigin: true, rewrite: (p) => p.replace('/api/search', '/api/v1/search') },
             '/api/comparisons': { target: ENGINE_DATA, changeOrigin: true },
+
+            // engine-excel-sync: export flows (FS27)
+            '/api/export-flows': { target: ENGINE_EXCEL_SYNC, changeOrigin: true },
 
             // engine-reporting: reports, periods, forms, templates, notifications
             '/api/reports': { target: ENGINE_REPORTING, changeOrigin: true },

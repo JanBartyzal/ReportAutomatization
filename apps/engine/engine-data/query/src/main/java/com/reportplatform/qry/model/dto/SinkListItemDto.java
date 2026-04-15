@@ -9,6 +9,7 @@ import java.util.UUID;
 public record SinkListItemDto(
         UUID id,
         String fileId,
+        String filename,
         String sourceSheet,
         int rowCount,
         int columnCount,
