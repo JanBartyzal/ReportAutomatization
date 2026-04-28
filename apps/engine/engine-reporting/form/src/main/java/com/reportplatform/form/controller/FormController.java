@@ -62,17 +62,18 @@ public class FormController {
             @Valid @RequestBody FormCreateRequest request,
             @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId,
             @RequestHeader(value = "X-Org-Id", required = false) String headerOrgId) {
-        // If orgId not provided in body, use the X-Org-Id header
-        FormCreateRequest effectiveRequest = request;
-        if ((request.orgId() == null || request.orgId().isBlank()) && headerOrgId != null) {
-            effectiveRequest = new FormCreateRequest(
-                    headerOrgId, request.title(), request.description(),
-                    request.scope(), request.ownerOrgId(), request.fields());
-        } else if (request.orgId() == null || request.orgId().isBlank()) {
-            effectiveRequest = new FormCreateRequest(
-                    "default-org", request.title(), request.description(),
-                    request.scope(), request.ownerOrgId(), request.fields());
+        // Resolve orgId: body takes precedence, then X-Org-Id header; reject if neither provided
+        String effectiveOrgId = (request.orgId() != null && !request.orgId().isBlank())
+                ? request.orgId()
+                : headerOrgId;
+        if (effectiveOrgId == null || effectiveOrgId.isBlank()) {
+            return ResponseEntity.badRequest().body(
+                    java.util.Map.of("error", "orgId is required in request body or X-Org-Id header"));
         }
+        FormCreateRequest effectiveRequest = (request.orgId() != null && !request.orgId().isBlank())
+                ? request
+                : new FormCreateRequest(effectiveOrgId, request.title(), request.description(),
+                        request.scope(), request.ownerOrgId(), request.fields());
         var form = formService.createForm(effectiveRequest, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(form);
     }
@@ -204,11 +205,11 @@ public class FormController {
             var result = excelImportService.importExcel(id, file);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            return ResponseEntity.ok(java.util.Map.of(
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of(
                     "form_id", id,
-                    "status", "IMPORTED",
-                    "rows_imported", 0,
-                    "message", "Excel import processed"));
+                    "status", "FAILED",
+                    "error", "Excel import failed",
+                    "detail", e.getMessage() != null ? e.getMessage() : "Unknown error"));
         }
     }
 }

@@ -1327,4 +1327,332 @@ export_flow_executions (
 
 ---
 
-*PPTX Analyzer & Automation Platform – Project Charter v5.1 | Březen 2026 | Interní dokument*
+*PPTX Analyzer & Automation Platform – Project Charter v5.3 | Duben 2026 | Interní dokument*
+
+
+## ChangeLog
+
+### v5.3 – 2026-04-28 – Multi-Backend Storage (POSTGRES / SPARK / BLOB) + Frontend DataSource Switcher
+
+#### Kontext
+Upgrade připravující platformu na soubežný provoz tří storage backendů pro tabulková data. Nová architektura umožňuje přepnout uložiště pro konkrétní organizaci/typ souboru bez restartu služby, a zároveň zobrazit v UI ze kterého zdroje data pocházejí.
+
+#### Backend – engine-data:sink-tbl
+
+| Soubor | Změna |
+|--------|-------|
+| `SparkTableStorageBackend.java` | Oprava viditelnosti konstanty `BACKEND_TYPE` → `public static final` |
+| `BlobTableStorageBackend.java` | **Nová třída** – 3. storage backend; serializuje záznamy jako JSON a nahrává je do Azure Blob Storage (`{orgId}/{fileId}/{sheet}.json`). Implementuje `TableStorageBackend` (bulkInsert + deleteByFileId). |
+| `engine-data/pom.xml` | Přidána managed dependency `azure-storage-blob:12.28.1` |
+| `sink-tbl/pom.xml` | Přidána dependency `azure-storage-blob` pro `BlobTableStorageBackend` |
+| `StorageRoutingAdminController.java` | Rozšířena validace backendu o hodnotu `BLOB` |
+
+#### Backend – engine-data:query
+
+| Soubor | Změna |
+|--------|-------|
+| `ParsedTableEntity.java` (query read-only) | Přidáno pole `storageBackend` mapované na sloupec `storage_backend` |
+| `QryParsedTableRepository.java` | Přidány metody pro filtrování podle `storageBackend` (4 varianty + `countByOrgIdAndStorageBackend`) |
+| `SinkListItemDto.java` | Přidáno pole `String storageBackend` do record |
+| `SinkQueryService.java` | `listSinks()` rozšířeno o parametr `storageBackend`; větvení dotazu pro filtrování; `toListItem()` mapuje `storageBackend` z entity |
+| `SinkBrowserController.java` | `GET /api/query/sinks` – přidán query param `?storage_backend=`; injektován `DataSourceStatsService`; přidán endpoint `GET /api/query/sinks/data-source-stats` |
+| `DataSourceStatsService.java` | **Nová třída** – agreguje statistiky ze tří backendů: počet řádků v Postgres, dostupnost a počet blobů v Azure Blob, dostupnost Spark API (health probe) |
+| `query/pom.xml` | Přidána dependency `azure-storage-blob` pro `DataSourceStatsService` |
+
+#### Backend – engine-data:app (DB migrace)
+
+| Migrace | Popis |
+|---------|-------|
+| `V11_0_3__sinktbl_add_blob_backend.sql` | Rozšiřuje `CHECK` constraint na `storage_routing_config.backend` o hodnotu `'BLOB'`; odstraňuje případný CHECK na `parsed_tables.storage_backend` |
+
+#### Backend – engine-data:app (Application)
+
+| Soubor | Změna |
+|--------|-------|
+| `EngineDataApplication.java` | Přidána anotace `@EnableScheduling` (potřebná pro `StorageRoutingService.refreshRules()`) |
+
+#### Shared TypeScript typy – @reportplatform/types
+
+| Soubor | Změna |
+|--------|-------|
+| `sinks.ts` | Přidán typ `StorageBackend = 'POSTGRES' \| 'SPARK' \| 'BLOB'`; do `SinkListItem` přidáno volitelné pole `storageBackend?`; do `SinkListFilters` přidáno pole `storage_backend?: StorageBackend \| 'ALL'` |
+| `storageRouting.ts` | **Nový soubor** – typy `DataSourceMode`, `StorageRoutingRule`, `UpsertRoutingRuleRequest`, `DataSourceStats` |
+| `index.ts` | Exportován nový modul `storageRouting` |
+
+#### Frontend – API a hooks
+
+| Soubor | Popis |
+|--------|-------|
+| `api/storageRouting.ts` | **Nový soubor** – klientské funkce: `listRoutingRules`, `upsertRoutingRule`, `deleteRoutingRule`, `refreshRoutingRules`, `getDataSourceStats` |
+| `hooks/useStorageRouting.ts` | **Nový soubor** – TanStack Query hooks: `useStorageRoutingRules`, `useUpsertRoutingRule`, `useDeleteRoutingRule`, `useRefreshRoutingRules`, `useDataSourceStats` (auto-refresh 60 s) |
+
+#### Frontend – nové komponenty
+
+| Komponenta | Popis |
+|-----------|-------|
+| `DataSource/DataSourceSwitcher.tsx` | **Nová komponenta** – přepínač zdroje dat (ALL / POSTGRES / SPARK / BLOB) s count badges, ikonami dostupnosti (✓/✗) a tooltips |
+| `Admin/StorageRoutingPanel.tsx` | **Nová komponenta** – admin tabulka pravidel routování s možností přidání/smazání pravidla a force-refresh cache; chráněno: globální výchozí pravidlo nelze smazat |
+
+#### Frontend – integrace do stránek
+
+| Stránka | Změna |
+|---------|-------|
+| `SinkBrowserPage.tsx` | Integrován `DataSourceSwitcher` nad filtry; přidán sloupec `Storage` (badge POSTGRES/SPARK/BLOB) do tabulky; stav `dataSourceMode` řídí query param `storage_backend` |
+| `AdminPage.tsx` | Přidána záložka **Storage Routing** s komponentou `StorageRoutingPanel` |
+| `FileDetailPage.tsx` | V pravém sidebaru přidána sekce **Uložená data** – zobrazuje počty sheets per storage backend (dle dat ze `useSinks`) |
+
+#### Dokumentace
+
+| Soubor | Popis |
+|--------|-------|
+| `docs/spark-migration-guide.md` | Existující průvodce migrací; platí i pro BLOB backend – viz sekce „Monitoring" a „Pre-Switch Checklist" |
+
+---
+
+### v5.3.1 – 2026-04-28 – Security Hardening, Error Handling & Build Fixes
+
+#### Kontext
+Čtyři průchody cross-cutting oprav zaměřených na bezpečnost (SQL injection v RLS interceptorech), robustnost (tiché výjimky → log.warn, unsafe collection access), správné HTTP status kódy a vynucení multi-tenant validace. Bez nových feature sets.
+
+#### Security – SQL Injection v RLS interceptorech
+
+Všechny `set_config()` volání přešly z string concatenace na JDBC parametry. Oprava se týká všech vrstev kde EntityManager volá PostgreSQL session proměnné.
+
+| Soubor | Změna |
+|--------|-------|
+| `engine-data/dashboard/config/RlsInterceptor.java` | `"set_config('app.current_org_id', '" + orgId + "'"` → `.setParameter("orgId", orgId)` a `.setParameter("role", sanitizedRole)` |
+| `engine-reporting/common/config/RlsInterceptor.java` | Stejné + opraveny parametry `userId` a `primaryRole` |
+| `engine-data/query/config/RlsInterceptor.java` | Stejné (předchozí kolo) |
+| `engine-data/query/service/SinkQueryService.java` | `SET LOCAL` → `set_config()` s parametrem |
+| `engine-data/query/service/NamedQueryService.java` | Stejné |
+| `engine-data/query/service/QueryService.java` | Stejné |
+| `engine-data/dashboard/service/AggregationService.java` | `set_config` přes `JdbcTemplate.execute(ConnectionCallback)` s `PreparedStatement` |
+
+#### Security & Robustnost – Validace vstupů a HTTP status kódy
+
+| Soubor | Změna |
+|--------|-------|
+| `engine-core/admin/controller/AdminController.java` | `catch (IllegalArgumentException ignored)` při UUID parsování `X-Org-Id` → `log.warn` + vrátí `400 Bad Request` |
+| `engine-core/admin/controller/PromotionController.java` | `listCandidates` tiché `200+empty` catch → `500`; `rejectCandidate` vždy 204 → UUID chyba `400`, service chyba `500`; `triggerMigration` stejné |
+| `engine-core/batch/controller/BatchController.java` | `UUID.randomUUID()` fallback pro `holdingId` odstraněn → `400` pokud chybí nebo neplatný formát |
+| `engine-core/versioning/controller/VersionController.java` | Version-not-found `200+empty` → `404`; generic catch `200+empty` → `500`; `getDiff` IllegalArgumentException → `404` |
+| `engine-integrations/servicenow/controller/IntegrationController.java` | `listConnections` required; `createConnection` `instanceUrl`/`credentialsRef` required; odstraněn `stub.service-now.com`; `deleteConnection` IllegalArgumentException → `404` |
+| `engine-reporting/form/controller/FormController.java` | Odstraněn `"default-org"` fallback → `400`; `importExcel` catch byl `200 IMPORTED` → `500 FAILED` |
+| `engine-reporting/form/controller/FormResponseController.java` | Odstraněn `"default-org"` fallback → `400` |
+| `engine-reporting/lifecycle/controller/ReportController.java` | Odstraněn `"default-org"` + `UUID.randomUUID()` pro `periodId` → `400` |
+| `engine-data/dashboard/controller/DashboardController.java` | `createDashboard` a `updateDashboard` – přidána null orgId validace → `400` |
+| `engine-data/query/controller/FileQueryController.java` | Hardcoded 1×1 placeholder PNG bytes → `501 Not Implemented` s `log.warn` |
+
+#### Robustnost – Tiché výjimky → log.warn
+
+| Soubor | Změna |
+|--------|-------|
+| `engine-reporting/common/config/HeaderAuthenticationFilter.java` | `catch (Exception ignored)` při JWT subject extrakci → `log.warn`; přidán `Logger` |
+| `engine-data/common/config/HeaderAuthenticationFilter.java` | Stejné |
+| `engine-integrations/servicenow/service/ItsmSyncService.java` | 2× `catch (Exception ignored)` (resolution time, age_days) → `log.warn` s kontextem |
+| `engine-integrations/servicenow/service/ProjectFetchService.java` | `catch (DateTimeParseException ignored)` → `log.warn`; `catch (NumberFormatException e) { return null; }` → `log.warn` |
+| `engine-data/query/service/QueryService.java` | `catch (NumberFormatException ignored)` při parsování slide indexu → `log.warn` |
+| `engine-data/dashboard/service/AggregationService.java` | `catch (NumberFormatException e) { return 0.0; }` → `log.warn` |
+| `engine-data/dashboard/service/ComparisonService.java` | Stejné |
+| `engine-integrations/servicenow/controller/ScheduleController.java` | Tiché fallback na defaultní cron `"0 0 0 * * ?"` → `logger.warn` |
+
+#### Robustnost – Unsafe collection access
+
+| Soubor | Změna |
+|--------|-------|
+| `engine-integrations/excel-sync/connector/SharePointConnector.java` | Trojité `json.get("value").get(0).get("id")` bez null checks → explicitní guard na `valueNode == null`, prázdné pole a chybějící `id` pole |
+
+#### Exception Handlery – scoping a doplnění
+
+| Soubor | Změna |
+|--------|-------|
+| `engine-core/admin/exception/GlobalExceptionHandler.java` | **Nový soubor** – `@RestControllerAdvice(basePackages="com.reportplatform.admin")`; IllegalArgumentException→400, NoSuchElementException→404, AccessDeniedException→403, Exception→500 |
+| `engine-core/batch/exception/GlobalExceptionHandler.java` | **Nový soubor** – stejná struktura, scoped na `com.reportplatform.batch` |
+| `engine-core/versioning/exception/GlobalExceptionHandler.java` | Přidán `basePackages`; IllegalArgumentException opraven na 400; přidán `NoSuchElementException→404` |
+| `engine-core/audit/exception/GlobalExceptionHandler.java` | Přidán `basePackages`; přidán `NoSuchElementException→404`; přidán `log.warn` do IllegalArgumentException handleru |
+
+#### Frontend – dynamická pole a opravy
+
+| Soubor | Změna |
+|--------|-------|
+| `pages/ExcelImportPage.tsx` | Odstraněn hardcoded seznam 17 polí → dynamický `useQuery` volající `templatesApi.getFormFields(formId)` |
+| `api/AiMcpProxyController.java` | Raw `Map.class` v RestTemplate volání → `ParameterizedTypeReference<Map<String,Object>>()` (3 volání) |
+
+#### Build – opravy TypeScript chyb
+
+| Soubor | Chyba → Oprava |
+|--------|----------------|
+| `components/Admin/StorageRoutingPanel.tsx` | Nepoužitý `React` import → odstraněn |
+| `pages/FileDetailPage.tsx` | Nepoužitý `StorageBackend` type import → odstraněn |
+| `pages/NamedQueryPage.tsx` | Nepoužitý `EditRegular` icon import → odstraněn |
+| `pages/ProjectsPage.tsx` | Nepoužitý `Search24Regular`; odstraněn unused `connSearch`/`setConnSearch` state; type chyba `c.name` → `c.instance_url` (`ServiceNowConnection` nemá pole `name`) |
+| `pages/TextTemplateEditorPage.tsx` | Nepoužitý `TextTemplate` type import → odstraněn |
+| `pages/TextTemplateRenderPage.tsx` | Nepoužitý `Card` import → odstraněn |
+
+#### Python – opravy tichých výjimek
+
+| Soubor | Změna |
+|--------|-------|
+| `processor-atomizers/pptx/service/spatial_extractor.py` | `except Exception: pass` → `except (AttributeError, TypeError) as e: logger.debug(...)` |
+| `processor-atomizers/pptx/service/pptx_service.py` | 2× `except OSError: pass` → `except OSError as e: logger.debug(...)` |
+
+---
+
+### v5.4 – 2026-04-28 – P8-W7 ServiceNow Project Sync + P8-W6/W9 Reporting Frontend + Stub/Mock Cleanup
+
+#### Kontext
+Implementace třetí vlny P8 rozšíření: synchronizace projektů ze ServiceNow (pm_project, pm_project_task, pm_project_budget_plan) s výpočtem RAG statusu a KPI metrik; kompletní frontend pro Reporting (Named Queries, Text Templates, Projekty); eliminace všech zbývajících STUB/MOCK odpovědí v backend controllerech.
+
+---
+
+#### Backend – engine-integrations (ServiceNow Project Sync)
+
+| Soubor | Změna |
+|--------|-------|
+| `V2_0_2__snow_project_sync.sql` | **Nová migrace** – tabulka `snow_project_sync_config`: konfigurační záznamy per-connection (syncScope ALL/ACTIVE_ONLY/BY_MANAGER, filterManagerEmails, budgetCurrency, RAG prahy: ragAmberBudgetThreshold, ragRedBudgetThreshold, ragAmberScheduleDays, ragRedScheduleDays, syncEnabled, lastSyncedAt); unique constraint na `connection_id` |
+| `ProjectSyncConfigEntity.java` | **Nová entita** – JPA mapping na `snow_project_sync_config`; BigDecimal thresholds; boolean syncEnabled |
+| `ProjectSyncConfigDto.java` | **Nový record DTO** – full projekce entity včetně timestamps |
+| `UpsertProjectSyncConfigRequest.java` | **Nový record** – patch-style request; `@NotBlank` na `budgetCurrency` |
+| `ProjectSyncConfigRepository.java` | **Nový repository** – `findByConnectionId`, `existsByConnectionId` |
+| `ProjectFetchService.java` | **Nová service** – stránkované fetchování ze SN API (pm_project + pm_project_task + pm_project_budget_plan); `enrichProjectRecord()` přidává `_kpi_*` pole (budgetUtilizationPct, costForecastAccuracy, scheduleVarianceDays, milestoneCompletionRate); `calculateRag()` vrací RED/AMBER/GREEN dle konfigurovatelných prahů; výsledky persistovány přes Dapr → ms-sink-tbl `/api/v1/projects/upsert` |
+| `IntegrationController.java` | Rozšířen o injekci `ProjectFetchService`; přidány 3 endpointy: `GET /{connectionId}/project-sync`, `POST /{connectionId}/project-sync`, `POST /{connectionId}/project-sync/trigger` |
+
+---
+
+#### Backend – engine-data (Snow Projects Query Layer)
+
+| Soubor | Změna |
+|--------|-------|
+| `V12_0_3__snow_project_tables.sql` | **Nová migrace** – tabulky `snow_projects` (KPI sloupce: budget_utilization_pct, schedule_variance_days, milestone_completion_rate, cost_forecast_accuracy, rag_status), `snow_project_tasks`, `snow_project_budgets`; RLS politiky na všech 3 tabulkách; seed 3 systémových Named Queries (Project RAG Dashboard, Project Budget Overview, Project Milestone Status) |
+| `SnowProjectEntity.java` | **Nová entita** – read-only JPA mapping na `snow_projects` |
+| `SnowProjectTaskEntity.java` | **Nová entita** – read-only JPA mapping na `snow_project_tasks` |
+| `SnowProjectBudgetEntity.java` | **Nová entita** – read-only JPA mapping na `snow_project_budgets` |
+| `SnowProjectRepository.java` | **Nový repository** – JPQL filtrovaný dotaz s RAG ordering (RED → AMBER → GREEN), filtry: orgId, connectionId, ragStatus, status, managerEmail; stránkování |
+| `SnowProjectTaskRepository.java` | **Nový repository** – `findByOrgIdAndProjectId` |
+| `SnowProjectBudgetRepository.java` | **Nový repository** – `findByOrgIdAndProjectId` |
+| `SnowProjectDto.java` | **Nový record DTO** – kompletní projekce projektu; volitelné listy `tasks` a `budgets` (null v list view, naplněné v detail view) |
+| `SnowProjectTaskDto.java` | **Nový record DTO** – projekce task entity |
+| `SnowProjectBudgetDto.java` | **Nový record DTO** – projekce budget entity |
+| `SnowProjectController.java` | **Nový controller** – `GET /api/v1/data/snow/projects` (stránkované, filtrovatelné), `GET /api/v1/data/snow/projects/{id}` (full detail s tasks + budgets) |
+
+---
+
+#### Shared TypeScript typy – @reportplatform/types
+
+| Soubor | Změna |
+|--------|-------|
+| `namedQueries.ts` | **Nový soubor** – typy `NamedQuery`, `CreateNamedQueryRequest`, `UpdateNamedQueryRequest`, `NamedQueryExecuteRequest`, `NamedQueryResult` |
+| `textTemplates.ts` | **Nový soubor** – typy `TextTemplate`, `BindingEntry`, `DataBindings`, `OutputFormat`, `TemplateType`, `RenderRequest`, `RenderResponse` |
+| `projects.ts` | **Nový soubor** – typy `SnowProject`, `SnowProjectTask`, `SnowProjectBudget`, `SnowProjectPage`, `ProjectSyncConfig`, `RagStatus`, `ProjectListFilters` |
+| `index.ts` | Přidány exporty modulů `namedQueries`, `textTemplates`, `projects` |
+
+---
+
+#### Frontend – API klienti
+
+| Soubor | Popis |
+|--------|-------|
+| `api/namedQueries.ts` | **Nový soubor** – `listNamedQueries`, `getNamedQuery`, `createNamedQuery`, `updateNamedQuery`, `deleteNamedQuery`, `executeNamedQuery` |
+| `api/textTemplates.ts` | **Nový soubor** – `listTextTemplates`, `getTextTemplate`, `createTextTemplate`, `updateTextTemplate`, `deleteTextTemplate`, `renderTextTemplate` |
+| `api/projects.ts` | **Nový soubor** – `listProjects`, `getProject`, `getProjectSyncConfig`, `upsertProjectSyncConfig`, `triggerProjectSync` |
+
+---
+
+#### Frontend – nové stránky
+
+| Stránka | Popis |
+|---------|-------|
+| `NamedQueryPage.tsx` | Katalog Named Queries – tabulka se search + datasource filtrem; dialog pro vytvoření (name, datasource, SQL); dialog pro spuštění s JSON preview výsledku (limit 50 řádků) |
+| `TextTemplateListPage.tsx` | Přehled text templates – tabulka s akcemi Edit a Render per řádek |
+| `TextTemplateEditorPage.tsx` | Editor šablony – name/description/templateType/outputFormats; markdown editor obsahu; správa data bindings (přidat/odebrat/upravit binding napojený na Named Query) |
+| `TextTemplateRenderPage.tsx` | Renderer šablony – výběr output formátu; automatická extrakce runtime parametrů z `{{input.X}}` ve vazebních params; tlačítko Download vygenerovaného souboru |
+| `ProjectsPage.tsx` | Přehled ServiceNow projektů – stránkovaná tabulka s RAG badge, ProgressBar pro budget utilization, barevné schedule variance; filtry connection/RAG/status/manager; trigger sync tlačítko |
+| `ProjectDetailPage.tsx` | Detail projektu – KPI card grid (budget utilization, schedule variance, milestone rate, cost forecast); TabList pro tasks a budgets; zvýrazňování po termínu; odkaz na generování reportu |
+
+#### Frontend – modifikované soubory
+
+| Soubor | Změna |
+|--------|-------|
+| `App.tsx` | Přidáno 7 nových routes: `/reporting/named-queries`, `/reporting/text-templates`, `/reporting/text-templates/new`, `/reporting/text-templates/:templateId/edit`, `/reporting/text-templates/:templateId/render`, `/projects`, `/projects/:projectId` |
+| `AppLayout.tsx` | Přidána sekce **Reporting** v navigaci (Text Templates – `DocumentText24Regular`, Named Queries – `CodeBlock24Regular`, Projects – `BriefcaseRegular`) |
+
+---
+
+#### Eliminace STUB/MOCK odpovědí
+
+Všechny catch bloky vracející falešné 200/201 odpovědi bez chybového kontextu nahrazeny správnými HTTP chybovými kódy.
+
+| Soubor | Metoda | Stará odpověď | Nová odpověď |
+|--------|--------|--------------|--------------|
+| `IntegrationController.java` | `getConnection` catch | `200 { id: "stub-...", status: "UNKNOWN" }` | `404 NOT_FOUND` |
+| `IntegrationController.java` | `createConnection` catch | `201 { id: "created-..." }` | `500 INTERNAL_SERVER_ERROR` |
+| `IntegrationController.java` | `updateConnection` catch | `200 { id: ..., status: "UPDATED" }` | `500 INTERNAL_SERVER_ERROR` |
+| `IntegrationController.java` | `testConnection` catch | `200 { tested: true, latencyMs: 0 }` | `200 { success: false, message: e.getMessage() }` |
+| `IntegrationController.java` | `triggerSync` catch | `202 { status: "SYNC_TRIGGERED" }` | `500 { status: "FAILED", message: e.getMessage() }` |
+| `PromotionController.java` | `updateCandidate` catch | `200 {}` | `500 INTERNAL_SERVER_ERROR` |
+| `PromotionController.java` | `approveCandidate` catch | `200 {}` | `500 INTERNAL_SERVER_ERROR` |
+| `VersionController.java` | `createVersionForEntity` catch | `201 { entityId: ... }` | `500 INTERNAL_SERVER_ERROR` |
+| `BatchController.java` | `createBatch` catch | `201 null body` | `500 INTERNAL_SERVER_ERROR` |
+| `ReportController.java` | `createReport` catch | `201 null body` | `500 INTERNAL_SERVER_ERROR` |
+| `ExcelImportPage.tsx` | upload error branch | mock `MappingSuggestion[]` vrácen při chybě | zůstane na upload stepu; zobrazí chybovou hlášku |
+
+---
+
+### v5.4.1 – 2026-04-28 – Security & Robustness Fixes (Code Review P8)
+
+#### Kontext
+Opravy nalezené při code review Phase 8 změn. Žádné nové feature sets – výhradně bezpečnostní, robustnostní a testovací opravy identifikované při analýze diff větve.
+
+---
+
+#### [HIGH] Security – SQL Injection v `NamedQueryService.assertReadOnly`
+
+| Soubor | Změna |
+|--------|-------|
+| `engine-data/query/service/NamedQueryService.java` | Blocklist `String[] forbidden = {"DELETE ", "INSERT ", …}` (jednoduché `contains` + trailing space) nahrazen 12 pre-kompilovanými `Pattern` s word-boundary `\b`. Catchuje `DELETE\nFROM`, `DELETE\tFROM`, víceřádkové DML i DML ve WITH-CTE. Přidána klíčová slova `EXECUTE`, `EXEC`, `CALL`, `GRANT`, `REVOKE`. |
+| `engine-data/query/service/NamedQueryService.java` | `assertReadOnly()` voláno nově i při `create()` a `update()` (storage-time validace) – nejen při `execute()` (runtime). Přidána statická konstanta `FORBIDDEN_SQL_PATTERNS = List.of(...)`. |
+
+---
+
+#### [MEDIUM] Security – Unencoded `orgId` v URL (`AiMcpProxyController`)
+
+| Soubor | Změna |
+|--------|-------|
+| `engine-data/query/controller/AiMcpProxyController.java` | Endpoint `GET /ai/quota`: přímá string concatenace `"?orgId=" + orgId` → `UriComponentsBuilder.fromUriString(...).queryParamIfPresent("orgId", Optional.ofNullable(orgId)).toUriString()`. Eliminuje potenciální URL injection při nestandardním formátu orgId. |
+| `engine-data/query/controller/AiMcpProxyController.java` | Timeouty RestTemplate hardcoded na 5s/30s → konfigurovatelné přes `dapr.proxy.connect-timeout-seconds` a `dapr.proxy.read-timeout-seconds` (výchozí hodnoty zachovány). `RestTemplate` inicializován v `@PostConstruct` po injekci `@Value` polí. |
+
+---
+
+#### [MEDIUM] Robustnost – `ItsmSyncService`: JSON parsing, transakce, timezone
+
+| Soubor | Změna |
+|--------|-------|
+| `engine-integrations/servicenow/service/ItsmSyncService.java` | `parseJsonArray(String json)`: ruční regex-split JSON pole (`replaceAll + split(",")`) nahrazen `objectMapper.readValue(json, new TypeReference<List<String>>() {})`. Správně zpracovává escaped znaky, whitespace a prázdné pole. `ObjectMapper` přidán do konstruktoru. |
+| `engine-integrations/servicenow/service/ItsmSyncService.java` | `syncGroup()` změněno na `@Transactional(propagation = REQUIRES_NEW)` – každá skupina ITSM sync běží v nezávislé transakci. `syncAllGroupsForConnection()` zbaveno `@Transactional` a volá `self.syncGroup(...)` přes self-injection (`@Lazy @Autowired ItsmSyncService self`) tak, aby Spring proxy zachytil anotaci `REQUIRES_NEW`. Chyba v jedné skupině je zalogována (`log.error`) a ostatní skupiny pokračují (best-effort sémantika). |
+| `engine-integrations/servicenow/service/ItsmSyncService.java` | `enrichItsmRecord()`: parsování SN datetime z `value.replace(" ", "T") + "Z"` (předpokládá UTC suffix bez validace) → nový helper `parseSnDatetime(String)` s primárním `DateTimeFormatter("yyyy-MM-dd HH:mm:ss", ZoneOffset.UTC)` a fallbackem na `Instant.parse()` pro ISO-8601. Přidána statická konstanta `SN_DATETIME_FORMATTER`. |
+
+---
+
+#### [LOW] Dokumentace kontraktu – `SparkTableStorageBackend` návratová hodnota
+
+| Soubor | Změna |
+|--------|-------|
+| `engine-data/sink-tbl/backend/TableStorageBackend.java` | Javadoc `bulkInsert()` rozšířen: explicitně dokumentuje rozdíl mezi synchronním POSTGRES backendem (vrací počet durably persistovaných záznamů) a asynchronním SPARK backendem (vrací `records.size()` = počet odeslaných událostí, skutečná persistence probíhá mimo JVM). Stejné pro `deleteByFileId()`. |
+| `engine-data/sink-tbl/backend/SparkTableStorageBackend.java` | Javadoc `bulkInsert()` upřesněn: „submitted for async ingestion", odkaz na interface kontrakt. |
+
+---
+
+#### [LOW] Robustnost – `NamedQueryController`: Exception handlery
+
+| Soubor | Změna |
+|--------|-------|
+| `engine-data/query/controller/NamedQueryController.java` | Přidány 3 `@ExceptionHandler` metody: `IllegalArgumentException` → `400 Bad Request` (neplatný UUID v `X-Org-Id` nebo SQL validace), `NoSuchElementException` → `404 Not Found`, `IllegalStateException` → `409 Conflict` (pokus o modifikaci system query nebo spuštění neaktivní query). Bez těchto handlerů všechny vyhazovaly `500 Internal Server Error`. |
+
+---
+
+#### Testy – nové unit testy
+
+| Soubor | Pokrytí |
+|--------|---------|
+| `engine-data/query/src/test/…/NamedQueryServiceTest.java` | **Nový soubor** – 15 testů. `AssertReadOnly_Rejected`: 18 SQL vzorů (DML keywords, nested DML v CTE, multi-statement, prázdný SQL). `AssertReadOnly_Allowed`: 5 bezpečných SELECT vzorů včetně identifikátorů obsahujících keyword (např. `update_count`, `deleted_at`). `Execute_Validation`: neaktivní query → `IllegalStateException`; entita s DML SQL → `IllegalArgumentException` při execute. |
+| `engine-data/sink-tbl/src/test/…/StorageRoutingServiceTest.java` | **Nový soubor** – 9 testů pokrývajících všech 5 úrovní specificity pravidel: org+source → fallback na POSTGRES při prázdných pravidlech; org+source beats org+wildcard; org beats source; source beats global; case-insensitive source matching; null orgId; výjimka při absenci backendu. |

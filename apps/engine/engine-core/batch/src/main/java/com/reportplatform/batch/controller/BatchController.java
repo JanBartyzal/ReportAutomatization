@@ -39,7 +39,7 @@ public class BatchController {
     @GetMapping({"", "/"})
     @Transactional
     @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
-    public ResponseEntity<List<BatchEntity>> listBatches(
+    public ResponseEntity<?> listBatches(
             @RequestParam(required = false) UUID holdingId,
             @RequestParam(required = false) String status,
             @RequestHeader(value = "X-Org-Id", required = false) String orgId) {
@@ -57,7 +57,8 @@ public class BatchController {
             return ResponseEntity.ok(batchRepository.findAll());
         } catch (Exception e) {
             logger.error("Failed to list batches: {}", e.getMessage(), e);
-            return ResponseEntity.ok(List.of());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to list batches", "detail", e.getMessage()));
         }
     }
 
@@ -111,16 +112,15 @@ public class BatchController {
             if (holdingId == null || holdingId.isBlank()) {
                 holdingId = orgIdHeader;
             }
-            if (holdingId != null && !holdingId.isBlank()) {
-                try {
-                    batch.setHoldingId(UUID.fromString(holdingId));
-                } catch (IllegalArgumentException e) {
-                    logger.warn("Invalid holding_id format: {}, generating default", holdingId);
-                    batch.setHoldingId(UUID.randomUUID());
-                }
-            } else {
-                // Generate a default holding ID to satisfy NOT NULL constraint
-                batch.setHoldingId(UUID.randomUUID());
+            if (holdingId == null || holdingId.isBlank()) {
+                logger.warn("createBatch rejected: holding_id/orgId is required");
+                return ResponseEntity.badRequest().body(null);
+            }
+            try {
+                batch.setHoldingId(UUID.fromString(holdingId));
+            } catch (IllegalArgumentException e) {
+                logger.warn("createBatch rejected: invalid holding_id format '{}'", holdingId);
+                return ResponseEntity.badRequest().body(null);
             }
 
             batch.setCreatedBy((String) request.getOrDefault("created_by",
@@ -136,15 +136,8 @@ public class BatchController {
             return ResponseEntity.status(HttpStatus.CREATED).body(saved);
         } catch (Exception e) {
             logger.error("Failed to create batch: {}", e.getMessage(), e);
-            // Return a stub response so UAT tests get 201 with expected fields
-            BatchEntity stub = new BatchEntity();
-            stub.setId(UUID.randomUUID());
-            stub.setName((String) request.getOrDefault("name", "Unnamed Batch"));
-            stub.setPeriod((String) request.getOrDefault("period", ""));
-            stub.setStatus(BatchEntity.BatchStatus.OPEN);
-            stub.setHoldingId(UUID.randomUUID());
-            stub.setCreatedBy("system");
-            return ResponseEntity.status(HttpStatus.CREATED).body(stub);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
         }
     }
 

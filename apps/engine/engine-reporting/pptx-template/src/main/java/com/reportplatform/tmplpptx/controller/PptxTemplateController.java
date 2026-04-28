@@ -50,106 +50,71 @@ public class PptxTemplateController {
     }
 
     /**
-     * Create a template placeholder (JSON-based, without file upload).
-     * Used for creating template records before file upload.
+     * JSON-only template creation is not supported — a PPTX file is required to extract placeholders.
+     * Use the multipart/form-data POST endpoint with an attached .pptx file instead.
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> createTemplateFromJson(
-            @RequestBody Map<String, Object> body,
-            @RequestHeader(value = "X-Org-Id", required = false) String orgId,
-            @RequestHeader(value = "X-User-Id", required = false) String userId) {
-
-        String name = (String) body.getOrDefault("name", "Untitled Template");
-        String scope = (String) body.getOrDefault("scope", "CENTRAL");
-        String description = (String) body.getOrDefault("description", "");
-
-        UUID templateId = UUID.randomUUID();
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "id", templateId,
-                "template_id", templateId,
-                "name", name,
-                "scope", scope,
-                "description", description,
-                "org_id", orgId != null ? orgId : "",
-                "created_by", userId != null ? userId : "system",
-                "status", "CREATED"));
+            @RequestBody Map<String, Object> body) {
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(Map.of(
+                "error", "Template creation requires a PPTX file upload",
+                "hint", "Use Content-Type: multipart/form-data and include 'file' field with the .pptx file"));
     }
 
     /**
-     * Generate a single PPTX from template.
+     * Trigger async PPTX generation for a report via processor-generators (Dapr gRPC).
+     * Generation is handled asynchronously — poll GET /generate/{jobId}/status for progress.
      */
     @PostMapping("/generate")
     @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, Object>> generatePptx(
             @RequestBody Map<String, Object> body,
             @RequestHeader(value = "X-Org-Id", required = false) String orgId) {
-
-        Object templateIdObj = body.getOrDefault("template_id", null);
-        String templateId = templateIdObj != null ? templateIdObj.toString() : "";
-        Object reportIdObj = body.getOrDefault("report_id", null);
-        UUID jobId = UUID.randomUUID();
-
-        Map<String, Object> response = new java.util.LinkedHashMap<>();
-        response.put("status", "QUEUED");
-        response.put("job_id", jobId);
-        response.put("id", jobId);
-        response.put("template_id", templateId);
-        if (reportIdObj != null) {
-            response.put("report_id", reportIdObj);
-        }
-        response.put("message", "PPTX generation queued");
-
-        return ResponseEntity.ok(response);
+        // PPTX generation is delegated to processor-generators via Dapr gRPC.
+        // This requires the processor-generators service to be running and registered in Dapr.
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(Map.of(
+                "error", "PPTX generation requires the processor-generators service running via Dapr",
+                "detail", "Invoke processor-generators Dapr app directly or wait for orchestrator integration"));
     }
 
     /**
-     * Get generation job status.
+     * Get async generation job status.
+     * Jobs are tracked by the processor-generators service.
      */
     @GetMapping("/generate/{jobId}/status")
     @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, Object>> getGenerationStatus(@PathVariable UUID jobId) {
-        return ResponseEntity.ok(Map.of(
-                "job_id", jobId,
-                "status", "COMPLETED",
-                "progress", 100,
-                "message", "Generation completed"));
+        // No local job store exists — generation jobs are managed by processor-generators.
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                "error", "Generation job not found",
+                "job_id", jobId.toString(),
+                "detail", "Job tracking requires the processor-generators Dapr service"));
     }
 
     /**
-     * Download generated PPTX file.
+     * Download a generated PPTX file produced by processor-generators.
      */
     @GetMapping("/generate/{jobId}/download")
     @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
-    public ResponseEntity<byte[]> downloadGenerated(@PathVariable UUID jobId) {
-        // Return minimal placeholder PPTX (empty zip)
-        byte[] placeholder = new byte[]{0x50, 0x4B, 0x05, 0x06, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-        return ResponseEntity.ok()
-                .header("Content-Disposition", "attachment; filename=generated-" + jobId + ".pptx")
-                .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
-                .body(placeholder);
+    public ResponseEntity<Map<String, Object>> downloadGenerated(@PathVariable UUID jobId) {
+        // No generated file exists — downloads are served from blob storage after processor-generators completes.
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                "error", "Generated file not found",
+                "job_id", jobId.toString(),
+                "detail", "File becomes available after successful generation by processor-generators"));
     }
 
     /**
-     * Batch generate PPTX from template.
+     * Trigger batch PPTX generation for multiple reports via processor-generators (Dapr gRPC).
      */
     @PostMapping("/generate/batch")
     @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, Object>> batchGenerate(
             @RequestBody Map<String, Object> body,
             @RequestHeader(value = "X-Org-Id", required = false) String orgId) {
-
-        Object templateIdObj = body.getOrDefault("template_id", null);
-        String templateId = templateIdObj != null ? templateIdObj.toString() : "";
-        Object reportIdsObj = body.getOrDefault("report_ids", java.util.List.of());
-        UUID batchId = UUID.randomUUID();
-
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(
-                "status", "QUEUED",
-                "template_id", templateId,
-                "batch_id", batchId,
-                "job_id", batchId,
-                "report_ids", reportIdsObj,
-                "message", "Batch generation queued"));
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(Map.of(
+                "error", "Batch PPTX generation requires the processor-generators service running via Dapr",
+                "detail", "Submit individual generation requests or wait for orchestrator batch integration"));
     }
 
     /**

@@ -132,8 +132,8 @@ class SpatialTableExtractor:
                         if shape.placeholder_format and shape.placeholder_format.idx in (0, 1):
                             actual_title = shape.text_frame.text.strip()
                             break
-                    except Exception:
-                        pass
+                    except (AttributeError, TypeError) as e:
+                        logger.debug("Skipping shape placeholder access: %s", e)
             if actual_title:
                 score += 0.3  # Has a title
 

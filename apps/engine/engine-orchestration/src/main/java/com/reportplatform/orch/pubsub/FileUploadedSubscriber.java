@@ -63,11 +63,12 @@ public class FileUploadedSubscriber {
                 str(data.get("uploadedBy")),
                 data.get("fileSizeBytes") instanceof Number n ? n.longValue() : 0L,
                 str(data.get("uploadPurpose")),
-                str(data.get("blobUrl"))
+                str(data.get("blobUrl")),
+                str(data.get("storageHint"))
         );
 
-        log.info("Received file-uploaded event: fileId={}, fileType={}, orgId={}, purpose={}",
-                event.fileId(), event.fileType(), event.orgId(), event.uploadPurpose());
+        log.info("Received file-uploaded event: fileId={}, fileType={}, orgId={}, purpose={}, storageHint={}",
+                event.fileId(), event.fileType(), event.orgId(), event.uploadPurpose(), event.storageHint());
 
         try {
             String workflowId;
@@ -79,7 +80,8 @@ public class FileUploadedSubscriber {
                 log.info("FORM_IMPORT Workflow [{}] started for file [{}]", workflowId, event.fileId());
             } else {
                 workflowId = workflowService.startWorkflow(
-                        event.fileId(), event.fileType(), event.orgId(), event.blobUrl());
+                        event.fileId(), event.fileType(), event.orgId(), event.blobUrl(),
+                        event.storageHint());
                 log.info("FILE_PROCESSING Workflow [{}] started for file [{}]", workflowId, event.fileId());
             }
         } catch (Exception e) {
@@ -108,6 +110,8 @@ public class FileUploadedSubscriber {
             String uploadedBy,
             long fileSizeBytes,
             String uploadPurpose,
-            String blobUrl) {
+            String blobUrl,
+            /** "POSTGRES" (default) or "SPARK" – routes the STORE step. */
+            String storageHint) {
     }
 }

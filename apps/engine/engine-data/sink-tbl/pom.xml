@@ -52,6 +52,12 @@
             <artifactId>javax.annotation-api</artifactId>
             <version>1.3.2</version>
         </dependency>
+
+        <!-- Azure Blob Storage – used by BlobTableStorageBackend -->
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-storage-blob</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

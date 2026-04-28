@@ -48,13 +48,16 @@ public class FormResponseController {
             @Valid @RequestBody FormResponseCreateRequest request,
             @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId,
             @RequestHeader(value = "X-Org-Id", required = false) String headerOrgId) {
-        // If orgId not provided in body, use X-Org-Id header
-        FormResponseCreateRequest effectiveRequest = request;
-        if ((request.orgId() == null || request.orgId().isBlank()) && headerOrgId != null) {
-            effectiveRequest = new FormResponseCreateRequest(headerOrgId, request.periodId(), request.data());
-        } else if (request.orgId() == null || request.orgId().isBlank()) {
-            effectiveRequest = new FormResponseCreateRequest("default-org", request.periodId(), request.data());
+        // Resolve orgId: body takes precedence, then X-Org-Id header; reject if neither provided
+        String effectiveOrgId = (request.orgId() != null && !request.orgId().isBlank())
+                ? request.orgId()
+                : headerOrgId;
+        if (effectiveOrgId == null || effectiveOrgId.isBlank()) {
+            return ResponseEntity.badRequest().body(null);
         }
+        FormResponseCreateRequest effectiveRequest = (request.orgId() != null && !request.orgId().isBlank())
+                ? request
+                : new FormResponseCreateRequest(effectiveOrgId, request.periodId(), request.data());
         var response = formResponseService.createResponse(formId, effectiveRequest, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

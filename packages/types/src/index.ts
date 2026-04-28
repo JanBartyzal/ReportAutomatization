@@ -11,3 +11,7 @@ export * from './admin';
 export * from './integration';
 export * from './promotion';
 export * from './sinks';
+export * from './storageRouting';
+export * from './namedQueries';
+export * from './textTemplates';
+export * from './projects';

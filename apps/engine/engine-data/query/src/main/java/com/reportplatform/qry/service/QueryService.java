@@ -84,10 +84,11 @@ public class QueryService {
      */
     private void setRlsContext(String orgId) {
         if (orgId != null && !orgId.isBlank()) {
-            // Validate UUID to prevent SQL injection
-            UUID.fromString(orgId);
-            entityManager.createNativeQuery("SET LOCAL app.current_org_id = '" + orgId + "'")
-                    .executeUpdate();
+            UUID.fromString(orgId); // validate format
+            entityManager.createNativeQuery(
+                            "SELECT set_config('app.current_org_id', :orgId, true)")
+                    .setParameter("orgId", orgId)
+                    .getSingleResult();
         }
     }
 
@@ -427,7 +428,9 @@ public class QueryService {
                 if (docType != null && docType.startsWith("SLIDE_TEXT_")) {
                     try {
                         slideIndex = Integer.parseInt(docType.substring("SLIDE_TEXT_".length()));
-                    } catch (NumberFormatException ignored) {}
+                    } catch (NumberFormatException e) {
+                        log.warn("Cannot parse slide index from document type '{}': {}", docType, e.getMessage());
+                    }
                 }
             }
 

@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.FullyQualifiedAnnotationBeanNameGenerator;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Main application class for the consolidated engine-data service.
@@ -31,6 +32,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
     "com.reportplatform.template"
 })
 @EntityScan(basePackages = "com.reportplatform")
+@EnableScheduling
 public class EngineDataApplication {
 
     public static void main(String[] args) {

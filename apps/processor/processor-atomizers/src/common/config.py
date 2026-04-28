@@ -63,6 +63,10 @@ class Settings(BaseSettings):
     default_monthly_token_quota: int = 1_000_000
     prompts_config_path: str = "src/atomizers/ai/prompts/prompts.yaml"
 
+    # -- ServiceNow-specific --
+    servicenow_max_rows: int = 100_000
+    servicenow_strip_system_columns: bool = True
+
     # -- Cleanup-specific --
     cleanup_interval_hours: int = 6
     cleanup_dry_run: bool = False

@@ -89,6 +89,10 @@ public class DashboardController {
             @Valid @RequestBody DashboardRequest request) {
 
         UUID orgId = parseUuidOrNull(orgIdStr);
+        if (orgId == null) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", "X-Org-Id header is required and must be a valid UUID"));
+        }
         UUID userId = parseUuidOrNull(userIdStr);
         var response = dashboardService.createDashboard(orgId, userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -112,13 +116,17 @@ public class DashboardController {
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
-    public ResponseEntity<DashboardResponse> updateDashboard(
+    public ResponseEntity<?> updateDashboard(
             @PathVariable UUID id,
             @RequestHeader(value = "X-Org-Id", required = false) String orgIdStr,
             @RequestHeader(value = "X-User-Id", required = false) String userIdStr,
             @RequestBody DashboardRequest request) {
 
         UUID orgId = parseUuidOrNull(orgIdStr);
+        if (orgId == null) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", "X-Org-Id header is required and must be a valid UUID"));
+        }
         UUID userId = parseUuidOrNull(userIdStr);
         var response = dashboardService.updateDashboard(id, orgId, userId, request);
         return ResponseEntity.ok(response);

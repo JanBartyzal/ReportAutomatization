@@ -1,6 +1,7 @@
 package com.reportplatform.qry.controller;
 
 import com.reportplatform.qry.model.dto.*;
+import com.reportplatform.qry.service.DataSourceStatsService;
 import com.reportplatform.qry.service.SinkQueryService;
 import com.reportplatform.sink.tbl.service.SinkCorrectionService;
 import com.reportplatform.sink.tbl.service.SinkSelectionService;
@@ -21,14 +22,17 @@ import java.util.UUID;
 public class SinkBrowserController {
 
     private final SinkQueryService sinkQueryService;
+    private final DataSourceStatsService dataSourceStatsService;
     private final SinkCorrectionService correctionService;
     private final SinkSelectionService selectionService;
 
     public SinkBrowserController(
             SinkQueryService sinkQueryService,
+            DataSourceStatsService dataSourceStatsService,
             SinkCorrectionService correctionService,
             SinkSelectionService selectionService) {
         this.sinkQueryService = sinkQueryService;
+        this.dataSourceStatsService = dataSourceStatsService;
         this.correctionService = correctionService;
         this.selectionService = selectionService;
     }
@@ -47,11 +51,12 @@ public class SinkBrowserController {
             @RequestParam(value = "size", defaultValue = "20") int size,
             @RequestParam(value = "file_id", required = false) String fileId,
             @RequestParam(value = "source_sheet", required = false) String sourceSheet,
-            @RequestParam(value = "search", required = false) String search) {
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "storage_backend", required = false) String storageBackend) {
 
         // `search` takes priority over the legacy `source_sheet` param
         String effectiveSearch = search != null ? search : sourceSheet;
-        SinkListResponse response = sinkQueryService.listSinks(orgId, page, size, fileId, effectiveSearch);
+        SinkListResponse response = sinkQueryService.listSinks(orgId, page, size, fileId, effectiveSearch, storageBackend);
         return ResponseEntity.ok(response);
     }
 
@@ -115,6 +120,23 @@ public class SinkBrowserController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(preview);
+    }
+
+    /**
+     * Returns storage backend statistics for the current org.
+     * <p>
+     * Used by the frontend DataSourceSwitcher to display record counts and
+     * availability status for each of the three backends.
+     * </p>
+     * GET /api/query/sinks/data-source-stats
+     */
+    @GetMapping("/data-source-stats")
+    @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
+    public ResponseEntity<DataSourceStatsService.DataSourceStats> getDataSourceStats(
+            @RequestHeader("X-Org-Id") String orgId) {
+
+        DataSourceStatsService.DataSourceStats stats = dataSourceStatsService.getStats(orgId);
+        return ResponseEntity.ok(stats);
     }
 
     // ========== WRITE ENDPOINTS (proxy to sink-tbl services) ==========

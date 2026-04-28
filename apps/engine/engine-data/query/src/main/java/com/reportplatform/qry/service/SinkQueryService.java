@@ -56,25 +56,45 @@ public class SinkQueryService {
 
     private void setRlsContext(String orgId) {
         if (orgId != null && !orgId.isBlank()) {
-            UUID.fromString(orgId);
-            entityManager.createNativeQuery("SET LOCAL app.current_org_id = '" + orgId + "'")
-                    .executeUpdate();
+            UUID.fromString(orgId); // validate format
+            entityManager.createNativeQuery(
+                            "SELECT set_config('app.current_org_id', :orgId, true)")
+                    .setParameter("orgId", orgId)
+                    .getSingleResult();
         }
     }
 
     /**
      * List all sinks with summary info, paginated.
      * @param search searches source_sheet name (case-insensitive contains)
+     * @param storageBackend optional filter: "POSTGRES", "SPARK", "BLOB" – null means all
      */
     @Transactional(readOnly = true)
     public SinkListResponse listSinks(String orgId, int page, int size,
-                                       String fileId, String search) {
+                                       String fileId, String search, String storageBackend) {
         setRlsContext(orgId);
 
         PageRequest pageRequest = PageRequest.of(page, size);
         Page<ParsedTableEntity> tablePage;
 
-        if (fileId != null && search != null) {
+        if (storageBackend != null) {
+            if (fileId != null && search != null) {
+                tablePage = parsedTableRepository
+                        .findByOrgIdAndStorageBackendAndFileIdAndSourceSheetContainingIgnoreCaseOrderByCreatedAtDesc(
+                                orgId, storageBackend, fileId, search, pageRequest);
+            } else if (fileId != null) {
+                tablePage = parsedTableRepository
+                        .findByOrgIdAndStorageBackendAndFileIdOrderByCreatedAtDesc(
+                                orgId, storageBackend, fileId, pageRequest);
+            } else if (search != null) {
+                tablePage = parsedTableRepository
+                        .findByOrgIdAndStorageBackendAndSourceSheetContainingIgnoreCaseOrderByCreatedAtDesc(
+                                orgId, storageBackend, search, pageRequest);
+            } else {
+                tablePage = parsedTableRepository
+                        .findByOrgIdAndStorageBackendOrderByCreatedAtDesc(orgId, storageBackend, pageRequest);
+            }
+        } else if (fileId != null && search != null) {
             tablePage = parsedTableRepository.findByOrgIdAndFileIdAndSourceSheetContainingIgnoreCaseOrderByCreatedAtDesc(
                     orgId, fileId, search, pageRequest);
         } else if (fileId != null) {
@@ -335,7 +355,8 @@ public class SinkQueryService {
                 table.getMetadata(),
                 table.getCreatedAt(),
                 corrCount,
-                hasSel);
+                hasSel,
+                table.getStorageBackend());
     }
 
     private SinkCorrectionDto toCorrectionDto(SinkCorrectionEntity e) {

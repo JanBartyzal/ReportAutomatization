@@ -131,7 +131,10 @@ public class ComparisonService {
         if (val == null) return 0.0;
         if (val instanceof Number num) return num.doubleValue();
         try { return Double.parseDouble(val.toString()); }
-        catch (NumberFormatException e) { return 0.0; }
+        catch (NumberFormatException e) {
+            log.warn("Cannot parse numeric value '{}' as double, treating as 0.0", val);
+            return 0.0;
+        }
     }
 
     private ComparisonKpiResponse toKpiResponse(ComparisonKpiEntity entity) {

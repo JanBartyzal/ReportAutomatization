@@ -126,6 +126,8 @@ public class SchemaMappingController {
     @PreAuthorize("hasAnyRole('VIEWER','EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<List<Map<String, Object>>> getSlideMetadata(
             @RequestHeader(value = "X-Org-Id", required = false) String orgId) {
+        // Slide metadata is persisted as part of MappingTemplateEntity rules.
+        // Return empty list — no standalone slide-metadata store exists yet.
         return ResponseEntity.ok(List.of());
     }
 
@@ -133,11 +135,11 @@ public class SchemaMappingController {
     @PreAuthorize("hasAnyRole('EDITOR','ADMIN','COMPANY_ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, Object>> createSlideMetadata(
             @RequestBody Map<String, Object> body) {
-
-        UUID id = UUID.randomUUID();
-        Map<String, Object> result = new java.util.HashMap<>(body);
-        result.put("id", id);
-        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+        // Slide metadata persistence requires a dedicated table (not yet implemented).
+        // Returning 501 is preferable to creating a fake resource with a random ID that won't be found on subsequent requests.
+        log.warn("createSlideMetadata called but slide-metadata persistence is not yet implemented");
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                .body(Map.of("error", "Slide metadata persistence is not yet implemented"));
     }
 
     @PostMapping("/slide-metadata/validate")
@@ -145,9 +147,16 @@ public class SchemaMappingController {
     public ResponseEntity<Map<String, Object>> validateSlideMetadata(
             @RequestBody Map<String, Object> body) {
 
+        List<String> errors = new java.util.ArrayList<>();
+        if (!body.containsKey("slide_index") && !body.containsKey("slideIndex")) {
+            errors.add("slide_index is required");
+        }
+        if (!body.containsKey("template_id") && !body.containsKey("templateId")) {
+            errors.add("template_id is required");
+        }
         return ResponseEntity.ok(Map.of(
-                "valid", true,
-                "errors", List.of()));
+                "valid", errors.isEmpty(),
+                "errors", errors));
     }
 
     @GetMapping("/slide-metadata/match")
@@ -156,9 +165,18 @@ public class SchemaMappingController {
             @RequestHeader(value = "X-Org-Id", required = false) String orgId,
             @RequestParam(required = false) String fileId) {
 
-        return ResponseEntity.ok(Map.of(
-                "matches", List.of(),
-                "confidence", 0.0));
+        // Matching a file to slide metadata requires fetching the file's extracted headers
+        // from the query service and then running them through the suggestion engine.
+        // That cross-service call is not available in this module.
+        // Clients should use POST /api/query/templates/mappings/suggest with explicit source_headers instead.
+        if (fileId == null || fileId.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "fileId parameter is required"));
+        }
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                .body(Map.of(
+                        "error", "Automatic file-to-template matching is not yet implemented",
+                        "suggestion", "Use POST /api/query/templates/mappings/suggest with explicit source_headers"));
     }
 
     private String inferFieldType(String header) {

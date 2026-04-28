@@ -1,6 +1,5 @@
 package com.reportplatform.admin.controller;
 
-import com.reportplatform.admin.model.dto.PaginatedResponse;
 import com.reportplatform.admin.model.dto.PromotionCandidateDTO;
 import com.reportplatform.admin.model.dto.UpdatePromotionRequest;
 import com.reportplatform.admin.service.PromotionApprovalService;
@@ -47,15 +46,9 @@ public class PromotionController {
         try {
             return ResponseEntity.ok(promotionApprovalService.listCandidates(status, page, pageSize));
         } catch (Exception e) {
-            logger.warn("Failed to list promotion candidates: {}", e.getMessage());
-            // Return empty paginated response
-            PaginatedResponse<PromotionCandidateDTO> empty = new PaginatedResponse<>();
-            empty.setPage(page);
-            empty.setPageSize(pageSize);
-            empty.setTotalItems(0);
-            empty.setTotalPages(0);
-            empty.setData(java.util.List.of());
-            return ResponseEntity.ok(empty);
+            logger.error("Failed to list promotion candidates: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to list promotion candidates", "detail", e.getMessage()));
         }
     }
 
@@ -69,19 +62,14 @@ public class PromotionController {
         try {
             UUID uuid = UUID.fromString(id);
             return ResponseEntity.ok(promotionApprovalService.getCandidate(uuid));
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid UUID format for candidate id: {}", id);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Invalid candidate id format", "id", id));
         } catch (Exception e) {
-            logger.warn("Candidate not found or error: {}", e.getMessage());
-            String shortId = id.length() >= 8 ? id.substring(0, 8) : id;
-            return ResponseEntity.ok(Map.of(
-                    "id", id,
-                    "status", "CANDIDATE",
-                    "proposed_table_name", "tbl_promoted_" + shortId,
-                    "proposed_ddl", "CREATE TABLE tbl_promoted_" + shortId + " (id UUID PRIMARY KEY, data JSONB)",
-                    "proposed_indexes", "",
-                    "column_type_analysis", "",
-                    "usage_count", 0,
-                    "created_at", java.time.Instant.now().toString()
-            ));
+            logger.warn("Candidate not found: {}", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Promotion candidate not found", "id", id));
         }
     }
 
@@ -103,18 +91,14 @@ public class PromotionController {
                     "column_type_analysis", candidate.getColumnTypeAnalysis() != null ? candidate.getColumnTypeAnalysis() : "",
                     "status", candidate.getStatus()
             ));
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid UUID format for candidate id: {}", id);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Invalid candidate id format", "id", id));
         } catch (Exception e) {
-            logger.warn("Schema proposal retrieval failed for candidate {}: {}", id, e.getMessage());
-            String shortId = id.length() >= 8 ? id.substring(0, 8) : id;
-            String tableName = "tbl_promoted_" + shortId;
-            return ResponseEntity.ok(Map.of(
-                    "id", id,
-                    "proposed_table_name", tableName,
-                    "proposed_ddl", "CREATE TABLE " + tableName + " (id UUID PRIMARY KEY, data JSONB, created_at TIMESTAMPTZ DEFAULT NOW())",
-                    "proposed_indexes", "CREATE INDEX idx_" + tableName + "_created ON " + tableName + "(created_at)",
-                    "column_type_analysis", "Columns: id (UUID), data (JSONB), created_at (TIMESTAMPTZ)",
-                    "status", "CANDIDATE"
-            ));
+            logger.warn("Schema proposal not found for candidate {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Schema proposal not found for candidate", "id", id));
         }
     }
 
@@ -131,12 +115,9 @@ public class PromotionController {
             UUID uuid = UUID.fromString(id);
             return ResponseEntity.ok(promotionApprovalService.updateCandidate(uuid, request));
         } catch (Exception e) {
-            logger.warn("Update candidate failed for {}: {}", id, e.getMessage());
-            return ResponseEntity.ok(Map.of(
-                    "id", id,
-                    "status", "CANDIDATE",
-                    "message", "Update accepted (stub)"
-            ));
+            logger.error("Update candidate failed for {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to update promotion candidate", "detail", e.getMessage()));
         }
     }
 
@@ -155,16 +136,9 @@ public class PromotionController {
             PromotionCandidateDTO approved = promotionApprovalService.approveCandidate(uuid, userId);
             return ResponseEntity.ok(approved);
         } catch (Exception e) {
-            logger.warn("Approve candidate failed for {}: {}", id, e.getMessage());
-            String shortId = id.length() >= 8 ? id.substring(0, 8) : id;
-            return ResponseEntity.ok(Map.of(
-                    "id", id,
-                    "status", "APPROVED",
-                    "reviewed_by", userId,
-                    "reviewed_at", java.time.Instant.now().toString(),
-                    "proposed_table_name", "tbl_promoted_" + shortId,
-                    "message", "Promotion approved (stub — downstream service unavailable)"
-            ));
+            logger.error("Approve candidate failed for {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to approve promotion candidate", "detail", e.getMessage()));
         }
     }
 
@@ -173,17 +147,25 @@ public class PromotionController {
      */
     @DeleteMapping({"/{id}", "/candidates/{id}"})
     @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
-    public ResponseEntity<Void> rejectCandidate(
+    public ResponseEntity<?> rejectCandidate(
             @PathVariable String id,
             @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
         logger.info("Rejecting promotion candidate: id={}, reviewedBy={}", id, userId);
+        UUID uuid;
         try {
-            UUID uuid = UUID.fromString(id);
-            promotionApprovalService.rejectCandidate(uuid, userId);
-        } catch (Exception e) {
-            logger.warn("Reject candidate failed for {}: {}", id, e.getMessage());
+            uuid = UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Invalid candidate id format", "id", id));
         }
-        return ResponseEntity.noContent().build();
+        try {
+            promotionApprovalService.rejectCandidate(uuid, userId);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            logger.error("Reject candidate failed for {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to reject promotion candidate", "detail", e.getMessage()));
+        }
     }
 
     /**
@@ -193,15 +175,23 @@ public class PromotionController {
     @PreAuthorize("hasAnyRole('ADMIN','HOLDING_ADMIN')")
     public ResponseEntity<Map<String, String>> triggerMigration(@PathVariable String id) {
         logger.info("Triggering migration for promotion candidate: id={}", id);
+        UUID uuid;
         try {
-            UUID uuid = UUID.fromString(id);
-            promotionApprovalService.triggerMigration(uuid);
-        } catch (Exception e) {
-            logger.warn("Trigger migration failed for {}: {}", id, e.getMessage());
+            uuid = UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Invalid candidate id format", "id", id));
         }
-        return ResponseEntity.accepted().body(Map.of(
-                "candidate_id", id,
-                "status", "MIGRATING"));
+        try {
+            promotionApprovalService.triggerMigration(uuid);
+            return ResponseEntity.accepted().body(Map.of(
+                    "candidate_id", id,
+                    "status", "MIGRATING"));
+        } catch (Exception e) {
+            logger.error("Trigger migration failed for {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to trigger migration", "detail", e.getMessage()));
+        }
     }
 
     /**
@@ -214,13 +204,14 @@ public class PromotionController {
         try {
             UUID uuid = UUID.fromString(id);
             return ResponseEntity.ok(promotionApprovalService.getMigrationStatus(uuid));
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid UUID format for candidate id: {}", id);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Invalid candidate id format", "id", id));
         } catch (Exception e) {
-            logger.warn("Migration status failed for {}: {}", id, e.getMessage());
-            return ResponseEntity.ok(Map.of(
-                    "candidate_id", id,
-                    "status", "COMPLETED",
-                    "progress", 100
-            ));
+            logger.error("Failed to get migration status for {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to retrieve migration status", "id", id));
         }
     }
 }

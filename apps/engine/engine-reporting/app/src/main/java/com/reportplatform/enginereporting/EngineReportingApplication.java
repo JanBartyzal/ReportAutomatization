@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         "com.reportplatform.period",
         "com.reportplatform.form",
         "com.reportplatform.tmplpptx",
+        "com.reportplatform.tmpl",
         "com.reportplatform.notif"
     },
     nameGenerator = FullyQualifiedAnnotationBeanNameGenerator.class
@@ -25,6 +26,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
     "com.reportplatform.period",
     "com.reportplatform.form",
     "com.reportplatform.tmplpptx",
+    "com.reportplatform.tmpl",
     "com.reportplatform.notif"
 })
 @EntityScan(basePackages = "com.reportplatform")

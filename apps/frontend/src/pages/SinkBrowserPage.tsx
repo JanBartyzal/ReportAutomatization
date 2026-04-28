@@ -6,16 +6,25 @@ import {
   Badge,
   Button,
   Input,
+  Divider,
   type TableColumnDefinition,
   createTableColumn,
   TableCellLayout,
 } from '@fluentui/react-components';
 import { Search24Regular, DocumentRegular } from '@fluentui/react-icons';
 import { useSinks } from '../hooks/useSinks';
+import { useDataSourceStats } from '../hooks/useStorageRouting';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { DataTable } from '../components/shared/DataTable';
 import { PageHeader } from '../components/shared/PageHeader';
-import type { SinkListFilters, SinkListItem } from '@reportplatform/types';
+import { DataSourceSwitcher } from '../components/DataSource/DataSourceSwitcher';
+import type { DataSourceMode, SinkListFilters, SinkListItem, StorageBackend } from '@reportplatform/types';
+
+const BACKEND_BADGE_COLOR: Record<StorageBackend, 'brand' | 'warning' | 'informative'> = {
+  POSTGRES: 'brand',
+  SPARK: 'warning',
+  BLOB: 'informative',
+};
 
 const useStyles = makeStyles({
   container: {
@@ -24,7 +33,7 @@ const useStyles = makeStyles({
   filters: {
     display: 'flex',
     gap: tokens.spacingHorizontalM,
-    marginBottom: tokens.spacingVerticalL,
+    marginBottom: tokens.spacingVerticalM,
     flexWrap: 'wrap',
     alignItems: 'center',
   },
@@ -37,6 +46,9 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeBase200,
     color: tokens.colorNeutralForeground3,
     fontWeight: tokens.fontWeightSemibold,
+  },
+  sourceSwitcherRow: {
+    marginBottom: tokens.spacingVerticalM,
   },
   correctionBadge: {
     cursor: 'default',
@@ -64,9 +76,22 @@ export default function SinkBrowserPage() {
   const styles = useStyles();
   const navigate = useNavigate();
   const [filters, setFilters] = useState<SinkListFilters>({ page: 0, size: 20 });
+  const [dataSourceMode, setDataSourceMode] = useState<DataSourceMode>('ALL');
 
-  const { data, isLoading } = useSinks(filters);
+  // Effective filter sent to API: omit storage_backend when 'ALL' is selected
+  const effectiveFilters: SinkListFilters = {
+    ...filters,
+    storage_backend: dataSourceMode !== 'ALL' ? dataSourceMode : undefined,
+  };
+
+  const { data, isLoading } = useSinks(effectiveFilters);
+  const { data: stats, isLoading: loadingStats } = useDataSourceStats();
   const sinks = data?.sinks ?? [];
+
+  const handleModeChange = (mode: DataSourceMode) => {
+    setDataSourceMode(mode);
+    setFilters((f) => ({ ...f, page: 0 }));
+  };
 
   const columns: TableColumnDefinition<SinkListItem>[] = [
     createTableColumn<SinkListItem>({
@@ -93,6 +118,25 @@ export default function SinkBrowserPage() {
             <DocumentRegular fontSize={14} />
             {item.filename}
           </span>
+        </TableCellLayout>
+      ),
+    }),
+    createTableColumn<SinkListItem>({
+      columnId: 'backend',
+      renderHeaderCell: () => 'Storage',
+      renderCell: (item) => (
+        <TableCellLayout>
+          {item.storageBackend ? (
+            <Badge
+              appearance="outline"
+              color={BACKEND_BADGE_COLOR[item.storageBackend] ?? 'subtle'}
+              size="small"
+            >
+              {item.storageBackend}
+            </Badge>
+          ) : (
+            <span className={styles.dimText}>POSTGRES</span>
+          )}
         </TableCellLayout>
       ),
     }),
@@ -149,6 +193,18 @@ export default function SinkBrowserPage() {
   return (
     <div className={styles.container}>
       <PageHeader title="Sink Browser" />
+
+      {/* Data source switcher */}
+      <div className={styles.sourceSwitcherRow}>
+        <DataSourceSwitcher
+          value={dataSourceMode}
+          onChange={handleModeChange}
+          stats={stats}
+          loadingStats={loadingStats}
+        />
+      </div>
+
+      <Divider style={{ marginBottom: tokens.spacingVerticalM }} />
 
       <div className={styles.filters}>
         {/* Search by sheet name */}

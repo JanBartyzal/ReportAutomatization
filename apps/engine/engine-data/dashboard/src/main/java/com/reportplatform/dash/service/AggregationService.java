@@ -107,8 +107,16 @@ public class AggregationService {
 
         // Set RLS context so PostgreSQL row-level security policies filter by org
         if (orgId != null) {
+            final String orgIdStr = orgId.toString();
             jdbcTemplate.getJdbcTemplate().execute(
-                    "SELECT set_config('app.current_org_id', '" + orgId + "', true)");
+                    (java.sql.Connection conn) -> {
+                        try (var stmt = conn.prepareStatement(
+                                "SELECT set_config('app.current_org_id', ?, true)")) {
+                            stmt.setString(1, orgIdStr);
+                            stmt.execute();
+                        }
+                        return null;
+                    });
         }
 
         String validatedSql = buildRawSql(sql);
@@ -451,6 +459,7 @@ public class AggregationService {
         try {
             return Double.parseDouble(val.toString());
         } catch (NumberFormatException e) {
+            log.warn("Cannot parse numeric value '{}' as double, treating as 0.0", val);
             return 0.0;
         }
     }

@@ -23,6 +23,7 @@
         <module>period</module>
         <module>form</module>
         <module>pptx-template</module>
+        <module>text-template</module>
         <module>notification</module>
         <module>app</module>
     </modules>
@@ -61,6 +62,11 @@
             <dependency>
                 <groupId>com.reportplatform</groupId>
                 <artifactId>engine-reporting-pptx-template</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.reportplatform</groupId>
+                <artifactId>engine-reporting-text-template</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

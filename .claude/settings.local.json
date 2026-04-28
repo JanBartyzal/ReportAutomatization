@@ -258,7 +258,31 @@
       "Bash(curl -s -w \"\\\\nHTTP: %{http_code}\" -X POST http://localhost/api/dashboards/ -H \"Authorization: Bearer dev-bypass-token\" -H \"Content-Type: application/json\" -d '{\"name\":\"Test Save\",\"description\":\"test\",\"config\":{\"widgets\":[]},\"chartType\":\"bar\",\"is_public\":false}')",
       "Bash(curl -s -X DELETE http://localhost/api/dashboards/48f39c3b-ade9-444f-8f5f-786e5f73cb79 -H \"Authorization: Bearer dev-bypass-token\" -w \"\\\\nHTTP: %{http_code}\")",
       "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
-      "Bash(grep -r \"server.port\\\\|server:\\\\|port:\" c:/Docker/ReportAutomatization/docker-compose*.yml)"
+      "Bash(grep -r \"server.port\\\\|server:\\\\|port:\" c:/Docker/ReportAutomatization/docker-compose*.yml)",
+      "Bash(node -e \"const icons = require\\('./apps/frontend/node_modules/@fluentui/react-icons'\\); const keys = Object.keys\\(icons\\).filter\\(k => k.toLowerCase\\(\\).includes\\('briefcase'\\) || k.toLowerCase\\(\\).includes\\('building'\\) || k.toLowerCase\\(\\).includes\\('project'\\)\\); console.log\\(keys.slice\\(0,20\\).join\\('\\\\n'\\)\\);\")",
+      "Bash(node -e \"const icons = require\\('./apps/frontend/node_modules/@fluentui/react-icons'\\); console.log\\('CodeBlock24Regular:', !!icons.CodeBlock24Regular, '\\\\nDocumentText24Regular:', !!icons.DocumentText24Regular, '\\\\nBriefcaseRegular:', !!icons.BriefcaseRegular, '\\\\nCodeFilled:', !!icons.CodeFilled, '\\\\nCode24Regular:', !!icons.Code24Regular\\);\")",
+      "Bash(node -e \"const icons = require\\('./apps/frontend/node_modules/@fluentui/react-icons'\\); const check = ['Add24Regular','Delete24Regular','Play24Regular','PlayRegular','EditRegular','OpenRegular','Save24Regular','ArrowLeft24Regular','Add24Regular','Delete24Regular','DocumentArrowDown24Regular','ArrowClockwiseRegular','Search24Regular']; check.forEach\\(k => console.log\\(k + ':', !!icons[k]\\)\\);\")",
+      "Bash(find /c/Docker/ReportAutomatization/apps/engine/apps/frontend -type f \\\\\\( -name \"*.java\" -o -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) ! -path \"*/test/*\" ! -name \"*.test.ts\" ! -name \"*.spec.ts\" ! -name \"*Test.java\" -exec grep -l \"// TODO\\\\|// FIXME\" {} \\\\;)",
+      "Bash(find /c/Docker/ReportAutomatization/apps/engine /c/Docker/ReportAutomatization/apps/frontend -type f \\\\\\( -name \"*.java\" -o -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) ! -path \"*/test/*\" ! -name \"*.test.ts\" ! -name \"*.spec.ts\" ! -name \"*Test.java\" -exec grep -l \"// TODO\\\\|// FIXME\\\\|TODO:|FIXME:\" {} \\\\;)",
+      "Bash(grep -r \"// TODO\\\\|// FIXME\" /c/Docker/ReportAutomatization/apps/engine --include=\"*.java\" ! -path \"*/test/*\" ! -name \"*Test.java\")",
+      "Bash(grep -r \"throw new UnsupportedOperationException\\\\|throw new NotImplementedError\" /c/Docker/ReportAutomatization/apps/engine --include=\"*.java\" ! -path \"*/test/*\" ! -name \"*Test.java\")",
+      "Bash(grep -r \"return\\\\s*null\\\\s*;\" /c/Docker/ReportAutomatization/apps/engine/engine-reporting --include=\"*.java\" ! -path \"*/test/*\" ! -name \"*Test.java\")",
+      "Bash(grep -r \"not implemented\\\\|Not implemented\\\\|NOT IMPLEMENTED\" /c/Docker/ReportAutomatization/apps/engine /c/Docker/ReportAutomatization/apps/frontend --include=\"*.java\" --include=\"*.ts\" --include=\"*.tsx\" ! -path \"*/node_modules/*\" ! -path \"*/test/*\")",
+      "Bash(grep -r \"const.*\\\\[\\\\s*\\\\]\" /c/Docker/ReportAutomatization/apps/frontend/src --include=\"*.tsx\" --include=\"*.ts\" ! -path \"*/test/*\")",
+      "Bash(grep -r \"return\\\\s*\\\\[\\\\]\" /c/Docker/ReportAutomatization/apps/frontend/src --include=\"*.tsx\" --include=\"*.ts\" ! -path \"*/test/*\")",
+      "Bash(find /c/Docker/ReportAutomatization/apps/frontend/src -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) ! -path \"*/test/*\" -exec grep -l \"mock\\\\|fake\\\\|stub\" {} \\\\;)",
+      "Bash(find /c/Docker/ReportAutomatization/apps/engine -type f -name \"*.java\" ! -path \"*/test/*\" ! -name \"*Test.java\" -exec grep -l \"stub\\\\|STUB\\\\|Stub\" {} \\\\;)",
+      "Bash(find /c/Docker/ReportAutomatization/apps/engine /c/Docker/ReportAutomatization/apps/frontend/src -type f \\\\\\( -name \"*.java\" -o -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) ! -path \"*/node_modules/*\" ! -path \"*/test/*\" ! -path \"*target*\" ! -name \"*Test.java\" ! -name \"*.test.ts\" ! -name \"*.spec.ts\" -exec grep -l \"stub.*\\\\\\(downstream\\\\|unavailable\\\\|fallback\\\\|bypass\\\\|placeholder\\\\\\)\" {} \\\\;)",
+      "Bash(grep -r \"return ResponseEntity.ok.*stub\\\\|return.*Map.of.*stub\" /c/Docker/ReportAutomatization/apps/engine --include=\"*.java\" ! -path \"*/test/*\")",
+      "Bash(grep -rn \"stub\\\\|Stub\\\\|STUB\" /c/Docker/ReportAutomatization/apps/engine/engine-core /c/Docker/ReportAutomatization/apps/engine/engine-data /c/Docker/ReportAutomatization/apps/engine/engine-integrations --include=\"*.java\" ! -path \"*/test/*\" ! -path \"*target*\")",
+      "Bash(grep -rn \"except.*:$\" \"c:/Docker/ReportAutomatization/apps/processor/\" --include=\"*.py\" -A1)",
+      "Bash(grep -B1 \"^\\\\-\\\\-$\\\\|pass$\")",
+      "Bash(find /c/Docker/ReportAutomatization/apps/engine -name \"*.java\" -type f -exec grep -l \"PASSWORD\\\\|SECRET.*=\\\\|API.*KEY.*=\" {} \\\\;)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(gh pr *)",
+      "Bash(where gh *)",
+      "Read(//usr/local/bin/**)",
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && git diff {} 2>/dev/null | grep -E \"^\\\\+.*TODO|^\\\\+.*FIXME|^\\\\+.*XXX|^\\\\+.*BUG|^\\\\+.*HACK\" | head -5')"
     ]
   }
 }

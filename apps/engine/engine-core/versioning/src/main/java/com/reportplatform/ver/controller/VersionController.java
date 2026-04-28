@@ -9,6 +9,8 @@ import com.reportplatform.ver.model.dto.VersionResponse;
 import com.reportplatform.ver.service.VersionDiffService;
 import com.reportplatform.ver.service.VersionService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/versions")
 public class VersionController {
+
+    private static final Logger logger = LoggerFactory.getLogger(VersionController.class);
 
     private final VersionService versionService;
     private final VersionDiffService versionDiffService;
@@ -46,14 +50,14 @@ public class VersionController {
                     var v = versionService.getVersionEntity(entityType, entityId, version);
                     return ResponseEntity.ok(List.of(VersionResponse.from(v)));
                 } catch (IllegalArgumentException e) {
-                    // Version not found — return empty list (200) not 404
-                    return ResponseEntity.ok(List.of());
+                    return ResponseEntity.notFound().build();
                 }
             }
             return ResponseEntity.ok(versionService.listVersions(entityType, entityId));
         } catch (Exception e) {
-            // Return empty list on any error
-            return ResponseEntity.ok(List.of());
+            logger.error("Failed to list versions for {}/{}: {}", entityType, entityId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to list versions", "detail", e.getMessage()));
         }
     }
 
@@ -67,25 +71,20 @@ public class VersionController {
         try {
             return ResponseEntity.ok(versionDiffService.getDiff(entityType, entityId, v1, v2));
         } catch (IllegalArgumentException e) {
-            // Versions don't exist yet — return empty diff instead of 500
-            return ResponseEntity.ok(Map.of(
+            logger.warn("getDiff: versions not found for {}/{} v{}..v{}: {}", entityType, entityId, v1, v2, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                    "error", "One or both versions not found",
                     "entityType", entityType,
                     "entityId", entityId.toString(),
                     "fromVersion", v1,
                     "toVersion", v2,
-                    "changes", List.of(),
-                    "diff", List.of(),
-                    "data", Map.of("message", "No versions found to compare: " + e.getMessage())
+                    "detail", e.getMessage()
             ));
         } catch (Exception e) {
-            return ResponseEntity.ok(Map.of(
-                    "entityType", entityType,
-                    "entityId", entityId.toString(),
-                    "fromVersion", v1,
-                    "toVersion", v2,
-                    "changes", List.of(),
-                    "diff", List.of(),
-                    "data", Map.of("message", "Diff computation unavailable: " + e.getMessage())
+            logger.error("getDiff failed for {}/{} v{}..v{}: {}", entityType, entityId, v1, v2, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "error", "Diff computation failed",
+                    "detail", e.getMessage()
             ));
         }
     }
@@ -130,8 +129,10 @@ public class VersionController {
             snapshot.put("entity_type", entityType);
             snapshot.put("entity_id", entityId.toString());
 
-            // Default orgId if not provided
-            UUID effectiveOrgId = orgId != null ? orgId : UUID.randomUUID();
+            if (orgId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "X-Org-Id header is required"));
+            }
+            UUID effectiveOrgId = orgId;
 
             CreateVersionRequest request = new CreateVersionRequest(
                     entityType, entityId, snapshot, comment, userId);
@@ -152,16 +153,9 @@ public class VersionController {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            // Return a stub version response so UAT tests get 201
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "id", UUID.randomUUID().toString(),
-                    "entityType", entityType,
-                    "entityId", entityId.toString(),
-                    "versionNumber", 1,
-                    "reason", body != null ? body.getOrDefault("comment", "") : "",
-                    "createdBy", userId,
-                    "createdAt", java.time.Instant.now().toString()
-            ));
+            logger.error("Failed to create version for {}/{}: {}", entityType, entityId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to create version", "detail", e.getMessage()));
         }
     }
 

@@ -7,6 +7,8 @@ import com.reportplatform.qry.model.dto.SlideDataResponse;
 import com.reportplatform.qry.model.dto.TableQueryResponse;
 import com.reportplatform.qry.service.ExcelExportService;
 import com.reportplatform.qry.service.QueryService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/query")
 public class FileQueryController {
+
+    private static final Logger log = LoggerFactory.getLogger(FileQueryController.class);
 
     private final QueryService queryService;
     private final ExcelExportService excelExportService;
@@ -115,23 +119,12 @@ public class FileQueryController {
             @PathVariable("slide_num") int slideNum,
             @RequestHeader(value = "X-Org-Id") String orgId) {
 
-        // Return a minimal PNG placeholder (1x1 transparent pixel)
-        byte[] png = new byte[]{
-            (byte)0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
-            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-            0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, (byte)0xC4,
-            (byte)0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
-            0x54, 0x78, (byte)0x9C, 0x62, 0x00, 0x00, 0x00, 0x02,
-            0x00, 0x01, (byte)0xE5, 0x27, (byte)0xDE, (byte)0xFC, 0x00,
-            0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, (byte)0xAE,
-            0x42, 0x60, (byte)0x82
-        };
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.IMAGE_PNG);
-        headers.setContentLength(png.length);
-        return ResponseEntity.ok().headers(headers).body(png);
+        // Slide image rendering requires processor-atomizers PPTX renderer (not yet integrated).
+        // Returning 501 is correct — the endpoint exists but the feature is not yet available.
+        log.warn("getSlideImage not implemented: fileId={}, slideNum={}, orgId={}", fileId, slideNum, orgId);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_IMPLEMENTED)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(null);
     }
 
     /**

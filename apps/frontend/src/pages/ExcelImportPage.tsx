@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
     Title3,
     Subtitle2,
@@ -18,6 +19,8 @@ import {
     TableCell,
     Divider,
     MessageBar,
+    makeStyles,
+    tokens,
 } from '@fluentui/react-components';
 import {
     ArrowUpload24Regular,
@@ -29,46 +32,111 @@ import {
 import { useImportExcel, useForm } from '../hooks/useForms';
 import { exportExcelTemplate } from '../api/forms';
 import templatesApi, { MappingSuggestion } from '../api/templates';
+import { uploadFile } from '../api/files';
+import { UploadPurpose } from '@reportplatform/types';
+
+const useStyles = makeStyles({
+    container: {
+        padding: tokens.spacingHorizontalXXL,
+        maxWidth: '1000px',
+        margin: '0 auto',
+    },
+    header: {
+        display: 'flex',
+        alignItems: 'center',
+        marginBottom: tokens.spacingVerticalXL,
+    },
+    subtitle: {
+        color: tokens.colorNeutralForeground2,
+        marginBottom: tokens.spacingVerticalXL,
+    },
+    error: {
+        marginBottom: tokens.spacingVerticalM,
+    },
+    selectedFileName: {
+        marginTop: tokens.spacingVerticalS,
+        color: tokens.colorNeutralForeground2,
+    },
+    uploadStatus: {
+        marginTop: tokens.spacingVerticalS,
+        display: 'flex',
+        alignItems: 'center',
+        gap: tokens.spacingHorizontalS,
+    },
+    divider: {
+        margin: `${tokens.spacingVerticalXL} 0`,
+    },
+    actionRow: {
+        display: 'flex',
+        gap: tokens.spacingHorizontalS,
+        marginTop: tokens.spacingVerticalM,
+    },
+    actionRowEnd: {
+        display: 'flex',
+        gap: tokens.spacingHorizontalS,
+        justifyContent: 'flex-end',
+    },
+    previewBox: {
+        padding: tokens.spacingHorizontalL,
+        background: tokens.colorNeutralBackground1,
+        borderRadius: tokens.borderRadiusMedium,
+        marginBottom: tokens.spacingVerticalXL,
+    },
+    mappingSummary: {
+        marginBottom: tokens.spacingVerticalM,
+    },
+});
 
 export const ExcelImportPage: React.FC = () => {
     const { formId } = useParams<{ formId: string }>();
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const styles = useStyles();
 
     const importExcel = useImportExcel(formId!);
     const { data: form } = useForm(formId!);
 
-    // Use the schema mapping hook
+    const { data: formFields = [], isLoading: formFieldsLoading } = useQuery({
+        queryKey: ['form-fields', formId],
+        queryFn: () => templatesApi.getFormFields(formId!),
+        enabled: !!formId,
+        staleTime: 5 * 60 * 1000,
+    });
+
     const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
+    const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [mappings, setMappings] = useState<MappingSuggestion[]>([]);
     const [step, setStep] = useState<'upload' | 'mapping' | 'preview'>('upload');
-    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch mapping suggestions from API when file is selected
-    const fetchSuggestions = useCallback(async (fileId: string, fId: string) => {
-        setIsLoadingSuggestions(true);
+    const handleFileSelect = useCallback(async (file: File) => {
+        setIsProcessing(true);
         setError(null);
+        setUploadProgress(0);
         try {
-            const suggestions = await templatesApi.getMappingSuggestions(fileId, fId);
+            // Upload file to ingestor and get a real server-assigned file ID
+            const uploadResponse = await uploadFile(file, UploadPurpose.FORM_IMPORT, (progress) => {
+                if (progress.total) {
+                    setUploadProgress(Math.round((progress.loaded / progress.total) * 100));
+                }
+            });
+            setSelectedFileId(uploadResponse.file_id);
+
+            // Get AI-assisted column-to-field mapping suggestions from the uploaded file
+            const suggestions = await templatesApi.getMappingSuggestions(uploadResponse.file_id, formId!);
             setMappings(suggestions);
             setStep('mapping');
         } catch (err) {
-            console.error('Failed to fetch mapping suggestions:', err);
-            setError('Failed to get mapping suggestions. Please try again.');
-            // Fall back to mock data if API fails
-            const mockMappings: MappingSuggestion[] = [
-                { excelColumn: 'headcount', formField: 'headcount', confidence: 0.95, suggestions: ['headcount', 'total_headcount'] },
-                { excelColumn: 'salaries_total', formField: 'salaries_total', confidence: 0.92, suggestions: ['salaries_total', 'total_salaries'] },
-                { excelColumn: 'budget_category', formField: 'budget_category', confidence: 0.88, suggestions: ['budget_category', 'category'] },
-                { excelColumn: 'unknown_column', formField: null, confidence: 0, suggestions: [] },
-            ];
-            setMappings(mockMappings);
-            setStep('mapping');
+            console.error('Failed to upload file or fetch mapping suggestions:', err);
+            setError('Failed to process file. Please try again.');
         } finally {
-            setIsLoadingSuggestions(false);
+            setIsProcessing(false);
+            setUploadProgress(0);
         }
-    }, []);
+    }, [formId]);
 
     const handleDownloadTemplate = async () => {
         try {
@@ -80,17 +148,9 @@ export const ExcelImportPage: React.FC = () => {
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error('Failed to download template', error);
+        } catch (err) {
+            console.error('Failed to download template', err);
         }
-    };
-
-    const handleFileSelect = async () => {
-        // In a real implementation, this would upload the file first
-        // For now, we'll simulate with a mock file ID
-        const mockFileId = `file_${Date.now()}`;
-        setSelectedFileId(mockFileId);
-        await fetchSuggestions(mockFileId, formId!);
     };
 
     const handleMappingChange = (excelColumn: string, formField: string | null) => {
@@ -105,7 +165,6 @@ export const ExcelImportPage: React.FC = () => {
 
     const handleApplyMapping = async () => {
         if (!selectedFileId || !formId) return;
-
         try {
             await templatesApi.applyMapping({
                 fileId: selectedFileId,
@@ -128,18 +187,13 @@ export const ExcelImportPage: React.FC = () => {
         return <Badge appearance="filled" color="danger"><ErrorCircleRegular /> Low</Badge>;
     };
 
-    // Get unique form field options
-    const formFieldOptions = [
-        'headcount', 'salaries_total', 'personnel_other', 'it_hardware', 'it_software',
-        'it_cloud', 'it_support', 'office_rent', 'office_utilities', 'office_supplies',
-        'office_insurance', 'travel_domestic', 'travel_international', 'travel_entertainment',
-        'budget_total', 'budget_category', 'budget_notes'
-    ];
+    const uploadStatusLabel = uploadProgress > 0 && uploadProgress < 100
+        ? `Uploading... ${uploadProgress}%`
+        : 'Analyzing columns...';
 
     return (
-        <div style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+        <div className={styles.container}>
+            <div className={styles.header}>
                 <Button
                     appearance="transparent"
                     icon={<ArrowLeftRegular />}
@@ -150,13 +204,12 @@ export const ExcelImportPage: React.FC = () => {
             </div>
 
             <Title3 block>Import Excel Data</Title3>
-            <Subtitle2 block style={{ color: 'var(--colorNeutralForeground2)', marginBottom: '24px' }}>
+            <Subtitle2 block className={styles.subtitle}>
                 Upload an Excel file and map columns to form fields
             </Subtitle2>
 
-            {/* Error message */}
             {error && (
-                <MessageBar intent="error" style={{ marginBottom: '16px' }}>
+                <MessageBar intent="error" className={styles.error}>
                     {error}
                 </MessageBar>
             )}
@@ -172,12 +225,15 @@ export const ExcelImportPage: React.FC = () => {
                             type="file"
                             accept=".xlsx"
                             ref={fileInputRef}
-                            style={{ display: 'none' }}
+                            title="Select an Excel file (.xlsx)"
+                            aria-label="Select an Excel file"
+                            hidden
                             onChange={(e) => {
                                 const file = (e.target as HTMLInputElement).files?.[0];
                                 if (file) {
-                                    // Trigger file selection
-                                    handleFileSelect();
+                                    setSelectedFileName(file.name);
+                                    setPendingFile(file);
+                                    handleFileSelect(file);
                                 }
                             }}
                         />
@@ -185,24 +241,32 @@ export const ExcelImportPage: React.FC = () => {
                             appearance="secondary"
                             icon={<ArrowUpload24Regular />}
                             onClick={() => fileInputRef.current?.click()}
-                            disabled={isLoadingSuggestions}
+                            disabled={isProcessing}
                         >
-                            {isLoadingSuggestions ? 'Loading...' : 'Choose File'}
+                            {isProcessing ? 'Processing...' : 'Choose File'}
                         </Button>
-                        {isLoadingSuggestions && (
-                            <Spinner size="tiny" style={{ marginLeft: '8px' }} />
+                        {selectedFileName && !isProcessing && (
+                            <Body1 block className={styles.selectedFileName}>
+                                Selected: {selectedFileName}
+                            </Body1>
+                        )}
+                        {isProcessing && (
+                            <div className={styles.uploadStatus}>
+                                <Spinner size="tiny" />
+                                <Body1>{uploadStatusLabel}</Body1>
+                            </div>
                         )}
                     </Field>
 
-                    <Divider style={{ margin: '24px 0' }} />
+                    <Divider className={styles.divider} />
 
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                    <div className={styles.actionRow}>
                         <Button
                             appearance="primary"
-                            disabled={importExcel.isPending}
-                            onClick={handleFileSelect}
+                            disabled={isProcessing || !pendingFile}
+                            onClick={() => pendingFile && handleFileSelect(pendingFile)}
                         >
-                            {importExcel.isPending ? <Spinner size="tiny" /> : 'Continue'}
+                            {isProcessing ? <Spinner size="tiny" /> : 'Retry Upload'}
                         </Button>
                         <Button
                             appearance="secondary"
@@ -217,83 +281,73 @@ export const ExcelImportPage: React.FC = () => {
             {/* Step 2: Mapping */}
             {step === 'mapping' && (
                 <div>
-                    <Body1 style={{ marginBottom: '16px' }}>
+                    <Body1 className={styles.mappingSummary}>
                         Review the column mappings below. Fields with low confidence may need manual adjustment.
                     </Body1>
 
-                    {isLoadingSuggestions ? (
-                        <div style={{ textAlign: 'center', padding: '48px' }}>
-                            <Spinner label="Loading mapping suggestions..." />
-                        </div>
-                    ) : (
-                        <>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHeaderCell>Excel Column</TableHeaderCell>
-                                        <TableHeaderCell>Confidence</TableHeaderCell>
-                                        <TableHeaderCell>Map to Form Field</TableHeaderCell>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {mappings.map((mapping) => (
-                                        <TableRow key={mapping.excelColumn}>
-                                            <TableCell>{mapping.excelColumn}</TableCell>
-                                            <TableCell>{getConfidenceBadge(mapping.confidence)}</TableCell>
-                                            <TableCell>
-                                                <Dropdown
-                                                    placeholder="Select form field..."
-                                                    value={mapping.formField || ''}
-                                                    onOptionSelect={(_, data) => handleMappingChange(mapping.excelColumn, data.optionValue as string)}
-                                                >
-                                                    <Option value="">-- Unmapped --</Option>
-                                                    {formFieldOptions.map(field => (
-                                                        <Option key={field} value={field}>
-                                                            {field}
-                                                        </Option>
-                                                    ))}
-                                                </Dropdown>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHeaderCell>Excel Column</TableHeaderCell>
+                                <TableHeaderCell>Confidence</TableHeaderCell>
+                                <TableHeaderCell>Map to Form Field</TableHeaderCell>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {mappings.map((mapping) => (
+                                <TableRow key={mapping.excelColumn}>
+                                    <TableCell>{mapping.excelColumn}</TableCell>
+                                    <TableCell>{getConfidenceBadge(mapping.confidence)}</TableCell>
+                                    <TableCell>
+                                        <Dropdown
+                                            placeholder={formFieldsLoading ? 'Loading fields...' : 'Select form field...'}
+                                            value={mapping.formField || ''}
+                                            disabled={formFieldsLoading}
+                                            onOptionSelect={(_, data) =>
+                                                handleMappingChange(mapping.excelColumn, data.optionValue as string)
+                                            }
+                                        >
+                                            <Option value="">-- Unmapped --</Option>
+                                            {formFields.map(field => (
+                                                <Option key={field.name} value={field.name}>
+                                                    {field.label}
+                                                </Option>
+                                            ))}
+                                        </Dropdown>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
 
-                            <Divider style={{ margin: '24px 0' }} />
+                    <Divider className={styles.divider} />
 
-                            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                                <Button appearance="secondary" onClick={() => setStep('upload')}>
-                                    Back
-                                </Button>
-                                <Button appearance="primary" onClick={handleConfirmMapping}>
-                                    Confirm Mapping & Preview
-                                </Button>
-                            </div>
-                        </>
-                    )}
+                    <div className={styles.actionRowEnd}>
+                        <Button appearance="secondary" onClick={() => setStep('upload')}>
+                            Back
+                        </Button>
+                        <Button appearance="primary" onClick={handleConfirmMapping}>
+                            Confirm Mapping & Preview
+                        </Button>
+                    </div>
                 </div>
             )}
 
             {/* Step 3: Preview */}
             {step === 'preview' && (
                 <div>
-                    <Body1 style={{ marginBottom: '16px' }}>
+                    <Body1 className={styles.mappingSummary}>
                         Review your imported data before submitting.
                     </Body1>
 
-                    <div style={{
-                        padding: '16px',
-                        background: 'var(--colorNeutralBackground1)',
-                        borderRadius: '8px',
-                        marginBottom: '24px'
-                    }}>
+                    <div className={styles.previewBox}>
                         <Title3 block>Imported Data Preview</Title3>
                         <Body1 block>
                             {mappings.filter(m => m.formField).length} columns will be mapped to form fields
                         </Body1>
                     </div>
 
-                    <div style={{ marginBottom: '16px' }}>
+                    <div className={styles.mappingSummary}>
                         <Subtitle2 block>Mapping Summary</Subtitle2>
                         <ul>
                             {mappings.filter(m => m.formField).map(m => (
@@ -304,9 +358,9 @@ export const ExcelImportPage: React.FC = () => {
                         </ul>
                     </div>
 
-                    <Divider style={{ margin: '24px 0' }} />
+                    <Divider className={styles.divider} />
 
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                    <div className={styles.actionRowEnd}>
                         <Button appearance="secondary" onClick={() => setStep('mapping')}>
                             Back to Mapping
                         </Button>

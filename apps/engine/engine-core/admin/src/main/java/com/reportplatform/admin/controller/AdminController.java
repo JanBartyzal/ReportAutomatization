@@ -102,7 +102,10 @@ public class AdminController {
         if (request.getOrgId() == null && orgId != null && !orgId.isBlank()) {
             try {
                 request.setOrgId(UUID.fromString(orgId));
-            } catch (IllegalArgumentException ignored) {}
+            } catch (IllegalArgumentException e) {
+                logger.warn("Invalid X-Org-Id header value '{}': {}", orgId, e.getMessage());
+                return ResponseEntity.badRequest().build();
+            }
         }
         ApiKeyCreatedResponse response = apiKeyService.createApiKey(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);

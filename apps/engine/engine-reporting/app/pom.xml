@@ -37,6 +37,10 @@
         </dependency>
         <dependency>
             <groupId>com.reportplatform</groupId>
+            <artifactId>engine-reporting-text-template</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.reportplatform</groupId>
             <artifactId>engine-reporting-notification</artifactId>
         </dependency>
 

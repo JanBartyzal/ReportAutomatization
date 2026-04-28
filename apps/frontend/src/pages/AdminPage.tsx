@@ -18,8 +18,9 @@ import UsersPanel from '../components/Admin/UsersPanel';
 import ApiKeysPanel from '../components/Admin/ApiKeysPanel';
 import FailedJobsPanel from '../components/Admin/FailedJobsPanel';
 import BatchesPanel from '../components/Admin/BatchesPanel';
+import { StorageRoutingPanel } from '../components/Admin/StorageRoutingPanel';
 
-type AdminTab = 'organizations' | 'users' | 'apikeys' | 'failedjobs' | 'batches';
+type AdminTab = 'organizations' | 'users' | 'apikeys' | 'failedjobs' | 'batches' | 'storagerouting';
 
 const useStyles = makeStyles({
     container: {
@@ -56,6 +57,7 @@ const AdminPage: React.FC = () => {
                 <Tab value="apikeys">API Keys</Tab>
                 <Tab value="failedjobs">Failed Jobs</Tab>
                 <Tab value="batches">Batches</Tab>
+                <Tab value="storagerouting">Storage Routing</Tab>
             </TabList>
 
             <ContentCard>
@@ -64,6 +66,7 @@ const AdminPage: React.FC = () => {
                 {selectedTab === 'apikeys' && <ApiKeysPanel />}
                 {selectedTab === 'failedjobs' && <FailedJobsPanel />}
                 {selectedTab === 'batches' && <BatchesPanel />}
+                {selectedTab === 'storagerouting' && <StorageRoutingPanel />}
             </ContentCard>
         </div>
     );

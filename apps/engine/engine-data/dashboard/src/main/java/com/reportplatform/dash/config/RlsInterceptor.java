@@ -40,7 +40,8 @@ public class RlsInterceptor implements HandlerInterceptor {
                 log.warn("Invalid org_id format in header: {}", orgId);
                 return true;
             }
-            entityManager.createNativeQuery("SELECT set_config('app.current_org_id', '" + orgId + "', false)")
+            entityManager.createNativeQuery("SELECT set_config('app.current_org_id', :orgId, false)")
+                    .setParameter("orgId", orgId)
                     .getSingleResult();
             log.debug("RLS org_id set to: {}", orgId);
         }
@@ -49,7 +50,8 @@ public class RlsInterceptor implements HandlerInterceptor {
         if (userRole != null && !userRole.isBlank()) {
             String sanitizedRole = userRole.replaceAll("[^A-Z_,]", "");
             if (!sanitizedRole.isEmpty()) {
-                entityManager.createNativeQuery("SELECT set_config('app.current_user_role', '" + sanitizedRole + "', false)")
+                entityManager.createNativeQuery("SELECT set_config('app.current_user_role', :role, false)")
+                        .setParameter("role", sanitizedRole)
                         .getSingleResult();
             }
         }

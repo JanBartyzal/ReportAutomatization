@@ -42,6 +42,12 @@ import SinkBrowserPage from './pages/SinkBrowserPage';
 import SinkDetailPage from './pages/SinkDetailPage';
 import AdminPage from './pages/AdminPage';
 import ExportFlowsPage from './pages/ExportFlowsPage';
+import NamedQueryPage from './pages/NamedQueryPage';
+import TextTemplateListPage from './pages/TextTemplateListPage';
+import TextTemplateEditorPage from './pages/TextTemplateEditorPage';
+import TextTemplateRenderPage from './pages/TextTemplateRenderPage';
+import ProjectsPage from './pages/ProjectsPage';
+import ProjectDetailPage from './pages/ProjectDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function AuthenticatedRoutes() {
@@ -117,6 +123,14 @@ function AuthenticatedRoutes() {
                         <ExportFlowsPage />
                     </AdminGuard>
                 } />
+                {/* P8 – Named Queries, Text Templates, Projects */}
+                <Route path="/reporting/named-queries" element={<NamedQueryPage />} />
+                <Route path="/reporting/text-templates" element={<TextTemplateListPage />} />
+                <Route path="/reporting/text-templates/new" element={<TextTemplateEditorPage />} />
+                <Route path="/reporting/text-templates/:templateId/edit" element={<TextTemplateEditorPage />} />
+                <Route path="/reporting/text-templates/:templateId/render" element={<TextTemplateRenderPage />} />
+                <Route path="/projects" element={<ProjectsPage />} />
+                <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </AppLayout>

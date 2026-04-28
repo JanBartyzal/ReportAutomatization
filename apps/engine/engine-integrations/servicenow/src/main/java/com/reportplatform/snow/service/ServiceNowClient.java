@@ -89,18 +89,38 @@ public class ServiceNowClient {
      * @param sysUpdatedOnAfter   optional filter for incremental sync (sys_updated_on > value)
      * @return list of table data DTOs
      */
+    /** Backward-compatible overload (generic sync without field selection). */
     public List<ServiceNowTableDataDTO> fetchTable(String instanceUrl, String tableName,
                                                     String accessToken, int offset, int limit,
                                                     String sysUpdatedOnAfter) {
-        logger.info("Fetching table '{}' from {} (offset={}, limit={})", tableName, instanceUrl, offset, limit);
+        return fetchTable(instanceUrl, tableName, accessToken, offset, limit,
+                sysUpdatedOnAfter, null, null);
+    }
 
-        String query = "";
-        if (sysUpdatedOnAfter != null && !sysUpdatedOnAfter.isBlank()) {
+    /**
+     * Fetch records from a ServiceNow table with field selection and custom query support.
+     *
+     * @param sysUpdatedOnAfter optional incremental filter (sys_updated_on > value)
+     * @param sysparmFields     comma-separated list of fields to return (null = all)
+     * @param customQuery       full sysparm_query string overriding the default filter
+     */
+    public List<ServiceNowTableDataDTO> fetchTable(String instanceUrl, String tableName,
+                                                    String accessToken, int offset, int limit,
+                                                    String sysUpdatedOnAfter,
+                                                    String sysparmFields,
+                                                    String customQuery) {
+        logger.info("Fetching table '{}' from {} (offset={}, limit={}, query={})",
+                tableName, instanceUrl, offset, limit, customQuery);
+
+        String query = customQuery != null && !customQuery.isBlank() ? customQuery : "";
+        if (query.isBlank() && sysUpdatedOnAfter != null && !sysUpdatedOnAfter.isBlank()) {
             query = "sys_updated_on>" + sysUpdatedOnAfter;
         }
 
         String finalQuery = query;
-        return executeWithRetry(() -> doFetchTable(instanceUrl, tableName, accessToken, offset, limit, finalQuery));
+        String finalFields = sysparmFields;
+        return executeWithRetry(() ->
+                doFetchTable(instanceUrl, tableName, accessToken, offset, limit, finalQuery, finalFields));
     }
 
     /**
@@ -130,6 +150,13 @@ public class ServiceNowClient {
     private List<ServiceNowTableDataDTO> doFetchTable(String instanceUrl, String tableName,
                                                        String accessToken, int offset, int limit,
                                                        String query) {
+        return doFetchTable(instanceUrl, tableName, accessToken, offset, limit, query, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ServiceNowTableDataDTO> doFetchTable(String instanceUrl, String tableName,
+                                                       String accessToken, int offset, int limit,
+                                                       String query, String fields) {
         WebClient client = webClientBuilder.baseUrl(instanceUrl).build();
 
         Map<String, Object> response = client.get()
@@ -139,6 +166,9 @@ public class ServiceNowClient {
                             .queryParam("sysparm_limit", limit);
                     if (query != null && !query.isBlank()) {
                         uriBuilder.queryParam("sysparm_query", query);
+                    }
+                    if (fields != null && !fields.isBlank()) {
+                        uriBuilder.queryParam("sysparm_fields", fields);
                     }
                     return uriBuilder.build(tableName);
                 })

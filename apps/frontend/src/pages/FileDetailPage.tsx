@@ -18,6 +18,7 @@ import {
 } from '@fluentui/react-components';
 import { ArrowSyncRegular, ChevronLeft24Regular, ChevronRight24Regular, HistoryRegular } from '@fluentui/react-icons';
 import { useFile, useReprocessFile, useFileContent } from '../hooks/useFiles';
+import { useSinks } from '../hooks/useSinks';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import { useNavigate } from 'react-router-dom';
@@ -109,6 +110,15 @@ const useStyles = makeStyles({
         minHeight: '200px',
         color: tokens.colorNeutralForeground2,
     },
+    backendSection: {
+        marginTop: tokens.spacingHorizontalL,
+    },
+    backendList: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: tokens.spacingVerticalXS,
+        marginTop: tokens.spacingVerticalS,
+    },
 });
 
 export default function FileDetailPage() {
@@ -117,6 +127,7 @@ export default function FileDetailPage() {
     const { fileId } = useParams<{ fileId: string }>();
     const { data: file, isLoading } = useFile(fileId || '', { pollingInterval: 5000 });
     const { data: content, isLoading: isContentLoading } = useFileContent(fileId || '', file?.mime_type);
+    const { data: sinksData } = useSinks({ file_id: fileId, size: 100 });
     const reprocess = useReprocessFile();
     const [currentIndex, setCurrentIndex] = useState(1);
 
@@ -352,6 +363,37 @@ export default function FileDetailPage() {
                             <Body1 className={styles.metadataValue}>{content.metadata.total_rows}</Body1>
                         </div>
                     )}
+
+                    {/* Storage backend info for parsed sinks of this file */}
+                    {sinksData && sinksData.sinks.length > 0 && (() => {
+                        const backendCounts = sinksData.sinks.reduce<Record<string, number>>((acc, s) => {
+                            const b = s.storageBackend ?? 'POSTGRES';
+                            acc[b] = (acc[b] ?? 0) + 1;
+                            return acc;
+                        }, {});
+                        const BACKEND_COLOR: Record<string, 'brand' | 'warning' | 'informative'> = {
+                            POSTGRES: 'brand', SPARK: 'warning', BLOB: 'informative',
+                        };
+                        return (
+                            <div className={`${styles.metadataItem} ${styles.backendSection}`}>
+                                <Title3>Uložená data</Title3>
+                                <div className={styles.backendList}>
+                                    {Object.entries(backendCounts).map(([backend, cnt]) => (
+                                        <div key={backend} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Badge
+                                                appearance="filled"
+                                                color={BACKEND_COLOR[backend] ?? 'subtle'}
+                                                size="medium"
+                                            >
+                                                {backend}
+                                            </Badge>
+                                            <Body1 className={styles.metadataValue}>{cnt} sheet{cnt !== 1 ? 's' : ''}</Body1>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })()}
 
                     <Title3 style={{ marginTop: tokens.spacingHorizontalL }}>Processing Log</Title3>
                     {file.workflow_status?.steps ? (

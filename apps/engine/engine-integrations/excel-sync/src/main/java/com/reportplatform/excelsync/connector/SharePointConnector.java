@@ -186,13 +186,25 @@ public class SharePointConnector implements FileConnector {
 
         try {
             JsonNode json = objectMapper.readTree(responseBody);
-            for (JsonNode drive : json.get("value")) {
-                if (driveName.equals(drive.get("name").asText())) {
-                    return drive.get("id").asText();
+            JsonNode valueNode = json.get("value");
+            if (valueNode == null || !valueNode.isArray() || valueNode.isEmpty()) {
+                throw new RuntimeException("SharePoint returned no drives in response");
+            }
+            for (JsonNode drive : valueNode) {
+                JsonNode nameNode = drive.get("name");
+                if (nameNode != null && driveName.equals(nameNode.asText())) {
+                    JsonNode idNode = drive.get("id");
+                    if (idNode != null) return idNode.asText();
                 }
             }
             // Fallback to first drive
-            return json.get("value").get(0).get("id").asText();
+            JsonNode firstId = valueNode.get(0).get("id");
+            if (firstId == null) {
+                throw new RuntimeException("First SharePoint drive has no 'id' field");
+            }
+            return firstId.asText();
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Failed to resolve SharePoint drive ID", e);
         }

@@ -47,6 +47,9 @@ public class ParsedTableEntity {
     @Column(name = "metadata", columnDefinition = "jsonb")
     private Object metadata;
 
+    @Column(name = "storage_backend", length = 20)
+    private String storageBackend = "POSTGRES";
+
     @Column(name = "created_at")
     private Instant createdAt;
 
@@ -82,6 +85,10 @@ public class ParsedTableEntity {
 
     public Object getMetadata() {
         return metadata;
+    }
+
+    public String getStorageBackend() {
+        return storageBackend;
     }
 
     public Instant getCreatedAt() {

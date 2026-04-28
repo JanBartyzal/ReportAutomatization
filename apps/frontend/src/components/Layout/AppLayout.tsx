@@ -22,6 +22,9 @@ import {
   People24Regular,
   Database24Regular,
   ArrowExport24Regular,
+  CodeBlock24Regular,
+  DocumentText24Regular,
+  BriefcaseRegular,
 } from '@fluentui/react-icons';
 import { useMe, useLogout } from '../../hooks/useAuth';
 import { useSSE } from '../../hooks/useNotifications';
@@ -59,6 +62,14 @@ const navSections: NavSection[] = [
       { to: '/dashboards', icon: <Grid24Regular />, label: 'Dashboards' },
       { to: '/sinks', icon: <Database24Regular />, label: 'Sink Browser' },
       { to: '/matrix', icon: <TableSimple24Regular />, label: 'Matrix' },
+    ],
+  },
+  {
+    title: 'Reporting',
+    items: [
+      { to: '/reporting/text-templates', icon: <DocumentText24Regular />, label: 'Text Templates' },
+      { to: '/reporting/named-queries', icon: <CodeBlock24Regular />, label: 'Named Queries' },
+      { to: '/projects', icon: <BriefcaseRegular />, label: 'Projects' },
     ],
   },
   {

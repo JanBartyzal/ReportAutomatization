@@ -8,6 +8,9 @@ export type CorrectionType = 'CELL_VALUE' | 'HEADER_RENAME' | 'ROW_DELETE' | 'RO
 /** Error categories for extraction learning */
 export type ErrorCategory = 'MERGED_CELLS' | 'WRONG_HEADER' | 'MISSING_ROW' | 'VALUE_FORMAT' | 'SPLIT_TABLE';
 
+/** Storage backend identifier */
+export type StorageBackend = 'POSTGRES' | 'SPARK' | 'BLOB';
+
 /** Sink list item (summary for browser list view) */
 export interface SinkListItem {
   id: string;
@@ -20,6 +23,7 @@ export interface SinkListItem {
   createdAt: string;
   correctionCount: number;
   hasSelections: boolean;
+  storageBackend?: StorageBackend;
 }
 
 /** Paginated sink list response */
@@ -108,4 +112,5 @@ export interface SinkListFilters {
   file_id?: string;
   source_sheet?: string;
   search?: string;
+  storage_backend?: StorageBackend | 'ALL';
 }

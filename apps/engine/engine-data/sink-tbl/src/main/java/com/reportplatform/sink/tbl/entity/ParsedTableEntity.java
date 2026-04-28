@@ -34,6 +34,9 @@ public class ParsedTableEntity {
     @Column(name = "metadata", columnDefinition = "jsonb")
     private String metadata; // JSON object
 
+    @Column(name = "storage_backend", nullable = false, length = 20)
+    private String storageBackend = "POSTGRES"; // POSTGRES | SPARK
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -99,6 +102,14 @@ public class ParsedTableEntity {
 
     public void setMetadata(String metadata) {
         this.metadata = metadata;
+    }
+
+    public String getStorageBackend() {
+        return storageBackend;
+    }
+
+    public void setStorageBackend(String storageBackend) {
+        this.storageBackend = storageBackend;
     }
 
     public OffsetDateTime getCreatedAt() {

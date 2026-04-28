@@ -36,10 +36,17 @@
         <grpc.version>1.65.1</grpc.version>
         <grpc-spring-boot.version>2.15.0.RELEASE</grpc-spring-boot.version>
         <poi.version>5.2.5</poi.version>
+        <azure-storage-blob.version>12.28.1</azure-storage-blob.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <!-- Azure Blob Storage -->
+            <dependency>
+                <groupId>com.azure</groupId>
+                <artifactId>azure-storage-blob</artifactId>
+                <version>${azure-storage-blob.version}</version>
+            </dependency>
             <!-- Internal engine-data modules -->
             <dependency>
                 <groupId>com.reportplatform</groupId>

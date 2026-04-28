@@ -77,18 +77,24 @@ public class WorkflowService {
         this.routingConfig = routingConfig;
     }
 
+    private static final String STORAGE_HINT_KEY = "storageHint";
+    private static final String STORAGE_HINT_SPARK = "SPARK";
+
     /**
      * Starts a new file processing workflow.
      *
-     * @param fileId   unique file identifier
-     * @param fileType file extension (e.g. "PPTX")
-     * @param orgId    organization identifier
+     * @param fileId      unique file identifier
+     * @param fileType    file extension (e.g. "PPTX", "SERVICE_NOW")
+     * @param orgId       organization identifier
+     * @param blobUrl     blob storage URL of the uploaded file
+     * @param storageHint "POSTGRES" (default) or "SPARK"
      * @return the generated workflow ID
      */
-    public String startWorkflow(String fileId, String fileType, String orgId, String blobUrl) {
+    public String startWorkflow(String fileId, String fileType, String orgId, String blobUrl,
+            String storageHint) {
         String workflowId = UUID.randomUUID().toString();
-        log.info("Starting workflow [{}] for file [{}] type [{}] org [{}] blobUrl [{}]",
-                workflowId, fileId, fileType, orgId, blobUrl);
+        log.info("Starting workflow [{}] for file [{}] type [{}] org [{}] blobUrl [{}] storageHint [{}]",
+                workflowId, fileId, fileType, orgId, blobUrl, storageHint);
 
         // Persist workflow history
         var history = new WorkflowHistoryEntity(fileId, workflowId,
@@ -106,6 +112,9 @@ public class WorkflowService {
         var context = new SagaOrchestrator.SagaContext(workflowId, fileId, fileType, orgId);
         if (blobUrl != null && !blobUrl.isBlank()) {
             context.put("blobUrl", blobUrl);
+        }
+        if (storageHint != null && !storageHint.isBlank()) {
+            context.put(STORAGE_HINT_KEY, storageHint);
         }
         List<SagaOrchestrator.SagaStep> steps = buildPipelineSteps(sm, fileId, workflowId);
         SagaOrchestrator.SagaResult result = sagaOrchestrator.execute(steps, context);
@@ -139,6 +148,13 @@ public class WorkflowService {
 
         sm.stopReactively().block();
         return workflowId;
+    }
+
+    /**
+     * Backward-compatible overload – defaults to POSTGRES storage hint.
+     */
+    public String startWorkflow(String fileId, String fileType, String orgId, String blobUrl) {
+        return startWorkflow(fileId, fileType, orgId, blobUrl, null);
     }
 
     /**
@@ -197,47 +213,39 @@ public class WorkflowService {
     private ExcelParseResult parseExcelFile(String fileId, String blobUrl) {
         log.info("Calling processor-atomizers (Excel) to parse file: {}", fileId);
 
-        try {
-            // Build request for Excel atomizer
-            Map<String, String> request = new java.util.HashMap<>();
-            request.put("file_id", fileId);
-            request.put("blob_url", blobUrl);
+        // Build request for Excel atomizer
+        Map<String, String> request = new java.util.HashMap<>();
+        request.put("file_id", fileId);
+        request.put("blob_url", blobUrl);
 
-            // Call processor-atomizers (direct HTTP with Dapr fallback)
-            Map<String, Object> response = directServiceClient.invokeMethod(
-                    routingConfig.processorAtomizers(),
-                    "/api/v1/excel/extract",
-                    request,
-                    Map.class);
+        // Call processor-atomizers (direct HTTP with Dapr fallback)
+        Map<String, Object> response = directServiceClient.invokeMethod(
+                routingConfig.processorAtomizers(),
+                "/api/v1/excel/extract",
+                request,
+                Map.class);
 
-            if (response != null) {
-                // Extract headers and sample rows from response
-                List<String> headers = new ArrayList<>();
-                List<Object> sampleRows = new ArrayList<>();
-
-                Object headersObj = response.get("headers");
-                if (headersObj instanceof List) {
-                    headers = new ArrayList<>((List<String>) headersObj);
-                }
-
-                Object rowsObj = response.get("rows");
-                if (rowsObj instanceof List) {
-                    List rowsList = (List) rowsObj;
-                    // Take first 10 rows as samples
-                    for (int i = 0; i < Math.min(10, rowsList.size()); i++) {
-                        sampleRows.add(rowsList.get(i));
-                    }
-                }
-
-                log.info("processor-atomizers (Excel) returned {} headers and {} sample rows", headers.size(), sampleRows.size());
-                return new ExcelParseResult(headers, sampleRows);
-            }
-        } catch (Exception e) {
-            log.error("Failed to call processor-atomizers (Excel): {}", e.getMessage(), e);
+        if (response == null) {
+            throw new ParsingException(fileId, "processor-atomizers returned null response for Excel extraction", null);
         }
 
-        // Return empty result on failure
-        return new ExcelParseResult(List.of(), List.of());
+        List<String> headers = new ArrayList<>();
+        List<Object> sampleRows = new ArrayList<>();
+
+        Object headersObj = response.get("headers");
+        if (headersObj instanceof List<?> headerList) {
+            headerList.forEach(h -> headers.add(h != null ? h.toString() : ""));
+        }
+
+        Object rowsObj = response.get("rows");
+        if (rowsObj instanceof List<?> rowsList) {
+            for (int i = 0; i < Math.min(10, rowsList.size()); i++) {
+                sampleRows.add(rowsList.get(i));
+            }
+        }
+
+        log.info("processor-atomizers (Excel) returned {} headers and {} sample rows", headers.size(), sampleRows.size());
+        return new ExcelParseResult(headers, sampleRows);
     }
 
     /**
@@ -398,6 +406,45 @@ public class WorkflowService {
     }
 
     /**
+     * Publishes {@code spark-ingest-requested} – SPARK STORE path.
+     * The external Spark/ADF pipeline subscribes and reads the raw file from Blob.
+     */
+    private void publishSparkIngestRequestedEvent(
+            String fileId, String fileType, String orgId, String blobUrl) {
+        try {
+            var event = new java.util.HashMap<String, Object>();
+            event.put("fileId", fileId);
+            event.put("fileType", fileType);
+            event.put("orgId", orgId);
+            event.put("blobUrl", blobUrl != null ? blobUrl : "");
+            event.put("requestedAt", java.time.Instant.now().toString());
+
+            daprClient.publishEvent("reportplatform-pubsub", "spark-ingest-requested", event).block();
+            log.info("Published spark-ingest-requested for fileId=[{}]", fileId);
+        } catch (Exception e) {
+            log.error("Failed to publish spark-ingest-requested for fileId=[{}]: {}", fileId, e.getMessage(), e);
+            throw new StorageException(fileId, "Spark ingest event publish failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Publishes {@code spark-delete-requested} – SPARK compensating action.
+     */
+    private void publishSparkDeleteRequestedEvent(String fileId, String orgId) {
+        try {
+            var event = new java.util.HashMap<String, Object>();
+            event.put("fileId", fileId);
+            event.put("orgId", orgId);
+            event.put("requestedAt", java.time.Instant.now().toString());
+
+            daprClient.publishEvent("reportplatform-pubsub", "spark-delete-requested", event).block();
+            log.info("Published spark-delete-requested for fileId=[{}]", fileId);
+        } catch (Exception e) {
+            log.error("Failed to publish spark-delete-requested for fileId=[{}]: {}", fileId, e.getMessage(), e);
+        }
+    }
+
+    /**
      * Publishes a {@code data-imported} event via Dapr PubSub after successful workflow completion.
      * Fire-and-forget: failures are logged but never block the workflow.
      */
@@ -544,7 +591,7 @@ public class WorkflowService {
             }
         });
 
-        // Step 4: Store (sink to table store and document store)
+        // Step 4: Store (sink to table/document store OR delegate to Spark pipeline)
         steps.add(new SagaOrchestrator.SagaStep() {
             @Override
             public String name() {
@@ -559,43 +606,56 @@ public class WorkflowService {
                     return;
                 }
 
-                String mapResult = ctx.get("mapResult", String.class);
-                Map<String, String> request = Map.of(
-                        "fileId", ctx.fileId(),
-                        "mappedData", mapResult != null ? mapResult : "",
-                        "orgId", ctx.orgId());
+                String hint = ctx.get(STORAGE_HINT_KEY, String.class);
+                boolean useSpark = STORAGE_HINT_SPARK.equalsIgnoreCase(hint);
 
-                try {
-                    // Store to table sink (engine-data)
-                    directServiceClient.invokeMethod(routingConfig.engineData(), "store", request, Map.class);
+                if (useSpark) {
+                    // SPARK path: publish event; the external pipeline reads from Blob
+                    log.info("STORE [{}]: storageHint=SPARK – publishing spark-ingest-requested", ctx.fileId());
+                    publishSparkIngestRequestedEvent(ctx.fileId(), ctx.fileType(), ctx.orgId(),
+                            ctx.get("blobUrl", String.class));
+                } else {
+                    // POSTGRES path: call engine-data sinks as before
+                    String mapResult = ctx.get("mapResult", String.class);
+                    Map<String, String> request = Map.of(
+                            "fileId", ctx.fileId(),
+                            "mappedData", mapResult != null ? mapResult : "",
+                            "orgId", ctx.orgId());
 
-                    // Store to document sink (engine-data)
-                    directServiceClient.invokeMethod(routingConfig.engineData(), "store-doc", request, Map.class);
-
-                    idempotencyService.markProcessed(ctx.fileId(), "STORE", "OK");
-                    sendEvent(sm, WorkflowEvent.STORE_COMPLETE, fileId, workflowId);
-                } catch (Exception e) {
-                    throw new StorageException(ctx.fileId(), "Storage failed: " + e.getMessage(), e);
+                    try {
+                        directServiceClient.invokeMethod(routingConfig.engineData(), "store", request, Map.class);
+                        directServiceClient.invokeMethod(routingConfig.engineData(), "store-doc", request, Map.class);
+                    } catch (Exception e) {
+                        throw new StorageException(ctx.fileId(), "Storage failed: " + e.getMessage(), e);
+                    }
                 }
+
+                idempotencyService.markProcessed(ctx.fileId(), "STORE", "OK");
+                sendEvent(sm, WorkflowEvent.STORE_COMPLETE, fileId, workflowId);
             }
 
             @Override
             public void compensate(SagaOrchestrator.SagaContext ctx) {
-                try {
-                    Map<String, String> request = Map.of(
-                            "fileId", ctx.fileId(),
-                            "orgId", ctx.orgId());
+                String hint = ctx.get(STORAGE_HINT_KEY, String.class);
+                boolean useSpark = STORAGE_HINT_SPARK.equalsIgnoreCase(hint);
 
-                    // Compensate document sink first, then table sink (reverse order)
-                    directServiceClient.invokeMethod(routingConfig.engineData(), "rollback-doc", request, Map.class);
-                    directServiceClient.invokeMethod(routingConfig.engineData(), "rollback", request, Map.class);
-
-                    idempotencyService.invalidate(ctx.fileId(), "STORE");
-                    log.info("Store step compensated for file [{}]", ctx.fileId());
-                } catch (Exception e) {
-                    log.error("CRITICAL: Store compensation failed for file [{}]: {}",
-                            ctx.fileId(), e.getMessage(), e);
+                if (useSpark) {
+                    // Publish async delete event; Spark pipeline handles the removal
+                    publishSparkDeleteRequestedEvent(ctx.fileId(), ctx.orgId());
+                } else {
+                    try {
+                        Map<String, String> request = Map.of(
+                                "fileId", ctx.fileId(),
+                                "orgId", ctx.orgId());
+                        directServiceClient.invokeMethod(routingConfig.engineData(), "rollback-doc", request, Map.class);
+                        directServiceClient.invokeMethod(routingConfig.engineData(), "rollback", request, Map.class);
+                    } catch (Exception e) {
+                        log.error("CRITICAL: Store compensation failed for file [{}]: {}",
+                                ctx.fileId(), e.getMessage(), e);
+                    }
                 }
+                idempotencyService.invalidate(ctx.fileId(), "STORE");
+                log.info("Store step compensated for file [{}]", ctx.fileId());
             }
         });
 

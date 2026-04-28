@@ -169,8 +169,8 @@ class PptxAtomizerService(pptx_pb2_grpc.PptxAtomizerServiceServicer):
         finally:
             try:
                 os.unlink(pptx_path)
-            except OSError:
-                pass
+            except OSError as e:
+                logger.debug("Could not delete temp PPTX file %s: %s", pptx_path, e)
 
         async with PptxBlobClient(self._settings) as blob:
             image_url = await blob.upload_slide_image(
@@ -301,8 +301,8 @@ class PptxAtomizerService(pptx_pb2_grpc.PptxAtomizerServiceServicer):
 
         try:
             os.unlink(pptx_path)
-        except OSError:
-            pass
+        except OSError as e:
+            logger.debug("Could not delete temp PPTX file %s: %s", pptx_path, e)
 
         if errors and len(slide_contents) == 0:
             status = common_pb2.PROCESSING_STATUS_FAILED

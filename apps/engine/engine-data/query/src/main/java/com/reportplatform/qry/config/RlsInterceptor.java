@@ -16,8 +16,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
  * and {@code app.query_scope} on the database connection so that RLS policies filter
  * results correctly based on organization, role, and scope.
  *
- * NOTE: SET LOCAL does not support prepared statement parameters ($1).
- * Values are validated (UUID format, alphanumeric) before inline SQL to prevent injection.
+ * Uses {@code set_config(name, value, is_local=true)} with parameterized queries so that
+ * values never touch the SQL text. orgId is additionally validated as UUID format.
  */
 @Component("queryRlsInterceptor")
 public class RlsInterceptor implements HandlerInterceptor {
@@ -45,10 +45,10 @@ public class RlsInterceptor implements HandlerInterceptor {
                 return false;
             }
 
-            // SET LOCAL does not support prepared statement parameters —
-            // use validated UUID string directly (safe after UUID.fromString validation)
-            entityManager.createNativeQuery("SET LOCAL app.current_org_id = '" + orgId + "'")
-                    .executeUpdate();
+            entityManager.createNativeQuery(
+                            "SELECT set_config('app.current_org_id', :orgId, true)")
+                    .setParameter("orgId", orgId)
+                    .getSingleResult();
 
             log.debug("RLS org_id set to: {}", orgId);
         }
@@ -59,8 +59,10 @@ public class RlsInterceptor implements HandlerInterceptor {
             // Sanitize: only allow known role values (A-Z and underscore)
             String sanitizedRole = userRole.replaceAll("[^A-Z_]", "");
             if (!sanitizedRole.isEmpty()) {
-                entityManager.createNativeQuery("SET LOCAL app.current_user_role = '" + sanitizedRole + "'")
-                        .executeUpdate();
+                entityManager.createNativeQuery(
+                                "SELECT set_config('app.current_user_role', :role, true)")
+                        .setParameter("role", sanitizedRole)
+                        .getSingleResult();
                 log.debug("RLS user_role set to: {}", sanitizedRole);
             }
         }
@@ -70,8 +72,10 @@ public class RlsInterceptor implements HandlerInterceptor {
         if (queryScope != null && !queryScope.isBlank()) {
             String sanitizedScope = queryScope.replaceAll("[^A-Z_]", "");
             if (!sanitizedScope.isEmpty()) {
-                entityManager.createNativeQuery("SET LOCAL app.query_scope = '" + sanitizedScope + "'")
-                        .executeUpdate();
+                entityManager.createNativeQuery(
+                                "SELECT set_config('app.query_scope', :scope, true)")
+                        .setParameter("scope", sanitizedScope)
+                        .getSingleResult();
                 log.debug("RLS query_scope set to: {}", sanitizedScope);
             }
         }

@@ -16,6 +16,7 @@ public record SinkListItemDto(
         Object metadata,
         Instant createdAt,
         long correctionCount,
-        boolean hasSelections
+        boolean hasSelections,
+        String storageBackend
 ) {
 }

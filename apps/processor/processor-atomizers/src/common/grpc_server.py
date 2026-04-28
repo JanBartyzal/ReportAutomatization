@@ -15,12 +15,14 @@ from atomizer.v1 import (  # type: ignore[import-untyped]
     excel_pb2_grpc,
     pdf_pb2_grpc,
     pptx_pb2_grpc,
+    servicenow_pb2_grpc,
 )
 
 from src.atomizers.ai.service.ai_gateway_grpc import AiGatewayGrpcService
 from src.atomizers.csv.service.csv_service import CsvAtomizerService
 from src.atomizers.pdf.service.pdf_service import PdfAtomizerService
 from src.atomizers.pptx.service.pptx_service import PptxAtomizerService
+from src.atomizers.servicenow.service.servicenow_service import ServiceNowAtomizerService
 from src.atomizers.xls.service.excel_service import ExcelAtomizerService
 
 if TYPE_CHECKING:
@@ -62,6 +64,11 @@ async def create_grpc_server(settings: "Settings") -> grpc.aio.Server:
     csv_servicer = CsvAtomizerService(settings)
     csv_pb2_grpc.add_CsvAtomizerServiceServicer_to_server(csv_servicer, server)
     logger.info("Registered CsvAtomizerService")
+
+    # ServiceNow atomizer
+    servicenow_servicer = ServiceNowAtomizerService(settings)
+    servicenow_pb2_grpc.add_ServiceNowAtomizerServiceServicer_to_server(servicenow_servicer, server)
+    logger.info("Registered ServiceNowAtomizerService")
 
     # AI Gateway
     ai_servicer = AiGatewayGrpcService(settings)

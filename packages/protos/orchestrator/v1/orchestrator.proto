@@ -34,10 +34,11 @@ service OrchestratorService {
 message StartFileWorkflowRequest {
   common.v1.RequestContext context = 1;
   string file_id = 2;
-  string file_type = 3;      // "PPTX", "XLSX", "PDF", "CSV"
+  string file_type = 3;       // "PPTX", "XLSX", "PDF", "CSV", "SERVICE_NOW"
   string org_id = 4;
   string blob_url = 5;
   string upload_purpose = 6;  // "PARSE" or "FORM_IMPORT"
+  string storage_hint = 7;    // "POSTGRES" (default) or "SPARK"
 }
 
 message GetWorkflowStatusRequest {
@@ -122,6 +123,10 @@ message FileUploadedEvent {
   string blob_url = 5;
   string upload_purpose = 6;
   string uploaded_at = 7;
+  // Optional storage-backend hint.  When set to "SPARK" the orchestrator
+  // skips the TableSink step and instead publishes "spark-ingest-requested".
+  // Omit (or set to empty / "POSTGRES") to keep the default POSTGRES path.
+  string storage_hint = 8;
 }
 
 // Published by MS-ORCH on topic "processing-completed"

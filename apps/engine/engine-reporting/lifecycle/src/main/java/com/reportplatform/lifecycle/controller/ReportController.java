@@ -13,6 +13,8 @@ import com.reportplatform.lifecycle.service.AuditService;
 import com.reportplatform.lifecycle.service.ReportService;
 import com.reportplatform.lifecycle.service.SubmissionChecklistService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +36,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/reports")
 public class ReportController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ReportController.class);
 
     private final ReportService reportService;
     private final AuditService auditService;
@@ -66,35 +70,29 @@ public class ReportController {
             @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId,
             @RequestHeader(value = "X-Org-Id", required = false) String headerOrgId) {
         try {
-            String orgId = request.orgId() != null && !request.orgId().isBlank()
+            String orgId = (request.orgId() != null && !request.orgId().isBlank())
                     ? request.orgId()
-                    : (headerOrgId != null ? headerOrgId : "default-org");
+                    : headerOrgId;
+            if (orgId == null || orgId.isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(java.util.Map.of("error", "orgId is required in request body or X-Org-Id header"));
+            }
+            if (request.periodId() == null) {
+                return ResponseEntity.badRequest()
+                        .body(java.util.Map.of("error", "periodId is required"));
+            }
             String reportType = request.reportType() != null && !request.reportType().isBlank()
                     ? request.reportType()
                     : "GENERAL";
             ReportScope scope = request.scope() != null
                     ? ReportScope.valueOf(request.scope())
                     : ReportScope.CENTRAL;
-            UUID periodId = request.periodId() != null ? request.periodId() : UUID.randomUUID();
-            var report = reportService.createReport(orgId, periodId, reportType, userId, scope);
+            var report = reportService.createReport(orgId, request.periodId(), reportType, userId, scope);
             return ResponseEntity.status(HttpStatus.CREATED).body(ReportResponse.from(report));
         } catch (Exception e) {
-            // Return stub response so UAT tests can proceed
-            String orgId = request.orgId() != null ? request.orgId()
-                    : (headerOrgId != null ? headerOrgId : "default-org");
-            String reportType = request.reportType() != null ? request.reportType() : "GENERAL";
-            UUID stubId = UUID.randomUUID();
-            return ResponseEntity.status(HttpStatus.CREATED).body(java.util.Map.of(
-                    "id", stubId.toString(),
-                    "orgId", orgId,
-                    "periodId", request.periodId() != null ? request.periodId().toString() : UUID.randomUUID().toString(),
-                    "reportType", reportType,
-                    "status", "DRAFT",
-                    "scope", request.scope() != null ? request.scope() : "CENTRAL",
-                    "locked", false,
-                    "createdBy", userId,
-                    "createdAt", java.time.Instant.now().toString()
-            ));
+            logger.error("Failed to create report: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("error", "Failed to create report", "detail", e.getMessage()));
         }
     }
 

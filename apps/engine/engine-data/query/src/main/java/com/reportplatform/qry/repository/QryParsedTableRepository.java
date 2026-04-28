@@ -23,6 +23,21 @@ public interface QryParsedTableRepository extends JpaRepository<ParsedTableEntit
     Page<ParsedTableEntity> findByOrgIdAndFileIdAndSourceSheetContainingIgnoreCaseOrderByCreatedAtDesc(
             String orgId, String fileId, String sourceSheet, Pageable pageable);
 
+    // Storage-backend-aware queries
+    Page<ParsedTableEntity> findByOrgIdAndStorageBackendOrderByCreatedAtDesc(
+            String orgId, String storageBackend, Pageable pageable);
+
+    Page<ParsedTableEntity> findByOrgIdAndStorageBackendAndSourceSheetContainingIgnoreCaseOrderByCreatedAtDesc(
+            String orgId, String storageBackend, String sourceSheet, Pageable pageable);
+
+    Page<ParsedTableEntity> findByOrgIdAndStorageBackendAndFileIdOrderByCreatedAtDesc(
+            String orgId, String storageBackend, String fileId, Pageable pageable);
+
+    Page<ParsedTableEntity> findByOrgIdAndStorageBackendAndFileIdAndSourceSheetContainingIgnoreCaseOrderByCreatedAtDesc(
+            String orgId, String storageBackend, String fileId, String sourceSheet, Pageable pageable);
+
+    long countByOrgIdAndStorageBackend(String orgId, String storageBackend);
+
     // Scope-aware queries
     Page<ParsedTableEntity> findByOrgIdAndScopeOrderByCreatedAtDesc(
             String orgId, String scope, Pageable pageable);
