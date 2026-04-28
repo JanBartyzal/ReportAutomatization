@@ -249,12 +249,20 @@ public class ProjectFetchService {
         String projectedEnd = str(fields, "projected_end_date");
         if (plannedEnd != null && projectedEnd != null) {
             try {
-                LocalDate planned = LocalDate.parse(plannedEnd.substring(0, 10));
-                LocalDate projected = LocalDate.parse(projectedEnd.substring(0, 10));
-                scheduleVariance = (int) (projected.toEpochDay() - planned.toEpochDay());
-                fields.put("_kpi_schedule_variance_days", scheduleVariance);
-            } catch (DateTimeParseException e) {
-                log.warn("Failed to parse schedule dates (plannedEnd={}, projectedEnd={}): {}", plannedEnd, projectedEnd, e.getMessage());
+                // substring(0, 10) extracts "yyyy-MM-dd" from SN date strings like "2024-06-30 00:00:00"
+                // Guards: length check prevents StringIndexOutOfBoundsException for unexpected formats
+                if (plannedEnd.length() >= 10 && projectedEnd.length() >= 10) {
+                    LocalDate planned = LocalDate.parse(plannedEnd.substring(0, 10));
+                    LocalDate projected = LocalDate.parse(projectedEnd.substring(0, 10));
+                    scheduleVariance = (int) (projected.toEpochDay() - planned.toEpochDay());
+                    fields.put("_kpi_schedule_variance_days", scheduleVariance);
+                } else {
+                    log.warn("Schedule date strings too short to parse (plannedEnd='{}', projectedEnd='{}')",
+                            plannedEnd, projectedEnd);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to parse schedule dates (plannedEnd={}, projectedEnd={}): {}",
+                        plannedEnd, projectedEnd, e.getMessage());
             }
         }
 

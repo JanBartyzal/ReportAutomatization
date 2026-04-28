@@ -1656,3 +1656,54 @@ Opravy nalezené při code review Phase 8 změn. Žádné nové feature sets –
 |--------|---------|
 | `engine-data/query/src/test/…/NamedQueryServiceTest.java` | **Nový soubor** – 15 testů. `AssertReadOnly_Rejected`: 18 SQL vzorů (DML keywords, nested DML v CTE, multi-statement, prázdný SQL). `AssertReadOnly_Allowed`: 5 bezpečných SELECT vzorů včetně identifikátorů obsahujících keyword (např. `update_count`, `deleted_at`). `Execute_Validation`: neaktivní query → `IllegalStateException`; entita s DML SQL → `IllegalArgumentException` při execute. |
 | `engine-data/sink-tbl/src/test/…/StorageRoutingServiceTest.java` | **Nový soubor** – 9 testů pokrývajících všech 5 úrovní specificity pravidel: org+source → fallback na POSTGRES při prázdných pravidlech; org+source beats org+wildcard; org beats source; source beats global; case-insensitive source matching; null orgId; výjimka při absenci backendu. |
+
+---
+
+### v5.4.2 – 2026-04-28 – Code Review Fixes (P8 post-merge hardening)
+
+#### Kontext
+Opravy identifikované při post-merge code review P8 větve. Zaměřeno na robustnost parsování dat, výkonnost DB indexů a bezpečnost Named Query execution pipeline. Bez nových feature sets.
+
+---
+
+#### [HIGH] Robustnost – `NamedQueryService`: validace parametrů a typová konverze
+
+| Soubor | Změna |
+|--------|-------|
+| `engine-data/query/service/NamedQueryService.java` | **Nová metoda `validateRequiredParams()`** – před exekucí query parsuje `paramsSchema` (JSON Schema) a ověří, že všechna pole deklarovaná v poli `required` jsou přítomna v runtime `params`. Chybějící parametry vyhodí `IllegalArgumentException` se jmény konkrétních chybějících polí (`"Missing required parameters for query {id}: [groupId]"`). Bez této validace selhávalo volání se záhadnou JDBC chybou o unbound parameter. |
+| `engine-data/query/service/NamedQueryService.java` | **Nová metoda `coerceParamValue()`** – všechny parametry byly dříve bindovány jako `String`, bez ohledu na deklarovaný typ v `paramsSchema`. Nová metoda čte `properties.{paramName}.type` ze schématu a převede hodnotu na odpovídající Java typ: `"integer"` → `Long`, `"number"` → `Double`, `"boolean"` → `Boolean`. Ostatní typy (string, array, object) předány jako `String`. Na chybu konverze loguje `WARN` a jako fallback předá původní string (DB reportuje typovou chybu přímo). |
+| `engine-data/query/service/NamedQueryService.java` | **Nová metoda `parseSchemaProperties()`** – extrahuje sekci `properties` z JSON Schema stringu. Vrátí prázdnou mapu při parse chybě (graceful degradace). |
+| `engine-data/query/service/NamedQueryService.java` | Přidán `ObjectMapper` jako konstruktorový parametr a field (injektován Springem). Přidány importy `com.fasterxml.jackson.core.type.TypeReference`, `com.fasterxml.jackson.databind.ObjectMapper`. |
+
+---
+
+#### [MEDIUM] Robustnost – `ProjectFetchService`: odolnost vůči neočekávaným formátům datumů
+
+| Soubor | Změna |
+|--------|-------|
+| `engine-integrations/servicenow/service/ProjectFetchService.java` | Výpočet `scheduleVarianceDays`: `plannedEnd.substring(0, 10)` a `projectedEnd.substring(0, 10)` bez kontroly délky mohly způsobit `StringIndexOutOfBoundsException` při neočekávaném formátu datumu z ServiceNow API (kratší než 10 znaků). Přidán guard `length >= 10` před každý `substring` volání. Při nesplnění podmínky loguje `WARN` s hodnotami obou datumů. Catch rozšířen z `DateTimeParseException` na `Exception` – zachytí i `StringIndexOutOfBoundsException` a jiné runtime výjimky při parsování. |
+
+---
+
+#### [MEDIUM] Výkon DB – chybějící indexy pro inkrementální sync
+
+| Migrace | Změna |
+|---------|-------|
+| `V12_0_2__snow_itsm_tables.sql` | Přidán `CREATE INDEX idx_snow_inc_synced_at ON snow_incidents (synced_at)`. Tento index chyběl přestože `synced_at` je hlavní filtrovací sloupec pro inkrementální sync dotazy (`WHERE synced_at > :lastSync`). Bez indexu full-scan tabulky s miliony záznamů. |
+| `V12_0_2__snow_itsm_tables.sql` | Přidán `CREATE INDEX idx_snow_req_synced_at ON snow_requests (synced_at)`. Stejný důvod jako u `snow_incidents`. |
+
+---
+
+#### [LOW] Výkon DB – kompozitní index pro Named Queries
+
+| Migrace | Změna |
+|---------|-------|
+| `V12_0_1__qry_named_queries.sql` | Přidán `CREATE INDEX idx_named_queries_active_system ON named_queries (is_active, is_system)`. Metody `findAccessibleByOrgId` a `findAccessibleByOrgIdPageable` vždy filtrují podle obou sloupců zároveň (`is_active = TRUE AND (org_id = :orgId OR is_system = TRUE)`). Separátní indexy `idx_named_queries_is_system` a `idx_named_queries_is_active` jsou méně efektivní než kompozitní pro tento access pattern. |
+
+---
+
+#### [LOW] Kvalita kódu – `HeaderAuthenticationFilter` (engine-data): duplicitní Logger instance
+
+| Soubor | Změna |
+|--------|-------|
+| `engine-data/common/config/HeaderAuthenticationFilter.java` | Čtyři volání `org.slf4j.LoggerFactory.getLogger(HeaderAuthenticationFilter.class).info(...)` uvnitř metody `doFilterInternal()` nahrazena použitím existujícího statického fieldu `log`. Každé inline `LoggerFactory.getLogger()` volání zbytečně vytvářelo novou instanci Loggeru (i když SLF4J interně cachuje, jde o zbytečný lookup a anti-pattern). Sjednocen styl logování s ostatními třídami v projektu. |

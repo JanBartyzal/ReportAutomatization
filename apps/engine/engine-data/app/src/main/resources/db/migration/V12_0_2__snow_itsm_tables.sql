@@ -54,6 +54,8 @@ CREATE INDEX idx_snow_inc_state          ON snow_incidents (state);
 CREATE INDEX idx_snow_inc_priority       ON snow_incidents (priority);
 CREATE INDEX idx_snow_inc_opened_at      ON snow_incidents (opened_at);
 CREATE INDEX idx_snow_inc_sla_breached   ON snow_incidents (is_sla_breached);
+-- Supports incremental sync queries filtered by last sync timestamp
+CREATE INDEX idx_snow_inc_synced_at      ON snow_incidents (synced_at);
 
 ALTER TABLE snow_incidents ENABLE ROW LEVEL SECURITY;
 
@@ -107,6 +109,8 @@ CREATE INDEX idx_snow_req_connection     ON snow_requests (connection_id);
 CREATE INDEX idx_snow_req_resolver_group ON snow_requests (resolver_group_id);
 CREATE INDEX idx_snow_req_state          ON snow_requests (state);
 CREATE INDEX idx_snow_req_opened_at      ON snow_requests (opened_at);
+-- Supports incremental sync queries filtered by last sync timestamp
+CREATE INDEX idx_snow_req_synced_at      ON snow_requests (synced_at);
 
 ALTER TABLE snow_requests ENABLE ROW LEVEL SECURITY;
 

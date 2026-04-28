@@ -23,6 +23,8 @@ CREATE INDEX idx_named_queries_org_id         ON named_queries (org_id);
 CREATE INDEX idx_named_queries_is_system       ON named_queries (is_system);
 CREATE INDEX idx_named_queries_data_source     ON named_queries (data_source_hint);
 CREATE INDEX idx_named_queries_is_active       ON named_queries (is_active);
+-- Composite index for the common access pattern: list active queries filtered by org_id + system flag
+CREATE INDEX idx_named_queries_active_system   ON named_queries (is_active, is_system);
 
 -- RLS: each org sees its own queries + system queries (org_id IS NULL)
 ALTER TABLE named_queries ENABLE ROW LEVEL SECURITY;

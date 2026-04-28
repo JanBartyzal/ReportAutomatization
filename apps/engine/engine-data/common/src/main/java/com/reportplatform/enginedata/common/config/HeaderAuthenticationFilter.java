@@ -43,8 +43,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         String rolesHeader = request.getHeader(ROLES_HEADER);
 
         // Debug logging
-        org.slf4j.LoggerFactory.getLogger(HeaderAuthenticationFilter.class)
-            .info("HeaderAuthFilter: path={}, userId={}, roles={}",
+        log.info("HeaderAuthFilter: path={}, userId={}, roles={}",
                   request.getRequestURI(), userId, rolesHeader);
 
         if (userId != null && !userId.isBlank()) {
@@ -63,8 +62,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
             var auth = new UsernamePasswordAuthenticationToken(userId, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(auth);
-            org.slf4j.LoggerFactory.getLogger(HeaderAuthenticationFilter.class)
-                .info("HeaderAuthFilter: set auth with {} authorities: {}",
+            log.info("HeaderAuthFilter: set auth with {} authorities: {}",
                       authorities.size(), authorities);
         } else {
             // Fallback: check X-API-Key header for direct service calls (UAT/dev)
@@ -86,8 +84,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
                 var auth = new UsernamePasswordAuthenticationToken(
                         "apikey-user", null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
-                org.slf4j.LoggerFactory.getLogger(HeaderAuthenticationFilter.class)
-                    .info("HeaderAuthFilter: API key fallback auth");
+                log.info("HeaderAuthFilter: API key fallback auth");
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -115,8 +112,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
                 }
                 var auth = new UsernamePasswordAuthenticationToken(principalId, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
-                org.slf4j.LoggerFactory.getLogger(HeaderAuthenticationFilter.class)
-                    .info("HeaderAuthFilter: Bearer fallback auth for principal={}", principalId);
+                log.info("HeaderAuthFilter: Bearer fallback auth for principal={}", principalId);
             }
         }
 

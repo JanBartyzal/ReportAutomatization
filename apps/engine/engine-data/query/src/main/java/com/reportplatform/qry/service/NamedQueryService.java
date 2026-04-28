@@ -1,5 +1,7 @@
 package com.reportplatform.qry.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reportplatform.qry.model.NamedQueryEntity;
 import com.reportplatform.qry.model.dto.*;
 import com.reportplatform.qry.repository.NamedQueryRepository;
@@ -61,12 +63,14 @@ public class NamedQueryService {
     );
 
     private final NamedQueryRepository repository;
+    private final ObjectMapper objectMapper;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    public NamedQueryService(NamedQueryRepository repository) {
+    public NamedQueryService(NamedQueryRepository repository, ObjectMapper objectMapper) {
         this.repository = repository;
+        this.objectMapper = objectMapper;
     }
 
     // ---- CRUD ----
@@ -189,10 +193,15 @@ public class NamedQueryService {
         jakarta.persistence.TypedQuery<Tuple> nativeQuery =
                 (jakarta.persistence.TypedQuery<Tuple>) entityManager.createNativeQuery(sql, Tuple.class);
 
-        // Bind named parameters from request
+        // Validate required parameters against paramsSchema before binding
         Map<String, String> params = req.params() != null ? req.params() : Map.of();
+        validateRequiredParams(entity.getParamsSchema(), params, queryId);
+
+        // Bind named parameters with type-aware coercion based on paramsSchema
+        Map<String, Object> schemaProperties = parseSchemaProperties(entity.getParamsSchema());
         for (Map.Entry<String, String> entry : params.entrySet()) {
-            nativeQuery.setParameter(entry.getKey(), entry.getValue());
+            Object coerced = coerceParamValue(entry.getKey(), entry.getValue(), schemaProperties);
+            nativeQuery.setParameter(entry.getKey(), coerced);
         }
 
         List<Tuple> rawResults = nativeQuery.getResultList();
@@ -204,6 +213,95 @@ public class NamedQueryService {
     }
 
     // ---- Helpers ----
+
+    /**
+     * Validates that all parameters declared as {@code required} in the query's
+     * paramsSchema are present in the caller-supplied params map.
+     *
+     * @throws IllegalArgumentException with a clear list of missing param names
+     */
+    private void validateRequiredParams(String paramsSchema, Map<String, String> params, UUID queryId) {
+        if (paramsSchema == null || paramsSchema.isBlank() || paramsSchema.equals("{}")) return;
+        try {
+            Map<String, Object> schema = objectMapper.readValue(
+                    paramsSchema, new TypeReference<Map<String, Object>>() {});
+            Object requiredRaw = schema.get("required");
+            if (!(requiredRaw instanceof List<?> required) || required.isEmpty()) return;
+
+            List<String> missing = required.stream()
+                    .map(Object::toString)
+                    .filter(name -> !params.containsKey(name) || params.get(name) == null)
+                    .toList();
+
+            if (!missing.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Missing required parameters for query " + queryId + ": " + missing);
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            log.warn("Could not parse paramsSchema for validation (queryId={}): {}", queryId, e.getMessage());
+        }
+    }
+
+    /**
+     * Parses the {@code properties} section of a JSON Schema string into a map of
+     * param-name → property descriptor (e.g. {@code {"type": "integer"}}).
+     * Returns an empty map on any parse error so callers degrade gracefully.
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseSchemaProperties(String paramsSchema) {
+        if (paramsSchema == null || paramsSchema.isBlank() || paramsSchema.equals("{}")) return Map.of();
+        try {
+            Map<String, Object> schema = objectMapper.readValue(
+                    paramsSchema, new TypeReference<Map<String, Object>>() {});
+            Object props = schema.get("properties");
+            if (props instanceof Map<?, ?> m) {
+                return (Map<String, Object>) m;
+            }
+        } catch (Exception e) {
+            log.warn("Could not parse paramsSchema properties: {}", e.getMessage());
+        }
+        return Map.of();
+    }
+
+    /**
+     * Converts a string parameter value to the Java type declared in the schema.
+     * <p>
+     * Supported type coercions:
+     * <ul>
+     *   <li>{@code "integer"} / {@code "number"} → {@link Long} / {@link Double}</li>
+     *   <li>{@code "boolean"} → {@link Boolean}</li>
+     *   <li>anything else → kept as {@link String}</li>
+     * </ul>
+     * Falls back to the original string on parse failure so the DB can report a
+     * type error rather than the service swallowing it silently.
+     */
+    private Object coerceParamValue(String paramName, String rawValue, Map<String, Object> schemaProperties) {
+        if (rawValue == null) return null;
+        Object propDef = schemaProperties.get(paramName);
+        if (!(propDef instanceof Map<?, ?> propMap)) return rawValue;
+
+        String type = String.valueOf(propMap.get("type"));
+        return switch (type) {
+            case "integer" -> {
+                try { yield Long.parseLong(rawValue); }
+                catch (NumberFormatException e) {
+                    log.warn("Cannot coerce param '{}' value '{}' to integer; passing as string", paramName, rawValue);
+                    yield rawValue;
+                }
+            }
+            case "number" -> {
+                try { yield Double.parseDouble(rawValue); }
+                catch (NumberFormatException e) {
+                    log.warn("Cannot coerce param '{}' value '{}' to number; passing as string", paramName, rawValue);
+                    yield rawValue;
+                }
+            }
+            case "boolean" -> Boolean.parseBoolean(rawValue);
+            default -> rawValue;
+        };
+    }
 
     /**
      * Validates that the SQL is a read-only SELECT (or WITH…SELECT) statement.
