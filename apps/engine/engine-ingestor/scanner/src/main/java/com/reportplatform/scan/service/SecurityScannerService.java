@@ -44,16 +44,20 @@ public class SecurityScannerService {
         this.clamavClientService = clamavClientService;
     }
 
-    /**
-     * Scan raw file bytes for viruses using ClamAV.
-     * Called BEFORE blob upload to prevent infected files from reaching storage.
-     */
     public ScanResult scanStream(byte[] fileContent) throws IOException {
         logger.info("Scanning file stream: size={}B", fileContent.length);
+        return scanStream(new ByteArrayInputStream(fileContent));
+    }
+
+    /**
+     * Scan a stream for viruses using ClamAV.
+     * Called BEFORE blob upload to prevent infected files from reaching storage.
+     */
+    public ScanResult scanStream(InputStream fileContent) throws IOException {
         long startTime = System.currentTimeMillis();
 
         ClamavClientService.ScanResult scanResult =
-                clamavClientService.scanFile(new ByteArrayInputStream(fileContent));
+                clamavClientService.scanFile(fileContent);
 
         long duration = System.currentTimeMillis() - startTime;
 

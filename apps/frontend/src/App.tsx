@@ -42,6 +42,7 @@ import SinkBrowserPage from './pages/SinkBrowserPage';
 import SinkDetailPage from './pages/SinkDetailPage';
 import AdminPage from './pages/AdminPage';
 import ExportFlowsPage from './pages/ExportFlowsPage';
+import DrilldownReportsPage from './pages/DrilldownReportsPage';
 import NamedQueryPage from './pages/NamedQueryPage';
 import TextTemplateListPage from './pages/TextTemplateListPage';
 import TextTemplateEditorPage from './pages/TextTemplateEditorPage';
@@ -65,6 +66,8 @@ function AuthenticatedRoutes() {
                 <Route path="/files/:fileId" element={<FileDetailPage />} />
                 <Route path="/upload" element={<UploadPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/reports/analytics" element={<DrilldownReportsPage />} />
+                <Route path="/reports/analytics/:reportId" element={<DrilldownReportsPage />} />
                 <Route path="/reports/:reportId" element={<ReportDetailPage />} />
                 <Route path="/periods" element={<PeriodsPage />} />
                 <Route path="/periods/:periodId" element={<PeriodDetailPage />} />

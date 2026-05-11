@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # Step02: File Upload (FS02)
 # Verify file upload using real test files from tests/UAT/data/,
-# type validation, auth check, and metadata retrieval.
+# upload purpose routing, type validation, auth check, AV rejection, and metadata retrieval.
 
 import sys
 import os
 import io
+import time
 
 # Add shared lib to path
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../shared")))
@@ -34,6 +35,12 @@ TEST_FILES = {
 
 # Fake EXE blob for rejection test
 FAKE_EXE = b"MZ" + b"\x00" * 100
+CSV_BYTES = b"Project,Cost\nItem1,100\nItem2,250\n"
+PDF_BYTES = b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n"
+EICAR_BYTES = (
+    b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$"
+    b"EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
+)
 
 
 def _load_test_file(file_key: str) -> tuple[str, bytes, str] | None:
@@ -96,16 +103,15 @@ def main() -> int:
         filename, content, mime = pptx_data
         session._log(f"[INFO] Uploading PPTX: {filename} ({len(content)} bytes)")
         pptx_file = (filename, io.BytesIO(content), mime)
-        status, body = upload_session.call("POST", "/api/upload",
+        start = time.perf_counter()
+        status, body = upload_session.call_status_in("POST", "/api/upload",
                                     files={"file": pptx_file},
-                                    expected_status=201,
-                                    tag="upload-pptx",
+                                    body={"upload_purpose": "PARSE"},
+                                    expected_statuses=(202, 201, 200),
+                                    tag="upload-pptx-parse",
                                     timeout=TIMEOUTS.get("upload", 60))
-        # Accept both 200 and 201
-        if status == 200:
-            session._pass_count += 1
-            session._fail_count = max(0, session._fail_count - 1)
-            session._log("[OK]   Upload PPTX returned 200 (acceptable)")
+        elapsed = time.perf_counter() - start
+        session.assert_true(elapsed < 5.0, f"PPTX upload completed under 5s ({elapsed:.2f}s)")
 
         pptx_file_id = None
         if isinstance(body, dict):
@@ -113,6 +119,9 @@ def main() -> int:
             if pptx_file_id:
                 file_ids["pptx"] = pptx_file_id
                 session._log(f"[INFO] PPTX file_id: {pptx_file_id}")
+                response_purpose = body.get("uploadPurpose") or body.get("upload_purpose") or body.get("purpose")
+                if response_purpose is not None:
+                    session.assert_true(response_purpose == "PARSE", f"PPTX upload purpose persisted as PARSE ({response_purpose})")
             else:
                 session.assert_true(False, "Upload PPTX response should contain fileId/file_id/id")
     else:
@@ -128,15 +137,12 @@ def main() -> int:
         filename, content, mime = xlsx_data
         session._log(f"[INFO] Uploading XLSX: {filename} ({len(content)} bytes)")
         xlsx_file = (filename, io.BytesIO(content), mime)
-        status, body = upload_session.call("POST", "/api/upload",
+        status, body = upload_session.call_status_in("POST", "/api/upload",
                                     files={"file": xlsx_file},
-                                    expected_status=201,
-                                    tag="upload-xlsx",
+                                    body={"upload_purpose": "FORM_IMPORT"},
+                                    expected_statuses=(202, 201, 200),
+                                    tag="upload-xlsx-form-import",
                                     timeout=TIMEOUTS.get("upload", 60))
-        if status == 200:
-            session._pass_count += 1
-            session._fail_count = max(0, session._fail_count - 1)
-            session._log("[OK]   Upload XLSX returned 200 (acceptable)")
 
         xlsx_file_id = None
         if isinstance(body, dict):
@@ -144,6 +150,9 @@ def main() -> int:
             if xlsx_file_id:
                 file_ids["xlsx"] = xlsx_file_id
                 session._log(f"[INFO] XLSX file_id: {xlsx_file_id}")
+                response_purpose = body.get("uploadPurpose") or body.get("upload_purpose") or body.get("purpose")
+                if response_purpose is not None:
+                    session.assert_true(response_purpose == "FORM_IMPORT", f"XLSX upload purpose persisted as FORM_IMPORT ({response_purpose})")
             else:
                 session.assert_true(False, "Upload XLSX response should contain fileId/file_id/id")
     else:
@@ -154,17 +163,56 @@ def main() -> int:
     # ---------------------------------------------------------------
     # 4. Upload invalid file type (.exe) — expect 415
     # ---------------------------------------------------------------
+    csv_file = ("uat_upload.csv", io.BytesIO(CSV_BYTES), "text/csv")
+    status, body = upload_session.call_status_in("POST", "/api/upload",
+                                files={"file": csv_file},
+                                body={"upload_purpose": "PARSE"},
+                                expected_statuses=(202, 201, 200),
+                                tag="upload-csv-allowlist",
+                                timeout=TIMEOUTS.get("upload", 60))
+    if isinstance(body, dict):
+        csv_file_id = body.get("fileId") or body.get("file_id") or body.get("id")
+        if csv_file_id:
+            file_ids["csv"] = csv_file_id
+
+    pdf_file = ("uat_upload.pdf", io.BytesIO(PDF_BYTES), "application/pdf")
+    status, body = upload_session.call_status_in("POST", "/api/upload",
+                                files={"file": pdf_file},
+                                body={"upload_purpose": "PARSE"},
+                                expected_statuses=(202, 201, 200),
+                                tag="upload-pdf-allowlist",
+                                timeout=TIMEOUTS.get("upload", 60))
+    if isinstance(body, dict):
+        pdf_file_id = body.get("fileId") or body.get("file_id") or body.get("id")
+        if pdf_file_id:
+            file_ids["pdf"] = pdf_file_id
+
     exe_file = ("malicious.exe", io.BytesIO(FAKE_EXE), "application/octet-stream")
-    status, body = upload_session.call("POST", "/api/upload",
+    upload_session.call_status_in("POST", "/api/upload",
                                 files={"file": exe_file},
-                                expected_status=415,
+                                expected_statuses=(415, 400),
                                 tag="upload-exe-rejected",
                                 timeout=TIMEOUTS.get("upload", 60))
-    # 400 is also acceptable for rejected file type
-    if status == 400:
-        session._pass_count += 1
-        session._fail_count = max(0, session._fail_count - 1)
-        session._log("[OK]   Upload .exe returned 400 (acceptable rejection)")
+
+    spoofed_pptx = ("spoofed.pptx", io.BytesIO(FAKE_EXE),
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+    upload_session.call_status_in("POST", "/api/upload",
+                                files={"file": spoofed_pptx},
+                                body={"upload_purpose": "PARSE"},
+                                expected_statuses=(415, 400),
+                                tag="upload-magic-mismatch-rejected",
+                                timeout=TIMEOUTS.get("upload", 60))
+
+    eicar_file = ("eicar.csv", io.BytesIO(EICAR_BYTES), "text/csv")
+    status, body = upload_session.call("POST", "/api/upload",
+                                files={"file": eicar_file},
+                                body={"upload_purpose": "PARSE"},
+                                expected_status=422,
+                                tag="upload-eicar-rejected",
+                                timeout=TIMEOUTS.get("upload", 60))
+    if status == 422 and isinstance(body, dict):
+        reason = str(body.get("error") or body.get("reason") or body.get("code") or "").upper()
+        session.assert_true("INFECT" in reason or reason == "", f"EICAR rejection reason present or status is explicit 422 ({reason})")
 
     # ---------------------------------------------------------------
     # 5. Upload without auth — expect 401/403 (in dev mode may accept)
@@ -172,13 +220,10 @@ def main() -> int:
     noauth_session = UATSession(base_url=upload_url)  # no token, no api_key, no X-headers
     noauth_file = ("noauth.pptx", io.BytesIO(b"PK\x03\x04" + b"\x00" * 50),
                    "application/vnd.openxmlformats-officedocument.presentationml.presentation")
-    status, body = noauth_session.call("POST", "/api/upload",
+    noauth_session.call_status_in("POST", "/api/upload",
                                 files={"file": noauth_file},
-                                expected_status=400,  # 400 = missing required X-User-Id/X-Org-Id headers
+                                expected_statuses=(401, 403, 400),
                                 tag="upload-no-auth")
-    # In prod (via nginx): 401 (ForwardAuth). Direct to service: 400 (missing headers) or 401/403
-    session.assert_true(status in (400, 401, 403),
-                        f"No-auth upload rejected (HTTP {status})")
 
     # ---------------------------------------------------------------
     # 6. Check uploaded file metadata (PPTX)
@@ -190,6 +235,16 @@ def main() -> int:
             session.assert_field(body, "filename", label="PPTX filename present")
             has_mime = ("mimeType" in body or "mime_type" in body or "contentType" in body)
             session.assert_true(has_mime, "PPTX metadata contains mime type field")
+            scan_status = body.get("scanStatus") or body.get("scan_status")
+            if scan_status is not None:
+                session.assert_true(str(scan_status).upper() in ("CLEAN", "PASSED", "OK"), f"PPTX scan status is clean ({scan_status})")
+            blob_url = body.get("blobUrl") or body.get("blob_url") or body.get("storageUrl")
+            if blob_url:
+                session.assert_true(str(session.org_id) in str(blob_url), "Blob URL/path contains org id")
+                session.assert_true(str(pptx_file_id) in str(blob_url), "Blob URL/path contains file id")
+            purpose = body.get("uploadPurpose") or body.get("upload_purpose") or body.get("purpose")
+            if purpose is not None:
+                session.assert_true(purpose == "PARSE", f"PPTX metadata purpose is PARSE ({purpose})")
         elif status in (404, 500):
             session.missing_feature(f"GET /api/files/{pptx_file_id}",
                                     f"File metadata query returned {status} — endpoint may not be implemented yet")
@@ -206,6 +261,9 @@ def main() -> int:
             session.assert_field(body, "filename", label="XLSX filename present")
             has_mime = ("mimeType" in body or "mime_type" in body or "contentType" in body)
             session.assert_true(has_mime, "XLSX metadata contains mime type field")
+            purpose = body.get("uploadPurpose") or body.get("upload_purpose") or body.get("purpose")
+            if purpose is not None:
+                session.assert_true(purpose == "FORM_IMPORT", f"XLSX metadata purpose is FORM_IMPORT ({purpose})")
         elif status in (404, 500):
             session.missing_feature(f"GET /api/files/{xlsx_file_id}",
                                     f"File metadata query returned {status} — endpoint may not be implemented yet")

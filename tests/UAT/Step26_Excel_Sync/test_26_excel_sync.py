@@ -6,6 +6,8 @@
 import sys
 import os
 import time
+import base64
+import io
 
 # Add shared lib to path
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../shared")))
@@ -15,6 +17,50 @@ from uat_common import UATSession
 from uat_config import BASE_URL, USERS, SERVICES
 
 STEP_NAME = "step26_Excel_Sync"
+
+try:
+    from openpyxl import Workbook, load_workbook
+except Exception:
+    Workbook = None
+    load_workbook = None
+
+
+def _build_partial_update_workbook() -> str:
+    """Create a multi-sheet workbook and return it as base64 for UpdateSheet."""
+    if Workbook is None:
+        return ""
+    wb = Workbook()
+    data = wb.active
+    data.title = "ExportData"
+    data["A1"] = "OldHeader"
+    data["A2"] = "old-value"
+
+    summary = wb.create_sheet("ManualSummary")
+    summary["A1"] = "Manual KPI"
+    summary["B1"] = 42
+
+    charts = wb.create_sheet("Charts")
+    charts["A1"] = "Do not touch"
+
+    out = io.BytesIO()
+    wb.save(out)
+    return base64.b64encode(out.getvalue()).decode("ascii")
+
+
+def _verify_partial_update(session: UATSession, excel_base64: str) -> None:
+    """Verify target sheet changed and non-target sheets stayed intact."""
+    if load_workbook is None:
+        session.assert_true(bool(excel_base64), "Partial sheet update returned non-empty Excel payload")
+        return
+    wb = load_workbook(io.BytesIO(base64.b64decode(excel_base64)))
+    session.assert_true("ExportData" in wb.sheetnames, "Updated workbook contains target sheet")
+    session.assert_true("ManualSummary" in wb.sheetnames and "Charts" in wb.sheetnames,
+                        "Updated workbook preserved non-target sheets")
+    session.assert_true(wb["ExportData"]["A1"].value == "Project", "Target sheet header was replaced")
+    session.assert_true(wb["ExportData"]["A2"].value == "Item1", "Target sheet row data was written")
+    session.assert_true(wb["ManualSummary"]["A1"].value == "Manual KPI", "Manual summary sheet content preserved")
+    session.assert_true(wb["ManualSummary"]["B1"].value == 42, "Manual summary sheet numeric value preserved")
+    session.assert_true(wb["Charts"]["A1"].value == "Do not touch", "Chart/support sheet content preserved")
 
 
 def main() -> int:
@@ -241,8 +287,38 @@ def main() -> int:
     # 26.6 — Partial Sheet Update Verification
     # ---------------------------------------------------------------
     session._log("[INFO] === 26.6 Partial Sheet Update ===")
-    # This test verifies the end-to-end flow; depends on processor-generators running
-    integrations.assert_true(True, "Partial sheet update verified via execution pipeline (integration test)")
+    generators = session.for_service(SERVICES["processor_generators"])
+    update_payload = {
+        "excel_base64": _build_partial_update_workbook(),
+        "sheet_name": "ExportData",
+        "headers": ["Project", "Cost", "Budget"],
+        "data_rows": [
+            [
+                {"type": "string", "value": "Item1"},
+                {"type": "number", "value": 100},
+                {"type": "number", "value": 120},
+            ],
+            [
+                {"type": "string", "value": "Item2"},
+                {"type": "number", "value": 250},
+                {"type": "number", "value": 300},
+            ],
+        ],
+        "auto_filter": True,
+        "freeze_header": True,
+        "auto_column_width": True,
+    }
+    status, body = generators.call("POST", "/api/v1/excel/update-sheet",
+                                   body=update_payload,
+                                   expected_status=200,
+                                   tag="partial-sheet-update")
+    if status == 200 and isinstance(body, dict):
+        generators.assert_true(body.get("rows_written") == 2, "Partial sheet update wrote 2 data rows")
+        generators.assert_true(body.get("sheet_name") == "ExportData", "Partial sheet update targeted ExportData")
+        _verify_partial_update(generators, body.get("excel_base64", ""))
+    elif status in (404, 500):
+        generators.missing_feature("POST /api/v1/excel/update-sheet",
+                                   "processor-generators Excel partial sheet endpoint")
 
     # ---------------------------------------------------------------
     # 26.7 — Concurrent Execution Guard
@@ -299,6 +375,7 @@ def main() -> int:
     # Sync counters and save state
     # ---------------------------------------------------------------
     session.sync_counters_from(integrations)
+    session.sync_counters_from(generators)
     state_updates = {"tokens": tokens}
     if export_flow_id:
         state_updates["export_flow_id"] = export_flow_id

@@ -349,7 +349,7 @@ services:
       - DAPR_PUBSUB_NAME=reportplatform-pubsub
       - DAPR_STATESTORE_NAME=reportplatform-statestore
       - LITELLM_BASE_URL=http://litellm:4000
-      - LITELLM_API_KEY=${LITELLM_API_KEY:-sk-local-dev-key}
+      - LITELLM_API_KEY=${LITELLM_API_KEY:?LITELLM_API_KEY is required}
       - DEFAULT_MONTHLY_TOKEN_QUOTA=1000000
       - MAX_CONCURRENT_PER_ORG=5
       - CLEANUP_INTERVAL_HOURS=6
@@ -527,9 +527,9 @@ services:
     container_name: litellm
     command: --config /app/config.yaml --port 4000
     environment:
-      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-https://placeholder.openai.azure.com}
-      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-sk-placeholder}
-      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-local-dev-key}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:?AZURE_OPENAI_ENDPOINT is required}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:?AZURE_OPENAI_API_KEY is required}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:?LITELLM_MASTER_KEY is required}
     volumes:
       - ./litellm/config.yaml:/app/config.yaml:ro
     ports:

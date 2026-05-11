@@ -127,4 +127,10 @@ ROUTES = {
     "batch_generation":   "/batch-generation",
     "generated_reports":  "/generated-reports",
     "comparison":         "/comparison",
+    "local":              "/local",
+    "sinks":              "/sinks",
+    "sink_detail":        "/sinks/:sinkId",
+    "projects":           "/projects",
+    "project_detail":     "/projects/:projectId",
+    "export_flows":       "/admin/export-flows",
 }

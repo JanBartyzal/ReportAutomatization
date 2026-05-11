@@ -1,9 +1,9 @@
 # UAT Master Runner - ReportAutomatization (RA)
-# Spusti vsechny kroky Step00 az Step25 v poradi, pak vygeneruje report.
+# Spusti vsechny kroky Step00 az Step26 v poradi, pak vygeneruje report.
 
 param(
     [string]$StartStep = "00",
-    [string]$EndStep = "25",
+    [string]$EndStep = "26",
     [switch]$StopOnFail
 )
 

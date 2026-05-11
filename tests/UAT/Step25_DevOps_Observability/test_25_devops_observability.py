@@ -63,6 +63,28 @@ def main() -> int:
     if status in (404, 500):
         session.missing_feature("GET /actuator/health (engine-core)", "Endpoint not implemented yet")
 
+    # Charter FS99 expects all deployed services to expose a health endpoint.
+    service_health_paths = {
+        "engine_ingestor": "/actuator/health",
+        "engine_orchestrator": "/actuator/health",
+        "engine_data": "/actuator/health",
+        "engine_reporting": "/actuator/health",
+        "engine_integrations": "/actuator/health",
+        "processor_atomizers": "/health",
+        "processor_generators": "/health",
+    }
+    for service_key, health_path in service_health_paths.items():
+        svc = session.for_service(SERVICES[service_key])
+        status, body = svc.call("GET", health_path,
+                                expected_status=200,
+                                tag=f"health-{service_key}")
+        if status in (404, 500):
+            svc.missing_feature(f"GET {health_path} ({service_key})",
+                                "Service health endpoint")
+        elif status == 0:
+            svc.missing_feature(f"GET {health_path} ({service_key})",
+                                "Service is not reachable in this UAT environment")
+
     # ---------------------------------------------------------------
     # 3. Prometheus metrics — GET /actuator/prometheus or /metrics
     # ---------------------------------------------------------------
@@ -77,6 +99,26 @@ def main() -> int:
         if status not in (200,):
             session.missing_feature("/actuator/prometheus",
                                     "Prometheus metrics endpoint")
+
+    # Check representative metrics endpoints across Java and Python services.
+    for service_key, metrics_paths in {
+        "engine_data": ("/actuator/prometheus", "/metrics"),
+        "engine_reporting": ("/actuator/prometheus", "/metrics"),
+        "engine_integrations": ("/actuator/prometheus", "/metrics"),
+        "processor_generators": ("/metrics",),
+    }.items():
+        svc = session.for_service(SERVICES[service_key])
+        ok = False
+        for metrics_path in metrics_paths:
+            status, body = svc.call("GET", metrics_path,
+                                    expected_status=200,
+                                    tag=f"metrics-{service_key}")
+            if status == 200:
+                ok = True
+                break
+        if not ok:
+            svc.missing_feature(f"GET {metrics_paths[0]} ({service_key})",
+                                "Prometheus metrics for service")
 
     # ---------------------------------------------------------------
     # 4. OpenTelemetry check — GET /actuator/health, check for tracing info

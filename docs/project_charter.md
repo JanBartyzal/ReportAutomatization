@@ -1,10 +1,10 @@
 # Project Charter: PPTX Analyzer & Automation Platform
 
-**Verze:** 5.3 – Live Excel Export & External Sync (FS27)
+**Verze:** 5.4 – Drill-down Analytical Reports (FS28)
 **Datum:** Duben 2026
 **Architektura:** Event-Driven Microservices + Custom Orchestrator (engine-orchestrator)
 **Deployment Units:** 10 consolidated services (router, engine-core, engine-ingestor, engine-orchestrator, engine-data, engine-reporting, engine-integrations, processor-atomizers, processor-generators, frontend)
-**Feature Sets:** FS01–FS27 + FS99 (DevOps)
+**Feature Sets:** FS01–FS28 + FS99 (DevOps)
 **Docs Reference:** `docs/project_standards.md`, `docs/dod_criteria.md`
 
 > **Consolidation Note (P8):** Původních 29+ mikroslužeb bylo konsolidováno do 10 deployment units.
@@ -45,16 +45,18 @@ Systém je rozdělen do šesti logických vrstev, přičemž každá vrstva má 
 | 2 | **Edge Layer** | API Gateway (Nginx) jako jediný vstupní bod. Azure Front Door (WAF + SSL terminace), Host-based routing, rate limiting (100 req/s API, 10 req/s Auth/Upload, burst 20), ForwardAuth pro validaci Azure Entra ID tokenů. CORS whitelist: `https://*.company.cz` + `localhost:3000` (dev). | router, engine-core:auth |
 | 3 | **Ingestion Layer** | Streaming příjem souborů, antivirová kontrola (ClamAV/ICAP), sanitizace (odstranění maker), uložení do Blob Storage, trigger orchestrátoru přes Dapr PubSub / gRPC. | engine-ingestor, engine-ingestor:scanner |
 | 4 | **Orchestration Layer** | Custom Orchestrator (Spring State Machine) řídí celý processing pipeline: routing dle typu souboru, Saga Pattern pro distribuované transakce, exponential backoff retry, Dead Letter Queue. gRPC pro interní volání Atomizerů a Sinků. | engine-orchestrator |
-| 5 | **Processing Layer (Atomizers)** | Bezstavové kontejnery pro extrakci dat z konkrétního formátu. Volány výhradně přes engine-orchestrator (Dapr gRPC). **Žádné REST endpointy** – pouze gRPC service definitions. Výsledky ukládají jako URL reference na Blob, ne jako inline payload. | processor-atomizers:pptx, -XLS, -PDF, -CSV, -AI, -CLN |
+| 5 | **Processing Layer (Atomizers)** | Bezstavové kontejnery pro extrakci dat z konkrétního formátu. Volány výhradně přes engine-orchestrator; preferovaný interní kontrakt je Dapr gRPC, ale Atomizer může vystavit i REST kontrakt pro Python/FastAPI implementace a budoucí cloudovou náhradu služby. REST Atomizeru není frontend-facing API. Výsledky ukládají jako URL reference na Blob, ne jako inline payload. | processor-atomizers:pptx, -XLS, -PDF, -CSV, -AI, -CLN |
 | 6 | **Persistence Layer (Sinks)** | Write-optimalizované gRPC API pro strukturovaná data (PostgreSQL), vector embeddings (pgVector), audit logy. Voláno výhradně z engine-orchestrator přes Dapr gRPC. **Žádné REST endpointy** – čtení přes CQRS read model (engine-data:query, engine-data:dashboard – ty vystavují REST pro FE). | engine-data:sink-tbl/DOC/LOG, engine-data:query, engine-data:dashboard |
 
 ### 2.1 Komunikační pravidla
 
-- **Interní komunikace (service-to-service):** Probíhá **výhradně** přes Dapr sidecars s gRPC protokolem. Žádná interní služba nevystavuje REST rozhraní pro interní volání.
+- **Interní komunikace (service-to-service):** Probíhá primárně přes Dapr sidecars s gRPC protokolem. Výjimkou jsou Atomizery, které mohou vystavit interní REST kontrakt kvůli Python/FastAPI runtime a budoucí cloudové náhradě služby.
 - **Externí komunikace (frontend-facing):** REST API dostupné **pouze** přes API Gateway (router). REST endpointy vystavují pouze edge služby: engine-core:auth (auth_request z Nginx), engine-ingestor (upload endpoint), engine-data:query (čtení pro FE), engine-data:dashboard (agregace pro FE).
-- **Interní služby bez REST:** processor-atomizers (Atomizery), engine-data (sink modules) (Sinky), engine-data:template, engine-orchestrator – tyto služby komunikují **výhradně** přes Dapr gRPC a nemají žádné REST endpointy.
+- **Interní služby bez frontend REST:** engine-data (sink modules) (Sinky), engine-data:template, engine-orchestrator – tyto služby komunikují primárně přes Dapr gRPC a nemají frontend-facing REST endpointy. Atomizery jsou výjimka popsaná níže.
 - Frontend komunikuje výhradně s API Gateway – nikdy přímo s backend službami.
 - Atomizery jsou volány **VÝHRADNĚ** přes engine-orchestrator (Dapr gRPC) – nikdy přímo z frontendové vrstvy.
+- **Schválená výjimka pro Atomizery:** Atomizer může kromě gRPC vystavit interní REST rozhraní. Důvody: Python/FastAPI runtime, jednodušší integrace specializovaných extrakčních knihoven a připravenost na nahrazení lokálního Atomizeru cloudovou REST službou. Toto REST rozhraní zůstává interní a nesmí být voláno přímo z frontendu; vstupním bodem pipeline zůstává engine-orchestrator.
+- Atomizer není vlastníkem sinků ani persistence logiky. Downstream data mohou být ukládána nebo načítána i z externích analytických zdrojů typu Snowflake, Databricks nebo jiný cloudový warehouse, pokud jsou zachovány tenant izolace, audit a definované read/write kontrakty.
 - Sinky jsou volány **VÝHRADNĚ** přes engine-orchestrator (Dapr gRPC) pro zápis. Čtení probíhá přes engine-data:query (CQRS read model, REST pro FE).
 - **Asynchronní eventy:** Dapr Pub/Sub pro události typu `file-uploaded`, `report.status_changed`, `notify`. Fire-and-forget s built-in retry.
 - Binary data (PNG slidy, CSV soubory) se **NIKDY** nepřenáší jako inline payload – vždy jako URL reference na Blob Storage.
@@ -69,7 +71,7 @@ Systém je rozdělen do šesti logických vrstev, přičemž každá vrstva má 
 | router → engine-ingestor, engine-data:query, engine-data:dashboard | REST | Frontend-facing edge služby |
 | engine-ingestor → engine-ingestor:scanner | Dapr gRPC | Interní služba |
 | engine-ingestor → engine-orchestrator | Dapr Pub/Sub | Async event trigger |
-| engine-orchestrator → processor-atomizers | Dapr gRPC | Interní zpracování |
+| engine-orchestrator → processor-atomizers | Dapr gRPC / interní REST | Interní zpracování; REST je schválená varianta pro Python nebo cloudový Atomizer |
 | engine-orchestrator → engine-data (sink modules) | Dapr gRPC | Interní persistence |
 | engine-orchestrator → engine-data:template | Dapr gRPC | Interní mapping |
 | engine-orchestrator → engine-reporting:notification | Dapr Pub/Sub | Async notifikace |
@@ -316,7 +318,7 @@ Business kontext: engine-orchestrator je mozek celého systému. Řídí tok dat
 - **Pipeline Workflow:** `Event (new_file)` → `Get Metadata` → `Router dle file type` → `Call Atomizer (gRPC)` → `Apply Schema Mapping (engine-data:template)` → `Store (engine-data (sink modules) via gRPC)`
 - **Saga Pattern:** Distribuované transakce s rollback capability. Každý krok definuje compensating action pro případ selhání.
 - **Async Worker Layer:** Dapr Pub/Sub (nebo RabbitMQ / Azure Service Bus) pro asynchronní zpracování. 20–50 paralelních slide extractions.
-- **gRPC Internal Communication:** Všechna interní volání Atomizerů a Sinků přes gRPC (ne REST webhooky).
+- **Internal Communication:** Sinky jsou volány přes gRPC. Atomizery preferují gRPC, ale mohou být volány i interním REST kontraktem, pokud jde o Python/FastAPI implementaci nebo cloudovou náhradu Atomizer služby; nikdy nejde o přímé frontend volání.
 - **Filter Logic:** Po extrakci každého elementu: je-li tabulka → engine-data:sink-tbl (PostgreSQL); je-li text → engine-data:sink-doc (pgVector).
 - **Error Handling:** Exponential backoff: 3 retry (1s, 5s, 30s), pak záznam do `failed_jobs`. Specifické exception types: `ParsingException`, `StorageException`, `VirusDetectedException`.
 - **Idempotence:** Redis-based: `file_id + step_hash` jako klíč. Duplicate processing detekován a přeskočen.
@@ -1175,6 +1177,153 @@ export_flow_executions (
 
 ---
 
+## FS28 – Drill-down Analytical Reports
+**Priorita: VYSOKÁ**
+
+**Pokrývající microservices:** frontend, engine-data:dashboard, engine-data:query, engine-reporting:lifecycle, processor-generators:pptx/xls
+
+**Tech Stack:** React + FluentUI + Recharts/Nivo (frontend), Java 21 + Spring Boot (engine-data, engine-reporting), Python + FastAPI (exports)
+
+### Business kontext
+
+Management a controlling potřebují nad konsolidovanými daty interaktivní report podobný analytickému chování v Power BI: první obrazovka ukáže souhrn KPI, grafů a tabulek, ale uživatel se z každého prvku může prokliknout na detailní řádky, zdrojová data, historii změn a související evidence. FS28 zavádí **Drill-down Analytical Report** jako kompozici existujících dashboard widgetů, uložených dotazů, tabulek a reportových dat.
+
+Report není statický export. Je to řízený analytický pohled nad daty platformy, který podporuje proklikávání z agregace na detail při zachování RLS, auditní stopy a sdílených filtrů.
+
+### Klíčové funkce
+
+- **Report Composer:** Admin/Editor skládá drill-down report z existujících dashboard widgetů (FS11), Named Queries (FS06), sink selections (FS25), formulářových dat (FS20) a reportových entit (FS17/FS26).
+- **Summary View:** První obrazovka obsahuje KPI karty, grafy a tabulky pro rychlé manažerské čtení. Každý prvek může mít definovanou drill akci.
+- **Drill hierarchy:** Podpora úrovní `summary -> widget segment / table row -> dimension detail -> source rows -> source artifact`. Dimenze zahrnují minimálně organizaci, periodu, kategorii, cost center, projekt a zdrojový soubor/formulář.
+- **Cross-filtering:** Kliknutí na segment grafu nebo řádek tabulky aplikuje filtr na související widgety ve stejném reportu. Uživatel vidí aktivní filtry jako filter chips.
+- **Detail pane / page:** Detail se otevře jako boční panel nebo samostatná stránka s tabulkou detailních řádků, odkazem na sink detail, zdrojový soubor, formulář a auditní historii.
+- **Breadcrumbs a deep links:** Každý drill stav má čitelnou navigaci zpět a URL deep link, který zachová report, filtry, drill úroveň a vybranou periodu.
+- **Export current state:** Uživatel může exportovat celý summary report nebo aktuální drill stav do PPTX/PDF/Excel. Export musí jasně uvést aplikované filtry a čas snapshotu.
+- **Security by design:** Drill-down dědí oprávnění reportu/dashboardu a vynucuje RLS na každém query. Uživatel nikdy neuvidí detailní řádky mimo svoji organizaci nebo mimo povolený scope.
+
+### Datový model
+
+#### Tabulka `drilldown_report_definitions`
+```sql
+drilldown_report_definitions (
+  id                UUID PK DEFAULT gen_random_uuid(),
+  org_id            UUID NOT NULL,
+  name              VARCHAR(255) NOT NULL,
+  description       TEXT,
+  report_type       VARCHAR(50) DEFAULT 'ANALYTICAL',
+  base_period_type  VARCHAR(50),
+  default_filters   JSONB,
+  layout_config     JSONB NOT NULL,
+  is_public         BOOLEAN DEFAULT false,
+  created_by        UUID NOT NULL,
+  created_at        TIMESTAMPTZ DEFAULT now(),
+  updated_at        TIMESTAMPTZ DEFAULT now()
+)
+```
++ RLS policy na `org_id`
+
+#### Tabulka `drilldown_report_sections`
+```sql
+drilldown_report_sections (
+  id                UUID PK DEFAULT gen_random_uuid(),
+  report_id         UUID REFERENCES drilldown_report_definitions(id),
+  org_id            UUID NOT NULL,
+  section_key       VARCHAR(100) NOT NULL,
+  title             VARCHAR(255) NOT NULL,
+  component_type    VARCHAR(30) NOT NULL, -- 'KPI' | 'CHART' | 'TABLE' | 'TEXT'
+  source_type       VARCHAR(30) NOT NULL, -- 'DASHBOARD_WIDGET' | 'NAMED_QUERY' | 'SINK_SELECTION' | 'REPORT_FORM'
+  source_ref_id     UUID,
+  query_config      JSONB,
+  drill_config      JSONB,
+  display_order     INT NOT NULL
+)
+```
++ RLS policy na `org_id`
+
+#### Tabulka `drilldown_report_views`
+```sql
+drilldown_report_views (
+  id                UUID PK DEFAULT gen_random_uuid(),
+  report_id         UUID REFERENCES drilldown_report_definitions(id),
+  org_id            UUID NOT NULL,
+  user_id           UUID NOT NULL,
+  view_state        JSONB NOT NULL, -- filters, drill path, selected widget/row
+  created_at        TIMESTAMPTZ DEFAULT now(),
+  expires_at        TIMESTAMPTZ
+)
+```
+
+### Požadavky
+
+#### Drill-down API (engine-data:dashboard / engine-data:query)
+- `GET /api/drilldown-reports` – seznam dostupných drill-down reportů pro aktuální organizaci a roli.
+- `POST /api/drilldown-reports` – vytvoření reportu v composeru.
+- `GET /api/drilldown-reports/{id}` – definice reportu včetně layoutu a sekcí.
+- `PUT /api/drilldown-reports/{id}` – úprava definice, layoutu a drill konfigurace.
+- `POST /api/drilldown-reports/{id}/query` – načtení summary dat pro zadané filtry.
+- `POST /api/drilldown-reports/{id}/drill` – načtení detailu pro vybraný widget segment, řádek tabulky nebo dimenzi.
+- `POST /api/drilldown-reports/{id}/view-state` – uložení sdíleného deep-link stavu.
+- `POST /api/drilldown-reports/{id}/export` – export summary nebo aktuálního drill stavu.
+
+#### Frontend UI
+- Nová sekce `/reports/analytics` pro seznam a spuštění drill-down reportů.
+- Viewer obsahuje pevný filter bar, summary grid, detail pane, breadcrumbs a export menu.
+- Composer umožní přidat existující dashboard widget, tabulku nebo Named Query, nastavit výchozí filtry a definovat drill akce.
+- Tabulky v detailu podporují stránkování, sort, export vybraného detailu a otevření zdrojového sinku/souboru/formuláře.
+- Interakce se musí chovat konzistentně napříč grafem, KPI kartou a tabulkou: kliknutí buď filtruje související prvky, nebo otevře drill detail podle konfigurace.
+
+#### Výkon a bezpečnost
+- Summary agregace se načítají lazy podle viditelnosti sekcí a cacheují se v Redis s krátkým TTL.
+- Drill detail musí být stránkovaný; backend nikdy neposílá neomezený dataset do prohlížeče.
+- Query builder musí povolit jen schválené zdroje/datové sady a používat parametrizované filtry.
+- Každý drill request zapisuje audit event s `report_id`, `section_key`, uživatelem, organizací a aplikovanými filtry.
+
+### Dopad na existující Feature Sets
+
+| FS | Dopad |
+|---|---|
+| **FS06 (Query)** | Sdílené Named Queries a parametrizované dotazy pro summary i detail |
+| **FS11 (Dashboards)** | Dashboard widgety se stávají zdrojem sekcí a drill akcí |
+| **FS14 (Versioning)** | Detail může zobrazit historii změn vybraného řádku |
+| **FS16 (Audit)** | Audit drill akcí a exportů |
+| **FS17/FS20 (Reporting lifecycle / Forms)** | Reportová a formulářová data mohou být použita jako zdroj sekcí |
+| **FS25 (Sink Browser)** | Drill detail odkazuje na sink rows, korekce a source artifacts |
+| **FS26 (Report Generation UI & Export)** | Export analytického reportu nebo aktuálního drill stavu |
+
+### Acceptance kritéria
+
+- Admin/Editor vytvoří drill-down report nejméně ze 3 různých prvků: KPI, graf a tabulka.
+- Viewer otevře summary report a kliknutím na grafický segment vyfiltruje související tabulku.
+- Kliknutí na řádek tabulky otevře detailní řádky včetně odkazu na sink detail a zdrojový soubor/formulář.
+- Breadcrumb navigace umožní návrat z detailu zpět na summary bez ztráty filtrů.
+- Deep link otevře stejný report se stejným filtrem, periodou a drill úrovní pro oprávněného uživatele.
+- Export aktuálního drill stavu obsahuje aplikované filtry, čas snapshotu a data odpovídající obrazovce.
+- RLS test prokáže, že uživatel z jiné organizace nevidí summary ani detailní data mimo svůj scope.
+- Detailní tabulka nad datasetem s více než 100k řádky používá stránkování a nevrací neomezený payload.
+
+### Nové DB tabulky
+
+| Tabulka | Účel | Effort |
+|---|---|---|
+| `drilldown_report_definitions` | Definice analytického reportu, layout a výchozí filtry | M |
+| `drilldown_report_sections` | Sekce reportu, zdroj dat a drill konfigurace | M |
+| `drilldown_report_views` | Uložené/deep-link drill stavy uživatele | S |
+
+### Effort odhad
+
+| Komponenta | Effort |
+|---|---|
+| DB migrace + RLS + audit eventy | **M** |
+| engine-data:dashboard – summary/drill API | **L** |
+| engine-data:query – parametrizované dotazy a paging detailu | **M** |
+| Frontend – viewer, breadcrumbs, detail pane, cross-filtering | **L** |
+| Frontend – composer pro skládání reportu | **L** |
+| Export current state do PPTX/PDF/Excel | **M** |
+| UAT/E2E testy pro RLS, deep link a drill flow | **M** |
+| **Celkem** | **XL** |
+
+---
+
 ### FS99 – DevOps & Observability
 **Priorita: VYSOKÁ**
 
@@ -1194,16 +1343,16 @@ export_flow_executions (
 
 | # | Deployment Unit | Moduly | Popis / Odpovědnost | Feature Sets | Tech Stack |
 |---|---|---|---|---|---|
-| 1 | **frontend** | — | React SPA – upload, viewer, dashboardy, form filler, sink browser, notifikace (WebSocket/SSE), MSAL auth | FS09, FS11, FS25 | React 18 + Vite + TS + FluentUI |
+| 1 | **frontend** | — | React SPA – upload, viewer, dashboardy, drill-down analytické reporty, form filler, sink browser, notifikace (WebSocket/SSE), MSAL auth | FS09, FS11, FS25, FS28 | React 18 + Vite + TS + FluentUI |
 | 2 | **router** | — | Nginx API Gateway – Host-based routing, Azure Front Door (WAF + SSL), rate limiting, ForwardAuth | FS01 | Nginx (config) |
 | 3 | **engine-core** | auth, admin, batch, versioning, audit | Validace Entra ID tokenů, RBAC, KeyVault, API keys, holdingová hierarchie, verzování dat, diff tool, auditní logy, Failed Jobs UI | FS01, FS07, FS08, FS14, FS16 | Java 21 + Spring Boot |
 | 4 | **engine-ingestor** | ingestor, scanner | Streaming upload, MIME validace, ClamAV antivirová kontrola, sanitizace, Blob Storage, trigger engine-orchestrator | FS02 | Java 21 + Spring Boot + ClamAV |
 | 5 | **engine-orchestrator** | — | Workflow engine (Spring State Machine), Saga Pattern, Type-Safe Contracts, gRPC routing, Redis state, exponential backoff retry, DLQ | FS04 | Java 21 + Spring Boot |
-| 6 | **engine-data** | sink-tbl, sink-doc, sink-log, query, dashboard, search, template | Sinky pro strukturovaná data/dokumenty/logy, CQRS read model, Redis cache, BI dashboard agregace, full-text + vector search, Schema Mapping Registry, Sink Browser & Corrections | FS05, FS06, FS11, FS15, FS25 | Java 21 + Spring Boot |
-| 7 | **engine-reporting** | lifecycle, period, form, pptx-template, notification | Stavový automat reportů, správa period a deadlinů, dynamic form builder, PPTX šablony, in-app + e-mail notifikace | FS17, FS18, FS19, FS20, FS13, FS26 | Java 21 + Spring Boot |
+| 6 | **engine-data** | sink-tbl, sink-doc, sink-log, query, dashboard, search, template | Sinky pro strukturovaná data/dokumenty/logy, CQRS read model, Redis cache, BI dashboard agregace, drill-down analytika, full-text + vector search, Schema Mapping Registry, Sink Browser & Corrections | FS05, FS06, FS11, FS15, FS25, FS28 | Java 21 + Spring Boot |
+| 7 | **engine-reporting** | lifecycle, period, form, pptx-template, notification | Stavový automat reportů, správa period a deadlinů, dynamic form builder, PPTX šablony, analytické reporty, in-app + e-mail notifikace | FS17, FS18, FS19, FS20, FS13, FS26, FS28 | Java 21 + Spring Boot |
 | 8 | **engine-integrations** | servicenow, excel-sync | ServiceNow API integrace, OAuth2, scheduled sync, report distribution, Live Excel Export & External Sync (SharePoint / local path) | FS23, FS27 | Java 21 + Spring Boot |
 | 9 | **processor-atomizers** | pptx, xls, pdf, csv, ai, cleanup | Bezstavové extraktory dat z PPTX/Excel/PDF/CSV, LiteLLM AI gateway, cleanup worker, extraction learning hints | FS03, FS10, FS12, FS25 | Python + FastAPI |
-| 10 | **processor-generators** | pptx, xls, mcp | Generování PPTX/Excel reportů ze šablon, partial sheet update pro Live Excel Export, MCP Server pro AI agenty (OBO flow) | FS18, FS23, FS12, FS27 | Python + FastAPI |
+| 10 | **processor-generators** | pptx, xls, mcp | Generování PPTX/Excel reportů ze šablon, export drill-down snapshotů, partial sheet update pro Live Excel Export, MCP Server pro AI agenty (OBO flow) | FS18, FS23, FS12, FS27, FS28 | Python + FastAPI |
 
 ### Effort legenda
 
@@ -1232,6 +1381,7 @@ export_flow_executions (
 | **P7** | FS22 Advanced Comparison (placeholder) | | |  Granulární srovnání period |
 | **P8** | Sink Browser & Corrections | engine-data (sink-tbl, query, template), processor-atomizers, frontend | FS25 | Procházení sinků, manuální korekce, výběr dat pro report, extraction learning |
 | **P9** | Live Excel Export & External Sync | engine-integrations:excel-sync, processor-generators:xls, engine-data:query, frontend | FS27 | Automatická aktualizace externích Excel souborů (SharePoint / síťový disk) při importu dat |
+| **P10** | Drill-down Analytical Reports | frontend, engine-data:dashboard, engine-data:query, engine-reporting:lifecycle, processor-generators:pptx/xls | FS28 | Interaktivní summary reporty s proklikem z KPI/grafů/tabulek na detailní data podobně jako Power BI |
 
 
 
@@ -1294,7 +1444,7 @@ export_flow_executions (
 | engine-core:admin | engine-orchestrator | Dapr gRPC | Sync | Health metrics agregace (FS99) |
 | engine-ingestor | engine-ingestor:scanner | Dapr gRPC | Sync | Interní: AV scan před uložením |
 | engine-ingestor | engine-orchestrator | Dapr Pub/Sub | Async | Event `file-uploaded` → trigger workflow |
-| engine-orchestrator | processor-atomizers | Dapr gRPC | Sync | Interní: orchestrátor volá Atomizery |
+| engine-orchestrator | processor-atomizers | Dapr gRPC / interní REST | Sync | Interní: orchestrátor volá Atomizery; REST je povolená varianta pro Python/cloud implementace |
 | engine-orchestrator | engine-data (sink modules) | Dapr gRPC | Sync | Interní: orchestrátor volá Sinky |
 | engine-orchestrator | engine-data:template | Dapr gRPC | Sync | Interní: schema mapping před uložením |
 | engine-orchestrator | engine-reporting:notification | Dapr Pub/Sub | Async | Event-driven notifikace |

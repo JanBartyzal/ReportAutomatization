@@ -15,3 +15,4 @@ export * from './storageRouting';
 export * from './namedQueries';
 export * from './textTemplates';
 export * from './projects';
+export * from './drilldownReports';

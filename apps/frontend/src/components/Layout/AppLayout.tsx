@@ -25,6 +25,7 @@ import {
   CodeBlock24Regular,
   DocumentText24Regular,
   BriefcaseRegular,
+  ChartMultiple24Regular,
 } from '@fluentui/react-icons';
 import { useMe, useLogout } from '../../hooks/useAuth';
 import { useSSE } from '../../hooks/useNotifications';
@@ -69,6 +70,7 @@ const navSections: NavSection[] = [
     items: [
       { to: '/reporting/text-templates', icon: <DocumentText24Regular />, label: 'Text Templates' },
       { to: '/reporting/named-queries', icon: <CodeBlock24Regular />, label: 'Named Queries' },
+      { to: '/reports/analytics', icon: <ChartMultiple24Regular />, label: 'Analytical Reports' },
       { to: '/projects', icon: <BriefcaseRegular />, label: 'Projects' },
     ],
   },

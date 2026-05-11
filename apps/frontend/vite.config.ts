@@ -35,6 +35,7 @@ export default defineConfig({
             // engine-data: query, dashboards, search
             '/api/query': { target: ENGINE_DATA, changeOrigin: true },
             '/api/dashboards': { target: ENGINE_DATA, changeOrigin: true },
+            '/api/drilldown-reports': { target: ENGINE_DATA, changeOrigin: true },
             '/api/search': { target: ENGINE_DATA, changeOrigin: true, rewrite: (p) => p.replace('/api/search', '/api/v1/search') },
             '/api/comparisons': { target: ENGINE_DATA, changeOrigin: true },
 

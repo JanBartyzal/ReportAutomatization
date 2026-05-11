@@ -8,6 +8,15 @@ import re
 import sys
 import datetime
 
+CONFIG_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../config"))
+if CONFIG_DIR not in sys.path:
+    sys.path.insert(0, CONFIG_DIR)
+
+try:
+    from uat_traceability import FEATURE_COVERAGE
+except Exception:
+    FEATURE_COVERAGE = []
+
 LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../logs")
 
 
@@ -132,6 +141,23 @@ def generate_report(logs_dir: str = LOGS_DIR) -> str:
             f"| {r['step']} | {r['total']} | {r['passed']} | {r['failed']} "
             f"| {r['skipped']} | {pct_str} | {status_badge} |"
         )
+
+    if FEATURE_COVERAGE:
+        result_by_step = {r["step"]: r for r in results}
+        lines += [
+            "",
+            "## Charter Traceability",
+            "",
+            "| FS | Charter area | UAT step | Covered areas | Step status |",
+            "|----|--------------|----------|---------------|-------------|",
+        ]
+        for item in FEATURE_COVERAGE:
+            step = item["step"]
+            result = result_by_step.get(step)
+            status = result["status"] if result else "NOT_RUN"
+            lines.append(
+                f"| {item['fs']} | {item['name']} | {step} | {item['areas']} | {status} |"
+            )
 
     # Error files section
     error_files = sorted(

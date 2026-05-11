@@ -1,0 +1,24 @@
+{
+  "name": "ra-playwright-tests",
+  "version": "1.0.0",
+  "description": "Playwright E2E / UX tests for ReportAutomatization frontend",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:fs09": "playwright test tests/FS09_Auth_Navigation tests/FS09_File_Upload",
+    "test:fs12": "playwright test tests/FS12_Search_AI_MCP",
+    "test:fs17": "playwright test tests/FS17_Report_Lifecycle",
+    "test:fs19": "playwright test tests/FS19_Form_Builder tests/FS19_Form_Filling",
+    "test:fs24": "playwright test tests/FS24_Data_Promotion",
+    "test:fs27": "playwright test tests/FS27_Excel_Sync",
+    "test:ux": "playwright test tests/FS99_UX_Quality",
+    "report": "playwright show-report logs/html-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  }
+}

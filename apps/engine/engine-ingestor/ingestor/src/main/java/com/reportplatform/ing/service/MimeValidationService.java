@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
+import static org.springframework.http.HttpStatus.PAYLOAD_TOO_LARGE;
 import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
 @Service
@@ -115,7 +116,7 @@ public class MimeValidationService {
         };
 
         if (fileSize > maxSize) {
-            throw new ResponseStatusException(UNSUPPORTED_MEDIA_TYPE,
+            throw new ResponseStatusException(PAYLOAD_TOO_LARGE,
                     "File size %d bytes exceeds maximum %d bytes for %s files".formatted(fileSize, maxSize, extension));
         }
     }

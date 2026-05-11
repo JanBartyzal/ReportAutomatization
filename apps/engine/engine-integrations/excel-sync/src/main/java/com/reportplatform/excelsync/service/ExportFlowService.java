@@ -4,6 +4,7 @@ import com.reportplatform.excelsync.model.dto.*;
 import com.reportplatform.excelsync.model.entity.*;
 import com.reportplatform.excelsync.repository.ExportFlowDefinitionRepository;
 import com.reportplatform.excelsync.repository.ExportFlowExecutionRepository;
+import com.reportplatform.excelsync.config.ExcelSyncProperties;
 import io.dapr.client.DaprClient;
 import io.dapr.client.domain.HttpExtension;
 import org.slf4j.Logger;
@@ -11,6 +12,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,17 +29,34 @@ public class ExportFlowService {
 
     private static final Pattern INVALID_SHEET_CHARS = Pattern.compile("[\\[\\]:*?/\\\\]");
     private static final int MAX_SHEET_NAME_LENGTH = 31;
+    private static final List<Pattern> FORBIDDEN_SQL_PATTERNS = List.of(
+            Pattern.compile("\\bINSERT\\b"),
+            Pattern.compile("\\bUPDATE\\b"),
+            Pattern.compile("\\bDELETE\\b"),
+            Pattern.compile("\\bDROP\\b"),
+            Pattern.compile("\\bALTER\\b"),
+            Pattern.compile("\\bTRUNCATE\\b"),
+            Pattern.compile("\\bCREATE\\b"),
+            Pattern.compile("\\bEXECUTE\\b"),
+            Pattern.compile("\\bEXEC\\b"),
+            Pattern.compile("\\bCALL\\b"),
+            Pattern.compile("\\bGRANT\\b"),
+            Pattern.compile("\\bREVOKE\\b")
+    );
 
     private final ExportFlowDefinitionRepository definitionRepository;
     private final ExportFlowExecutionRepository executionRepository;
     private final DaprClient daprClient;
+    private final ExcelSyncProperties excelSyncProperties;
 
     public ExportFlowService(ExportFlowDefinitionRepository definitionRepository,
-                             ExportFlowExecutionRepository executionRepository,
-                             DaprClient daprClient) {
+                              ExportFlowExecutionRepository executionRepository,
+                              DaprClient daprClient,
+                              ExcelSyncProperties excelSyncProperties) {
         this.definitionRepository = definitionRepository;
         this.executionRepository = executionRepository;
         this.daprClient = daprClient;
+        this.excelSyncProperties = excelSyncProperties;
     }
 
     @Transactional(readOnly = true)
@@ -193,10 +214,14 @@ public class ExportFlowService {
             throw new IllegalArgumentException("SQL query cannot be empty");
         }
         String upper = sqlQuery.trim().toUpperCase();
-        if (upper.startsWith("INSERT") || upper.startsWith("UPDATE") || upper.startsWith("DELETE")
-                || upper.startsWith("DROP") || upper.startsWith("ALTER") || upper.startsWith("CREATE")
-                || upper.startsWith("TRUNCATE")) {
+        if (!upper.startsWith("SELECT") && !upper.startsWith("WITH")) {
             throw new IllegalArgumentException("Only SELECT queries are allowed");
+        }
+        for (Pattern pattern : FORBIDDEN_SQL_PATTERNS) {
+            if (pattern.matcher(upper).find()) {
+                throw new IllegalArgumentException("SQL query contains forbidden keyword: "
+                        + pattern.pattern().replace("\\b", "").replace("\\", ""));
+            }
         }
     }
 
@@ -208,6 +233,34 @@ public class ExportFlowService {
             if (!targetPath.startsWith("https://") || !targetPath.contains("sharepoint.com")) {
                 throw new IllegalArgumentException("Invalid SharePoint URL format");
             }
+            return;
         }
+
+        if (targetType == TargetType.LOCAL_PATH) {
+            validateLocalTargetPath(targetPath);
+        }
+    }
+
+    private void validateLocalTargetPath(String targetPath) {
+        try {
+            Path requested = Path.of(targetPath).toAbsolutePath().normalize();
+            for (String allowedPath : excelSyncProperties.getAllowedPaths()) {
+                Path allowed = Path.of(allowedPath).toAbsolutePath().normalize();
+                if (requested.startsWith(allowed)) {
+                    return;
+                }
+                try {
+                    Path allowedReal = allowed.toRealPath();
+                    if (requested.startsWith(allowedReal)) {
+                        return;
+                    }
+                } catch (IOException ignored) {
+                    // The export root may be created by deployment; normalized path check still applies.
+                }
+            }
+        } catch (InvalidPathException e) {
+            throw new IllegalArgumentException("Invalid local target path");
+        }
+        throw new IllegalArgumentException("Local target path is outside configured allowed paths");
     }
 }

@@ -22,6 +22,12 @@ tests/web_uat/
 │   ├── Step19_Form_Builder/     # FS19: Form creation
 │   ├── Step19_Form_Filling/     # FS19: Form filling
 │   └── Step20_Period_Dashboard/ # FS20: Period management
+│   ├── Step21_Local_Scope/      # FS21: Local forms/templates
+│   ├── Step22_Period_Comparison/# FS22: Period comparison dashboards
+│   ├── Step23_Integrations_UI/  # FS23: ServiceNow/project sync UI
+│   ├── Step25_Sink_Browser/     # FS25: Sink browser/corrections
+│   ├── Step27_Excel_Sync/       # FS27: Live Excel export flows
+│   └── Step99_UX_Quality/       # FS99: responsive/accessibility smoke checks
 ├── run_all_tests.py          # Test runner
 ├── run.ps1                   # PowerShell runner
 └── logs/                     # Test outputs
@@ -99,6 +105,36 @@ python run_all_tests.py
 - Completion percentage
 - Deadline tracking
 - Status legend
+
+### FS21 - Local Scope
+- Local dashboard route
+- Local form/template creation entry points
+- Forms/templates tabs and scope indicators
+
+### FS22 - Period Comparison
+- Comparison route
+- Period/org filter controls
+- Chart or table visualization surface
+
+### FS23 - Integrations
+- ServiceNow integration tabs
+- Connection dialog required fields
+- Schedule/history/project navigation
+
+### FS25 - Sink Browser
+- Sink list filters and data-source stats
+- Sink table/detail navigation
+- Selection and correction controls
+
+### FS27 - Excel Sync
+- Export Flow management page
+- Create-flow drawer/dialog
+- Target type, SQL, schedule/manual trigger, execution history controls
+
+### FS99 - UX Quality
+- Responsive smoke checks for core routes
+- Global search and navigation landmarks
+- Basic accessible names for buttons and inputs
 
 ## Integration with Backend UAT
 

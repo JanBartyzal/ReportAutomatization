@@ -61,8 +61,10 @@ def main() -> int:
     # 3. Configure ServiceNow connection — POST /api/admin/integrations/servicenow
     # ---------------------------------------------------------------
     snow_payload = {
+        "name": "UAT ServiceNow Connection",
         "instance_url": "https://test.service-now.com",
-        "auth_type": "oauth2"
+        "auth_type": "oauth2",
+        "credentials_ref": "vault://servicenow/uat"
     }
     conn_id = None
     status, body = integrations.call("POST", "/api/admin/integrations/servicenow",
@@ -140,9 +142,93 @@ def main() -> int:
                                      "No connection ID available to test distribution")
 
     # ---------------------------------------------------------------
+    # 8. Project sync config (P8 addition): thresholds + scope
+    # ---------------------------------------------------------------
+    if conn_id:
+        project_sync_payload = {
+            "syncScope": "ACTIVE_ONLY",
+            "filterManagerEmails": ["pm@example.com"],
+            "budgetCurrency": "CZK",
+            "ragAmberBudgetThreshold": 80,
+            "ragRedBudgetThreshold": 95,
+            "ragAmberScheduleDays": 7,
+            "ragRedScheduleDays": 14,
+            "syncEnabled": True
+        }
+        status, body = integrations.call("POST", f"/api/admin/integrations/servicenow/{conn_id}/project-sync",
+                                         body=project_sync_payload,
+                                         expected_status=200,
+                                         tag="upsert-project-sync-config")
+        if status == 200 and isinstance(body, dict):
+            integrations.assert_true(
+                (body.get("syncScope") or body.get("sync_scope")) == "ACTIVE_ONLY",
+                "Project sync scope saved as ACTIVE_ONLY")
+            integrations.assert_true(
+                str(body.get("budgetCurrency") or body.get("budget_currency")) == "CZK",
+                "Project sync budget currency saved")
+        elif status in (404, 500):
+            integrations.missing_feature(
+                f"POST /api/admin/integrations/servicenow/{conn_id}/project-sync",
+                "Project sync config endpoint")
+
+        status, body = integrations.call("GET", f"/api/admin/integrations/servicenow/{conn_id}/project-sync",
+                                         expected_status=200,
+                                         tag="get-project-sync-config")
+        if status == 200 and isinstance(body, dict):
+            integrations.assert_true(
+                "ragAmberBudgetThreshold" in body or "rag_amber_budget_threshold" in body,
+                "Project sync RAG budget thresholds returned")
+            integrations.assert_true(
+                "ragRedScheduleDays" in body or "rag_red_schedule_days" in body,
+                "Project sync RAG schedule thresholds returned")
+        elif status in (404, 500):
+            integrations.missing_feature(
+                f"GET /api/admin/integrations/servicenow/{conn_id}/project-sync",
+                "Project sync config read endpoint")
+
+        status, body = integrations.call("POST", f"/api/admin/integrations/servicenow/{conn_id}/project-sync/trigger",
+                                         expected_status=202,
+                                         tag="trigger-project-sync")
+        if status == 202 and isinstance(body, dict):
+            integrations.assert_true("projects_fetched" in body or "projectsFetched" in body,
+                                     "Project sync response includes fetched count")
+            integrations.assert_true("projects_stored" in body or "projectsStored" in body,
+                                     "Project sync response includes stored count")
+        elif status in (404, 500):
+            integrations.missing_feature(
+                f"POST /api/admin/integrations/servicenow/{conn_id}/project-sync/trigger",
+                "Project sync trigger endpoint or external SN mock")
+    else:
+        integrations.missing_feature("POST /api/admin/integrations/servicenow/{connId}/project-sync",
+                                     "No connection ID available to test project sync config")
+
+    # ---------------------------------------------------------------
+    # 9. Project query read model exposes RAG/KPI fields
+    # ---------------------------------------------------------------
+    data_session = session.for_service(SERVICES["engine_data"])
+    status, body = data_session.call("GET", "/api/v1/data/snow/projects",
+                                     expected_status=200,
+                                     tag="list-snow-projects")
+    if status == 200 and isinstance(body, dict):
+        content = body.get("content", body.get("items", body.get("data", [])))
+        data_session.assert_true(isinstance(content, list), "Snow projects read model returns a page/list")
+        if content:
+            first = content[0]
+            data_session.assert_true("ragStatus" in first or "rag_status" in first,
+                                     "Snow project rows expose RAG status")
+            data_session.assert_true("budgetUtilizationPct" in first or "budget_utilization_pct" in first,
+                                     "Snow project rows expose budget utilization KPI")
+            data_session.assert_true("scheduleVarianceDays" in first or "schedule_variance_days" in first,
+                                     "Snow project rows expose schedule variance KPI")
+    elif status in (404, 500):
+        data_session.missing_feature("GET /api/v1/data/snow/projects",
+                                     "ServiceNow projects query read model")
+
+    # ---------------------------------------------------------------
     # Sync counters from sub-session
     # ---------------------------------------------------------------
     session.sync_counters_from(integrations)
+    session.sync_counters_from(data_session)
 
     # ---------------------------------------------------------------
     # Save state

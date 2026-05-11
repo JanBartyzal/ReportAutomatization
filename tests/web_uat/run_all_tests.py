@@ -7,6 +7,9 @@ import os
 import re
 import subprocess
 import datetime
+import importlib.util
+
+from config.web_config import BASE_URL
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -53,7 +56,50 @@ TEST_MODULES = [
 
     # Step20: Period Management (FS20)
     ("tests/Step20_Period_Dashboard/test_period_dashboard.py", "Step20 - Period Dashboard"),
+
+    # Step21: Local Forms/Templates (FS21)
+    ("tests/Step21_Local_Scope/test_local_scope.py", "Step21 - Local Scope"),
+
+    # Step22: Period Comparison (FS22)
+    ("tests/Step22_Period_Comparison/test_period_comparison.py", "Step22 - Period Comparison"),
+
+    # Step23: ServiceNow and Projects UI (FS23)
+    ("tests/Step23_Integrations_UI/test_integrations_ui.py", "Step23 - Integrations UI"),
+
+    # Step25: Sink Browser & Corrections (FS25)
+    ("tests/Step25_Sink_Browser/test_sink_browser.py", "Step25 - Sink Browser"),
+
+    # Step27: Live Excel Export & External Sync (FS27)
+    ("tests/Step27_Excel_Sync/test_excel_sync.py", "Step27 - Excel Sync"),
+
+    # Step99: Cross-page UX quality smoke checks (FS99 / UX)
+    ("tests/Step99_UX_Quality/test_ux_quality.py", "Step99 - UX Quality"),
 ]
+
+
+def print_usage() -> None:
+    print("Usage: python run_all_tests.py [--help] [--list]")
+    print("")
+    print("Runs Selenium-based Web UI UAT modules against the configured frontend.")
+    print(f"Base URL: {BASE_URL}")
+    print("")
+    print("Options:")
+    print("  --help, -h   Show this help and exit")
+    print("  --list       List test modules and exit")
+
+
+def print_test_list() -> None:
+    for i, (path, name) in enumerate(TEST_MODULES, 1):
+        print(f"{i:02d}. {name}  ({path})")
+
+
+def preflight() -> bool:
+    if importlib.util.find_spec("selenium") is None:
+        print("[ERROR] Selenium is not installed. Install dependencies first:")
+        print("        pip install selenium requests")
+        print("        Then ensure ChromeDriver/EdgeDriver/GeckoDriver is available.")
+        return False
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -195,7 +241,7 @@ def generate_report(results: list, timestamp: str) -> str:
     lines = []
     lines.append("# RA Web UI UAT Test Report")
     lines.append(f"\nGenerated: {timestamp}")
-    lines.append(f"Base URL: `http://localhost:5173` (Vite dev server)")
+    lines.append(f"Base URL: `{BASE_URL}`")
     lines.append(f"Total duration: {total_duration:.1f}s")
     lines.append("")
 
@@ -275,6 +321,20 @@ def generate_report(results: list, timestamp: str) -> str:
 
 
 def main():
+    args = set(sys.argv[1:])
+    if "--help" in args or "-h" in args:
+        print_usage()
+        return 0
+    if "--list" in args:
+        print_test_list()
+        return 0
+    if args:
+        print(f"[ERROR] Unknown argument(s): {', '.join(sorted(args))}")
+        print_usage()
+        return 2
+    if not preflight():
+        return 2
+
     print("""
     ====================================================================
        ReportAutomatization - Web UI UAT Test Suite

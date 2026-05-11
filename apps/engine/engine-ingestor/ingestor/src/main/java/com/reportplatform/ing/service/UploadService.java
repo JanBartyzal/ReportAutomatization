@@ -18,8 +18,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.UUID;
 
 /**
@@ -83,64 +86,89 @@ public class UploadService {
             BufferedInputStream validatedStream = mimeValidationService.validate(
                     originalFilename, contentType, file.getInputStream(), fileSize);
 
-            // Buffer the validated stream for scanning (required before blob upload)
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            validatedStream.transferTo(buffer);
-            byte[] fileContent = buffer.toByteArray();
+            Path spoolFile = Files.createTempFile("ra-upload-", ".bin");
+            try {
+                try (OutputStream out = Files.newOutputStream(spoolFile)) {
+                    validatedStream.transferTo(out);
+                }
 
-            // Step 2: ClamAV antivirus scan BEFORE blob upload
-            SecurityScannerService.ScanResult scanResult = securityScannerService.scanStream(fileContent);
-            if (scanResult.status() == SecurityScannerService.ScanStatus.SCAN_RESULT_INFECTED) {
-                log.warn("Upload rejected - infected file: filename={}, threat={}",
-                        originalFilename, scanResult.threatName());
-                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                        "File infected: " + scanResult.threatName());
+                // Step 2: ClamAV antivirus scan BEFORE blob upload
+                SecurityScannerService.ScanResult scanResult;
+                try (InputStream scanInput = Files.newInputStream(spoolFile)) {
+                    scanResult = securityScannerService.scanStream(scanInput);
+                }
+                if (scanResult.status() == SecurityScannerService.ScanStatus.SCAN_RESULT_INFECTED) {
+                    log.warn("Upload rejected - infected file: filename={}, threat={}",
+                            originalFilename, scanResult.threatName());
+                    throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                            "File infected: " + scanResult.threatName());
+                }
+
+                // Step 3: VBA macro removal for .xlsm/.pptm files
+                boolean macroRemoved = false;
+                byte[] sanitizedContent = null;
+                if (isMacroEnabledOffice(contentType)) {
+                    SecurityScannerService.SanitizeResult sanitizeResult =
+                            securityScannerService.removeVbaMacros(Files.readAllBytes(spoolFile), contentType);
+                    if (sanitizeResult.macroRemoved()) {
+                        sanitizedContent = sanitizeResult.sanitizedContent();
+                        macroRemoved = true;
+                        log.info("VBA macros removed from file: filename={}", originalFilename);
+                    }
+                }
+
+                InputStream uploadInput;
+                long uploadLength;
+                if (sanitizedContent != null) {
+                    uploadInput = new ByteArrayInputStream(sanitizedContent);
+                    uploadLength = sanitizedContent.length;
+                } else {
+                    uploadInput = Files.newInputStream(spoolFile);
+                    uploadLength = Files.size(spoolFile);
+                }
+
+                // Step 4: Upload sanitized file to blob storage
+                String blobPath = blobStorageService.buildBlobPath(orgId, fileId, originalFilename);
+                try (InputStream in = uploadInput) {
+                    blobStorageService.uploadStream(blobPath, in, uploadLength, contentType);
+                }
+
+                // Step 5: Set RLS org context so the INSERT passes the row-level security policy,
+                // then persist file metadata. The 'true' flag makes the setting transaction-local.
+                setRlsContext(orgId);
+                FileEntity entity = new FileEntity();
+                entity.setId(fileId);
+                entity.setOrgId(orgId);
+                entity.setUserId(userId);
+                entity.setFilename(originalFilename);
+                entity.setSizeBytes(fileSize);
+                entity.setMimeType(contentType);
+                entity.setRawBlobUrl(blobPath);
+                entity.setBlobUrl(blobPath);
+                entity.setScanStatus(ScanStatus.CLEAN);
+                entity.setUploadPurpose(uploadPurpose);
+                entity.setMacroRemoved(macroRemoved);
+                entity = fileRepository.save(entity);
+
+                // Step 6: Publish event to orchestrator
+                orchestratorTriggerService.publishFileUploaded(entity);
+
+                return new UploadResponse(
+                        entity.getId(),
+                        entity.getFilename(),
+                        entity.getSizeBytes(),
+                        entity.getMimeType(),
+                        entity.getScanStatus(),
+                        entity.getUploadPurpose(),
+                        entity.getCreatedAt()
+                );
+            } finally {
+                try {
+                    Files.deleteIfExists(spoolFile);
+                } catch (IOException deleteError) {
+                    log.warn("Failed to delete upload spool file {}: {}", spoolFile, deleteError.getMessage());
+                }
             }
-
-            // Step 3: VBA macro removal for .xlsm/.pptm files
-            boolean macroRemoved = false;
-            SecurityScannerService.SanitizeResult sanitizeResult =
-                    securityScannerService.removeVbaMacros(fileContent, contentType);
-            if (sanitizeResult.macroRemoved()) {
-                fileContent = sanitizeResult.sanitizedContent();
-                macroRemoved = true;
-                log.info("VBA macros removed from file: filename={}", originalFilename);
-            }
-
-            // Step 4: Upload sanitized file to blob storage
-            String blobPath = blobStorageService.buildBlobPath(orgId, fileId, originalFilename);
-            String blobUrl = blobStorageService.uploadStream(
-                    blobPath, new ByteArrayInputStream(fileContent), fileContent.length, contentType);
-
-            // Step 5: Set RLS org context so the INSERT passes the row-level security policy,
-            // then persist file metadata. The 'true' flag makes the setting transaction-local.
-            setRlsContext(orgId);
-            FileEntity entity = new FileEntity();
-            entity.setId(fileId);
-            entity.setOrgId(orgId);
-            entity.setUserId(userId);
-            entity.setFilename(originalFilename);
-            entity.setSizeBytes(fileSize);
-            entity.setMimeType(contentType);
-            entity.setRawBlobUrl(blobPath);
-            entity.setBlobUrl(blobPath);
-            entity.setScanStatus(ScanStatus.CLEAN);
-            entity.setUploadPurpose(uploadPurpose);
-            entity.setMacroRemoved(macroRemoved);
-            entity = fileRepository.save(entity);
-
-            // Step 6: Publish event to orchestrator
-            orchestratorTriggerService.publishFileUploaded(entity);
-
-            return new UploadResponse(
-                    entity.getId(),
-                    entity.getFilename(),
-                    entity.getSizeBytes(),
-                    entity.getMimeType(),
-                    entity.getScanStatus(),
-                    entity.getUploadPurpose(),
-                    entity.getCreatedAt()
-            );
         } catch (ResponseStatusException e) {
             throw e;
         } catch (IOException e) {
@@ -166,5 +194,10 @@ public class UploadService {
             throw new IllegalArgumentException("Filename must not be empty");
         }
         return filename.replaceAll("[/\\\\]", "_").strip();
+    }
+
+    private boolean isMacroEnabledOffice(String contentType) {
+        return "application/vnd.ms-excel.sheet.macroEnabled.12".equals(contentType)
+                || "application/vnd.ms-powerpoint.presentation.macroEnabled.12".equals(contentType);
     }
 }

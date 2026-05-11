@@ -79,7 +79,7 @@ public class ExportFlowController {
     public ResponseEntity<?> listFlows(
             @RequestHeader(value = "X-Org-Id", required = false) UUID orgId) {
         if (orgId == null) {
-            return ResponseEntity.ok(java.util.List.of());
+            return ResponseEntity.badRequest().body(Map.of("error", "X-Org-Id header is required"));
         }
         return ResponseEntity.ok(exportFlowService.listFlows(orgId));
     }
@@ -92,6 +92,9 @@ public class ExportFlowController {
             @PathVariable UUID id,
             @RequestHeader(value = "X-Org-Id", required = false) UUID orgId) {
         try {
+            if (orgId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "X-Org-Id header is required"));
+            }
             return ResponseEntity.ok(exportFlowService.getFlow(id, orgId));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
@@ -107,8 +110,10 @@ public class ExportFlowController {
             @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId,
             @Valid @RequestBody CreateExportFlowRequest request) {
         try {
-            UUID effectiveOrgId = orgId != null ? orgId : UUID.randomUUID();
-            ExportFlowDTO created = exportFlowService.createFlow(effectiveOrgId, userId, request);
+            if (orgId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "X-Org-Id header is required"));
+            }
+            ExportFlowDTO created = exportFlowService.createFlow(orgId, userId, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -124,6 +129,9 @@ public class ExportFlowController {
             @RequestHeader(value = "X-Org-Id", required = false) UUID orgId,
             @Valid @RequestBody UpdateExportFlowRequest request) {
         try {
+            if (orgId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "X-Org-Id header is required"));
+            }
             return ResponseEntity.ok(exportFlowService.updateFlow(id, orgId, request));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -138,6 +146,9 @@ public class ExportFlowController {
             @PathVariable UUID id,
             @RequestHeader(value = "X-Org-Id", required = false) UUID orgId) {
         try {
+            if (orgId == null) {
+                return ResponseEntity.badRequest().build();
+            }
             exportFlowService.softDeleteFlow(id, orgId);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
@@ -154,6 +165,9 @@ public class ExportFlowController {
             @RequestHeader(value = "X-Org-Id", required = false) UUID orgId,
             @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
         try {
+            if (orgId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "X-Org-Id header is required"));
+            }
             // Create a pending execution record
             ExportFlowDTO flow = exportFlowService.getFlow(id, orgId);
             ExportFlowExecutionEntity execution = new ExportFlowExecutionEntity();
@@ -185,6 +199,9 @@ public class ExportFlowController {
             @RequestHeader(value = "X-Org-Id", required = false) UUID orgId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        if (orgId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "X-Org-Id header is required"));
+        }
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "startedAt"));
         Page<ExportFlowExecutionDTO> executions = executionRepository
                 .findByFlowIdAndOrgIdOrderByStartedAtDesc(id, orgId, pageRequest)
@@ -200,6 +217,9 @@ public class ExportFlowController {
             @PathVariable UUID id,
             @RequestHeader(value = "X-Org-Id", required = false) UUID orgId) {
         try {
+            if (orgId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "X-Org-Id header is required"));
+            }
             ExportFlowTestResult result = exportFlowService.testFlow(id, orgId);
             if (result.getError() != null) {
                 return ResponseEntity.badRequest().body(result);

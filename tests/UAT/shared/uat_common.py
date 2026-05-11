@@ -330,6 +330,37 @@ class UATSession:
             self._error_lines.append(f"## Request Exception\n- Endpoint: `{method.upper()} {path}`\n- Error: {exc}\n")
             return 0, {}
 
+    def call_status_in(self, method: str, path: str, expected_statuses: tuple[int, ...],
+                       body=None, files=None, tag: str | None = None,
+                       timeout: int = 30, query_params: dict | None = None) -> tuple[int, dict | bytes | str]:
+        """Call an endpoint and accept any status from expected_statuses.
+
+        This keeps logs strict but avoids the older pattern where tests called
+        with one expected status and then manually repaired counters.
+        """
+        primary = expected_statuses[0]
+        status, data = self.call(
+            method,
+            path,
+            body=body,
+            files=files,
+            expected_status=primary,
+            tag=tag,
+            timeout=timeout,
+            query_params=query_params,
+        )
+        if status != primary and status in expected_statuses:
+            if self._fail_count > 0:
+                self._fail_count -= 1
+            self._pass_count += 1
+            label = tag or path
+            self._log(f"[OK]   {method.upper()} {label} -> {status} (accepted)")
+            for i in range(len(self._error_lines) - 1, -1, -1):
+                if self._error_lines[i].startswith("## Unexpected Status"):
+                    self._error_lines.pop(i)
+                    break
+        return status, data
+
     def missing_feature(self, endpoint: str, description: str) -> None:
         """Reclassify the preceding FAIL as a SKIP (missing/unimplemented feature).
 
