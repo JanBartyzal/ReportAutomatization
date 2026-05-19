@@ -1,5 +1,6 @@
 package com.reportplatform.qry.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reportplatform.qry.model.NamedQueryEntity;
 import com.reportplatform.qry.model.dto.CreateNamedQueryRequest;
 import com.reportplatform.qry.model.dto.NamedQueryExecuteRequest;
@@ -34,6 +35,9 @@ class NamedQueryServiceTest {
     private NamedQueryRepository repository;
 
     @Mock
+    private ObjectMapper objectMapper;
+
+    @Mock
     private EntityManager entityManager;
 
     @Mock
@@ -43,7 +47,7 @@ class NamedQueryServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new NamedQueryService(repository);
+        service = new NamedQueryService(repository, objectMapper);
         // Inject the EntityManager via reflection (field injection via @PersistenceContext)
         try {
             var emField = NamedQueryService.class.getDeclaredField("entityManager");

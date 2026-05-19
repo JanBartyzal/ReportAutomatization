@@ -20,7 +20,7 @@ import { gotoAndWait, featurePresent } from '../../fixtures/auth.fixture';
 const EXPECTED_FIELD_TYPES = ['text', 'number', 'date', 'dropdown', 'table'];
 
 test.describe('Form builder page', () => {
-  test('form builder is reachable via "New Form" button', async ({ page }) => {
+  test('form builder is reachable via "New Form" button', { tag: ['@smoke'] }, async ({ page }) => {
     await gotoAndWait(page, ROUTES.forms);
     const forms = new FormsPage(page);
 

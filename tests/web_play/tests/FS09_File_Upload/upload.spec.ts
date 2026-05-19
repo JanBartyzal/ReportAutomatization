@@ -32,7 +32,7 @@ function fakeXlsxBuffer(): Buffer {
 }
 
 test.describe('Upload page layout', () => {
-  test('upload page has visible dropzone', async ({ page }) => {
+  test('upload page has visible dropzone', { tag: ['@smoke'] }, async ({ page }) => {
     await gotoAndWait(page, ROUTES.upload);
     const upload = new UploadPage(page);
 

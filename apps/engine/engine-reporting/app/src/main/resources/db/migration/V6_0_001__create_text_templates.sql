@@ -68,13 +68,13 @@ VALUES
     'MARKDOWN',
     E'# ITSM Status Report\n\n**Group:** {{GROUP_NAME}}  \n**Generated:** {{GENERATED_DATE}}\n\n---\n\n## Summary\n\n| Metric | Value |\n|--------|-------|\n| Open Incidents | {{OPEN_COUNT}} |\n| SLA Breach Rate | {{SLA_BREACH_PCT}}% |\n| Avg Resolution Time | {{AVG_RESOLUTION_HRS}} hrs |\n\n---\n\n## Open Incidents by Priority\n\n{{PRIORITY_CHART}}\n\n---\n\n## Top 10 Oldest Open Incidents\n\n{{TOP10_INCIDENTS}}\n\n---\n\n## 7-Day Trend\n\n{{TREND_CHART}}\n',
     '["PPTX","EXCEL"]',
-    '{"bindings":['
-    || '{"placeholder":"{{OPEN_COUNT}}","type":"SCALAR","queryId":"__itsm_incident_open_count__","params":{"groupId":"{{input.groupId}}"},"label":"Open Incidents"},'
-    || '{"placeholder":"{{PRIORITY_CHART}}","type":"CHART","queryId":"__itsm_incident_priority_distribution__","params":{"groupId":"{{input.groupId}}"},"chartType":"PIE","label":"Priority Distribution"},'
-    || '{"placeholder":"{{SLA_BREACH_PCT}}","type":"SCALAR","queryId":"__itsm_incident_sla_breach_rate__","params":{"groupId":"{{input.groupId}}"},"label":"SLA Breach %"},'
-    || '{"placeholder":"{{TOP10_INCIDENTS}}","type":"TABLE","queryId":"__itsm_incident_top10_open__","params":{"groupId":"{{input.groupId}}"},"label":"Oldest Open Incidents"},'
-    || '{"placeholder":"{{TREND_CHART}}","type":"CHART","queryId":"__itsm_incident_trend_7d__","params":{"groupId":"{{input.groupId}}"},"chartType":"LINE","label":"7-Day Trend"}'
-    || ']}',
+    (   '{"bindings":['
+        || '{"placeholder":"{{OPEN_COUNT}}","type":"SCALAR","queryId":"__itsm_incident_open_count__","params":{"groupId":"{{input.groupId}}"},"label":"Open Incidents"},'
+        || '{"placeholder":"{{PRIORITY_CHART}}","type":"CHART","queryId":"__itsm_incident_priority_distribution__","params":{"groupId":"{{input.groupId}}"},"chartType":"PIE","label":"Priority Distribution"},'
+        || '{"placeholder":"{{SLA_BREACH_PCT}}","type":"SCALAR","queryId":"__itsm_incident_sla_breach_rate__","params":{"groupId":"{{input.groupId}}"},"label":"SLA Breach %"},'
+        || '{"placeholder":"{{TOP10_INCIDENTS}}","type":"TABLE","queryId":"__itsm_incident_top10_open__","params":{"groupId":"{{input.groupId}}"},"label":"Oldest Open Incidents"},'
+        || '{"placeholder":"{{TREND_CHART}}","type":"CHART","queryId":"__itsm_incident_trend_7d__","params":{"groupId":"{{input.groupId}}"},"chartType":"LINE","label":"7-Day Trend"}'
+        || ']}' )::jsonb,
     'CENTRAL',
     TRUE,
     'system'
@@ -87,9 +87,9 @@ VALUES
     'MARKDOWN',
     E'# {{REPORT_TITLE}}\n\n{{REPORT_DESCRIPTION}}\n\n---\n\n## Data\n\n{{MAIN_TABLE}}\n',
     '["PPTX","EXCEL"]',
-    '{"bindings":['
-    || '{"placeholder":"{{MAIN_TABLE}}","type":"TABLE","queryId":"__universal_query__","params":{},"label":"Data"}'
-    || ']}',
+    (   '{"bindings":['
+        || '{"placeholder":"{{MAIN_TABLE}}","type":"TABLE","queryId":"__universal_query__","params":{},"label":"Data"}'
+        || ']}' )::jsonb,
     'CENTRAL',
     TRUE,
     'system'

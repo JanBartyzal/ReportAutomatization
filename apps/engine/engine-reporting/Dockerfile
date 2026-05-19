@@ -23,6 +23,7 @@ COPY apps/engine/engine-reporting/lifecycle/pom.xml apps/engine/engine-reporting
 COPY apps/engine/engine-reporting/period/pom.xml apps/engine/engine-reporting/period/
 COPY apps/engine/engine-reporting/form/pom.xml apps/engine/engine-reporting/form/
 COPY apps/engine/engine-reporting/pptx-template/pom.xml apps/engine/engine-reporting/pptx-template/
+COPY apps/engine/engine-reporting/text-template/pom.xml apps/engine/engine-reporting/text-template/
 COPY apps/engine/engine-reporting/notification/pom.xml apps/engine/engine-reporting/notification/
 COPY apps/engine/engine-reporting/app/pom.xml apps/engine/engine-reporting/app/
 
@@ -32,6 +33,7 @@ COPY apps/engine/engine-reporting/lifecycle/src apps/engine/engine-reporting/lif
 COPY apps/engine/engine-reporting/period/src apps/engine/engine-reporting/period/src
 COPY apps/engine/engine-reporting/form/src apps/engine/engine-reporting/form/src
 COPY apps/engine/engine-reporting/pptx-template/src apps/engine/engine-reporting/pptx-template/src
+COPY apps/engine/engine-reporting/text-template/src apps/engine/engine-reporting/text-template/src
 COPY apps/engine/engine-reporting/notification/src apps/engine/engine-reporting/notification/src
 COPY apps/engine/engine-reporting/app/src apps/engine/engine-reporting/app/src
 

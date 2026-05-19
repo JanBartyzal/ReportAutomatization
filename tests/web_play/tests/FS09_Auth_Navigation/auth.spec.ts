@@ -78,7 +78,7 @@ test.describe('Login page', () => {
 // ── Post-login redirect & layout ──────────────────────────────────────────────
 
 test.describe('Post-login layout', () => {
-  test('landing page shows sidebar navigation', async ({ page }) => {
+  test('landing page shows sidebar navigation', { tag: ['@smoke'] }, async ({ page }) => {
     await gotoAndWait(page, ROUTES.dashboard);
 
     const app = new AppPage(page);
@@ -86,7 +86,7 @@ test.describe('Post-login layout', () => {
     expect(links.length, 'Sidebar should have at least 4 navigation links').toBeGreaterThanOrEqual(4);
   });
 
-  test('sidebar contains required navigation items', async ({ page }) => {
+  test('sidebar contains required navigation items', { tag: ['@smoke'] }, async ({ page }) => {
     await gotoAndWait(page, ROUTES.dashboard);
     const app = new AppPage(page);
 

@@ -1,4 +1,4 @@
-package com.reportplatform.enginedata.common.controller;
+package com.reportplatform.template.tmpl.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -93,7 +93,6 @@ public class PipelineController {
      */
     @SuppressWarnings("unchecked")
     private String applyColumnMapping(String orgId, Map<String, Object> parsedData) throws Exception {
-        // Collect all source headers from sheets or slides
         List<String> allHeaders = new ArrayList<>();
 
         List<Map<String, Object>> sheets = (List<Map<String, Object>>) parsedData.get("sheets");
@@ -109,14 +108,11 @@ public class PipelineController {
         }
 
         if (allHeaders.isEmpty()) {
-            // No mappable headers — return parsedData unchanged
             return objectMapper.writeValueAsString(parsedData);
         }
 
-        // Get mapping suggestions for all headers
         List<MappingActionData> suggestions = templateMappingService.suggestMapping(orgId, allHeaders);
 
-        // Build header rename map: sourceColumn → targetColumn (for mapped columns only)
         Map<String, String> renameMap = new LinkedHashMap<>();
         for (MappingActionData action : suggestions) {
             if (!"UNMAPPED".equals(action.ruleType()) && action.targetColumn() != null) {
@@ -129,7 +125,6 @@ public class PipelineController {
             return objectMapper.writeValueAsString(parsedData);
         }
 
-        // Apply renames to sheets
         Map<String, Object> mapped = new LinkedHashMap<>(parsedData);
         if (sheets != null) {
             List<Map<String, Object>> remappedSheets = new ArrayList<>();
@@ -147,8 +142,7 @@ public class PipelineController {
             mapped.put("sheets", remappedSheets);
         }
 
-        int renamedCount = renameMap.size();
-        log.info("MAP step: renamed {} column(s) for file using template mapping", renamedCount);
+        log.info("MAP step: renamed {} column(s) for file using template mapping", renameMap.size());
         return objectMapper.writeValueAsString(mapped);
     }
 

@@ -18,7 +18,7 @@ import { ROUTES, TIMEOUTS } from '../../config/config';
 import { gotoAndWait, featurePresent } from '../../fixtures/auth.fixture';
 
 test.describe('Sink Browser list page', () => {
-  test('/sinks page loads', async ({ page }) => {
+  test('/sinks page loads', { tag: ['@smoke'] }, async ({ page }) => {
     await gotoAndWait(page, ROUTES.sinks);
     await expect(page).not.toHaveURL(/login|error/);
 

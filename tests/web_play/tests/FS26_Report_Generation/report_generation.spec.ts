@@ -17,7 +17,7 @@ import { ROUTES, TIMEOUTS } from '../../config/config';
 import { gotoAndWait, featurePresent } from '../../fixtures/auth.fixture';
 
 test.describe('Create Report dialog', () => {
-  test('"New Report" button opens create dialog', async ({ page }) => {
+  test('"New Report" button opens create dialog', { tag: ['@smoke'] }, async ({ page }) => {
     await gotoAndWait(page, ROUTES.reports);
     const reportsPage = new ReportsPage(page);
 

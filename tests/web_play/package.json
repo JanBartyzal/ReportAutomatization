@@ -13,6 +13,8 @@
     "test:fs19": "playwright test tests/FS19_Form_Builder tests/FS19_Form_Filling",
     "test:fs24": "playwright test tests/FS24_Data_Promotion",
     "test:fs27": "playwright test tests/FS27_Excel_Sync",
+    "test:fs27:batch": "playwright test tests/FS27_Excel_Sync/batch_import_reporting.spec.ts",
+    "test:smoke": "playwright test --grep @smoke",
     "test:ux": "playwright test tests/FS99_UX_Quality",
     "report": "playwright show-report logs/html-report"
   },

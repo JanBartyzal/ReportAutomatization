@@ -37,3 +37,8 @@ export const darkTheme = createDarkTheme(reportBrand);
  * Hero gradient per theme-config.json
  */
 export const heroGradient = `linear-gradient(${themeConfig.heroGradient.angle}deg, ${themeConfig.heroGradient.from} 0%, ${themeConfig.heroGradient.to} 100%)`;
+
+/**
+ * Chart color palette for data visualizations.
+ */
+export const chartPalette = ['#0078D4', '#107C10', '#D83B01', '#FFB900', '#5C2D91', '#008272'];

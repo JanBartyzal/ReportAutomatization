@@ -1,0 +1,43 @@
+{
+  "description": "Playwright E2E source data for multi-entity OPEX Excel imports, batch isolation, SQL persistence, and report output validation.",
+  "persistentTable": "opex_actuals_persisted",
+  "sinkTable": "sink_opex_lines",
+  "outputReports": {
+    "excel": "batch_summary.xlsx",
+    "pdf": "batch_report.pdf",
+    "combined": "sink_plus_persisted_reconciliation.xlsx"
+  },
+  "batches": [
+    {
+      "id": "BATCH-A-2026-04",
+      "name": "April 2026 OPEX multi-entity import",
+      "period": "2026-04",
+      "files": [
+        "BATCH-A_holding_consolidated.xlsx",
+        "BATCH-A_company_cz_finance.xlsx",
+        "BATCH-A_division_cz_it.xlsx",
+        "BATCH-A_costcenter_de_ops.xlsx"
+      ]
+    },
+    {
+      "id": "BATCH-B-2026-05",
+      "name": "May 2026 OPEX multi-entity import",
+      "period": "2026-05",
+      "files": [
+        "BATCH-B_holding_consolidated.xlsx",
+        "BATCH-B_company_cz_finance.xlsx",
+        "BATCH-B_division_cz_it.xlsx"
+      ]
+    }
+  ],
+  "hierarchyLevels": ["HOLDING", "COMPANY", "DIVISION", "COST_CENTER"],
+  "expectedColumns": [
+    "batch_id",
+    "entity_path",
+    "account",
+    "amount",
+    "currency",
+    "sink_key",
+    "persistent_table"
+  ]
+}

@@ -60,7 +60,8 @@ RUN mkdir -p /app/generated/atomizer/v1 /app/generated/common/v1 && \
         /tmp/protos/atomizer/v1/csv.proto \
         /tmp/protos/atomizer/v1/excel.proto \
         /tmp/protos/atomizer/v1/pdf.proto \
-        /tmp/protos/atomizer/v1/pptx.proto && \
+        /tmp/protos/atomizer/v1/pptx.proto \
+        /tmp/protos/atomizer/v1/servicenow.proto && \
     # Create __init__.py files for proper Python package structure
     touch /app/generated/__init__.py \
           /app/generated/atomizer/__init__.py \

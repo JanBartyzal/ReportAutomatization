@@ -16,7 +16,7 @@ import { ROUTES, TIMEOUTS } from '../../config/config';
 import { gotoAndWait, featurePresent } from '../../fixtures/auth.fixture';
 
 test.describe('Dashboard list page', () => {
-  test('dashboards page loads without errors', async ({ page }) => {
+  test('dashboards page loads without errors', { tag: ['@smoke'] }, async ({ page }) => {
     await gotoAndWait(page, ROUTES.dashboards);
     const app = new AppPage(page);
     await app.expectNoErrorsVisible();

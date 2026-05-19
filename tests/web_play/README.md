@@ -25,7 +25,7 @@ End-to-end UX/UI tests for the ReportAutomatization (RA) frontend, built with **
 | FS24 | Data Promotion | Smart persistence candidates, promoted tables, DDL preview, approve/dismiss controls |
 | FS25 | Sink Browser | List/filters/pagination, checkboxes, detail inline editing, highlighted corrections |
 | FS26 | Report Generation | Create report dialog (org/period/type), generate button, download link, batch page |
-| FS27 | Excel Sync | Export flows list, create dialog (SQL/target/sheet/trigger), Export Now button |
+| FS27 | Excel Sync | Export flows list, create dialog (SQL/target/sheet/trigger), Export Now button, multi-batch Excel import/reporting contract |
 | FS99 | UX Quality | Page titles, landmarks, all-buttons-accessible, responsive layout, keyboard nav, loading states, toast roles, colour contrast |
 
 ## Structure
@@ -45,6 +45,7 @@ tests/web_play/
 │   ├── UploadPage.ts         # File upload interactions
 │   ├── ReportsPage.ts        # Reports table, status transitions, approve/reject
 │   └── FormsPage.ts          # Form builder canvas, field palette, autosave
+├── sourcedata/               # XLSX fixtures for multi-batch Excel import/reporting tests
 ├── tests/
 │   ├── auth.setup/           # Validates auth state files (runs before other projects)
 │   ├── FS09_Auth_Navigation/
@@ -103,7 +104,15 @@ npx playwright install chromium
 .\run.ps1 -Suite forms            # FS19 form builder
 .\run.ps1 -Suite search           # FS12 search / query tooling
 .\run.ps1 -Suite promotion        # FS24 data promotion
+.\run.ps1 -Suite excel-batch      # FS27 multi-batch Excel import/reporting contract
 .\run.ps1 -Suite ux               # FS99 UX quality
+```
+
+### Tags
+```powershell
+.\run.ps1 -Tag smoke              # Fast smoke coverage across tagged specs
+.\run.ps1 -Suite excel-batch -Tag smoke
+.\run.ps1 -Suite excel-batch -Tag slow
 ```
 
 ### Headed mode (visible browser)

@@ -17,6 +17,7 @@
 import { test, expect } from '@playwright/test';
 import { ROUTES, TIMEOUTS } from '../../config/config';
 import { gotoAndWait } from '../../fixtures/auth.fixture';
+import { withApiMocks } from '../../fixtures/api-mock.fixture';
 
 // Core routes to smoke-check
 const CORE_ROUTES = [
@@ -44,7 +45,8 @@ const CORE_ROUTES = [
 
 test.describe('Page titles', () => {
   for (const route of CORE_ROUTES) {
-    test(`page title is meaningful on ${route}`, async ({ page }) => {
+    test(`page title is meaningful on ${route}`, { tag: ['@smoke', '@a11y'] }, async ({ page }) => {
+      await withApiMocks(page);
       await gotoAndWait(page, route);
       const title = await page.title();
       expect(title, `Page title on ${route} should not be blank`).toBeTruthy();
@@ -58,7 +60,8 @@ test.describe('Page titles', () => {
 
 test.describe('Route availability', () => {
   for (const route of CORE_ROUTES) {
-    test(`route ${route} renders app content, not a 404`, async ({ page }) => {
+    test(`route ${route} renders app content, not a 404`, { tag: ['@smoke'] }, async ({ page }) => {
+      await withApiMocks(page);
       await gotoAndWait(page, route);
       await expect(page).not.toHaveURL(/login|signin|error/);
 
@@ -102,22 +105,20 @@ test.describe('HTML semantic landmarks', () => {
 
 test.describe('Accessible buttons', () => {
   for (const route of [ROUTES.dashboard, ROUTES.reports, ROUTES.forms]) {
-    test(`all buttons have accessible names on ${route}`, async ({ page }) => {
+    test(`all buttons have accessible names on ${route}`, { tag: ['@a11y'] }, async ({ page }) => {
       await gotoAndWait(page, route);
       const buttons = page.locator('button:not([aria-hidden="true"]):not(:disabled)');
       const count   = await buttons.count();
 
-      let missing = 0;
       for (let i = 0; i < Math.min(count, 30); i++) {
         const btn  = buttons.nth(i);
         const name = (await btn.getAttribute('aria-label') ?? await btn.textContent() ?? await btn.getAttribute('title') ?? '').trim();
         if (!name) {
-          missing++;
           const html = await btn.evaluate(el => el.outerHTML.slice(0, 200));
-          console.warn(`[A11Y] Button missing name on ${route}: ${html}`);
+          // soft: collect all violations before failing
+          expect.soft(name, `Button missing accessible name on ${route}: ${html}`).toBeTruthy();
         }
       }
-      expect(missing, `${missing} button(s) without accessible name on ${route}`).toBe(0);
     });
   }
 });
@@ -126,12 +127,11 @@ test.describe('Accessible form inputs', () => {
   const formRoutes = [ROUTES.formNew, ROUTES.adminManage];
 
   for (const route of formRoutes) {
-    test(`all inputs have labels on ${route}`, async ({ page }) => {
+    test(`all inputs have labels on ${route}`, { tag: ['@a11y'] }, async ({ page }) => {
       await gotoAndWait(page, route);
       const inputs = page.locator('input:not([type="hidden"]):not([aria-hidden="true"]), select, textarea');
       const count  = await inputs.count();
 
-      let missing = 0;
       for (let i = 0; i < Math.min(count, 20); i++) {
         const input   = inputs.nth(i);
         const id      = await input.getAttribute('id');
@@ -139,10 +139,10 @@ test.describe('Accessible form inputs', () => {
         const ariaBy  = await input.getAttribute('aria-labelledby');
         const plchldr = await input.getAttribute('placeholder');
         const hasLabel = !!(ariaLbl || ariaBy || plchldr || (id && await page.locator(`label[for="${id}"]`).count() > 0));
-        if (!hasLabel) missing++;
-      }
-      if (missing > 0) {
-        console.warn(`[A11Y] ${missing} input(s) missing labels on ${route}`);
+        if (!hasLabel) {
+          const html = await input.evaluate(el => el.outerHTML.slice(0, 200));
+          expect.soft(hasLabel, `Input missing label on ${route}: ${html}`).toBeTruthy();
+        }
       }
     });
   }

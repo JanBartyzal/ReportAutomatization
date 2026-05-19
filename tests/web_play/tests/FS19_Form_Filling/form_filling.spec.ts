@@ -75,7 +75,7 @@ test.describe('Form fill page layout', () => {
     }
   });
 
-  test('auto-save indicator is present', async ({ page }) => {
+  test('auto-save indicator is present', { tag: ['@slow'] }, async ({ page }) => {
     const hasForms = await openFirstPublishedForm(page);
     if (!hasForms) return;
 

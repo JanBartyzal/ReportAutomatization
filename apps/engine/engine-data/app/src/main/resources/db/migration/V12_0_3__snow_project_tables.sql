@@ -146,7 +146,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON snow_project_budgets TO engine_data_user
 
 -- ─── Seed: Named Queries for Project Reports ──────────────────────────────────
 
-INSERT INTO named_queries (id, org_id, name, description, data_source_type, sql_query, params_schema, is_system, created_by)
+INSERT INTO named_queries (id, org_id, name, description, data_source_hint, sql_query, params_schema, is_system, created_by)
 VALUES
 (
     gen_random_uuid(),

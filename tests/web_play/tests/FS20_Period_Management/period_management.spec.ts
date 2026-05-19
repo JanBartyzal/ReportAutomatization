@@ -15,7 +15,7 @@ import { ROUTES, TIMEOUTS } from '../../config/config';
 import { gotoAndWait, featurePresent } from '../../fixtures/auth.fixture';
 
 test.describe('Periods list', () => {
-  test('periods page loads without errors', async ({ page }) => {
+  test('periods page loads without errors', { tag: ['@smoke'] }, async ({ page }) => {
     await gotoAndWait(page, ROUTES.periods);
     await expect(page).not.toHaveURL(/login|error/);
 

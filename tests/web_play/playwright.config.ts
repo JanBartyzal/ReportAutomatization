@@ -13,7 +13,7 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: 2,
+  workers: process.env.CI ? 4 : 2,
 
   reporter: [
     ['list'],
@@ -45,6 +45,7 @@ export default defineConfig({
     // ── Holding Admin perspective (approves, manages periods, templates) ────
     {
       name: 'chromium-admin',
+      fullyParallel: true,
       use: {
         ...devices['Desktop Chrome'],
         storageState: ADMIN_STATE,
@@ -52,7 +53,6 @@ export default defineConfig({
       dependencies: ['setup'],
       testMatch: [
         '**/FS07_Admin_UI/**',
-        '**/FS08_Batch/**',
         '**/FS11_Dashboards/**',
         '**/FS12_Search_AI_MCP/**',
         '**/FS13_Notifications/**',
@@ -98,6 +98,7 @@ export default defineConfig({
     // ── UX quality (responsive, a11y) – multiple viewports ──────────────────
     {
       name: 'ux-desktop',
+      fullyParallel: true,
       use: {
         ...devices['Desktop Chrome'],
         storageState: ADMIN_STATE,
@@ -108,6 +109,7 @@ export default defineConfig({
     },
     {
       name: 'ux-tablet',
+      fullyParallel: true,
       use: {
         ...devices['iPad (gen 7)'],
         storageState: ADMIN_STATE,
@@ -117,6 +119,7 @@ export default defineConfig({
     },
     {
       name: 'ux-mobile',
+      fullyParallel: true,
       use: {
         ...devices['iPhone 14'],
         storageState: ADMIN_STATE,

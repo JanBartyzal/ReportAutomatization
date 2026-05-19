@@ -16,7 +16,7 @@ import { ROUTES, TIMEOUTS } from '../../config/config';
 import { gotoAndWait, featurePresent } from '../../fixtures/auth.fixture';
 
 test.describe('Export Flows list', () => {
-  test('export flows page loads', async ({ page }) => {
+  test('export flows page loads', { tag: ['@smoke'] }, async ({ page }) => {
     await gotoAndWait(page, ROUTES.exportFlows);
     await expect(page).not.toHaveURL(/login|error/);
 

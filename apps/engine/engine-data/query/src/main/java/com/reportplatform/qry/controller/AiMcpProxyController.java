@@ -3,12 +3,12 @@ package com.reportplatform.qry.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -16,7 +16,6 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.time.Duration;
 import java.util.Map;
 
 /**
@@ -45,19 +44,17 @@ public class AiMcpProxyController {
     @Value("${dapr.proxy.read-timeout-seconds:30}")
     private int readTimeoutSeconds;
 
-    private final RestTemplateBuilder restTemplateBuilder;
     private RestTemplate restTemplate;
 
-    public AiMcpProxyController(RestTemplateBuilder builder) {
-        this.restTemplateBuilder = builder;
+    public AiMcpProxyController() {
     }
 
     @jakarta.annotation.PostConstruct
     void init() {
-        this.restTemplate = restTemplateBuilder
-                .connectTimeout(Duration.ofSeconds(connectTimeoutSeconds))
-                .readTimeout(Duration.ofSeconds(readTimeoutSeconds))
-                .build();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout((int) (connectTimeoutSeconds * 1000L));
+        factory.setReadTimeout((int) (readTimeoutSeconds * 1000L));
+        this.restTemplate = new RestTemplate(factory);
     }
 
     /**

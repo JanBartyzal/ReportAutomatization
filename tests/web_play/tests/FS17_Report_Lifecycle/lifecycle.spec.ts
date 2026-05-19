@@ -17,7 +17,7 @@ import { ROUTES, TIMEOUTS } from '../../config/config';
 import { gotoAndWait, featurePresent } from '../../fixtures/auth.fixture';
 
 test.describe('Reports list page', () => {
-  test('reports page loads and shows status badges', async ({ page }) => {
+  test('reports page loads and shows status badges', { tag: ['@smoke'] }, async ({ page }) => {
     await gotoAndWait(page, ROUTES.reports);
 
     const listEl = page.locator('table, [role="grid"], [data-testid="report-table"]').first();

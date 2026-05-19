@@ -282,7 +282,20 @@
       "Bash(gh pr *)",
       "Bash(where gh *)",
       "Read(//usr/local/bin/**)",
-      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && git diff {} 2>/dev/null | grep -E \"^\\\\+.*TODO|^\\\\+.*FIXME|^\\\\+.*XXX|^\\\\+.*BUG|^\\\\+.*HACK\" | head -5')"
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && git diff {} 2>/dev/null | grep -E \"^\\\\+.*TODO|^\\\\+.*FIXME|^\\\\+.*XXX|^\\\\+.*BUG|^\\\\+.*HACK\" | head -5')",
+      "Bash(grep -v \"^.*//.*ROUTES\")",
+      "Bash(npx playwright *)",
+      "PowerShell(if \\(-not \\(Test-Path \"c:\\\\Docker\\\\ReportAutomatization\\\\.github\\\\workflows\"\\)\\) { New-Item -ItemType Directory -Path \"c:\\\\Docker\\\\ReportAutomatization\\\\.github\\\\workflows\" -Force | Out-Null }; Write-Host \"OK\")",
+      "PowerShell(Get-Command mvn -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command java -ErrorAction SilentlyContinue)",
+      "PowerShell($env:JAVA_HOME)",
+      "PowerShell($env:M2_HOME)",
+      "PowerShell(cd \"c:\\\\Docker\\\\ReportAutomatization\\\\apps\\\\frontend\"; $result = npx tsc --noEmit 2>&1; Write-Output \"EXIT: $LASTEXITCODE\"; $result | Select-Object -First 300 | ForEach-Object { Write-Output $_ })",
+      "PowerShell(cd \"c:\\\\Docker\\\\ReportAutomatization\\\\apps\\\\frontend\"; npx tsc --noEmit --pretty 2>&1 | Select-Object -First 300 | ForEach-Object { Write-Output $_ }; Write-Output \"Exit code: $LASTEXITCODE\")",
+      "PowerShell(cd \"c:\\\\Docker\\\\ReportAutomatization\\\\apps\\\\frontend\"; npx tsc --noEmit --pretty --diagnostics 2>&1 | ForEach-Object { Write-Output $_ }; Write-Output \"Exit: $LASTEXITCODE\")",
+      "PowerShell(Set-Location \"c:\\\\Docker\\\\ReportAutomatization\\\\apps\\\\frontend\"; $output = npx tsc --noEmit 2>&1; if \\($output\\) { $output | ForEach-Object { $_ } } else { \"NO OUTPUT - NO ERRORS\" }; \"Exit code: $LASTEXITCODE\")",
+      "PowerShell(Set-Location \"c:\\\\Docker\\\\ReportAutomatization\\\\apps\\\\frontend\"; $output = npx tsc --noEmit --strict 2>&1; if \\($output\\) { $output | Select-Object -First 100 | ForEach-Object { $_ } } else { \"NO OUTPUT\" }; \"Exit: $LASTEXITCODE\")",
+      "PowerShell(Set-Location \"c:\\\\Docker\\\\ReportAutomatization\\\\apps\\\\frontend\"; $output = npx tsc --noEmit 2>&1; if \\($output\\) { $output | ForEach-Object { $_ } } else { \"NO ERRORS\" }; \"Exit: $LASTEXITCODE\")"
     ]
   }
 }

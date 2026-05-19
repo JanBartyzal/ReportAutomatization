@@ -10,7 +10,7 @@
 .PARAMETER Suite
     Which test suite to run. Options: all (default), auth, upload, dashboards,
     notifications, versioning, schema, audit, lifecycle, pptx, forms, filling,
-    periods, local, comparison, search, integrations, promotion, sinks, generation, excel, ux
+    periods, local, comparison, search, integrations, promotion, sinks, generation, excel, excel-batch, ux
 
 .PARAMETER Headed
     Run tests in headed (visible browser) mode.
@@ -27,22 +27,29 @@
 .PARAMETER SkipFrontendCheck
     Skip the preflight HTTP check for the frontend base URL.
 
+.PARAMETER Tag
+    Run only tests with this tag. Options: smoke, a11y, slow (maps to @smoke / @a11y / @slow).
+
 .EXAMPLE
     .\run.ps1
     .\run.ps1 -Suite lifecycle -Headed
     .\run.ps1 -Suite ux -Report
+    .\run.ps1 -Tag smoke
+    .\run.ps1 -Tag a11y
     .\run.ps1 -BaseUrl "http://myhost:5173"
 #>
 param(
     [ValidateSet('all','auth','upload','dashboards','notifications','versioning',
                  'schema','audit','lifecycle','pptx','forms','filling','periods',
-                 'local','comparison','search','integrations','promotion','sinks','generation','excel','ux')]
+                 'local','comparison','search','integrations','promotion','sinks','generation','excel','excel-batch','ux','admin')]
     [string]$Suite    = 'all',
     [switch]$Headed,
     [switch]$Debug,
     [switch]$Report,
     [string]$BaseUrl  = 'http://localhost:5173',
-    [switch]$SkipFrontendCheck
+    [switch]$SkipFrontendCheck,
+    [ValidateSet('', 'smoke', 'a11y', 'slow')]
+    [string]$Tag      = ''
 )
 
 Set-StrictMode -Version Latest
@@ -107,6 +114,7 @@ if (-not $SkipFrontendCheck) {
 
 # ── Map suite name to test path ───────────────────────────────────────────────
 $suiteMap = @{
+    'admin'         = 'tests/FS07_Admin_UI'
     'auth'          = 'tests/FS09_Auth_Navigation'
     'upload'        = 'tests/FS09_File_Upload'
     'dashboards'    = 'tests/FS11_Dashboards'
@@ -127,21 +135,24 @@ $suiteMap = @{
     'sinks'         = 'tests/FS25_Sink_Browser'
     'generation'    = 'tests/FS26_Report_Generation'
     'excel'         = 'tests/FS27_Excel_Sync'
+    'excel-batch'   = 'tests/FS27_Excel_Sync/batch_import_reporting.spec.ts'
     'ux'            = 'tests/FS99_UX_Quality'
 }
 
 $testPath = if ($Suite -eq 'all') { '' } else { $suiteMap[$Suite] }
 
 # ── Build command arguments ───────────────────────────────────────────────────
-$args = @()
-if ($testPath)   { $args += $testPath }
-if ($Headed)     { $args += '--headed' }
-if ($Debug)      { $args += '--debug' }
+$pwArgs = @()
+if ($testPath)   { $pwArgs += $testPath }
+if ($Headed)     { $pwArgs += '--headed' }
+if ($Debug)      { $pwArgs += '--debug' }
+if ($Tag)        { $pwArgs += '--grep'; $pwArgs += "@$Tag" }
 
 Write-Host ""
 Write-Host "=======================================================" -ForegroundColor Blue
 Write-Host "  RA Playwright UX Tests" -ForegroundColor Blue
 Write-Host "  Suite    : $Suite" -ForegroundColor Blue
+Write-Host "  Tag      : $(if ($Tag) { "@$Tag" } else { "(all)" })" -ForegroundColor Blue
 Write-Host "  Base URL : $BaseUrl" -ForegroundColor Blue
 Write-Host "  Headed   : $Headed" -ForegroundColor Blue
 Write-Host "=======================================================" -ForegroundColor Blue
@@ -151,7 +162,7 @@ Push-Location $ScriptDir
 $env:BASE_URL = $BaseUrl
 
 try {
-    & $PlaywrightBin test @args
+    & $PlaywrightBin test @pwArgs
     $exitCode = $LASTEXITCODE
 } finally {
     Pop-Location

@@ -1,0 +1,128 @@
+name: Playwright UX Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/frontend/**'
+      - 'tests/web_play/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/frontend/**'
+      - 'tests/web_play/**'
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: 'Test suite to run (all / smoke / a11y / specific FS)'
+        required: false
+        default: 'smoke'
+      base_url:
+        description: 'Frontend base URL'
+        required: false
+        default: 'http://localhost:5173'
+
+jobs:
+  test:
+    name: Playwright – ${{ github.event.inputs.suite || 'smoke' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Node & npm cache ────────────────────────────────────────────────────
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: tests/web_play/package-lock.json
+
+      - name: Install test dependencies
+        working-directory: tests/web_play
+        run: npm ci
+
+      # ── Playwright browser cache ────────────────────────────────────────────
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('tests/web_play/package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        working-directory: tests/web_play
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright deps (system libs only)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: tests/web_play
+        run: npx playwright install-deps chromium
+
+      # ── Frontend ────────────────────────────────────────────────────────────
+      - name: Set up Node.js for frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: apps/frontend
+        run: npm ci
+
+      - name: Start frontend (background)
+        working-directory: apps/frontend
+        run: npm run dev &
+        env:
+          VITE_DEV_BYPASS_AUTH: 'true'
+
+      - name: Wait for frontend to be ready
+        run: npx wait-on http://localhost:5173 --timeout 60000
+
+      # ── Run tests ──────────────────────────────────────────────────────────
+      - name: Run Playwright tests
+        working-directory: tests/web_play
+        env:
+          BASE_URL: ${{ github.event.inputs.base_url || 'http://localhost:5173' }}
+          CI: 'true'
+        run: |
+          TAG="${{ github.event.inputs.suite || 'smoke' }}"
+          if [[ "$TAG" == "smoke" || "$TAG" == "a11y" || "$TAG" == "slow" ]]; then
+            npx playwright test --grep "@$TAG"
+          elif [[ "$TAG" == "all" ]]; then
+            npx playwright test
+          else
+            # Treat as suite directory path shorthand
+            npx playwright test "tests/FS*${TAG}*" || npx playwright test
+          fi
+
+      # ── Artifacts ─────────────────────────────────────────────────────────
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_number }}
+          path: tests/web_play/logs/html-report/
+          retention-days: 14
+
+      - name: Upload test results (JSON)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results-${{ github.run_number }}
+          path: tests/web_play/logs/results.json
+          retention-days: 14
+
+      - name: Upload failure traces & screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ github.run_number }}
+          path: tests/web_play/test-results/
+          retention-days: 7
